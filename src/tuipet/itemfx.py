@@ -133,13 +133,36 @@ SCRIPTS = {
                          (14, 18): {"idy": -1, "idx": -2, "icyc": 1},
                          (19, 20): {"idx": -2, "icyc": 1},
                          (21, 30): {"idy": 1, "idx": -1, "icyc": 1}}},
+    # bandaging(): RESTORED with the injury (canon restoration 2026-07-23,
+    # Joel: "do the bandage animation").  The DVPet bandage() beats,
+    # recovered from git 44c6405~1 (the port the pill-anim fix deleted):
+    # the med is held up beside the HURT pet (pose 9 throughout, being
+    # treated), pressed on at beat 4 (canon setLocY 53 -> 64), steps its
+    # 4-frame application strip at 0/8/13/18, ends 23 and chains into
+    # cheer.  Canon has no ripped bandage cues -- click on each
+    # application, confirm on the last (_useBandage / _lastBandage).
+    # ⚠ THE REMOVAL'S BUG MUST NOT RETURN: that port drew the strip at
+    # ABSOLUTE y0-4, above the window top (y6).  Every y here is
+    # FLOOR-RELATIVE (state() does `row["iy"] + floor`), so the med
+    # cannot climb out of the window by construction.
+    "Bandaging": {"steps": 24, "end": "cheer", "layout": "beside",
+                  "snds": {0: "click", 8: "click", 13: "click",
+                           18: "confirm"},
+                  "rows": {0: {"i": 0, "p": 9, "iy": -4},
+                           4: {"i": 0, "p": 9, "iy": 0},
+                           8: {"i": 1, "p": 9},
+                           13: {"i": 2, "p": 9},
+                           18: {"i": 3, "p": 9}}},
 }
 
 # AnimationTypes that deliberately have NO item fx: Idling (canon plays
 # nothing), plus every system with its own door (transports / ItemEvol /
-# Inherit / Recover / Bandaging ride their existing flows).  Jump keeps the
-# ported jumping() hop.  (The Futon/toilet mentions left with the staple
-# props: strict-DSprite items, 2026-07-17.)
+# Inherit / Recover ride their existing flows).  Jump keeps the ported
+# jumping() hop.  (The Futon/toilet mentions left with the staple props:
+# strict-DSprite items, 2026-07-17.)  BANDAGING was listed here as
+# "rides its existing flow" -- that flow was deleted with the heal fx in
+# 44c6405 and the claim went stale, so the Bandage flashed text over
+# ripped art.  Rebuilt above (canon restoration 2026-07-23).
 NO_FX = {"Idling"}
 
 

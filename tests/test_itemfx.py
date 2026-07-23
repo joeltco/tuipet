@@ -255,3 +255,60 @@ def test_the_sleeping_pill_eats_first_then_sleeps():
     res = pan.key("enter")
     assert res[1][0] == "eat"
     assert p.asleep                            # ...and it did go to sleep
+
+
+# ---- the Bandage's show, restored (2026-07-23, Joel: "do the bandage
+# animation") -----------------------------------------------------------------
+
+def test_the_bandage_plays_its_canon_beats():
+    """DVPet bandage(), recovered from git 44c6405~1: the med is held up
+    beside the HURT pet (pose 9 throughout), pressed on at beat 4 (canon
+    setLocY 53 -> 64), stepping its 4-frame strip at 0/8/13/18, ending
+    23 into cheer."""
+    sc = itemfx.SCRIPTS["Bandaging"]
+    assert sc["steps"] == 24 and sc["end"] == "cheer"
+    frames = [itemfx.state("Bandaging", b, 8, 8, 24)[0] for b in (0, 8, 13, 18)]
+    assert frames == [0, 1, 2, 3]                     # the application strip
+    assert all(itemfx.state("Bandaging", b, 8, 8, 24)[1] == 9
+               for b in range(24))                    # treated the whole way
+    held = itemfx.state("Bandaging", 0, 8, 8, 24)[3]
+    pressed = itemfx.state("Bandaging", 4, 8, 8, 24)[3]
+    assert pressed > held                             # it comes DOWN onto the pet
+
+
+def test_the_bandage_never_leaves_the_window():
+    """⚠ THE REMOVAL'S BUG (44c6405): the old port drew the strip at
+    ABSOLUTE y0-4 -- above the window top (y6) -- and was deleted for it.
+    Every y is floor-relative now; this walks all 24 beats to prove the
+    med stays inside the arena for small and tall icons alike."""
+    from tuipet import grid
+    for iw, ih in ((8, 8), (16, 16)):
+        for step in range(itemfx.SCRIPTS["Bandaging"]["steps"]):
+            _f, _p, ix, iy, _dx, _dy = itemfx.state("Bandaging", step, iw, ih, 24)
+            assert ix >= grid.X0, (step, iw, ix)
+            assert ix + iw <= grid.X1, (step, iw, ix)
+            assert iy >= 0, (step, ih, iy)            # NEVER above the window top
+            assert iy + ih <= grid.FLOOR, (step, ih, iy)
+
+
+def test_the_bandage_is_auto_wired_by_the_canon_column():
+    """No hand-map entry was needed: items.csv row 80 already says
+    Bandaging, so writing the script wired the item by itself."""
+    from tuipet import shop
+    assert shop.item_script("bandage") == "Bandaging"
+
+
+def test_the_bandage_show_only_plays_when_it_treats_something():
+    """A refused bandage keeps the item AND plays nothing."""
+    from tuipet.pet import Pet
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
+    p.world_seconds = 600.0
+    p.add_item("bandage")
+    pan = _bag_on(p, "bandage")
+    assert pan.key("enter") is None                   # healthy: refused, no show
+    assert p.inventory.get("bandage") == 1
+    p.injured = True
+    pan2 = _bag_on(p, "bandage")
+    res = pan2.key("enter")
+    assert res[1][0] == "item_use" and res[1][2] == "Bandaging"
+    assert not p.injured

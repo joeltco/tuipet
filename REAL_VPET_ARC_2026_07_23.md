@@ -206,8 +206,8 @@ of evidence below.
       `jeer`; wrong-moment verbs → the small pose only (no fx), since
       nothing happened.
 
-### E2 — Bandage animation  [Joel offered this: "theres a bandage
-sprite with animation sequence"]
+### E2 — Bandage animation  ✅ SHIPPED v0.5.209
+[Joel offered this: "theres a bandage sprite with animation sequence"]
 
 - [ ] The frames exist and are REAL rips: `i:80` is a 4-frame medicine
       strip (items.csv row 80, `AnimationType = Bandaging`), and
@@ -245,7 +245,7 @@ The canon mapping is FREE, we simply never read it: our icon key
 
 | item | canon AnimationType | script written? | wired? |
 |------|--------------------|-----------------|--------|
-| bandage | `Bandaging` | no (E2 writes it) | NO |
+| bandage | `Bandaging` | **yes (v0.5.209)** | **yes** |
 | music_player | `Play` | **yes** | NO |
 | textbook | `Study` | **yes** | NO |
 | dumbbell | `Lift` | **yes** | NO |

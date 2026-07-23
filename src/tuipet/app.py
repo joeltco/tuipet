@@ -132,12 +132,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("EVERY CONSUMABLE IS EATEN NOW: vitamins, both "
-                 "drinks, the sleep and caffeine pills and the anti-evo "
-                 "chip all play the eating animation with their own "
-                 "ripped artwork, instead of flashing a line of text. "
-                 "The pill always worked this way — now the whole shelf "
-                 "does.")
+    WHATS_NEW = ("THE BANDAGE HAS ITS ANIMATION BACK: treating an "
+                 "injured pet now plays the real DVPet bandaging "
+                 "sequence — the dressing is held up, pressed on, and "
+                 "worked through its four frames while your pet holds "
+                 "still, then cheers when it is patched up.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
