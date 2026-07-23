@@ -350,6 +350,27 @@ _TXT = {"cm": "care slips", "tr": "trainings", "of": "overfeeds",
 WIN_FEED_NOTE = "fed by cup & road, not pvp/raids"
 
 
+def straight_needed(pet, a, b):
+    """How many CONSECUTIVE wins from here reach `a` of the last `b`.
+
+    THE WINDOW ROLLS, and that is the whole point of this number (Joel
+    2026-07-23: "i won 2 fucking battles and it didnt count as wins, i
+    been on 11 for the last 2 battles").  A win that displaces an older
+    WIN is a no-op -- the counter sits perfectly still while you keep
+    winning -- so `now/b` alone cannot tell a player how far off they
+    are.  His real log was 11/15 with its three OLDEST entries wins:
+    victories 1-3 each swapped a 1 for a 1, and only the 4th pushed a
+    LOSS off the end and scored.  Returns 0 when the gate is already
+    met (b consecutive wins always fills the window, so this
+    terminates)."""
+    w = list(getattr(pet, "battle_log", None) or [])[-b:]
+    for n in range(b + 1):
+        if sum(w[-b:]) >= a:
+            return n
+        w = (w + [1])[-b:]
+    return b
+
+
 def _atom_row(pet, atom):
     kind, a, b = atom
     if kind == "win":
@@ -402,12 +423,27 @@ def requirement_report(pet, num):
         unmet = sum(1 for met, _ in rows if not met)
         if best is None or unmet < best_unmet:
             best, best_alt, best_unmet = rows, alt, unmet
-    if best and any(kind == "win" for kind, _a, _b in best_alt):
+    win_atom = next((at for at in best_alt if at[0] == "win"), None) if best_alt else None
+    if best and win_atom:
         # the WHICH-battles answer rides under the WIN row as a dim
         # informational line (met=None, the jogress-door shape) -- inlining
         # it in the row clipped the counter off the 35-char LCD (Joel's
-        # screenshot 2026-07-21, the "is it training or battles" report)
+        # screenshot 2026-07-21, the "is it training or battles" report).
+        # While the gate is UNMET the same sub-row answers the more urgent
+        # question instead -- how far off you actually are.  `now/b` alone
+        # is a liar on a rolling window: wins that displace older wins
+        # move nothing, so the counter can freeze mid-winning-streak
+        # (Joel 2026-07-23).  Both strings stay inside the 35-char clip.
+        # BOTH sub-rows while short: the feed note answers WHICH battles
+        # count (and a grinder needs that most while unmet), the streak
+        # row answers HOW FAR.  The detail page scrolls, so the extra row
+        # costs nothing; each stays inside the clip.
+        _, wa, wb = win_atom
+        need = straight_needed(pet, wa, wb)
         best = best + [(None, WIN_FEED_NOTE)]
+        if need:
+            best = best + [(None, f"needs {need} straight win"
+                                  f"{'s' if need > 1 else ''} from here")]
     return best or [(True, "time alone — the clock decides")]
 
 

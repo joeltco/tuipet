@@ -396,7 +396,13 @@ def test_requirement_report_shows_live_counters():
     # OR rules report the closest alternative
     r = lines.requirement_report(_Counters(93, log=[1] * 10 + [0] * 5), 220)
     assert r == [(False, "wins 12 of last 15  (now 10/15)"),
-                 (None, lines.WIN_FEED_NOTE)]
+                 (None, lines.WIN_FEED_NOTE),
+                 # how far off, on a window where winning can move
+                 # nothing (Joel 2026-07-23): this pet's 10 are all wins
+                 # sitting at the FRONT, so the first ten victories each
+                 # swap a 1 for a 1 and the counter does not budge -- 12
+                 # straight, not 2
+                 (None, "needs 12 straight wins from here")]
 
 
 def test_win_gate_report_names_the_local_feed():
@@ -459,3 +465,40 @@ def test_area_gate_is_the_adventure_road_or_the_raid_fallback():
     d.get("progress", {}).pop("raids", None)           # raids back to zero
     persistence.save_settings(d)
     assert lines._atom_met(q, atom)                    # the road opens Alphamon
+
+
+def test_the_win_row_says_how_far_off_you_really_are():
+    """Joel 2026-07-23: "i won 2 fucking battles and it didnt count as
+    wins, i been on 11 for the last 2 battles" -- and he was right to be
+    angry.  The window ROLLS, so a win that displaces an older WIN moves
+    the counter by zero; `now/b` alone cannot tell you that.  His real
+    log was 11/15 with its three OLDEST entries wins, so victories 1-3
+    each swapped a 1 for a 1 and only the FOURTH pushed a loss off."""
+    p = _Counters(93, log=[1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1])
+    assert lines.straight_needed(p, 12, 15) == 4
+    rows = lines.requirement_report(p, 220)
+    assert (None, "needs 4 straight wins from here") in rows
+    assert (None, lines.WIN_FEED_NOTE) in rows          # WHICH battles still answered
+    # ...and his very next win moved it 4 -> 3, which is the whole point:
+    # progress you can SEE while the 11 sits still
+    p.battle_log = (p.battle_log + [1])[-15:]
+    assert sum(p.battle_log) == 11                      # counter frozen...
+    assert lines.straight_needed(p, 12, 15) == 3        # ...but the goal got closer
+
+
+def test_a_met_window_drops_the_streak_row():
+    p = _Counters(93, log=[1] * 15)
+    assert lines.straight_needed(p, 12, 15) == 0
+    rows = lines.requirement_report(p, 220)
+    assert not any("straight" in t for _m, t in rows)
+    assert (None, lines.WIN_FEED_NOTE) in rows
+
+
+def test_one_more_win_reads_singular():
+    # sum 11, and the OLDEST entry is a loss -- so one win displaces
+    # it and scores (the case where the counter finally moves)
+    p = _Counters(93, log=[0] + [1] * 11 + [0] * 3)
+    assert sum(p.battle_log) == 11
+    assert lines.straight_needed(p, 12, 15) == 1
+    rows = lines.requirement_report(p, 220)
+    assert (None, "needs 1 straight win from here") in rows

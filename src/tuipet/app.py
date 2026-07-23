@@ -132,11 +132,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("YOUR PET FIDGETS NOW: it does a little squirming "
-                 "dance when a poop is building, and yawns and stretches "
-                 "as bedtime gets close. Both animations were drawn long "
-                 "ago and never once played — now they do, quietly, "
-                 "while it idles.")
+    WHATS_NEW = ("THE WIN GATE STOPS LYING: the 12-of-15 evolution "
+                 "requirement rolls, so a win that replaces an older win "
+                 "moves the counter by nothing — you can win three times "
+                 "and watch it sit still. The checklist now tells you how "
+                 "many STRAIGHT wins you actually need from here.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
