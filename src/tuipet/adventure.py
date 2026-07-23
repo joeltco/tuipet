@@ -146,22 +146,47 @@ def _town_legs(z):
     return out
 
 
-def _find_keys(z):
-    """The zone's discoverable loot as CATALOG keys.  The loot table is authored
-    by data id (rand_items -> i:<id>, rand_foods -> f:<id>), but the bag/use
-    system speaks CATALOG keys, so each icon is mapped back to its real, usable
-    entry (shop.key_for_icon); unmapped loot (nothing the game models) is
-    dropped -- finds only ever give items the player can see and use."""
-    from . import shop
-    icons = ([f"i:{i}" for i in z.get("rand_items", []) if i >= 0]
-             + [f"f:{f}" for f in z.get("rand_foods", []) if f >= 0])
-    out, seen = [], set()
-    for ic in icons:
-        k = shop.key_for_icon(ic)
-        if k and k not in seen:
-            seen.add(k)
-            out.append(k)
-    return out
+# THE BIOME LOOT TABLE (item diversity audit 2026-07-23, Joel: "do it
+# all").  The authored DVPet tables were per-SLOT -- 1-1 == 2-1 == 5-1,
+# so Andromon's Desert, Kimeramon's Seafloor and Etemon's Mountains all
+# dug the same Television -- and the catalog filter dropped 2/3 of their
+# entries anyway (552 authored -> 182 usable).  Pools now key on the
+# zone's BIOME (its scene), dealt from the EXISTING catalog only: no new
+# items, no new systems, and the road finally FEEDS you (fish by the
+# water, steak in the mountains).  The 3 road items ride every pool --
+# they're the run tools.  The FINAL zone of each map digs the RARE TIER
+# instead: the endgame used to dig exactly one item (the chip).
+_ROAD_KEYS = ("town_transport", "disaster_transport", "life_recovery")
+BIOME_FINDS = {
+    "greenhills":   ("fish", "vegetable", "ball", "candy"),
+    "flowerfield":  ("vegetable", "candy", "music_player", "ball"),
+    "forestgate":   ("poison_mushroom", "vegetable", "candy", "music_player"),
+    "mountains":    ("dumbbell", "steak", "cold_shower", "grow_capsule"),
+    "frozenpeak":   ("caffeine_pill", "steak", "vitamin", "cold_shower"),
+    "islandsea":    ("tuna", "fish", "skateboard", "ball"),
+    "lakeside":     ("fish", "tuna", "bubble_bath", "vegetable"),
+    "underwater":   ("fish", "tuna", "slim_drink", "bubble_bath"),
+    "city":         ("video_game", "television", "energy_drink",
+                     "cheese_burger", "skateboard"),
+    "datatunnel":   ("energy_drink", "anti_evo_chip", "video_game",
+                     "caffeine_pill"),
+    "factorynight": ("anti_evo_chip", "dumbbell", "energy_drink",
+                     "sleeping_pill"),
+    "volcano":      ("steak", "energy_drink", "cold_shower", "dumbbell"),
+    "desert":       ("tuna", "energy_drink", "vitamin", "slim_drink"),
+}
+FINAL_ZONE_FINDS = ("anti_evo_chip", "x_antibody", "textbook",
+                    "dna_crystal", "steak")
+
+
+def _find_keys(scene, is_final):
+    """The zone's discoverable loot as CATALOG keys: its biome's pool (or
+    the rare tier for a map's final zone), with the road items riding
+    along.  (The per-slot authored tables retired 2026-07-23 -- see
+    BIOME_FINDS above; dormant rand_items/rand_foods stay in the data.)"""
+    pool = (FINAL_ZONE_FINDS if is_final
+            else BIOME_FINDS.get(scene) or BIOME_FINDS[DEFAULT_SCENE])
+    return list(_ROAD_KEYS) + list(pool)
 
 
 @lru_cache(maxsize=1)
@@ -172,6 +197,7 @@ def _real_zones():
     encounters), and its discoverable loot pool (find_keys)."""
     out = []
     for mp in data.load_maps():
+        last = max(z["zone"] for z in mp["zones"])
         for z in mp["zones"]:
             hid = _boss_biome_hid(z)
             scene = HABITAT_SCENE.get(hid, DEFAULT_SCENE)
@@ -186,7 +212,7 @@ def _real_zones():
                 "randoms": z.get("randoms", []),
                 "bosses": bosses,
                 "town_legs": _town_legs(z),
-                "find_keys": _find_keys(z),
+                "find_keys": _find_keys(scene, z["zone"] == last),
                 "map": z["map"], "zone": z["zone"],
             })
     return out

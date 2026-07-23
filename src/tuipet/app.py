@@ -132,13 +132,14 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE RECOVERY DOZE: a drained pet's nap no longer wakes "
-                 "after one bar — lights off, it now sleeps straight "
-                 "through until half its energy is back (and past empty it "
-                 "recovers double-speed), so you don't have to babysit a "
-                 "wake-and-drain loop. Lights on still rouses it. And an "
-                 "empty tank finally says so: status reads \"exhausted\" "
-                 "instead of \"ok\".")
+    WHATS_NEW = ("A RICHER WORLD: adventure digs now match the land — fish "
+                 "by the seafloor, steak in the mountains, video games in "
+                 "the city — and each map's FINAL zone digs a rare tier "
+                 "worth the march. Every town shop got character too: each "
+                 "map sells a regional specialty (the hardest region "
+                 "stocks the Revive Floppy), and all 26 towns now carry a "
+                 "different signature good — no two shops in the world "
+                 "are alike.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

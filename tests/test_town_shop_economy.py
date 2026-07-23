@@ -120,7 +120,10 @@ def test_the_town_panel_serves_the_counter(monkeypatch):
     assert pan._tabs() == ["Food", "Items", "Eggs"]
     pan.tab = 0                                        # the Food shelf
     rows = pan._rows()
-    assert [e["key"] for e in rows] == ["steak"]
+    # steak (authored) + cake (map 1's regional specialty -- item
+    # diversity audit 2026-07-23); town 4's guest is a non-food
+    assert [e["key"] for e in rows] == ["steak", "cake"]
+    pan.cursor = 0                                     # buy the steak
     bits0 = p.bits
     pan.key("enter")                                   # buy at the LOCAL price
     assert bits0 - p.bits == rows[0]["price"]
@@ -154,7 +157,47 @@ def test_every_town_keeps_one_standing_guest_good():
         assert local == shop.CATALOG[k][2]           # flat catalog price
         assert shop._town_rows(tid)[-1][1] == k      # stable across calls
         guests[tid] = k
-    assert len(set(guests.values())) > 2             # real variety landed
+    # the collision-free deal (item diversity audit 2026-07-23): the old
+    # per-town crc32 pick served 8 items to 2-3 towns each and made towns
+    # 11+12 byte-identical shops.  Dealt without replacement now.
+    assert len(set(guests.values())) == len(guests)  # unique GAME-WIDE
+    assert "poison_mushroom" not in guests.values()  # a signature good is
+    #                                                  never a trap
+
+
+def test_the_regional_specialty_marks_every_map():
+    """P4 (item diversity audit 2026-07-23): each map's towns carry ONE
+    regional SKU beyond the 2-variant authored base -- the five maps read
+    differently before the guest good even lands.  Map 4 (the hardest
+    region) is where the Revive Floppy waits."""
+    tm = shop._town_maps()
+    for tid in data.load_towns():
+        want = shop._MAP_SPECIALTY[tm[tid]]
+        keys = [k for _sid, k, _o, _p in shop._town_rows(tid)]
+        assert want in keys, (tid, want)
+        # ...and the guest is never a duplicate of anything on the shelf
+        assert len(keys) == len(set(keys)), tid
+    assert shop._MAP_SPECIALTY[4] == "revive_floppy"
+    assert len(set(shop._MAP_SPECIALTY.values())) == 5   # five distinct
+
+
+def test_the_regional_row_buys_like_any_town_good():
+    p = _pet()
+    p.bits = 10_000
+    e = next(x for x in shop.town_stock(B_TOWN, D, pet=p)
+             if x["key"] == shop._MAP_SPECIALTY[shop._town_maps()[B_TOWN]])
+    bits0 = p.bits
+    msg, sfx = shop.town_buy(p, e, today=D)
+    assert sfx == "confirm" and p.inventory.get(e["key"], 0) == 1
+    assert bits0 - p.bits == e["price"]
+
+
+def test_former_twin_towns_read_differently():
+    """Towns 11 and 12 shared the same authored shelf AND the same guest
+    good -- two byte-identical shops (audit finding F5)."""
+    r11 = [k for _s, k, _o, _p in shop._town_rows(11)]
+    r12 = [k for _s, k, _o, _p in shop._town_rows(12)]
+    assert r11 != r12
 
 
 def test_the_first_generation_starts_with_pocket_money():

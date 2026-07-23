@@ -11,6 +11,8 @@ town counters serve the same catalog.  The digitama-licence shelf was cut
 like the real devices -- the shop sells goods, never digitama.
 """
 from __future__ import annotations
+from functools import lru_cache
+
 from . import data
 
 
@@ -412,12 +414,44 @@ def _today_ordinal(today=None):
     return d.toordinal()
 
 
-def _town_rows(town_id):
-    """The town's authored shelf: [(sid, catalog_key, econ_row, local_price)]
-    in list order (items shelf first, then the food family).  local_price is
-    the PRICE-LAW ratio (see above); rows whose consumable has no living
-    CATALOG identity are dropped -- their systems (chips, furniture) aren't
-    in tuipet, and dormant data stays dormant."""
+@lru_cache(maxsize=1)
+def _town_maps():
+    """town_id -> the MAP whose zone hosts the town (the road's own
+    geography; item diversity audit 2026-07-23)."""
+    from . import data
+    out = {}
+    for mp in data.load_maps():
+        for z in mp["zones"]:
+            for _lo, _hi, tid in z.get("towns", ()):
+                out[tid] = z["map"]
+    return out
+
+
+# P4 (item diversity audit 2026-07-23, Joel: "do it all"): each MAP's
+# towns carry ONE regional specialty beyond the 2-variant authored base,
+# so the five maps read differently before the guest good even lands.
+# Late maps sell the premium tier -- map 4 (the hardest region) is where
+# the Revive Floppy waits.
+_MAP_SPECIALTY = {1: "cake", 2: "xylophone", 3: "x_antibody",
+                  4: "revive_floppy", 5: "vitamin"}
+
+
+def _econ_stub(key):
+    """A synthetic econ row for non-authored shelf rows (guest/regional):
+    catalog price, standard factors, capped stock -- no money printer."""
+    v = CATALOG[key]
+    return {"price": v[2], "sale_factor": 2, "resell_factor": 2,
+            "max_stock": 2, "is_food": v[3] in ("Food", "Fruit"),
+            "consumable_id": -1}
+
+
+def _base_rows(town_id):
+    """The town's authored shelf + its map's regional specialty:
+    [(sid, catalog_key, econ_row, local_price)] in list order (items shelf
+    first, then the food family).  local_price is the PRICE-LAW ratio (see
+    above); rows whose consumable has no living CATALOG identity are
+    dropped -- their systems (chips, furniture) aren't in tuipet, and
+    dormant data stays dormant."""
     from . import data
     t = data.load_towns().get(town_id)
     if not t:
@@ -441,25 +475,51 @@ def _town_rows(town_id):
         else:
             local = o["price"]
         rows.append((sid, k, o, local))
-    # the GUEST shelf (gameplay polish #24, 2026-07-22): after catalog
-    # mapping, the 26 authored counters collapsed to TWO variants one SKU
-    # apart -- "all shops feel unique" (Joel 2026-07-21) lived only in the
-    # egg market and the cup.  Each town now keeps ONE standing guest good,
-    # crc32-picked from the UNGATED home CATALOG (the gated catalog() would
-    # re-deal the guest as unlocks land -- a town's character is permanent;
-    # the daily deal already rotates).  Adventure stays off the pool (its
-    # map-clear gate must hold); catalog price, standard factors, capped
-    # stock: no money printer.
+    sk = _MAP_SPECIALTY.get(_town_maps().get(town_id))
+    if sk and sk not in {k for _sid, k, _o, _p in rows}:
+        rows.append((f"regional:{town_id}", sk, _econ_stub(sk),
+                     CATALOG[sk][2]))
+    return rows
+
+
+@lru_cache(maxsize=1)
+def _guest_deal():
+    """town_id -> its standing guest good, dealt WITHOUT replacement
+    across ALL towns (item diversity audit 2026-07-23: the old per-town
+    crc32 pick birthday-collided -- 8 items served 2-3 towns each, and
+    towns 11+12 were byte-identical shops).  The pool is the UNGATED
+    priced catalog minus Adventure (its map-clear gate must hold) and
+    minus the Poison Mushroom (a town's one signature good is never a
+    trap -- the raid-pool rule).  26 towns, 28 candidates: every town's
+    guest is unique game-wide.  crc32-ordered, so the deal is STABLE --
+    a town's character stays permanent (the guest-good law); the daily
+    deal already rotates."""
     import zlib
-    stocked = {k for _sid, k, _o, _p in rows}
-    pool = [(k, v) for k, v in CATALOG.items()
-            if v[2] is not None and v[3] != "Adventure" and k not in stocked]
-    if pool:
-        gk, gv = pool[zlib.crc32(f"guest:{town_id}".encode()) % len(pool)]
-        o = {"price": gv[2], "sale_factor": 2, "resell_factor": 2,
-             "max_stock": 2, "is_food": gv[3] in ("Food", "Fruit"),
-             "consumable_id": -1}
-        rows.append((f"guest:{town_id}", gk, o, gv[2]))
+    pool = [k for k, v in CATALOG.items()
+            if v[2] is not None and v[3] != "Adventure"
+            and k != "poison_mushroom"]
+    pool.sort(key=lambda k: zlib.crc32(f"guest2:{k}".encode()))
+    taken, out = set(), {}
+    for tid in sorted(_town_maps()):
+        stocked = {k for _sid, k, _o, _p in _base_rows(tid)}
+        pick = (next((k for k in pool
+                      if k not in taken and k not in stocked), None)
+                or next((k for k in pool if k not in stocked), None))
+        if pick:
+            taken.add(pick)
+            out[tid] = pick
+    return out
+
+
+def _town_rows(town_id):
+    """The full town shelf: authored base + regional specialty + the
+    standing guest good (gameplay polish #24; re-dealt collision-free in
+    the item diversity audit 2026-07-23)."""
+    rows = _base_rows(town_id)
+    gk = _guest_deal().get(town_id)
+    if gk:
+        rows.append((f"guest:{town_id}", gk, _econ_stub(gk),
+                     CATALOG[gk][2]))
     return rows
 
 

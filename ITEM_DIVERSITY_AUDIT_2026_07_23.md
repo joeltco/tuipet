@@ -28,7 +28,7 @@ Every item is reachable — ZERO orphans.  Verified:
 
 ## FINDINGS — where diversity is thin
 
-- [ ] F1 **Adventure find pools are 5 copy-paste templates keyed to
+- [x] F1 **Adventure find pools are 5 copy-paste templates keyed to
       the zone's SLOT NUMBER, not its identity.**  1-1 == 2-1 == 5-1
       exactly; Andromon's Desert, Kimeramon's Seafloor and Etemon's
       Mountains all dig the same Television + Music Player.  Only 15
@@ -37,28 +37,30 @@ Every item is reachable — ZERO orphans.  Verified:
       DVPet tables were per-slot, and the catalog mapping drops 2/3
       of the authored entries (552 → 182 — correct filter, thin
       leftovers).
-- [ ] F2 **The four endgame zones dig ONE item** (Anti-Evo Chip).
+- [x] F2 **The four endgame zones dig ONE item** (Anti-Evo Chip).
       The hardest roads have the least interesting loot.
-- [ ] F3 **18 of 33 non-road items never appear as finds** — including
+- [x] F3 **18 of 33 non-road items never appear as finds** — including
       every FOOD except tuna/candy.  The road never feeds you: no
       fish by the seafloor, nothing edible in the flower field.
-- [ ] F4 **The 26 towns' AUTHORED shelves are 2 variants one SKU
+- [x] F4 **The 26 towns' AUTHORED shelves are 2 variants one SKU
       apart** (transports + potty + anti_evo_chip | steak).  The
       guest good (gameplay polish #24) is the only per-town item
       character.
-- [ ] F5 **Guest-good collisions**: 8 items serve 2-3 towns each;
+- [x] F5 **Guest-good collisions**: 8 items serve 2-3 towns each;
       towns 11 and 12 have the SAME authored shelf AND the same guest
       good (Xylophone) — two byte-identical shops.  caffeine_pill
       serves 3 towns.  (crc32 over a ~30 pool for 26 towns —
       birthday collisions.)
-- [ ] F6 **Town 18's one signature good is the Poison Mushroom** — a
+- [x] F6 **Town 18's one signature good is the Poison Mushroom** — a
       trap as the town's permanent character item.  (The home shop
       sells it too, so it may be deliberate comedy — Joel's call.)
-- [ ] F7 **Single-path items**: grow_capsule, vegetable, video_game
+- [x] F7 **Single-path items**: grow_capsule, vegetable, video_game
       exist ONLY on the home shelf — never a find, prize, gift or
       town good anywhere.
 
-## PROPOSALS (awaiting Joel's ruling — no table is touched without it)
+## PROPOSALS — ALL SHIPPED v0.5.192 (Joel: "do it all", 2026-07-23)
+
+P1-P5 executed: BIOME_FINDS + FINAL_ZONE_FINDS in adventure.py (per-slot authored tables retired, dormant rand_items/rand_foods stay in data); shop._guest_deal (global no-replacement, trap excluded, all 26 unique); shop._MAP_SPECIALTY (cake/xylophone/x_antibody/revive_floppy/vitamin).  F6 resolved via the guest pool trap-exclusion; the home shop still sells the mushroom.
 
 - P1 (fixes F1+F3): re-deal the find pools by BIOME from the EXISTING
   catalog — no new items, no new systems.  Seafloor digs fish/tuna/

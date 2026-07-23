@@ -42,6 +42,51 @@ def test_every_real_zone_has_a_loot_pool_of_named_consumables():
             assert shop.entry(k) and shop.entry(k)["name"]
 
 
+# --- THE BIOME LOOT TABLE (item diversity audit 2026-07-23, Joel: "do it
+# all").  The authored tables were per-SLOT (1-1 == 2-1 == 5-1): deserts,
+# seafloors and mountains all dug the same Television.  Pools key on the
+# BIOME now, the finals dig the rare tier, and the road finally feeds you.
+
+def _by_mz(m, z):
+    return next(x for x in ZONES if x["map"] == m and x["zone"] == z)
+
+
+def test_find_pools_key_on_the_biome_not_the_slot():
+    # the audit's own exhibit: Desert (5-2) vs Seafloor (2-2) vs
+    # Mountains (1-2) -- slot-mates that used to share one pool
+    pools = [tuple(_by_mz(*mz)["find_keys"]) for mz in ((5, 2), (2, 2), (1, 2))]
+    assert len(set(pools)) == 3                    # all three dig differently
+    # ...while SAME-biome zones share their pool across maps (by design)
+    assert _by_mz(1, 2)["find_keys"] == _by_mz(2, 3)["find_keys"]  # Mountains
+
+
+def test_the_final_zone_of_every_map_digs_the_rare_tier():
+    """The endgame used to dig exactly ONE item (the chip)."""
+    from tuipet.adventure import FINAL_ZONE_FINDS, _ROAD_KEYS
+    for m in sorted({z["map"] for z in ZONES}):
+        last = max(z["zone"] for z in ZONES if z["map"] == m)
+        pool = _by_mz(m, last)["find_keys"]
+        assert set(FINAL_ZONE_FINDS) <= set(pool), (m, last)
+        assert set(_ROAD_KEYS) <= set(pool)
+    assert "x_antibody" in FINAL_ZONE_FINDS        # the tier is genuinely rare
+
+
+def test_the_road_feeds_you_and_carries_its_tools():
+    """Audit F3: 18 items were never finds -- including every food except
+    tuna and candy.  Fish by the water now, and the road items ride
+    every pool."""
+    from tuipet import shop
+    from tuipet.adventure import _ROAD_KEYS
+    findable = set()
+    for z in ZONES:
+        assert set(_ROAD_KEYS) <= set(z["find_keys"]), z["name"]
+        findable.update(z["find_keys"])
+    foods = {k for k in findable if shop.CATALOG[k][3] == "Food"}
+    assert "fish" in foods and len(foods) >= 5
+    seafloor = next(z for z in ZONES if "Seafloor" in z["name"])
+    assert "fish" in seafloor["find_keys"]
+
+
 def test_a_find_comes_from_the_zone_pool_after_the_step(monkeypatch):
     monkeypatch.setattr(adventure, "ENCOUNTER_CHANCE", 0.0)
     monkeypatch.setattr(adventure, "HAZARD_CHANCE", 0.0)
