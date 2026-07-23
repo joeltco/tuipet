@@ -236,9 +236,18 @@ class ActionsMixin:
         self._open_mode(disciplinescreen.DisciplinePanel(p),
                         self._after_discipline)
 
-    def _after_discipline(self, msg):
+    def _after_discipline(self, result):
+        # the lesson's emotional beat rides the HOUSE screen, the same
+        # grammar every other verdict uses (_after_cup / _after_battle /
+        # the drill's cheer/jeer): a landed PRAISE cheers, a landed SCOLD
+        # jeers, and a wrong-moment verb shows only its small pose --
+        # nothing happened, so nothing plays (E1, Joel 2026-07-23:
+        # "praise and scold should have happy and sad animations").
+        msg, show = result if isinstance(result, tuple) else (result, None)
         if msg:
             self.flash(msg)
+        if show and self.screen_w.fx is None and not self.pet.dead:
+            self.screen_w.start_fx(show)
         self.repaint()
 
     def action_battle(self):

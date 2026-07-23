@@ -132,11 +132,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE BANDAGE HAS ITS ANIMATION BACK: treating an "
-                 "injured pet now plays the real DVPet bandaging "
-                 "sequence — the dressing is held up, pressed on, and "
-                 "worked through its four frames while your pet holds "
-                 "still, then cheers when it is patched up.")
+    WHATS_NEW = ("LESSONS LOOK LIKE LESSONS: praising your pet at a "
+                 "proud moment now plays the cheer, and scolding a real "
+                 "tantrum plays the sulk — the same beats training and "
+                 "the cup already use. Praise or scold at the wrong "
+                 "moment still shows nothing, because nothing happened.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

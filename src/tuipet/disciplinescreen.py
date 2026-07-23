@@ -37,8 +37,20 @@ class DisciplinePanel:
             self.cursor = 1 - self.cursor
         elif k in ("enter", "space"):
             p = self.pet
-            msg = p.praise() if self.cursor == 0 else p.scold()
-            return ("done", str(msg))
+            # did the verb LAND?  Read the moment BEFORE spending it: a
+            # praise inside its window / a scold answering a real tantrum
+            # earns the house-screen show, a wrong-moment verb earns only
+            # the small pose (E1, 2026-07-23).  Detected on the MOMENT,
+            # not on the gauge -- obedience at the 100 clamp would make a
+            # landed praise look like it did nothing.  (The asleep/dead/
+            # young guards live at the door in action_discipline, so a
+            # panel that is open always reaches the verb.)
+            if self.cursor == 0:
+                landed, msg, show = (p.world_seconds <= getattr(p, "praise_window", 0.0),
+                                     p.praise(), "cheer")
+            else:
+                landed, msg, show = bool(p.discipline_call), p.scold(), "jeer"
+            return ("done", (str(msg), show if landed else None))
         elif k == "escape":
             return ("done", None)
         return None

@@ -107,7 +107,9 @@ def test_the_panel_picks_scold_on_an_open_call_and_applies():
     for line in pan.text().plain.splitlines():
         assert len(line) <= 40
     done = pan.key("enter")
-    assert done[0] == "done" and "lesson" in done[1]
+    # the panel hands back (message, show) now -- a LANDED scold jeers
+    assert done[0] == "done" and "lesson" in done[1][0]
+    assert done[1][1] == "jeer"
     assert p.obedience == 75
 
 
@@ -116,3 +118,49 @@ def test_the_panel_wears_its_own_card():
     from tuipet.disciplinescreen import DisciplinePanel
     fn = statusbox.painter_for(DisciplinePanel(_pet()))
     assert fn is statusbox.discipline
+
+
+# ---- E1: the lesson's show (2026-07-23, Joel: "praise and scold should
+# have happy and sad animations ... already wired in") -----------------------
+
+def _panel(pet):
+    from tuipet.disciplinescreen import DisciplinePanel
+    return DisciplinePanel(pet)
+
+
+def test_a_landed_praise_cheers_and_a_landed_scold_jeers():
+    """Discipline joins the grammar every other verdict already uses --
+    the drill, the cup and the m-battle all cheer/jeer on the house
+    screen.  It was the one verb that set a pose and showed nothing."""
+    p = _pet()
+    p.record_battle(True, {"num": 4, "stage": "Champion", "attribute": "Data"})
+    pan = _panel(p)                                   # a proud window is open
+    pan.cursor = 0                                    # Praise
+    assert pan.key("enter")[1][1] == "cheer"
+
+    q = _pet(discipline_call=True)
+    q.scold_window = q.world_seconds + 600.0
+    pan2 = _panel(q)
+    assert pan2.cursor == 1                           # Scold preselected
+    assert pan2.key("enter")[1][1] == "jeer"
+
+
+def test_a_wrong_moment_verb_shows_nothing():
+    """Nothing happened, so nothing plays -- the small pose on the LCD is
+    the whole feedback (and it keeps a landed lesson legible)."""
+    calm = _pet()
+    for cur in (0, 1):                                # praise AND scold
+        pan = _panel(calm)
+        pan.cursor = cur
+        assert pan.key("enter")[1][1] is None
+
+
+def test_the_show_survives_the_obedience_clamp():
+    """Detected on the MOMENT, not the gauge: a praise landing at the 100
+    clamp moves no number but is still a real lesson."""
+    p = _pet(obedience=100)
+    p.record_battle(True, {"num": 4, "stage": "Champion", "attribute": "Data"})
+    pan = _panel(p)
+    pan.cursor = 0
+    assert p.obedience == 100
+    assert pan.key("enter")[1][1] == "cheer"

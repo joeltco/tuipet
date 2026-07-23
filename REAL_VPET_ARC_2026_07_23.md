@@ -193,15 +193,16 @@ Joel: "that whole animation system needs to be heavily audited, i dont
 think its being used in all the right places."  He is right; first pass
 of evidence below.
 
-### E1 — Praise & scold need their shows  [Joel named this]
+### E1 — Praise & scold need their shows  ✅ SHIPPED v0.5.210
+[Joel named this]
 
-- [ ] `pet.praise()` sets `_set_anim("happy")` and `pet.scold()` sets
+- [x] `pet.praise()` set `_set_anim("happy")` and `pet.scold()` sets
       `_set_anim("sad")` — but an ANIM is the LCD pose, not the SHOW.
       Every sibling verdict in the game fires an **fx** on the house
       screen: training uses `cheer`/`jeer`/`spit`, the cup uses
       `cheer`/`losing`, the m-battle now uses `cheer`/`losing`.
       Discipline fires NOTHING.
-- [ ] Wire `_after_discipline` to the same grammar it already follows
+- [x] Wired `_after_discipline` to the same grammar it already follows
       elsewhere: praise-that-landed → `cheer`; scold-that-landed →
       `jeer`; wrong-moment verbs → the small pose only (no fx), since
       nothing happened.
