@@ -333,3 +333,26 @@ def test_dodge_turns_away_while_airborne():
     assert all(seen[dt] for dt in range(1, 10)), "airborne beats must turn"
     assert not any(seen[dt] for dt in range(10, bs.DODGE_T + 1)), \
         "touchdown + return steps land facing forward"
+
+
+def test_the_discouraged_show_wears_the_gloom_cloud(monkeypatch):
+    """Joel 2026-07-23: "we are missing the discouraged animation?
+    opposite of the sunshine animation."  The ambient sulk (tantrum)
+    wears the `depressed` gloom-cloud emote from the rips -- unused
+    since the mood system left -- with the cheer-sun grammar: the pet's
+    right edge, head height, frame-cycled.  The plain idle never
+    wears it."""
+    from tuipet import data, grid
+    cap = _paint_capture(monkeypatch)
+    s = _screen()
+    p = _pet()
+    p._set_anim("tantrum", 2.0)
+    s.paint(p)
+    dep = data.load_effects()["depressed"]
+    want = {(app.PET_BASE_X + app.SPRITE_W + x, grid.TOP + y)
+            for y, row in enumerate(dep[0])
+            for x, c in enumerate(row) if c == "1"}
+    assert want and want <= set(cap["overlay"]), "the gloom cloud is missing"
+    p.anim = "idle"
+    s.paint(p)
+    assert not (want & set(cap["overlay"])), "the cloud must leave with the sulk"

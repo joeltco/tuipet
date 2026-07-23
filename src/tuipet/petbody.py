@@ -811,7 +811,10 @@ class BodyMixin:
         if m == "Happy":
             self._set_anim(random.choice(("play", "happy")), 2.0)
         elif m in ("Unhappy", "Depressed") and self.strength <= 2:
-            self._set_anim(random.choice(("angry", "tantrum")), 2.0)
+            # always the TANTRUM: it wears the depressed gloom-cloud emote
+            # (the discouraged show, Joel 2026-07-23) -- "angry" is the
+            # same pose pair but stays the disturb grumble, emote-free
+            self._set_anim("tantrum", 2.0)
 
     def _check_discipline_call(self):
         """A NO-OP: the spontaneous tantrum left with the discipline system."""

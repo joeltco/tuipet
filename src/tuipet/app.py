@@ -132,14 +132,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("A RICHER WORLD: adventure digs now match the land — fish "
-                 "by the seafloor, steak in the mountains, video games in "
-                 "the city — and each map's FINAL zone digs a rare tier "
-                 "worth the march. Every town shop got character too: each "
-                 "map sells a regional specialty (the hardest region "
-                 "stocks the Revive Floppy), and all 26 towns now carry a "
-                 "different signature good — no two shops in the world "
-                 "are alike.")
+    WHATS_NEW = ("THE GLOOM CLOUD: a discouraged pet finally shows it — "
+                 "the sulk now wears a little storm-cloud emote beside "
+                 "its head, the true opposite of the happy sunshine "
+                 "dance. Real extracted art that's been sitting unused "
+                 "in the sprite files, wired up at last.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

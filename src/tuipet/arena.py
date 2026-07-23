@@ -31,7 +31,7 @@ from .arenafx import (  # noqa: F401,E402
     COND_H, COND_W, FxMixin, GIFT_BACK, GIFT_HOLD, GIFT_OUT, PET_BASE_X,
     PLAY_HOP, PLAY_HOP_H, PLAY_LEAD, POOP_PAD, POOP_W, SCREEN_COLS,
     SCREEN_ROWS, SICK_ZONE, SPRITE_W, _FxCtx, _WINDOW, _clip_win,
-    _HIDDEN_STATUS_ICONS, _effect_overlay, _evol_strobe, _filth_pts,
+    _HIDDEN_STATUS_ICONS, _blit, _effect_overlay, _evol_strobe, _filth_pts,
     _filth_right, _sick_mark_up)
 
 
@@ -194,7 +194,20 @@ class Screen(FxMixin, Static):
         cap = ((grid.X1 - SICK_ZONE if _sick_mark_up(pet) else grid.X1)
                - SPRITE_W) - base
         xshift = min(max(xshift, lo), max(cap, lo))       # poop wins over the skull (it yields when crowded)
-        overlay = _clip_win(_effect_overlay(pet, wf, SCREEN_COLS, SCREEN_ROWS * 2, tick=self.frame_i))
+        pts = _effect_overlay(pet, wf, SCREEN_COLS, SCREEN_ROWS * 2, tick=self.frame_i)
+        if pet.anim == "tantrum" and pet.num != -1:
+            # THE DISCOURAGED SHOW (Joel 2026-07-23: "we are missing the
+            # discouraged animation? opposite of the sunshine animation"):
+            # the ambient sulk wears the `depressed` emote -- the gloom
+            # cloud from the rips, unused since the mood system left --
+            # with the cheer/jeer emote grammar: rides the pet's right
+            # edge, head height, frame-cycled on the 6-beat.  The happy
+            # side's sun bubble finally has its opposite.
+            dep = _FX.get("depressed")
+            if dep:
+                df = dep[(self.frame_i // 6) % len(dep)]
+                pts += _blit(df, PET_BASE_X + xshift + SPRITE_W, grid.TOP)
+        overlay = _clip_win(pts)
         if not pet.lights:                 # lights off: DVPet's lightsOff is a fully-opaque black
             rows, xshift, mirror = [], 0, False   # cover -> the pet is hidden; only black (+ Zzz) shows
         self.update(render_screen(rows, SCREEN_COLS, SCREEN_ROWS, on, bg,

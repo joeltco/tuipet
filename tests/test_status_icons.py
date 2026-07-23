@@ -49,7 +49,8 @@ ALLOWED_SILENT = {
     "st_bandage": "badge -> the +bnd HUD deco",
     "st_vitamin": "badge -> the +vit HUD deco",
     "st_fatigue": "badge -> the +tired HUD deco",
-    "depressed": "the Data_Status mood icon; the digicore CONDITION page shows text",
+    # ("depressed" left the silent list 2026-07-23: it now rides the ambient
+    # tantrum as the gloom-cloud emote -- the discouraged show, Joel's order)
     "flash": "attackHitFlash crop; battle_overlays.json hit_explosion is the source in use",
     "frozen": "DVPet's game-PAUSED indicator, not a cold state (documented in paint)",
     "battle_bag": "superseded by hp_dummies.json (the clean battleBags rows)",

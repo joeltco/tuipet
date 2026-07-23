@@ -80,4 +80,7 @@ def test_good_care_no_longer_mutes_the_happy_idles():
 
     assert idled(4) in ("play", "happy")           # well-drilled joy PLAYS
     assert idled(4, sick=True) == "idle"           # a drilled pet doesn't sulk
-    assert idled(1, sick=True) in ("angry", "tantrum")   # under-drilled fuming
+    # the sulk is ALWAYS the tantrum now (the discouraged show, Joel
+    # 2026-07-23): it wears the depressed gloom-cloud emote -- "angry"
+    # is the same pose pair but stays the disturb grumble, emote-free
+    assert idled(1, sick=True) == "tantrum"
