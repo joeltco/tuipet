@@ -132,11 +132,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE WARP OPENS THE DOORS: a Town Transport now lands "
-                 "you at the town for real — after the rest, you get the "
-                 "same visit-or-walk-on choice as arriving on foot, shop "
-                 "and all. It used to rest you and march straight past "
-                 "the town you paid a ticket to reach.")
+    WHATS_NEW = ("TRAINING IN THE LEDGER: the DigiCore POWER page's "
+                 "Drills row now shows both counts that feed the fight — "
+                 "lifetime drills (never reset) and this stage's (they "
+                 "gate evolution and reset when it evolves). The stage "
+                 "count was always working; now you can watch it.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

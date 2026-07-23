@@ -360,7 +360,13 @@ def build_pages(pet):
         ("Virus", str(pet.virus)), ("Effort", f"{pet.strength}/4"),
         ("Form", getattr(pet, "saved_hit_type", "normal")),
         ("Level", f"{lines._pet_level(pet)} ({getattr(pet, 'exp', 0)} exp)"),
-        ("Drills", str(getattr(pet, "total_trainings", 0))),
+        # both training terms of the hit formula on one row (Joel
+        # 2026-07-23 "is there a stat somewhere i can see that shows
+        # this?"): lifetime (the +20% term, never resets) · this stage
+        # (the +10% term AND the TR evolution gate; resets on evolve) --
+        # stage_trainings was live everywhere but visible nowhere
+        ("Drills", f"{getattr(pet, 'total_trainings', 0)}"
+                   f" · {getattr(pet, 'stage_trainings', 0)} this stage"),
         ("KO6", f"{pet.mega_kills} Mega felled"),
     ]
     if pet.x_antibody != "None":

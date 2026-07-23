@@ -649,3 +649,18 @@ def test_the_core_number_wears_its_own_unit():
     assert "to elder" in DigiCorePanel(p2).text().plain
     p2.age_seconds = 16 * 86400.0                  # over the line
     assert "elder" in DigiCorePanel(p2).text().plain
+
+
+def test_the_drills_row_shows_both_training_terms():
+    """Joel 2026-07-23: "is there a stat somewhere i can see that shows
+    this?"  The POWER page's Drills row now carries BOTH hit-formula
+    training terms: lifetime (+20% cap, never resets) and this stage
+    (+10% cap, the TR evolution gate, resets on evolve) -- the stage
+    count was live everywhere but visible nowhere."""
+    from tuipet import digicore
+    p = Pet(num=100, stage="Champion", attribute="Vaccine")
+    p.total_trainings = 150
+    p.stage_trainings = 42
+    power = dict(digicore.build_pages(p))["POWER"]
+    val = next(v for lab, v in power if lab == "Drills")
+    assert val == "150 · 42 this stage"
