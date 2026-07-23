@@ -514,6 +514,35 @@ def town_stock(town_id, today=None, pet=None):
     return out
 
 
+def town_egg_rows(town_id):
+    """The town's digitama band as SHOP ROWS (shops-look-the-same,
+    2026-07-22: Joel — "the egg tabs in town shops are different than the
+    normal shops, why arent these things modulized").  Same entry shape
+    the shelf renders everywhere; `egg_idx` rides the existing menu icon
+    plumbing (shop eggs draw their real egg frames)."""
+    from . import egg as egg_mod, persistence
+    owned = persistence.get_eggs_owned()
+    return [{"key": f"egg:{i}", "name": egg_mod.hatch_name(i)[:18],
+             "price": egg_price(i), "category": "Digitama",
+             "egg_idx": i, "owned": i in owned, "town_id": town_id}
+            for i in town_egg_stock(town_id)]
+
+
+def town_egg_buy(pet, idx):
+    """Buy a digitama outright (bits -> persistence.egg_own) -> (msg, sfx).
+    THE single buy path — the town egg panel and the shop's Eggs tab both
+    call here (single-source law)."""
+    from . import egg as egg_mod, persistence
+    if idx in persistence.get_eggs_owned():
+        return ("You already own that egg.", "error")
+    price = egg_price(idx)
+    if not pet.spend_bits(price):
+        return (f"{price}b — not enough bits.", "error")
+    persistence.egg_own(idx)
+    return (f"Bought the {egg_mod.hatch_name(idx)} egg — "
+            "it's on your carousel!", "reward")
+
+
 def town_buy(pet, e, today=None):
     """A town counter purchase: blocked once the day's authored stock is
     gone, recorded in the pet's daily ledger otherwise."""

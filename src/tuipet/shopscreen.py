@@ -52,7 +52,8 @@ _HONOR_PLATE = ["╭" + "─" * (menu.IC_W - 2) + "╮",
 
 
 class ShopPanel:
-    def __init__(self, pet, start_mode="shop", bag_only=False, town_id=None):
+    def __init__(self, pet, start_mode="shop", bag_only=False, town_id=None,
+                 start_tab=None):
         self.pet = pet
         self.mode = start_mode
         self.bag_only = bag_only        # road bag: use/sell only
@@ -60,6 +61,10 @@ class ShopPanel:
         #                                 prices, the day's deal, demand resale
         #                                 (shops arc 2026-07-21); None = home
         self.tab = 0
+        if start_tab is not None:       # e.g. the town hub's Eggs door
+            tabs = self._tabs()
+            if start_tab in tabs:
+                self.tab = tabs.index(start_tab)
         self.cursor = 0
         self.frame_i = 0
         self.sfx = None
@@ -101,12 +106,14 @@ class ShopPanel:
 
     # ---- data ----
     def _tabs(self):
-        """Shop: the classic four (a TOWN counter carries only its two
-        authored shelves -- eggs have their own hub slot, honors are a home
+        """Shop: the classic four; a TOWN counter carries its two authored
+        shelves + the digitama band as an EGGS tab (shops-look-the-same
+        2026-07-22: the market rode a separate one-off grid screen while
+        the home shop had a tab -- one shop family now; honors stay a home
         prestige).  Bag: the goods tabs over what you own."""
         if self.mode == "shop":
             if self.town is not None:
-                return ["Food", "Items"]
+                return ["Food", "Items", "Eggs"]
             return [g for g, _ in GROUPS]
         return [g for g, cats in GROUPS if cats is not None]
 
@@ -122,6 +129,8 @@ class ShopPanel:
                              worn=t["id"] == worn)
                         for t in data.load_titles()]
             if self.town is not None:      # the town counter: authored stock
+                if name == "Eggs":         # the digitama band, shop-row shape
+                    return shop.town_egg_rows(self.town)
                 return [e for e in shop.town_stock(self.town, pet=self.pet)
                         if e["category"] in cats]
             return [e for e in shop.catalog() if e["category"] in cats]
@@ -217,6 +226,9 @@ class ShopPanel:
                 if e.get("title_id") is not None:
                     msg, self.sfx = self._buy_title(e)
                     self._flash(msg)
+                elif e.get("egg_idx") is not None:
+                    msg, self.sfx = shop.town_egg_buy(self.pet, e["egg_idx"])
+                    self._flash(msg)
                 elif self.town is not None:
                     msg, self.sfx = shop.town_buy(self.pet, e)
                     self._flash(msg)
@@ -275,6 +287,11 @@ class ShopPanel:
                      else "owned" if sel.get("owned") else "%db" % sel["price"])
             desc = textwrap.wrap(sel.get("desc") or "a tamer honor", tw)[:2]
             return [sel["name"][:tw], state] + desc + [""] * (2 - len(desc))
+        if sel.get("egg_idx") is not None:     # the town digitama band
+            state = "owned" if sel.get("owned") else "%db" % sel["price"]
+            return [sel["name"][:tw], state,
+                    "a digitama, bought outright"[:tw],
+                    "joins your hatch carousel"[:tw]]
         key = str(sel["key"])
         if self.mode == "shop":
             held = self.pet.inventory.get(key, 0)
@@ -341,6 +358,9 @@ class ShopPanel:
                     if e.get("owned"):
                         return "%-18s %3s %7s" % (e["name"][:18], "", "owned")
                     return "%-18s %3s %6db" % (e["name"][:18], "", e["price"])
+                if e.get("egg_idx") is not None:     # digitama: owned/price
+                    tag = "owned" if e.get("owned") else "%6db" % e["price"]
+                    return "%-18s %3s %7s" % (e["name"][:18], "", tag.strip())
                 held = self.pet.inventory.get(e["key"], 0)
                 mark = ("x%d" % held) if held else ""
                 nm = ("▾" + e["name"][:17]) if e.get("deal") else e["name"][:18]

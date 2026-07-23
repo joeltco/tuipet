@@ -189,3 +189,50 @@ def test_the_egg_carousel_card_names_the_egg():
     idx = pan.carousel[pan.i]
     assert egg_mod.hatch_name(idx) in txt          # the egg's own name
     assert egg_mod.destined_name(idx) in txt       # the baby, unchanged
+
+
+def test_every_embedded_fight_shows_the_battle_card():
+    """Modularize (Joel 2026-07-22: 'why are adventure battles and cup
+    battles different?? the status box in cup shows so much more'):
+    painter_for walks sub chains, so ANY host's embedded fight gets THE
+    battle card — the cup's, the road wild's, the town cup's two layers
+    deep, the raid volley's.  One fight, one card."""
+    from tuipet import adventure
+    from tuipet.adventurescreen import AdventurePanel
+    from tuipet.battlescreen import BattlePanel
+    from tuipet.townscreen import TownPanel
+    app = _app()
+
+    road = AdventurePanel(app.pet, zone=adventure.ZONES[0])
+    road._trans = None
+    road.travelling = True
+    road.sub = BattlePanel(app.pet, {"num": 100}, wild=True)
+    txt = _card(app, road)
+    assert "battle" in txt and "You " in txt and "Foe " in txt
+
+    town = TownPanel(app.pet, town_id=0)
+    town.cursor = 3                              # Town Cup
+    town.key("enter")                            # mounts the TournamentPanel
+    if town.sub is not None:                     # (affordability permitting)
+        town.sub.sub = BattlePanel(app.pet, {"num": 100})
+        txt = _card(app, town)
+        assert "battle" in txt and "You " in txt   # two layers deep, same card
+
+
+def test_the_shop_eggs_tab_buys_through_the_single_source():
+    """Shops-look-the-same: the tab's ENTER runs shop.town_egg_buy — the
+    exact path the old market panel now delegates to."""
+    from tuipet import persistence, shop
+    from tuipet.shopscreen import ShopPanel
+    app = _app()
+    app.pet.bits = 5000
+    pan = ShopPanel(app.pet, town_id=1, start_tab="Eggs")
+    rows = pan._rows()
+    idx = next(e["egg_idx"] for e in rows if not e["owned"])
+    pan.cursor = next(i for i, e in enumerate(rows) if e["egg_idx"] == idx)
+    pan.key("enter")
+    assert idx in persistence.get_eggs_owned()
+    assert app.pet.bits == 5000 - shop.egg_price(idx)
+    pan.key("enter")                             # again: refuses, no double bill
+    assert app.pet.bits == 5000 - shop.egg_price(idx)
+    assert pan.text()                            # and the tab renders

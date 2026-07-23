@@ -115,7 +115,9 @@ def test_the_town_panel_serves_the_counter(monkeypatch):
     p = _pet()
     p.bits = 10_000
     pan = ShopPanel(p, town_id=B_TOWN)
-    assert pan._tabs() == ["Food", "Items"]            # no eggs/honors in town
+    # the digitama band is a real shop tab (shops-look-the-same 2026-07-22);
+    # honors stay a home prestige
+    assert pan._tabs() == ["Food", "Items", "Eggs"]
     pan.tab = 0                                        # the Food shelf
     rows = pan._rows()
     assert [e["key"] for e in rows] == ["steak"]

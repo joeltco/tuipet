@@ -70,12 +70,21 @@ def test_buying_refused_without_bits(tmp_path, monkeypatch):
 
 
 def test_town_hub_has_an_eggs_slot_that_mounts_the_market():
+    """Shops-look-the-same (Joel 2026-07-22: 'the egg tabs in town shops
+    are different than the normal shops'): the Eggs door opens the SHOP's
+    own Eggs tab now -- one shop family, one layout -- with this town's
+    digitama band as ordinary shelf rows."""
+    from tuipet import shop
     assert any(m[0] == "eggs" for m in _MENU)
     t = TownPanel(_pet(), town_id=2)
     t.cursor = next(i for i, m in enumerate(_MENU) if m[0] == "eggs")
     t.key("enter")
-    assert type(t.sub).__name__ == "TownEggPanel"
-    assert t.sub.town_id == 2                           # this town's stock
+    assert type(t.sub).__name__ == "ShopPanel"
+    assert t.sub.town == 2                              # this town's stock
+    assert t.sub._tabs()[t.sub.tab] == "Eggs"           # opens ON the band
+    rows = t.sub._rows()
+    assert rows and all(e.get("egg_idx") is not None for e in rows)
+    assert {e["egg_idx"] for e in rows} == set(shop.town_egg_stock(2))
     # ESC leaves the market back to the town menu
     t.sub = None
     t._sub_done(None)

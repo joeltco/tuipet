@@ -132,11 +132,14 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE SICK CALL POINTS AT THE RIGHT KEY: the alert said "
-                 "'sick! (I — use a pill)' — but the pill is the FEED "
-                 "menu's second row, free and infinite, not a bag item. A "
-                 "panicked tamer got sent to the wrong screen. It now says "
-                 "'sick! (F — feed it the pill)'.")
+    WHATS_NEW = ("ONE FIGHT, ONE CARD · ONE SHOP, ONE LOOK: every battle "
+                 "now shows the same live status card — HP bars, foe, "
+                 "verdict — whether it's a cup bout, a wild on the road, "
+                 "the town cup, or a raid volley (the road used to show "
+                 "generic vitals mid-fight). And the town egg market moved "
+                 "onto the shop's own Eggs tab: same tab bar, same shelf, "
+                 "same dossier as every other counter — no more one-off "
+                 "grid screen. One shop family everywhere.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

@@ -529,9 +529,8 @@ class _SubView:
 
 
 def tournament(app):
-    sub = getattr(app.mode, "sub", None)
-    if sub is not None:                # a cup bout runs: the battle card, live HP
-        return battle(_SubView(app, sub))
+    # (the cup's own sub->battle hand-off moved into painter_for -- the
+    # dispatcher lends every host's card to its embedded fight now)
     p, t, T = app.pet, app.mode.tourney, theme
     app.stats_w.border_subtitle = gen_subtitle(p)
     if t is None:                      # cup-select phase (no bout yet)
@@ -694,9 +693,25 @@ def _registry():
 
 
 def painter_for(mode):
-    """The painter for a mode instance, or None (home screen -> vitals)."""
+    """The painter for a mode instance, or None (home screen -> vitals).
+
+    SUB CHAINS RESOLVE FIRST (modularize 2026-07-22, Joel: "why are
+    adventure battles and cup battles different?? the status box in cup
+    shows so much more"): the cup used to hand its card to its embedded
+    BattlePanel by itself while every OTHER host (the road's wilds, the
+    town cup two layers deep, the raid volley) fell through to generic
+    vitals -- same fight, different card.  The dispatcher now walks
+    mode.sub recursively and lends the card to the DEEPEST registered
+    panel, so one battle painter serves every fight wherever it runs.
+    Resolution happens per paint, so a sub opening/closing re-routes on
+    the next frame."""
     if mode is None:
         return None
+    sub = getattr(mode, "sub", None)
+    if sub is not None:
+        subfn = painter_for(sub)
+        if subfn is not None:
+            return lambda app: subfn(_SubView(app, sub))
     for cls, fn in _registry():
         if isinstance(mode, cls):
             return fn

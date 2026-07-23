@@ -58,20 +58,14 @@ class TownEggPanel:
         return None
 
     def _buy(self):
+        # THE single buy path lives in shop.town_egg_buy (shops-look-the-
+        # same 2026-07-22) -- this panel is unrouted now (the town hub's
+        # Eggs door opens the shop's own Eggs tab) but stays functional
         idx = self.stock[self.i]
-        if idx in self.owned:
-            self._flash("You already own that egg.")
-            self.sfx = "error"
-            return
-        price = shop.egg_price(idx)
-        if not self.pet.spend_bits(price):
-            self._flash(f"{price}b — not enough bits.")
-            self.sfx = "error"
-            return
-        persistence.egg_own(idx)
-        self.owned.add(idx)
-        self.sfx = "reward"
-        self._flash(f"Bought the {egg_mod.hatch_name(idx)} egg — it's on your carousel!")
+        msg, self.sfx = shop.town_egg_buy(self.pet, idx)
+        if self.sfx == "reward":
+            self.owned.add(idx)
+        self._flash(msg)
 
     # -- render (the real 8x8 thumbnails, framed selection) --------------------
     def _grid(self):

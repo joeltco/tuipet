@@ -53,9 +53,13 @@ class TownPanel(menu.SubHost):
                 # local prices, and the day's deal (shops arc 2026-07-21)
                 self.sub = ShopPanel(self.pet, town_id=self.town_id)
             elif key == "eggs":
-                from .towneggscreen import TownEggPanel
-                # this town's DISTINCT egg stock, as real 8x8 thumbnails
-                self.sub = TownEggPanel(self.pet, self.town_id)
+                from .shopscreen import ShopPanel
+                # this town's DISTINCT egg band, on the SHOP's own Eggs tab
+                # (shops-look-the-same 2026-07-22: the one-off thumbnail
+                # grid made the town's egg counter a different UI from
+                # every other shelf -- one shop family now, one layout)
+                self.sub = ShopPanel(self.pet, town_id=self.town_id,
+                                     start_tab="Eggs")
             elif key == "sell":
                 from .shopscreen import ShopPanel
                 # the real bag (use / sell back), same layout as home --
