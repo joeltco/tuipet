@@ -652,8 +652,12 @@ class AdventurePanel(menu.SubHost):
             if self.pet.asleep:
                 return "[dim]zzZ — a roadside nap[/]"
             if self._refuse_t > 0 or self._refused:
-                thint = " T" if self.adv.held_transports() else ""
-                return f"[b]Refuses to walk![/]  [dim]SPACE urge{thint} · ESC[/]"
+                # the refusal only ever fires PAST EMPTY (stop_travel_prob:
+                # negative energy only) -- say so, or the bare "SPACE urge"
+                # invites a dead mash (QOL sweep 2026-07-23)
+                out = ("rest ⚡ · T warp" if self.adv.held_transports()
+                       else "rest refills ⚡")
+                return f"[b]Refuses — spent![/]  [dim]{out} · ESC[/]"
             if self._scene is not None:
                 s, t = self._scene, self._scene["t"]
                 if s["grade"] is None and t >= INV_WALK_T:

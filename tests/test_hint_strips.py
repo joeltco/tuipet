@@ -120,7 +120,9 @@ def test_options_strip_covers_menu_and_confirm():
 
 def test_battle_strip_follows_the_fight():
     """0.5 phases (2026-07-17): intro -> ready (the timing bar) -> anim
-    (clean) -> result."""
+    -> result.  (The anim strip carried no hints until the QOL sweep
+    2026-07-23: the hurry keys were card-only whispers, undiscovered by
+    players watching the LCD.)"""
     from tuipet.battlescreen import BattlePanel
     from tuipet import data
     _, by = data.load_sprites()
@@ -132,7 +134,7 @@ def test_battle_strip_follows_the_fight():
     bp.phase = "ready"
     assert "lock" in _ok(bp.strip(), "battle:ready")
     bp.phase = "anim"
-    assert bp.strip() == ""                    # the round plays clean
+    assert "hurry" in _ok(bp.strip(), "battle:anim")
     bp.phase = "result"
 
 

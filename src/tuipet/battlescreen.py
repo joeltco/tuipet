@@ -53,7 +53,7 @@ CHARGE = 4                                      # the classic V-pet shoot frame 
 
 # timeline tuning (ticks per beat, 1 tick == 0.1s); slowed for a readable vpet pace
 BANNER_FLASHES, BANNER_HOLD = 3, 4
-SKIP_DEBOUNCE = 6                                # anim ticks before a skip key registers
+SKIP_DEBOUNCE = 6                                # ticks after the bar LOCKS before skip keys register
 REVEAL_T = 12                                    # 1.2s opponent reveal/taunt (startBattle)
 FACEOFF_T = 9                                    # 0.9s stare-down
 WINDUP_T = 9                                     # 0.9s charge / rear-back before firing
@@ -217,6 +217,7 @@ class BattlePanel:
         self.bar_dir = 1
         self.mega_lo, self.mega_hi = mega_window(pet)
         self.locked = None           # the locked hit-type
+        self._lock_frame = 0         # frame the bar locked: skip debounce anchor
         tl = []
         for _ in range(BANNER_FLASHES):
             tl += [{"m": "banner", "f": 0}] * BANNER_HOLD
@@ -237,6 +238,7 @@ class BattlePanel:
         """The bar locked: build the precomputed fight and roll the rounds."""
         self.pet.saved_hit_type = hit_type
         self.locked = hit_type
+        self._lock_frame = self.frame_i
         if self.raid:
             from .battle import RaidBout
             self.battle = RaidBout(self.pet, self._pick)
@@ -319,7 +321,9 @@ class BattlePanel:
             return menu.hints(("SPACE", "skip"))
         if self.phase == "result":
             return menu.hints(("SPACE", "done"))
-        return ""                              # the round animation plays clean
+        # the round anim: the hurry keys were card-only whispers -- siblings
+        # (hazard duck, dig) prompt on the strip, so this does too
+        return menu.hints(("SPACE", "hurry"), ("ESC", "end it"))
 
     def _lock_bar(self):
         if self.pet.battles >= 999 or self.mega_lo <= self.bar <= self.mega_hi:
@@ -345,7 +349,20 @@ class BattlePanel:
                 return ("done", None)          # walked away before the bell
             return None
         if self.phase == "anim":
-            if k in ("space", "enter", "escape") and self.i >= SKIP_DEBOUNCE:
+            # the debounce anchors on the LOCK frame, not the round frame:
+            # gating on self.i (reset every round) ate the first 0.6s of
+            # skip presses at EVERY round boundary (QOL sweep 2026-07-23)
+            if self.frame_i - self._lock_frame < SKIP_DEBOUNCE:
+                return None
+            if k == "escape" and self.battle and not self.battle.over:
+                # end it: fast-run the precomputed rounds to the DECIDING one
+                # and let that single round play out -- the KO (and a boss's
+                # death beat) still shows, but a lopsided 20-round bout no
+                # longer needs ~20 timed presses (QOL sweep 2026-07-23)
+                while self.phase == "anim" and not self.battle.over:
+                    self._next_round()
+                return None
+            if k in ("space", "enter", "escape"):
                 last = next((j for j in range(len(self.timeline) - 1, -1, -1)
                              if self.timeline[j]["m"] in ("hit", "dodge")), None)
                 if last is None or self.i >= last - (EXPLODE_FRAMES + 2):

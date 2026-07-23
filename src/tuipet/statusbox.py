@@ -656,7 +656,8 @@ def battle(app):
         lines += [f"[dim]{(m.hud_note or '')[:24]}[/]", "",
                   "[dim]SPACE  lock the bar[/]"]
     else:
-        lines += [f"[dim]{(m.hud_note or '')[:24]}[/]", "", "[dim]SPACE  skip[/]"]
+        lines += [f"[dim]{(m.hud_note or '')[:24]}[/]", "",
+                  "[dim]SPACE skip · ESC end it[/]"]
     app.stats_w.update("\n".join(lines))
 
 

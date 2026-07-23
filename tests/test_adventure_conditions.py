@@ -100,7 +100,10 @@ def test_the_panel_plants_its_feet_and_space_re_issues(monkeypatch):
         pan.anim()
         assert pan.text()
     assert pan.adv.loc == loc0                         # the march is halted
-    assert "Refuses to walk" in pan.strip()
+    # the strip says WHY (past-empty is the only trigger) instead of the
+    # bare "SPACE urge" that invited a dead mash (QOL sweep 2026-07-23)
+    assert "Refuses" in pan.strip() and "spent" in pan.strip()
+    assert "rest" in pan.strip() and "⚡" in pan.strip()
     pan.key("space")                                   # urge it on: still spent
     assert pan._refused and pan._refuse_t == REFUSE_T  # ...it refuses again
     p._set_energy(p.max_energy)                        # rested (a town would do this)

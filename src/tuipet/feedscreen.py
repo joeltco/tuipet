@@ -83,7 +83,10 @@ ROWS_MENU = [("meat", "Meat"), ("pill", "Pill")]
 class FeedPanel:
     def __init__(self, pet):
         self.pet = pet
-        self.cursor = 0
+        # a sick pet opens on the PILL: the HUD nag says "feed it the pill",
+        # and meat would only be refused -- don't make the cure two extra
+        # presses in the most-repeated care loop (QOL sweep 2026-07-23)
+        self.cursor = 1 if pet.sick else 0
         self.frame_i = 0
 
     def anim(self):

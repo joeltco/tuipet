@@ -132,10 +132,12 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("EASIER ON THE EARS: fresh installs now start at 50% "
-                 "volume instead of full blast. Your saved volume setting "
-                 "is untouched — this only picks the starting point for "
-                 "new tamers (Options → Sound to taste, as always).")
+    WHATS_NEW = ("QUALITY OF LIFE, ROUND 1: ESC now ends a decided battle "
+                 "in one press (SPACE still hurries beat by beat, and the "
+                 "hints show on the strip), skip presses no longer vanish "
+                 "at round boundaries, a sick pet's feed menu opens right "
+                 "on the Pill, and a spent pet on the road tells you it "
+                 "needs rest instead of begging to be urged.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
