@@ -201,11 +201,12 @@ def _pet():
     return p
 
 
-def _view(mega, hp=1000, start=0.0, now=100.0, attempts=3, award=None):
+def _view(mega, hp=1000, start=0.0, now=100.0, attempts=3, award=None,
+          you=(2, 150000), top=(("kai", 2000000),)):
     return {"t": "raid", "now": now,
             "boss": {"num": mega, "name": "BossMon", "hp": hp, "max_hp": 1000,
                      "start": start, "end": start + 604800},
-            "top": [["kai", 2000000]], "you": [2, 150000],
+            "top": [list(t) for t in top], "you": list(you),
             "attempts": attempts, "award": award}
 
 
@@ -552,3 +553,72 @@ def test_raid_hit_wire_carries_no_stage():
     c._send = lambda m: sent.append(m)
     c.raid_hit(40)
     assert sent == [{"t": "raid_hit", "damage": 40}]
+
+
+# ---- raid audit 2026-07-23 (Joel: "raid system is garbage... garbled mess,
+# boss at 5hp") -----------------------------------------------------------------
+
+def test_the_page_never_exceeds_the_lcd_in_cols_or_rows():
+    """The garble's root: the stats line ran 42 cols with a real tamer
+    name, WRAPPED in the box, and shoved the page past 12 rows.  Pre-fit
+    now: worst-case rank/damage/name, every row <= 40, exactly <= 12 rows,
+    no trailing 13th."""
+    pan = _panel()
+    pan.client.raid = _view(_mega(), you=(999, 99_000_000),
+                            top=[("Wxyzabcdefghij", 99_000_000)])
+    lines = pan.text().plain.split("\n")
+    assert len(lines) <= 12, f"{len(lines)} rows"
+    wide = [(i, len(l)) for i, l in enumerate(lines) if len(l) > 40]
+    assert not wide, f"over-40 rows: {wide}"
+
+
+def test_the_volley_card_shows_the_pool_never_the_stub():
+    """The status card during a raid volley showed the boss at 5/5 —
+    RaidBout's display stub leaking through the battle card.  The card
+    shows the COMMUNITY POOL now, and the player fights from 10."""
+    from tuipet import statusbox
+    pan = _panel()
+    pan.client.raid = _view(_mega())
+    pan.anim()
+    pan.key("space")                            # mount the volley
+    assert pan.sub is not None and pan.sub.raid
+
+    class _W:
+        txt = ""
+        border_subtitle = ""
+        def update(self, t):
+            self.txt = t
+
+    class _A:
+        pet = pan.pet
+        mode = pan
+        stats_w = _W()
+
+    statusbox.painter_for(pan)(_A())
+    card = _A.stats_w.txt
+    assert "raid" in card and "Pool" in card
+    assert "5/5" not in card                    # the stub is dead
+    assert "/10" in card or "10/10" in card     # the raid tank
+
+
+def test_the_boss_scene_backdrop_is_floor_anchored():
+    """The reduced 16px scene painted the TOP of the 24px arena art — sky
+    band, floor gone, the boss floating.  The crop anchors to the floor."""
+    from tuipet import raidscreen
+    seen = {}
+    real = raidscreen.render_scene
+
+    def spy(placements, cols, rows, *a, **kw):
+        seen["bgimg"] = kw.get("bgimg")
+        seen["rows"] = rows
+        return real(placements, cols, rows, *a, **kw)
+
+    pan = _panel()
+    pan.client.raid = _view(_mega())
+    raidscreen.render_scene = spy
+    try:
+        pan.text()
+    finally:
+        raidscreen.render_scene = real
+    full = pan.pet.background(file="tourneyBack")
+    assert seen["bgimg"] == full[-seen["rows"] * 2:]   # the BOTTOM slice

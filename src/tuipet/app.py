@@ -132,14 +132,15 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE DODGE IS A REAL REFLEX NOW: road ambushes used to "
-                 "accept SPACE anywhere in the whole 1.6-second beat — and "
-                 "since SPACE also hurries the march, your mash won dodges "
-                 "by accident before the ! even registered. New grammar, "
-                 "one press per ambush: '! ! ! wait for it…' during the "
-                 "warning (jump early and the duck is SPENT), then 'NOW! — "
-                 "SPACE' as it lunges. Duck the window, eat the pounce, or "
-                 "jump too soon — your reflexes decide, not your mash.")
+    WHATS_NEW = ("RAIDS CLEANED UP: the boss page's stats line could run "
+                 "wider than the LCD and wrap the whole bottom of the "
+                 "screen into a garbled mess — it pre-fits now, and the "
+                 "page holds exactly 12 rows. The boss stands on the arena "
+                 "FLOOR instead of floating over a sky-band crop. And the "
+                 "status card during a volley finally tells the truth: "
+                 "your tank out of 10, the boss's health as the COMMUNITY "
+                 "POOL percentage — never again a 5.5-million-HP boss "
+                 "wearing a five-heart bar.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

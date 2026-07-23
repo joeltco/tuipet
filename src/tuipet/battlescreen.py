@@ -206,7 +206,9 @@ class BattlePanel:
         self.done_anim = False
         self.won = None
         self.ran_away = False
-        self.hud_php = self.hud_fhp = 5
+        from .battle import RAID_PLAYER_HP
+        self.hud_php = RAID_PLAYER_HP if raid else 5   # raids fight from 10
+        self.hud_fhp = 5
         self.hud_note = "Battle start!"
         self.phase = "intro"
         self.sfx = "battle"          # the banner sting
@@ -522,7 +524,9 @@ class BattlePanel:
         bar should be the same sprite as the training slide bar' -- the old
         text-glyph page was the one bar that looked nothing like it).  The
         strip carries SPACE/ESC; the status card carries the coaching."""
-        self.hud_php, self.hud_fhp = 5, 5
+        from .battle import RAID_PLAYER_HP
+        self.hud_php = RAID_PLAYER_HP if self.raid else 5
+        self.hud_fhp = 5
         # the coaching names the FIGHT's levers (gameplay polish #2): the
         # old line pointed only at the bar-widening formula (which reads
         # age), while the fight itself is decided by hit_chance -- weight

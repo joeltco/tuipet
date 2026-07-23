@@ -157,7 +157,11 @@ class RaidPanel(menu.SubHost):
         rec = data.record_for(num)
         return {"num": num, "name": b.get("name", rec.get("name", "?")),
                 "stage": rec.get("stage", "Mega"),
-                "attribute": rec.get("attribute", "Free"), "boss": True}
+                "attribute": rec.get("attribute", "Free"), "boss": True,
+                # the COMMUNITY POOL rides the enemy dict so the battle
+                # card can show the boss's REAL health (raid audit
+                # 2026-07-23: the card showed RaidBout's 5/5 display stub)
+                "pool": (int(b.get("hp", 0)), max(1, int(b.get("max_hp", 1))))}
 
     def _report(self, b):
         if b is None:
@@ -283,6 +287,13 @@ class RaidPanel(menu.SubHost):
         boss = grid.prep(rows, ph=sc_rows * 2) if rows else None
         placements = [(boss, (COLS - grid.width(boss)) // 2, False)] if boss else []
         bgimg = self.pet.background(file="tourneyBack")
+        # FLOOR-anchor the backdrop crop (raid audit 2026-07-23, Joel: the
+        # boss screen "looks like shit garbled mess"): _paint_cells indexes
+        # bgimg by absolute row, so this reduced 16px scene painted the TOP
+        # of the 24px arena art -- sky band, floor gone, the boss floating
+        # mid-backdrop.  The bottom slice keeps the arena floor under it.
+        if bgimg and len(bgimg) > sc_rows * 2:
+            bgimg = bgimg[-sc_rows * 2:]
         scene = render_scene(placements, COLS, sc_rows, menu.scene_ink(bgimg),
                              LCD_BG, bgimg=bgimg)
         pool, pool_max = int(b.get("hp", 0)), max(1, int(b.get("max_hp", 1)))
@@ -301,13 +312,25 @@ class RaidPanel(menu.SubHost):
                        style=NEG if pct < 25 else INK_B)
         rank, mine = (list(v.get("you") or (0, 0)) + [0, 0])[:2]
         top = v.get("top") or []
-        lead = f"{top[0][0][:10]} {_fmt(top[0][1])}" if top else "—"
+        # PRE-FIT to the 40-col LCD (raid audit 2026-07-23: with a real
+        # tamer name this line ran 42+ cols, WRAPPED in the box, and the
+        # whole bottom of the page garbled -- the run-off law): fixed
+        # budget per field, name last and truncated to whatever remains.
         you = f"you #{rank} {_fmt(mine)}" if rank else "you —"
-        out.append(f" attempts {v.get('attempts', 0)}   "
-                   f"{you}   top {lead}\n", style=DIM)
+        head = f" ⚔{v.get('attempts', 0)}  {you}  top "
+        if top:
+            val = _fmt(top[0][1])
+            name = str(top[0][0])[:max(3, 39 - len(head) - 1 - len(val))]
+            line = f"{head}{name} {val}"
+        else:
+            line = f"{head}—"
+        out.append(line[:40] + "\n", style=DIM)
         # ONE context line closes the 12-row budget (the old stacked
         # cadence + award + note + footer ran the page to 15 rows and the
         # LCD box clipped the tail): priority msg > waiting purse > the
         # weekly cadence; the strip carries the keys (scene-screen law).
         out.append_text(menu.note(self._context_line(v, b), tick=self.frame_i))
+        out.right_crop(1)          # 12 rows, no 13th empty split element
+        #                            (the footer convention -- the trailing
+        #                            newline pushed the page to 13 rows)
         return out

@@ -596,21 +596,42 @@ def battle(app):
     b = m.battle                    # None until the timing bar locks (0.5)
     app.stats_w.border_subtitle = gen_subtitle(p)
     enemy = m.enemy or {}
+    raid = bool(getattr(m, "raid", False))
     tag = f" [{T.NEG}]BOSS[/]" if enemy.get("boss") else ""
-    pet_max = b.pet_max if b else 5
+    from .battle import RAID_PLAYER_HP
+    dflt = RAID_PLAYER_HP if raid else 5   # pre-lock: the raid fights from 10
+    pet_max = b.pet_max if b else dflt
     foe_max = b.enemy_max if b else 5
-    php = getattr(m, "hud_php", b.pet_hp if b else 5)
+    php = getattr(m, "hud_php", b.pet_hp if b else dflt)
     fhp = getattr(m, "hud_fhp", b.enemy_hp if b else 5)
     pp = int(100 * php / pet_max) if pet_max else 0
     fp = int(100 * fhp / foe_max) if foe_max else 0
+    if raid:
+        # the boss's real health is the COMMUNITY POOL (raid audit
+        # 2026-07-23: the card leaked RaidBout's 5/5 display stub -- a
+        # 5.5M shared boss shown as a five-heart foe)
+        pool = enemy.get("pool")
+        if pool:
+            phv, pmx = int(pool[0]), max(1, int(pool[1]))
+            pct = max(0, min(100, phv * 100 // pmx))
+            foe_line = f"Pool {bar(pct, 11, T.NEG)} {pct}%"
+        else:
+            foe_line = "Pool [dim]shared — held by the gate[/]"
+    else:
+        foe_line = f"Foe  {bar(fp, 11, T.NEG)} {fhp}/{foe_max}"
     lines = [
-        f"[b]{p.name[:14]}[/] [dim]· battle[/]", DIV,
+        f"[b]{p.name[:14]}[/] [dim]· {'raid' if raid else 'battle'}[/]", DIV,
         f"vs [b]{enemy.get('name', '?')[:14]}[/]{tag}", "",
         f"You  {bar(pp, 11, T.POS)} {php}/{pet_max}",
-        f"Foe  {bar(fp, 11, T.NEG)} {fhp}/{foe_max}",
+        foe_line,
         DIV,
     ]
-    if m.done_anim:
+    if m.done_anim and raid:
+        res = (f"[{T.POS}]STOOD YOUR GROUND[/]" if m.won
+               else f"[{T.NEG}]KNOCKED OUT[/]")
+        lines += [res, f"[b]dealt {getattr(b, 'dealt', 0)}[/] [dim]→ the gate[/]",
+                  "", "[dim]SPACE  continue[/]"]
+    elif m.done_anim:
         res = f"[{T.POS}]VICTORY![/]" if m.won else f"[{T.NEG}]DEFEAT[/]"
         lines += [res, f"[dim]{(b.reward if b else '') or ''}"[:30] + "[/]",
                   "", "[dim]SPACE  continue[/]"]
