@@ -714,7 +714,17 @@ class BodyMixin:
             elif r == 2:
                 self._set_mood(self.mood + GOOD_MORNING_MOOD.get(m, 100))
                 wake_anim = "happy"                  # GoodMorning: wakeUp(5)
-                self.wake_note = f"{self.name} woke up beaming!"
+                # the note tells the TRUTH about the night (sleep audit
+                # 2026-07-22, Joel: "my mon woke up 'beaming' with only one
+                # energy bar"): the morning ROLL is pure mood -- canon,
+                # untouched -- but a cut-short night (a dawn re-sleep, a
+                # midnight bedtime, the 7:00-sharp window) can wake a pet
+                # half-empty, and 'beaming' over a drained gauge reads as a
+                # bug.  Good roll + poor tank = up early, still weary.
+                if self.energy < self.max_energy // 2:
+                    self.wake_note = f"{self.name} is up — still weary…"
+                else:
+                    self.wake_note = f"{self.name} woke up beaming!"
         self._set_anim(wake_anim, 1.6)
 
     def _disturbed(self):

@@ -281,6 +281,19 @@ def test_the_morning_tier_reaches_the_hud():
         petbody.random.randrange = real
     assert "wrong side" in p.wake_note
 
+    # the GOOD roll tells the truth about the tank (sleep audit 2026-07-22:
+    # "woke up 'beaming' with only one energy bar") -- beaming needs at
+    # least half the gauge; a drained good morning is up-but-weary
+    for energy, word in ((1, "weary"), (24, "beaming")):
+        g = _quiet_champion()
+        g.asleep, g.lights, g.energy = True, False, energy
+        petbody.random.randrange = lambda n: 2     # force GoodMorning
+        try:
+            g._wake()
+        finally:
+            petbody.random.randrange = real
+        assert word in g.wake_note, (energy, g.wake_note)
+
     q = _quiet_champion()
     q.asleep, q.lights, q.energy = True, False, 1
     q._disturbed()
