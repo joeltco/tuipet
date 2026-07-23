@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.203 — DUEL WITH OPEN EYES (2026-07-23)
+
+DUEL WITH OPEN EYES: a tamer's saved lock now shows in the lobby — on the roster blurb, the challenge menu and the invite prompt ("Agumon · Champion · lock mega") — and the fight header shows both locks. A lock swings a duel hard now; nobody should accept one blind.
+
 ## 0.5.202 — THE LOCK DECIDES (2026-07-23)
 
 THE LOCK DECIDES: a clean mega lock on the battle bar now steadies your aim AND your guard — hitting the center wins about 4 fights in 5 even untrained, 9 in 10 trained. Equal locks cancel in PvP, so it stays fair. If you hit the center, you win.
