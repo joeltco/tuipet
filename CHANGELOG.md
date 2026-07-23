@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.210 — LESSONS LOOK LIKE LESSONS (2026-07-23)
+
+LESSONS LOOK LIKE LESSONS: praising your pet at a proud moment now plays the cheer, and scolding a real tantrum plays the sulk — the same beats training and the cup already use. Praise or scold at the wrong moment still shows nothing, because nothing happened.
+
 ## 0.5.209 — THE BANDAGE HAS ITS ANIMATION BACK (2026-07-23)
 
 THE BANDAGE HAS ITS ANIMATION BACK: treating an injured pet now plays the real DVPet bandaging sequence — the dressing is held up, pressed on, and worked through its four frames while your pet holds still, then cheers when it is patched up.
