@@ -639,3 +639,21 @@ def test_the_boss_scene_backdrop_is_floor_anchored():
         raidscreen.render_scene = real
     full = pan.pet.background(file="tourneyBack")
     assert seen["bgimg"] == full[-seen["rows"] * 2:]   # the BOTTOM slice
+
+
+def test_the_intro_never_shows_the_classic_five_on_a_raid_tank():
+    """Joel 2026-07-23: 'my mons hp say 5/10 when starting, then goes to
+    10/10 when the battle starts' — the banner/reveal frames carry no HP
+    and fell back to the classic literal 5.  The fallback is the panel's
+    own raid-aware hud now: 10/10 from the first banner frame."""
+    from tuipet.battle import RAID_PLAYER_HP
+    pan = _panel()
+    pan.client.raid = _view(_mega())
+    pan.anim()
+    pan.key("space")                              # mount the volley
+    sub = pan.sub
+    assert sub is not None and sub.raid
+    for _ in range(6):                            # the banner/reveal intro
+        sub.text()
+        assert sub.hud_php == RAID_PLAYER_HP, sub.hud_php
+        sub.i += 1

@@ -406,8 +406,12 @@ class BattlePanel:
     def _render_scene_frame(self, fr):
         b = self.battle
         m = fr["m"]
-        ph = fr.get("ph", b.pet_hp if b else 5)
-        fh = fr.get("fh", b.enemy_hp if b else 5)
+        # intro frames (banner/reveal) carry no HP: fall back to the
+        # panel's OWN hud values, which __init__ seeds raid-aware -- the
+        # literal 5 here showed a raid tamer "You 5/10" through the banner,
+        # snapping to 10/10 at the bell (Joel 2026-07-23)
+        ph = fr.get("ph", b.pet_hp if b else self.hud_php)
+        fh = fr.get("fh", b.enemy_hp if b else self.hud_fhp)
         if m == "banner":
             scene = self._scene([], _full(BANNER[fr["f"]]))
             note = "BATTLE!"
