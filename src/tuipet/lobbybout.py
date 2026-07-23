@@ -377,7 +377,12 @@ class BoutMixin:
         me = self._card()["name"]
         oc = self.opp_card or {}
         t.append(f"  vs {pname[:10]}'s {str(oc.get('name', '?'))[:12]}"
-                 f" · {str(oc.get('stage', '?'))[:9]}\n\n", style=DIM)
+                 f" · {str(oc.get('stage', '?'))[:9]}\n", style=DIM)
+        # both locks in the open (lock rework 2026-07-23): the duel fights
+        # on the exchanged CARDS' forms -- show the exact terms the seeded
+        # engine is using, mine and theirs
+        myf = (self.bt_my_card or {}).get("hit_type", "?")
+        t.append(f"  lock: {myf} vs {oc.get('hit_type', '?')}\n\n", style=DIM)
         t.append(f"  {_fit(me, 10)}{self.my_hp:>3}/{self.my_max:<2} [{_hpbar(self.my_hp, self.my_max)}]\n", style=INK_B)
         t.append(f"  {_fit(pname, 10)}{self.opp_hp:>3}/{self.opp_max:<2} [{_hpbar(self.opp_hp, self.opp_max)}]\n\n", style=INK)
         t.append(f"  {self.bt_log}\n\n" if self.bt_log else "\n\n", style=INK)

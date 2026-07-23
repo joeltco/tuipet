@@ -974,3 +974,42 @@ def test_session_gate_mirrors_the_send_side_conditions():
     gate = pan._session_gate("jogress")
     assert gate and "DP" in gate                       # gated on the meter...
     assert p.anim == anim0 and p.disturb == d0         # ...with zero side effects
+
+
+def test_the_saved_lock_rides_presence_and_the_blurb():
+    """Lock rework 2026-07-23 (Joel: "yes fix it"): a lock now swings
+    ±0.20 in a duel, so nobody accepts a challenge blind.  The presence
+    card carries the saved form (title-precedent compat: server relays
+    verbatim, older clients ignore), and _pet_of's blurb -- the invite
+    prompt and the [B]attle menu both read it -- says "lock mega".
+    Presences from older clients (no form field) simply omit the lock."""
+    s = LobbyState()
+    pan = _panel(s)
+    pan.pet.saved_hit_type = "mega"
+    assert pan._card()["form"] == "mega"
+    s.roster = [{"id": 7, "name": "rival",
+                 "pet": {"name": "Agumon", "stage": "Champion",
+                         "form": "miss"}},
+                {"id": 8, "name": "old-client",
+                 "pet": {"name": "Betamon", "stage": "Rookie"}}]
+    pan.state = s
+    assert "lock miss" in pan._pet_of(7)
+    assert "lock" not in pan._pet_of(8)          # older client: no false claim
+
+
+def test_the_fight_header_shows_both_locks():
+    """The duel fights on the exchanged CARDS' forms -- the header shows
+    the exact terms the seeded engine uses, mine and theirs."""
+    s = LobbyState()
+    pan = _panel(s)
+    pan.state = s
+    pan.partner = (7, "rival")
+    pan.bphase = "fight"
+    pan.bt_my_card = {"hit_type": "mega"}
+    pan.opp_card = {"name": "Agumon", "stage": "Champion", "hit_type": "normal"}
+    pan.bshow = None
+    pan.my_hp = pan.opp_hp = 5
+    pan.my_max = pan.opp_max = 5
+    pan.bt_log = ""
+    text = pan._text_battle().plain
+    assert "lock: mega vs normal" in text

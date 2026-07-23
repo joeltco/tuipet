@@ -149,6 +149,11 @@ class LobbyPanel(BoutMixin, ChatMixin):
         worn = data.title_name(persistence.get_title_worn())
         if worn:
             card["title"] = worn
+        # the saved lock rides the presence card (lock rework 2026-07-23:
+        # a lock now swings ±0.20 in a duel -- nobody should accept one
+        # blind).  Same compat rule as title: the server rebroadcasts
+        # verbatim, clients that predate it ignore the field.
+        card["form"] = getattr(self.pet, "saved_hit_type", "normal") or "normal"
         return card
     def _session_gate(self, kind):
         """PURE session eligibility for a REMOTE invite.  can_battle is a
@@ -179,15 +184,20 @@ class LobbyPanel(BoutMixin, ChatMixin):
         return sorted(others, key=lambda p: (not p.get("live", True),
                                              str(p.get("name", "")).lower()))
     def _pet_of(self, pid):
-        """'Agumon · Champion' for a roster id ('' when unknown); a worn honor
-        title trails as '· ★Bit Baron' (the marquee absorbs the length)."""
+        """'Agumon · Champion · lock mega' for a roster id ('' when
+        unknown); a worn honor title trails as '· ★Bit Baron' (the
+        marquee absorbs the length).  The LOCK shows so a challenge is
+        never accepted blind (lock rework 2026-07-23: ±0.20 duel swing);
+        presences from older clients simply omit it."""
         for pl in (self.state.roster if self.state else []):
             if pl["id"] == pid:
                 pet = pl.get("pet") or {}
                 nm, st = pet.get("name"), pet.get("stage")
+                fm = str(pet.get("form") or "")
+                lock = f" · lock {fm}" if fm else ""
                 t = str(pet.get("title") or "")[:24]
                 tail = f" · ★{t}" if t else ""
-                return f"{nm} · {st}{tail}" if nm and st else (nm or "")
+                return f"{nm} · {st}{lock}{tail}" if nm and st else (nm or "")
         return ""
 
     # ---- per-tick refresh (the 0.1s interval clock calls this) -----------
