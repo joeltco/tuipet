@@ -132,14 +132,14 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("DEAD FOES DON'T SHOOT: battles used to resolve both "
-                 "volleys at once, so a foe you just dropped to zero still "
-                 "landed its return shot AFTER its bar emptied — and the "
-                 "replay had to show the ghost hit. The engine now resolves "
-                 "in the order the theater plays: your volley first, and a "
-                 "killing blow ends the round on the spot. NPC bracket "
-                 "matches flip a coin for initiative so no entrant gains "
-                 "an edge from list order.")
+    WHATS_NEW = ("THE DODGE IS A REAL REFLEX NOW: road ambushes used to "
+                 "accept SPACE anywhere in the whole 1.6-second beat — and "
+                 "since SPACE also hurries the march, your mash won dodges "
+                 "by accident before the ! even registered. New grammar, "
+                 "one press per ambush: '! ! ! wait for it…' during the "
+                 "warning (jump early and the duck is SPENT), then 'NOW! — "
+                 "SPACE' as it lunges. Duck the window, eat the pounce, or "
+                 "jump too soon — your reflexes decide, not your mash.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

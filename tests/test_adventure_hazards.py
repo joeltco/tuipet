@@ -49,12 +49,16 @@ def test_the_engine_rolls_the_zones_own_wilds_and_towns_are_safe(monkeypatch):
 
 
 def test_a_space_press_ducks_it_clean(monkeypatch):
-    """SPACE inside the window banks the duck: no toll, the confirm ring at
-    impact, and the march resumes when the beat ends."""
+    """SPACE inside the LUNGE window banks the duck (dodge rework
+    2026-07-23: the telegraph is a WAIT beat now): no toll, the confirm
+    ring at impact, and the march resumes when the beat ends."""
     pan = _at_the_ambush(monkeypatch)
     p = pan.pet
     e0 = p.energy
-    assert "SPACE" in pan.strip()                      # the telegraph tells you
+    assert "wait for it" in pan.strip()                # the telegraph teaches
+    while pan._hazard["t"] < HZ_TELE_T:                # into the lunge
+        pan.anim()
+    assert "NOW" in pan.strip()                        # the window announces
     pan.key("space")
     assert pan._hazard["dodged"]
     for _ in range(HZ_TOTAL + 2):
@@ -98,3 +102,26 @@ def test_a_late_press_is_no_duck(monkeypatch):
     assert pan._hazard["hit"]
     pan.key("space")                                   # too late
     assert not pan._hazard["dodged"]
+
+
+def test_a_telegraph_press_is_too_soon_and_spends_the_duck(monkeypatch):
+    """The anti-mash rule (dodge rework 2026-07-23, Joel: 'the whole space
+    to dodge thing... its sloppy as fuck'): SPACE is also the hurry-the-
+    march key, so the old anywhere-in-1.6s bank let the mash win dodges
+    by accident.  One press per ambush now — during the telegraph it's
+    TOO SOON, the duck is spent, and the pounce lands."""
+    pan = _at_the_ambush(monkeypatch)
+    p = pan.pet
+    e0 = p.energy
+    assert pan._hazard["t"] < HZ_TELE_T                # still telegraphing
+    pan.key("space")                                   # the bled-in mash press
+    assert pan._hazard.get("spent") and not pan._hazard["dodged"]
+    assert "too soon" in pan.strip().lower()
+    pan.key("space")                                   # frantic second press:
+    assert not pan._hazard["dodged"]                   #   the duck stays spent
+    for _ in range(HZ_TOTAL + 2):
+        if pan._hazard is None:
+            break
+        pan.anim()
+    assert pan.travelling
+    assert p.energy == e0 - HAZARD_ENERGY              # the pounce landed

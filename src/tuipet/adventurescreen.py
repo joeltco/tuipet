@@ -572,10 +572,21 @@ class AdventurePanel(menu.SubHost):
                 self._go_home()
             return None
         if self._hazard is not None:          # the ambush: SPACE ducks it
+            # a REAL reflex window now (dodge rework 2026-07-23, Joel: "the
+            # whole space to dodge thing... its sloppy as fuck").  The old
+            # rule banked a duck ANYWHERE in the 1.6s beat -- and SPACE is
+            # also the hurry-the-march key, so the mash bled in and won the
+            # dodge by accident before the ! even registered.  New grammar,
+            # ONE press per ambush: during the telegraph it's TOO SOON (the
+            # duck is spent -- the anti-mash rule); during the lunge it's
+            # the clean duck.  ! ! ! means WAIT FOR IT.
             h = self._hazard
             if (k in ("space",) and not h["dodged"] and not h["hit"]
+                    and not h.get("spent")
                     and h["t"] < HZ_TELE_T + HZ_LUNGE_T):
-                h["dodged"] = True            # the duck is banked before impact
+                h["spent"] = True
+                if h["t"] >= HZ_TELE_T:       # inside the lunge: the duck
+                    h["dodged"] = True
             return None                       # everything else rides the beat
         if self._find is not None:            # a glint spotted: dig or pass
             if k in ("enter",):
@@ -655,10 +666,16 @@ class AdventurePanel(menu.SubHost):
                 return ""                     # the walk-out plays wordless
             if self._hazard is not None:
                 h = self._hazard
+                if h["t"] < HZ_TELE_T:        # the warning: DON'T press yet
+                    if h.get("spent"):
+                        return "[b]Jumped too soon![/]"
+                    return "[b]! ! ![/]  [dim]wait for it…[/]"
                 if h["t"] < HZ_TELE_T + HZ_LUNGE_T:
                     if h["dodged"]:
                         return "[b]![/]  [dim]ducking...[/]"
-                    return "[b]! ! ![/]  [dim]SPACE dodge[/]"
+                    if h.get("spent"):
+                        return "[b]Jumped too soon![/]"
+                    return "[b]NOW![/]  [dim]SPACE — duck![/]"
                 if h["dodged"]:
                     return "[b]Dodged the ambush![/]"
                 return f"[b]Ambushed![/]  ⚡-{adventure.HAZARD_ENERGY}"
