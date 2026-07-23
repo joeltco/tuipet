@@ -669,6 +669,14 @@ def battle(app):
         foe_line,
         DIV,
     ]
+    # the locked grade, VISIBLE (transparency 2026-07-23: training showed
+    # its Grade, battle showed NOTHING -- the intro-mash bug locked a miss
+    # and the player had no way to see it happen.  Never again: every
+    # fight wears its lock.)
+    if getattr(m, "locked", None):
+        g = m.locked
+        gsty = T.POS if g == "mega" else (T.NEG if g == "miss" else "")
+        lines.append(f"Lock [{gsty}]{g}[/]" if gsty else f"Lock {g}")
     if m.done_anim and raid:
         res = (f"[{T.POS}]STOOD YOUR GROUND[/]" if m.won
                else f"[{T.NEG}]KNOCKED OUT[/]")

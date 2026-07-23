@@ -122,3 +122,34 @@ def test_escape_stays_live_through_the_arm_window():
     pan.key("space")                          # skip the intro
     assert pan.key("escape") == ("done", None)
     assert pan.ran_away
+
+
+def test_every_fight_wears_its_lock_on_the_card():
+    """Transparency (Joel 2026-07-23): training showed its Grade, battle
+    showed NOTHING -- the mash bug locked a miss and the player had no
+    way to see it happen.  The battle card now shows the locked grade
+    from the lock onward."""
+    from tuipet import statusbox
+
+    class _W:
+        border_subtitle = ""
+
+        def update(self, s):
+            self.s = s
+
+    class _A:
+        def __init__(self, pet, mode):
+            self.pet, self.mode = pet, mode
+            self.stats_w = _W()
+
+    pan = BattlePanel(_pet())
+    app = _A(pan.pet, pan)
+    statusbox.battle(app)
+    assert "Lock" not in app.stats_w.s          # nothing locked yet
+    pan.key("space")                            # skip the intro
+    for _ in range(8):
+        pan.anim()
+    pan.bar = (pan.mega_lo + pan.mega_hi) // 2
+    pan.key("space")                            # the lock
+    statusbox.battle(app)
+    assert "Lock" in app.stats_w.s and "mega" in app.stats_w.s

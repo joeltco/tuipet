@@ -132,12 +132,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE BATTLE BAR NO LONGER EATS YOUR MASH: pressing "
-                 "SPACE through the battle intro used to lock the timing "
-                 "bar instantly at the left edge — a miss you never "
-                 "aimed. The bar now arms half a second after it "
-                 "appears, so only a deliberate press locks it. Your "
-                 "training megas were always real; now battles are too.")
+    WHATS_NEW = ("YOUR LOCK, ON THE CARD: every battle now shows the "
+                 "timing grade you locked (mega / normal / miss) on the "
+                 "status card for the whole fight — training always "
+                 "showed its grade, battles never did. No more losing "
+                 "with no idea why.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
