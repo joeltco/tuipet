@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.191 — THE RECOVERY DOZE (2026-07-23)
+
+THE RECOVERY DOZE: a drained pet's nap no longer wakes after one bar — lights off, it now sleeps straight through until half its energy is back (and past empty it recovers double-speed), so you don't have to babysit a wake-and-drain loop. Lights on still rouses it. And an empty tank finally says so: status reads "exhausted" instead of "ok".
+
 ## 0.5.190 — QUALITY OF LIFE, ROUND 4 (2026-07-23)
 
 QUALITY OF LIFE, ROUND 4 — the lobby feels the network: a dead connection fails fast instead of freezing "Connecting…" for ten seconds, the banner says whether you dropped or never got through, ENTER retries right now instead of waiting out the backoff, chat sent while offline says it's queued, the ladder page can time out and retry, long login messages scroll instead of clipping, and your password shows its last letter while you type it — so the account you create is the one you meant.
