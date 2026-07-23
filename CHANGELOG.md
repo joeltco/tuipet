@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.206 — DISCIPLINE IS BACK (canon) (2026-07-23)
+
+DISCIPLINE IS BACK (canon): press P to praise or scold. Your pet now throws the occasional tantrum — scold it for +25 manners; ignoring it costs a care mistake. Wins and clean training strikes open proud moments worth praising (+10). The manners gauge lives on the DigiCore PERSON page.
+
 ## 0.5.205 — INJURY IS BACK (canon) (2026-07-23)
 
 INJURY IS BACK (canon): battles can wound — especially losses in poor condition — and a hurt pet can't fight until you treat it with the BANDAGE (new in the shop, the device's second med). A Vitamin now also guards against injury for a day. Plus the Pendulum rule: a shaky bar lock costs nothing, and every fight names what's dragging you before the bell.
