@@ -50,15 +50,19 @@ _FX = data.load_effects()
 GRAVESTONE = _FX.get("grave", [None])[0]      # real DVPet death.png
 
 
-def _flip_frames(frames, _fr, first):
+def _flip_frames(frames, _fr, first, role=None):
     """A pose-flip needs two DIFFERENT rips (Joel 2026-07-22: "why does
-    bubbmon not have a dancing animation?  theres only one frame").  A
-    few sheets fill a role's slots with one identical frame -- Bubbmon's
+    bubbmon not have a dancing animation?  theres only one frame").  Some
+    sheets fill a role's slots with one identical frame -- Bubbmon's
     4/5/7 are the same rip, freezing its happy dance ([5,7]) and its
-    poopdance ([4,5]) solid.  When every slot resolves to the same bitmap,
-    alternate with a DIFFERENT real frame of the same species (the bob
-    pair first) -- motion from the rips it actually has, nothing drawn."""
-    if len(frames) < 2:
+    poopdance ([4,5]) solid; a roster scan found ~35 species with SOME
+    frozen flip (happy/poop/angry/tantrum/startle/wash... and sleep).
+    When every slot resolves to the same bitmap, alternate with a
+    DIFFERENT real frame of the same species (the bob pair first) --
+    motion from the rips it actually has, nothing drawn.  SLEEP is
+    exempt: a still sleeper is the correct pose, and the bob substitute
+    would flash it visibly awake every beat."""
+    if role == "sleep" or len(frames) < 2:
         return frames
     fs = [(_fr[i] if i < len(_fr) else None) or first for i in frames]
     if any(f != fs[0] for f in fs):
@@ -116,7 +120,8 @@ class Screen(FxMixin, Static):
             roles = data.ROLES
         _fr = rec["frames"]
         first = next((f for f in rec["frames"] if f), rec["frames"][0])
-        frames = _flip_frames(roles.get(pet.anim, [0]), _fr, first)
+        frames = _flip_frames(roles.get(pet.anim, [0]), _fr, first,
+                              role=pet.anim)
         # stepFrame: a GERIATRIC pet idles on spriteNum+9 -- the aged shuffle
         # toggles the dejected/collapse frames (canon re-audit 2026-07)
         if (pet.anim in ("idle", "walk") and pet.num != -1

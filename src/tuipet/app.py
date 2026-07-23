@@ -132,14 +132,14 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("BUBBMON DANCES: a few sprite sheets fill several pose "
-                 "slots with one identical frame — Bubbmon's happy dance "
-                 "and poopdance flipped between two copies of the same "
-                 "image, freezing solid. When a pose-flip resolves to one "
-                 "bitmap, the dance now alternates with a different REAL "
-                 "frame of the same species (its bob), so every mon moves "
-                 "when it celebrates. Nothing is drawn — rips only, as "
-                 "always.")
+    WHATS_NEW = ("EVERY MON MOVES WHEN IT SHOULD: a roster scan found ~35 "
+                 "species whose sheets fill a pose-flip with one identical "
+                 "frame — Bubbmon's dance was frozen solid, others froze "
+                 "their tantrums, startles or wash. Those flips now "
+                 "alternate with a different REAL frame of the same species "
+                 "(its bob), so celebration and agitation always MOVE. "
+                 "Sleep stays exempt on purpose: a still sleeper is the "
+                 "pose. Nothing is drawn — rips only, as always.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

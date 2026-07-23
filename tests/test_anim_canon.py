@@ -123,3 +123,18 @@ def test_a_duplicate_slot_sheet_still_dances():
     full = by[29]["frames"]                       # Agumon
     assert _flip_frames(data.ROLES["happy"], full,
                         next(f for f in full if f)) == data.ROLES["happy"]
+    # SLEEP is exempt (roster scan 2026-07-22: 25 species sleep on one
+    # frame) -- a still sleeper is the pose; the bob substitute would
+    # flash it visibly awake every beat
+    slp = by[375]["frames"]                       # a frozen-sleep species
+    f0 = next(f for f in slp if f)
+    assert slp[2] == slp[3]                       # the quirk, pinned
+    assert _flip_frames(data.ROLES["sleep"], slp, f0,
+                        role="sleep") == data.ROLES["sleep"]
+    # ...while its OTHER frozen flips (if any) still unfreeze
+    for role in ("angry", "tantrum"):
+        idxs = data.ROLES[role]
+        fs = [(slp[i] if i < len(slp) else None) or f0 for i in idxs]
+        if all(x == fs[0] for x in fs):
+            out = _flip_frames(idxs, slp, f0, role=role)
+            assert slp[out[0]] != slp[out[1]]
