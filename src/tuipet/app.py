@@ -132,16 +132,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE MORNING TELLS THE TRUTH: a good-morning roll used to "
-                 "say 'woke up beaming!' even over a nearly empty energy "
-                 "gauge — a cut-short night (a dawn re-sleep, a midnight "
-                 "bedtime, the 7:00-sharp wake) can end before the tank "
-                 "refills, and beaming over one bar read as a bug. A good "
-                 "morning on a drained tank now says 'up — still weary…'. "
-                 "The sleep audit behind it verified the refill math (a "
-                 "full night fully refills, drained pets recover double) "
-                 "and every action door on a sleeper (refuse or wake-and-"
-                 "grumble, never a silent drain).")
+    WHATS_NEW = ("THE SICK CALL POINTS AT THE RIGHT KEY: the alert said "
+                 "'sick! (I — use a pill)' — but the pill is the FEED "
+                 "menu's second row, free and infinite, not a bag item. A "
+                 "panicked tamer got sent to the wrong screen. It now says "
+                 "'sick! (F — feed it the pill)'.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -1325,7 +1320,10 @@ class TuiPetApp(ActionsMixin, App):
         # every call names its key (gameplay polish #19, 2026-07-22): lights
         # always said (S) while hungry/sick/cleaning -- the three commonest
         # calls -- left a new player hunting the 19-key bar mid-alarm
-        elif p.sick:          msg = f"{name} is sick! ([b]I[/] — use a pill)"
+        # the pill is the FEED menu's second row -- free and infinite (the
+        # canon meat/pill picker), NOT a bag item; the v0.5.169 hint sent a
+        # panicked player to the bag (Joel caught it 2026-07-22)
+        elif p.sick:          msg = f"{name} is sick! ([b]F[/] — feed it the pill)"
         elif p.hunger == 0:   msg = f"{name} is hungry! ([b]F[/])"
         elif p.strength == 0: msg = f"{name}'s effort gauge is empty — train it! ([b]T[/])"
         elif p.poop >= 3:     msg = f"{name} needs cleaning! ([b]C[/])"

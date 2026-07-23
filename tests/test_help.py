@@ -246,7 +246,10 @@ def test_every_need_call_names_its_key():
 
     msgs = asyncio.run(go())
     assert "F" in msgs["hungry"] and "hungry" in msgs["hungry"]
-    assert "I" in msgs["sick"] and "pill" in msgs["sick"]
+    # the pill is FEED's second row, not a bag item (Joel caught the
+    # wrong key 2026-07-22) -- the hint must send them to F
+    assert "F" in msgs["sick"] and "pill" in msgs["sick"]
+    assert "I" not in msgs["sick"]
     assert "C" in msgs["clean"]
     assert "T" in msgs["effort"]
 
