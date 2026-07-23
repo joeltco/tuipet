@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.174 — THE EGG WEARS ITS NAME (2026-07-22)
+
+THE EGG WEARS ITS NAME: the carousel's status card now titles the digitama you're browsing — matching an egg to its egg-guide entry used to mean matching the art by eye. The hatch line still names only the destined BABY: an egg will never promise to hatch an egg.
+
 ## 0.5.173 — THE DODGE IS REAL NOW (2026-07-22)
 
 THE DODGE IS REAL NOW: ducking an ambush used to make the attacker blink out of existence mid-air — the sail-past hid it behind your mon's own pixels for the whole beat, so a clean SPACE-dodge looked like a glitch. The strike now WHIFFS: the pouncer pulls up short of your crouch and visibly retreats off the right edge, on screen for every tick of the beat. Ducking finally looks as good as it feels.
