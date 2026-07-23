@@ -322,6 +322,7 @@ class CareMixin:
             "energy_drink": self._energy_drink,
             "slim_drink": self._super_carrot,
             "vitamin": self._vitamin,
+            "bandage": self._bandage,
             "sleeping_pill": self._sleep_pill,
             "caffeine_pill": self._caffeine,
             "music_player": self._alarm,
@@ -422,10 +423,26 @@ class CareMixin:
         return "A FEAST."
 
     def _vitamin(self):
-        if self.strength >= 4:
-            return _Refused("Effort is already full.")
+        # the canon second job (restoration 2026-07-23): a live vitamin
+        # guards against battle injuries (the decompile's good_v/bad_v
+        # column) for a game-day -- so a full-effort pet still has a
+        # reason to take one before a hard fight
+        if self.strength >= 4 and getattr(self, "vitamin_lapse", 0.0) > 0:
+            return _Refused("Effort is full and the vitamin is working.")
         self.strength = 4
-        return "Effort brims!"
+        self.vitamin_lapse = 1440.0          # game-min of injury protection
+        return "Effort brims — and it guards!"
+
+    def _bandage(self):
+        """The SECOND med, restored (canon restoration 2026-07-23, Joel:
+        "it was wrongfully stripped").  Cures the injury, one dose --
+        the pill's own grammar; the pill stays sick-only.  Two ailments,
+        two meds, the device pair."""
+        if not self.injured:
+            return _Refused("Nothing to bandage.")  # noqa: F405
+        self.injured = False
+        self._set_anim("happy", 1.4)
+        return "All patched up!"
 
     def _caffeine(self):
         """Tonight's bedtime pushed later: a quarter of the night off the

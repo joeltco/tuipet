@@ -479,6 +479,19 @@ EXP_PER_WIN = 100                   # DMX experience per defeated enemy.  The ma
 TRAIN_ENERGY_COST = 2               # the 0.5 drill's swing (clone TRAIN_ENERGY_COST)
 BATTLE_MIN_ENERGY = 10              # the source's battle gate (canon gates 2026-07-18,
 #                                     decompile L11746: energy < 10 refuses the fight)
+# THE INJURY ROLL (canon restoration 2026-07-23: the decompile's
+# BattleInjury table, adapted to today's tree -- the fatigue/mood
+# coefficients left with their systems).  Chance out of BATTLE_INJ_BOUND
+# per LOCAL recorded bout: condition good/bad x vitamin active or not,
+# +BATTLE_INJ_LOSS on a loss, +BATTLE_INJ_BAD_AGE for an elder or an
+# InTraining baby.  "Bad" condition = starving, drained, weight >= 8g
+# off base, or already sick.  A live vitamin is the canon guard
+# (good_v 0 / bad_v 25 -- the vitamin's second job on the device).
+BATTLE_INJ_BOUND = 1000
+BATTLE_INJ_TABLE = {"good_v": 0, "good_nv": 3, "bad_v": 25, "bad_nv": 100}
+BATTLE_INJ_LOSS = 50                # BattleInjuryWonFactor, added on a LOSS
+BATTLE_INJ_BAD_AGE = 10             # BattleInjuryBadAgeFactor (elder OR baby)
+DEATH_INJ_P = 7.5e-5                # the death whisper while hurt (sick's scale)
 PILL_ENERGY_GAIN = 7                    # the DSprite pill (feed menu, BASIC VPET 2026-07-16)
 PILL_WEIGHT_GAIN = 5
 STOMACH_CAPACITY = 4                    # legacy fallback only -- see stomach_capacity()

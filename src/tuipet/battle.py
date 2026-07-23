@@ -128,30 +128,28 @@ class Side:
              + min(self.trainings_total / 9999 * 0.2, 0.2)
              + self._condition()
              + _tri(self.attribute, other.attribute)
-             # the timing bar's real stake, DECISIVE (lock rework
-             # 2026-07-23, Joel: "i hit the fucking center each time" --
-             # measured: a mega lock at ±0.05 aim-only won just 66-72%,
-             # perfect play still ate every 4th fight because the FOE's
-             # rolls dominate the 5-HP race).  A clean lock now works
-             # BOTH ends: aim +0.10, and the OTHER side's guard term
-             # below drags an unlocked foe's rolls down 0.10 -- fresh
-             # perfect play ~80%, trained ~90%.  Symmetric for every
-             # Side, so equal locks cancel EXACTLY in PvP (cards carry
-             # hit_type; wilds are "normal"; the drill rulings --
-             # effort/weight move win or lose -- are untouched)
-             + {"mega": 0.10, "miss": -0.10}.get(self.hit_type, 0.0)
-             # the GUARD half: my clean form steadies my defense --
-             # a mega-locked opponent is harder to hit, a shanked one
-             # is exposed
-             + {"mega": -0.10, "miss": 0.10}.get(other.hit_type, 0.0))
+             # THE PEN20 SHAKE RULING (Joel 2026-07-23 "ok do it"): the
+             # lock is HEART, and heart can only help -- the Pendulum's
+             # shake charge, not a reflex exam.  A clean mega lock adds
+             # aim (+0.10) and steadies the guard (the other side's term
+             # below); normal and miss both just fight AT YOUR STATS --
+             # no lock can ever make a pet fight worse than it was
+             # raised.  Attentive duelists both lock mega, the terms
+             # cancel, and the raising decides -- exactly the device.
+             # (Supersedes the 2026-07-23 ±0.10 punish-tier stakes, same
+             # day: a terminal is a bad reflex judge, and the miss tier
+             # was the one mechanic left that could betray a player who
+             # did everything right.)
+             + (0.10 if self.hit_type == "mega" else 0.0)
+             + (-0.10 if other.hit_type == "mega" else 0.0))
         return min(1.0, max(0.0, p))
 
     def roll_damage(self, rng):
-        t = self.hit_type
-        if t == "mega":
+        # Pen20 shake ruling: a miss deals the plain 50% tier, same as
+        # normal -- the shanked-lock damage PENALTY (20%) died with the
+        # miss punish tier.  Only the mega bonus remains.
+        if self.hit_type == "mega":
             return 2 if rng() < 0.9 else 1
-        if t == "miss":
-            return 2 if rng() < 0.2 else 1
         return 2 if rng() < 0.5 else 1
 
 
@@ -190,26 +188,56 @@ def generate(me, foe, rounds=ROUNDS_LOCAL, rng=None):
     return seq, max(0, my_hp), max(0, foe_hp)
 
 
+def _drag_key(mine, theirs):
+    """The ONE drag detector behind the coach line and the pre-fight
+    readiness line (Pen20 honesty 2026-07-23: two surfaces, one truth).
+    Precedence = fixability: condition anomalies first (fixable
+    tonight), then the rank gap, then the training ledger."""
+    if mine.base_weight > 0 and abs(mine.weight - mine.base_weight) >= 8:
+        return "weight"
+    if mine.hunger <= 1:
+        return "hunger"
+    if mine.energy <= mine.energy_max * 0.4:
+        return "energy"
+    if mine.strength <= 1:
+        return "effort"
+    if theirs._rank() > mine._rank():
+        return "rank"
+    if mine.trainings_total < 1000:
+        return "drills"
+    return ""
+
+
 def coach_line(mine, theirs):
     """The result screen's one-line WHY (gameplay polish #1, 2026-07-22):
     hit_chance sums seven hidden terms and the old card showed none of
-    them, so losses read as arbitrary.  Precedence = fixability: condition
-    anomalies first (a player can fix those tonight), then the rank gap,
-    then the training ledger.  '' when nothing notable dragged -- the
-    volleys were just volleys."""
-    if mine.base_weight > 0 and abs(mine.weight - mine.base_weight) >= 8:
-        return f"weight {mine.weight}g vs base {mine.base_weight}g dragged it"
-    if mine.hunger <= 1:
-        return "it fought hungry"
-    if mine.energy <= mine.energy_max * 0.4:
-        return "energy ran low"
-    if mine.strength <= 1:
-        return "the effort gauge sat near empty"
-    if theirs._rank() > mine._rank():
-        return f"outranked — {theirs.stage} over {mine.stage}"
-    if mine.trainings_total < 1000:
-        return "more drills raise the hit rate"
-    return ""
+    them, so losses read as arbitrary.  '' when nothing notable dragged
+    -- the volleys were just volleys."""
+    return {
+        "weight": f"weight {mine.weight}g vs base {mine.base_weight}g dragged it",
+        "hunger": "it fought hungry",
+        "energy": "energy ran low",
+        "effort": "the effort gauge sat near empty",
+        "rank": f"outranked — {theirs.stage} over {mine.stage}",
+        "drills": "more drills raise the hit rate",
+        "": "",
+    }[_drag_key(mine, theirs)]
+
+
+def readiness_line(mine, theirs):
+    """The PRE-fight read (Pen20 honesty, Joel 2026-07-23: fifty fights
+    lost to an invisible starved weight -- "the fight should tell you
+    what's deciding it, before it starts").  Present tense, card-width
+    (<= 26 cells); "in top form" when nothing drags."""
+    return {
+        "weight": f"weight {mine.weight}g vs {mine.base_weight}g base",
+        "hunger": "fighting hungry",
+        "energy": "energy is low",
+        "effort": "effort meter low",
+        "rank": f"outranked by {theirs.stage}"[:26],
+        "drills": "drills would sharpen it",
+        "": "in top form",
+    }[_drag_key(mine, theirs)]
 
 
 class Battle:

@@ -52,7 +52,10 @@ def test_damage_follows_the_trained_hit_type():
     miss = battle.Side(0, stage="Rookie", hit_type="miss")
     rng = random.Random(7)
     doubles = sum(1 for _ in range(1000) if miss.roll_damage(rng.random) == 2)
-    assert doubles < 300                   # miss: ~20% double
+    assert 400 < doubles < 600             # miss = the plain 50% tier (Pen20
+    #                                        shake ruling 2026-07-23: the
+    #                                        damage penalty died with the
+    #                                        punish tier; only mega bonuses)
 
 
 def test_999_battles_forces_mega():
@@ -148,17 +151,16 @@ def _side(**kw):
 
 
 def test_the_saved_form_steadies_or_shakes_the_aim():
-    """#3: the timing bar's grade only ever tiered damage EV while the
-    fight was decided by hit_chance.  SUPERSEDED scale (lock rework
-    2026-07-23, Joel "FIX IT"): ±0.05 aim-only left perfect play losing
-    every 4th fight -- a lock is now ±0.10 aim AND ∓0.10 guard on the
-    foe's roll (test_timing_honesty owns the full-contract pin)."""
+    """#3, twice superseded and settled by THE PEN20 SHAKE RULING
+    (2026-07-23, Joel "ok do it"): a mega lock adds +0.10 aim; a miss
+    costs NOTHING -- the lock is heart, and heart can only help
+    (test_timing_honesty owns the full contract)."""
     foe = _side()
     normal = _side().hit_chance(foe)
     mega = _side(hit_type="mega").hit_chance(foe)
     miss = _side(hit_type="miss").hit_chance(foe)
     assert abs(mega - normal - 0.10) < 1e-9
-    assert abs(normal - miss - 0.10) < 1e-9
+    assert abs(normal - miss) < 1e-9           # a shank fights at your stats
 
 
 def test_coach_line_names_the_biggest_fixable_drag():

@@ -157,20 +157,42 @@ def test_every_fight_wears_its_lock_on_the_card():
     assert "Lock" in app.stats_w.s and "mega" in app.stats_w.s
 
 
-def test_the_lock_is_decisive_aim_and_guard():
-    """Lock rework 2026-07-23 (Joel: "FIX IT" -- measured, not guessed:
-    aim-only ±0.05 left perfect play at 66-72%, losing every 4th fight
-    to the foe's own rolls).  A lock now works BOTH ends: aim ±0.10 on
-    my roll, guard ∓0.10 on THEIRS.  Perfect fresh play ~80%, trained
-    ~90% -- and equal locks cancel EXACTLY, so PvP stays fair."""
+def test_the_lock_is_pure_upside_pen20_shake():
+    """THE PEN20 SHAKE RULING (Joel 2026-07-23 "ok do it", superseding
+    the same-day punish-tier stakes): the lock is HEART, and heart can
+    only help.  Mega adds aim (+0.10) and steadies the guard (foe roll
+    -0.10); normal and MISS both fight at your stats -- no lock ever
+    makes a pet fight worse than it was raised.  Equal megas cancel
+    exactly, so attentive duelists fight on the raising alone."""
     from tuipet.battle import Side
     mega = Side(100, stage="Champion", attribute="Free", hit_type="mega")
     norm = Side(100, stage="Champion", attribute="Free", hit_type="normal")
     mega2 = Side(100, stage="Champion", attribute="Free", hit_type="mega")
     miss = Side(100, stage="Champion", attribute="Free", hit_type="miss")
     base = norm.hit_chance(Side(100, stage="Champion", attribute="Free"))
-    assert mega.hit_chance(norm) - base == pytest.approx(0.10)   # aim
-    assert norm.hit_chance(mega) - base == pytest.approx(-0.10)  # guard
-    assert mega.hit_chance(mega2) == pytest.approx(base)         # locks cancel
-    assert miss.hit_chance(norm) - base == pytest.approx(-0.10)  # a shank exposes
-    assert norm.hit_chance(miss) - base == pytest.approx(0.10)
+    assert mega.hit_chance(norm) - base == pytest.approx(0.10)   # aim bonus
+    assert norm.hit_chance(mega) - base == pytest.approx(-0.10)  # guard bonus
+    assert mega.hit_chance(mega2) == pytest.approx(base)         # megas cancel
+    assert miss.hit_chance(norm) == pytest.approx(base)          # a shank costs NOTHING
+    assert norm.hit_chance(miss) == pytest.approx(base)          # ...both directions
+    rng = __import__("random").Random(7)
+    doubles = sum(1 for _ in range(1000) if miss.roll_damage(rng.random) == 2)
+    assert 400 < doubles < 600                                   # miss damage = the plain tier
+
+
+def test_the_ready_screen_names_the_real_drag():
+    """Pen20 honesty: the pre-fight card names THIS pet's biggest drag
+    before the bell -- the starved-weight class of loss can never be
+    invisible again -- and says "in top form" when nothing drags."""
+    from tuipet.battle import Side, readiness_line
+    p = _pet()
+    p._set_weight(10)                          # 15g under base: the real bug's shape
+    pan = BattlePanel(p)
+    pan.phase = "ready"
+    pan.text()                                 # the ready render sets the note
+    assert "weight 10g" in pan.hud_note and "base" in pan.hud_note
+    top = _pet()
+    top._set_energy(top.max_energy)
+    top.total_trainings = 5000
+    me, foe = Side.of_pet(top), Side.wild(100)
+    assert readiness_line(me, foe) == "in top form"

@@ -27,6 +27,11 @@ HELP = [
     # reads "broken" to a player nobody told what spends it
     ("Energy fuels drills, fights and the", 0),
     ("road; sleep refills it each night.", 0),
+    # the two ailments, two meds (canon restoration 2026-07-23)
+    ("Two ailments: SICKNESS (filth or", 0),
+    ("fat) takes the pill; battle INJURY", 0),
+    ("takes a Bandage from the bag. Both", 0),
+    ("block fights and whisper to death.", 0),
     # the alarm legend (#8): the ring count is the message
     ("Alarms count the urgency: one beep", 0),
     ("routine, two a mess, three urgent.", 0),

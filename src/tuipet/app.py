@@ -132,13 +132,13 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("BATTLES STOP STARVING YOUR PET: every bout sheds "
-                 "weight, and it could grind a pet 30g below its "
-                 "species base — a huge hidden accuracy penalty that "
-                 "grew the MORE you fought. Weight now floors at the "
-                 "species base, like training and travel always did. "
-                 "If your pet is thin, feed it back up — every gram "
-                 "toward base is hit chance back.")
+    WHATS_NEW = ("INJURY IS BACK (canon): battles can wound — "
+                 "especially losses in poor condition — and a hurt pet "
+                 "can't fight until you treat it with the BANDAGE (new "
+                 "in the shop, the device's second med). A Vitamin now "
+                 "also guards against injury for a day. Plus the "
+                 "Pendulum rule: a shaky bar lock costs nothing, and "
+                 "every fight names what's dragging you before the bell.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -767,7 +767,7 @@ class TuiPetApp(ActionsMixin, App):
     def _alarm_urgency(self, p):
         """How many rings the standing need deserves (the _need_message
         precedence, classed): 3 = lethal-adjacent, 2 = the mess, 1 = routine."""
-        if p.sick or p.energy <= 0 or p.is_frail():
+        if p.sick or p.is_injured() or p.energy <= 0 or p.is_frail():
             return 3
         if p.poop >= 3:
             return 2
@@ -1346,6 +1346,7 @@ class TuiPetApp(ActionsMixin, App):
         # canon meat/pill picker), NOT a bag item; the v0.5.169 hint sent a
         # panicked player to the bag (Joel caught it 2026-07-22)
         elif p.sick:          msg = f"{name} is sick! ([b]F[/] — feed it the pill)"
+        elif p.is_injured():  msg = f"{name} is hurt! ([b]I[/] — a Bandage from the bag)"
         elif p.hunger == 0:   msg = f"{name} is hungry! ([b]F[/])"
         elif p.strength == 0: msg = f"{name}'s effort gauge is empty — train it! ([b]T[/])"
         elif p.poop >= 3:     msg = f"{name} needs cleaning! ([b]C[/])"

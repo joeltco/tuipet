@@ -586,6 +586,10 @@ class BodyMixin:
                 self._die("starvation"); return True
         elif self.hunger > 0:
             self._starve_t = 0.0
+        # the vitamin's injury guard burns down in game-minutes (canon
+        # restoration 2026-07-23; TIME LAW-clean: only while the sim ticks)
+        if getattr(self, "vitamin_lapse", 0.0) > 0:
+            self.vitamin_lapse = max(0.0, self.vitamin_lapse - dt / 60.0)
         # the DSprite sickness (clone rules, 2026-07-17): caught per game-min
         # from filth (never on the road -- countFilth reads 0 away) or from
         # overweight steps
@@ -607,6 +611,10 @@ class BodyMixin:
                 break
         if self.sick:
             d += DEATH_SICK_P
+        if self.injured:
+            d += DEATH_INJ_P                              # noqa: F405  (canon restoration
+            #                                               2026-07-23: an untreated wound
+            #                                               whispers at sick's scale)
         for thresh, rate in DEATH_AGE:                        # noqa: F405
             if self.age_days >= thresh:
                 d += rate

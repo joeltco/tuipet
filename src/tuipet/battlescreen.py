@@ -566,12 +566,14 @@ class BattlePanel:
         from .battle import RAID_PLAYER_HP
         self.hud_php = RAID_PLAYER_HP if self.raid else 5
         self.hud_fhp = 5
-        # the coaching names the FIGHT's levers (gameplay polish #2): the
-        # old line pointed only at the bar-widening formula (which reads
-        # age), while the fight itself is decided by hit_chance -- weight
-        # near base, full meters, drills.  The bar still matters (damage
-        # tier); the levers matter more.
-        self.hud_note = "Set your timing!  (weight on base, full belly & drills win fights)"
+        # the pre-fight read (Pen20 honesty 2026-07-23): the card names
+        # THIS pet's actual biggest drag before the bell -- "weight 10g
+        # vs 40g base" -- instead of a generic tip.  Fifty fights were
+        # lost to an invisible starved weight; never again.  Same drag
+        # detector as the post-fight coach line (one truth, two tenses).
+        from .battle import Side, readiness_line
+        foe = Side.wild(self._pick.get("num", 0), boss=bool(self._pick.get("boss")))
+        self.hud_note = readiness_line(Side.of_pet(self.pet), foe)
         return self._scene([], strikefx.timing_bar(self.bar, self.mega_lo,
                                                    self.mega_hi))
 

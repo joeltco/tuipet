@@ -687,7 +687,7 @@ def battle(app):
         lines += [res, f"[dim]{(b.reward if b else '') or ''}"[:30] + "[/]",
                   "", "[dim]SPACE  continue[/]"]
     elif getattr(m, "phase", "") == "ready":
-        lines += [f"[dim]{(m.hud_note or '')[:24]}[/]", "",
+        lines += [f"[dim]{(m.hud_note or '')[:26]}[/]", "",
                   "[dim]SPACE  lock the bar[/]"]
     else:
         lines += [f"[dim]{(m.hud_note or '')[:24]}[/]", "",

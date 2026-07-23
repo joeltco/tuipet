@@ -42,7 +42,8 @@ CATALOG = {
     # ---- CARE ---------------------------------------------------------------
     "energy_drink":    ("Energy Drink",    "f:17", 200,  "Care", "energy to FULL", "instant pep"),
     "slim_drink":      ("Slim Drink",      "f:23", 100,  "Care", "weight -10", "the crash diet"),
-    "vitamin":         ("Vitamin",         "f:5",  500,  "Care", "effort to FULL", "effort in a capsule"),
+    "vitamin":         ("Vitamin",         "f:5",  500,  "Care", "effort FULL · injury guard", "effort in a capsule"),
+    "bandage":         ("Bandage",         "i:80", 300,  "Care", "treats an injury", "the second med, restored"),
     "sleeping_pill":   ("Sleep Pill",      "f:34", 300,  "Care", "sleep now", "lights out, no argument"),
     "caffeine_pill":   ("Caffeine Pill",   "f:38", 300,  "Care", "bedtime pushed later", "tonight runs long"),
     "music_player":    ("Music Player",    "i:9",  300,  "Care", "wake now, no grudge", "a gentle waking song"),

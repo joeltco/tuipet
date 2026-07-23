@@ -231,6 +231,10 @@ class BattleMixin:
             return "Too drained to fight."
         if self.sick:
             return "Too sick to fight."
+        if self.injured:
+            # the second ailment gates like the first (canon restoration
+            # 2026-07-23: a wounded device pet cannot battle)
+            return "Too hurt to fight."
         if self.poop:
             return "Clean up first!"
         return None
@@ -255,6 +259,11 @@ class BattleMixin:
         the classic battle.)"""
         if source == "pvp":
             online = True
+        # the injury roll judges the body the pet FOUGHT with -- read the
+        # condition BEFORE the bout bills it (the weight bill floors to
+        # base, which would erase the very drag that made the fight risky)
+        _inj_bad = (self.hunger <= 1 or self.energy < BATTLE_MIN_ENERGY  # noqa: F405
+                    or abs(self.weight - self._base_weight()) >= 8 or self.sick)
         # a battle SPENDS energy, so it floors at 0 (the energy floor law,
         # D3 ruling 2026-07-23 -- adventure.py's constants block): only a
         # hazard KNOCK pushes past empty.  Fighting on empty still bills the
@@ -274,6 +283,22 @@ class BattleMixin:
         self.stage_battles += 1                          # LINES_SPEC BTL gate (per-stage)
         self.battle_log = (self.battle_log + [1 if won else 0])[-15:]   # Pen20 rolling window
         self.stage_trainings += 2                        # a local bout trains (clone rule)
+        # THE INJURY ROLL (canon restoration 2026-07-23): battles can
+        # wound -- the second ailment the 2026-07-16 strip wrongfully
+        # took.  Adapted BattleInjury table (petbase); LOCAL bouts only
+        # (online stays L17 body-billing).  A healthy winner risks 0.3%,
+        # an unhealthy loser ~16%; a live vitamin is the canon guard.
+        if not self.injured:
+            vit = getattr(self, "vitamin_lapse", 0.0) > 0
+            key = ("bad_" if _inj_bad else "good_") + ("v" if vit else "nv")
+            chance = BATTLE_INJ_TABLE[key]  # noqa: F405
+            if not won:
+                chance += BATTLE_INJ_LOSS  # noqa: F405
+            if self.stage == "InTraining" or self.age_seconds >= 15 * 86400:
+                chance += BATTLE_INJ_BAD_AGE  # noqa: F405
+            if chance and random.random() < chance / BATTLE_INJ_BOUND:  # noqa: F405
+                self.injured = True
+                self.injuries += 1                       # the lifetime count
         if not won:
             return ""
         self.wins += 1

@@ -187,6 +187,10 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
     generation: int = 1
     dead: bool = False
     sick: bool = False              # the DSprite flag (clone-style, 2026-07-17): pill-cured only
+    injured: bool = False           # the SECOND ailment, RESTORED (canon restoration
+    #                                 2026-07-23, Joel "whatever is canon bring back"):
+    #                                 battles wound; the Bandage cures (one dose,
+    #                                 the pill's grammar); injuries counts lifetime
     death_cause: str = ""           # what took it (memorial epitaph, audit 2026-07-05)
     world_seconds: float = 0.0
     # (the weather/temperature block lived here -- temp, day_temp, temp_goal,
@@ -902,8 +906,11 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
         return False
 
     def is_injured(self):
-        """Always False: the injury system left (BASIC VPET 2026-07-16)."""
-        return False
+        """The second ailment, RESTORED (canon restoration 2026-07-23 --
+        the 2026-07-16 strip took a feature the real hardware has).
+        Battles wound (record_battle's adapted BattleInjury roll); the
+        Bandage cures; sick and injured can coexist, two meds apart."""
+        return self.injured
 
     def is_frail(self):
         """The frailty WARNING (Joel 2026-07-13, after MetalGreymon died with
