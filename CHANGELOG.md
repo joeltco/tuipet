@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.197 — TRAINING IN THE LEDGER (2026-07-23)
+
+TRAINING IN THE LEDGER: the DigiCore POWER page's Drills row now shows both counts that feed the fight — lifetime drills (never reset) and this stage's (they gate evolution and reset when it evolves). The stage count was always working; now you can watch it.
+
 ## 0.5.196 — THE WARP OPENS THE DOORS (2026-07-23)
 
 THE WARP OPENS THE DOORS: a Town Transport now lands you at the town for real — after the rest, you get the same visit-or-walk-on choice as arriving on foot, shop and all. It used to rest you and march straight past the town you paid a ticket to reach.
