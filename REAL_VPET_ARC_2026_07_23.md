@@ -38,14 +38,16 @@ mood within ~15 real-min on the compressed clock."
 
 ### P0 — TWO SHIPPED BUGS (v0.5.205/206), fix before any new work
 
-- [ ] **P0a — the Vitamin's injury guard is effectively PERMANENT.**
+- [x] **P0a — SHIPPED v0.5.207.  The Vitamin's injury guard was
+      effectively PERMANENT.**
       `_vitamin` sets `vitamin_lapse = 1440.0` (intended: 1 game-day)
       and `petbody:592` decays it `dt / 60.0`.  Under the unit law
       that is 60× too slow: it needs **86,400 game-min ≈ 24 real hours
       of play** to expire.  One 500b Vitamin disarms the entire injury
       system shipped one release earlier.  Fix: decay by `dt`.
-- [ ] **P0b — unit mislabels in shipped comments (and in this board's
-      first draft).**  The tantrum's `dt / (60.0*90.0)` is one per
+- [x] **P0b — SHIPPED v0.5.207 (comments corrected; THE UNIT LAW is
+      now written at the tick site).  Unit mislabels in shipped
+      comments (and in this board's first draft).**  The tantrum's `dt / (60.0*90.0)` is one per
       5400 game-min (= ~90 REAL min of play), not the "~1/90 game-min"
       the comment claims.  `praise_window`/`scold_window = +600.0` are
       600 game-min (= 10 real min), not "10 game-min".  The BEHAVIOUR
@@ -256,7 +258,12 @@ The canon mapping is FREE, we simply never read it: our icon key
 | life_recovery | `Recover` | no | NO |
 | the 7 toys | (various) | yes | yes |
 
-- [ ] **FIVE FREE WINS — art exists, script already written in
+- [x] **SHIPPED v0.5.207 — FOUR of the five (revive_floppy excluded:
+      its canon type is Play, but it is used on a DEAD pet and the bag
+      is unreachable at the grave, so that show could never play).
+      Wired by READING THE CANON COLUMN, and `shop.TOY_SCRIPTS` is
+      retired — `shop.item_script()` is the one source now.
+      ~~FIVE FREE WINS~~ — art exists, script already written in
       `itemfx.SCRIPTS`, only the wiring is missing**: `music_player`
       → Play, `textbook` → Study, `dumbbell` → Lift, `grow_capsule`
       → Study, `revive_floppy` → Play.  Zero new animation work.
@@ -270,7 +277,7 @@ The canon mapping is FREE, we simply never read it: our icon key
       `shopscreen` gates that on `FOOD_KEYS`, so Care items fall
       through to a bare text flash.  Covers vitamin, energy_drink,
       slim_drink, sleeping_pill, caffeine_pill, anti_evo_chip.
-- [ ] **Retire the hand-map.**  `shop.TOY_SCRIPTS` is a 7-entry
+- [x] **DONE v0.5.207 — retire the hand-map.**  `shop.TOY_SCRIPTS` is a 7-entry
       hand-maintained partial duplicate of a canon column that exists
       for all 26 items.  Read `AnimationType` off the icon key
       instead (single-source rule), keeping `itemfx.NO_FX` +

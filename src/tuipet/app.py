@@ -132,12 +132,12 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("DISCIPLINE IS BACK (canon): press P to praise or "
-                 "scold. Your pet now throws the occasional tantrum — "
-                 "scold it for +25 manners; ignoring it costs a care "
-                 "mistake. Wins and clean training strikes open proud "
-                 "moments worth praising (+10). The manners gauge lives "
-                 "on the DigiCore PERSON page.")
+    WHATS_NEW = ("ITEMS PUT ON A SHOW: the textbook now opens and "
+                 "pages while your pet studies, the dumbbell gets "
+                 "lifted, the grow capsule is read, the music player "
+                 "plays — animations that were fully drawn but never "
+                 "wired. Also fixed: a Vitamin's injury guard was "
+                 "lasting essentially forever instead of a day.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

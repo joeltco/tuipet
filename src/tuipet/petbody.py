@@ -586,15 +586,24 @@ class BodyMixin:
                 self._die("starvation"); return True
         elif self.hunger > 0:
             self._starve_t = 0.0
-        # the vitamin's injury guard burns down in game-minutes (canon
-        # restoration 2026-07-23; TIME LAW-clean: only while the sim ticks)
+        # ⭐ THE UNIT LAW (audit 2026-07-23): dt is world-SECONDS and one
+        # world-second IS one game-minute (SICK_POOP_P is "per minute" and
+        # coded p*dt; awake 480 + sleep 960 == DAY_LENGTH 1440).  NEVER
+        # divide dt by 60 to "get minutes" -- that is a 60x error, and it
+        # is exactly the P0a bug: this guard decayed dt/60.0, so a 1440
+        # game-min (1 game-day) vitamin took ~24 REAL HOURS of play to
+        # expire and one 500b capsule disarmed the whole injury system.
+        # Canon DURATION constants are device real-minutes and must be
+        # SCALED (the /60 precedent at FILTH_SICK_BOUND), never copied.
         if getattr(self, "vitamin_lapse", 0.0) > 0:
-            self.vitamin_lapse = max(0.0, self.vitamin_lapse - dt / 60.0)
+            self.vitamin_lapse = max(0.0, self.vitamin_lapse - dt)
         # THE TANTRUM (canon restoration B, 2026-07-23 -- adapted
         # checkDisciplineCall): an awake pet AT HOME acts up about once
-        # per 90 game-min; SCOLD inside the window pays obedience +25,
-        # IGNORING it past the window costs a care mistake and -5 (canon:
-        # ignored calls cost).  Never on the road, never asleep.
+        # per 5400 game-min (~90 REAL minutes of play -- the label used to
+        # read "90 game-min", the P0b mislabel); SCOLD inside the window
+        # pays obedience +25, IGNORING it past the window costs a care
+        # mistake and -5 (canon: ignored calls cost).  Never on the road,
+        # never asleep.
         if (not self.asleep and not getattr(self, "away", False)
                 and self.stage not in ("Egg", "Fresh")):
             if self.discipline_call:

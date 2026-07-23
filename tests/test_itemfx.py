@@ -128,3 +128,59 @@ def test_the_stage_lives_inside_the_window():
             assert ix + iw <= grid.X1, (action, iw, ih, ix)
             assert iy + ih <= grid.FLOOR, (action, iw, ih, iy)
     assert itemfx.PET_X + itemfx.SPRITE_W <= grid.X1
+
+
+# ---- the canon item-show map (item-show audit 2026-07-23) -------------------
+# Joel: "we have the vitamin sprite, correct? is all of that already wired
+# in?"  It was not: all 26 non-food catalog items carry a 4-frame ripped
+# strip, and only the 7 toys played a show.  shop.item_script now reads the
+# CANON AnimationType column instead of a hand-map.
+
+def test_the_toys_are_unchanged_by_the_canon_lookup():
+    """Regression: the 7 hand-mapped toys must resolve identically now
+    that the map is gone."""
+    from tuipet import shop
+    assert {k: shop.item_script(k) for k in
+            ("ball", "skateboard", "xylophone", "video_game",
+             "television", "bubble_bath", "cold_shower")} == {
+        "ball": "Bounce", "skateboard": "Ride",
+        "xylophone": "InteractXylophone", "video_game": "Play",
+        "television": "InteractTelevision", "bubble_bath": "Bathe",
+        "cold_shower": "Shower"}
+
+
+def test_the_free_wins_are_wired():
+    """Four items whose scripts were ALREADY written and whose art was
+    already ripped, flashing bare text because the hand-map omitted them."""
+    from tuipet import shop
+    assert shop.item_script("textbook") == "Study"
+    assert shop.item_script("dumbbell") == "Lift"
+    assert shop.item_script("music_player") == "Play"
+    assert shop.item_script("grow_capsule") == "Study"
+
+
+def test_own_door_items_are_never_hijacked():
+    """The memory chip, both road transports, the road's Life Recovery and
+    the Revive Floppy keep their own flows -- the Floppy especially: its
+    canon type is Play, but it is used on a DEAD pet and the bag is
+    unreachable at the grave, so that show could only ever be wrong."""
+    from tuipet import shop
+    for k in ("digimemory", "revive_floppy", "town_transport",
+              "disaster_transport", "life_recovery"):
+        assert shop.item_script(k) is None, k
+
+
+def test_food_sheet_consumables_take_no_script():
+    """`f:` items are EATEN -- foods.csv has no AnimationType at all -- so
+    they ride the eat fx (like the pill), never a script."""
+    from tuipet import shop
+    for k in ("vitamin", "energy_drink", "sleeping_pill", "anti_evo_chip"):
+        assert shop.item_script(k) is None, k
+
+
+def test_every_wired_script_actually_exists():
+    """No item may point at a script the painter cannot run."""
+    from tuipet import shop, itemfx
+    for k in shop.CATALOG:
+        sc = shop.item_script(k)
+        assert sc is None or sc in itemfx.SCRIPTS, (k, sc)

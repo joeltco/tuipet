@@ -204,10 +204,13 @@ class ShopPanel:
             # DVPet strip -- the eat fx the feed menu rides (TUIPET catalog
             # 2026-07-18; the _after_shop route was waiting for this)
             return ("done", ("eat", shop.ICON_KEYS.get(key, "f:0"), out))
-        if not refused and key in shop.TOY_SCRIPTS:
-            # the toy's SHOW: its canon itemfx script on the main LCD
-            return ("done", ("item_use", shop.ICON_KEYS[key],
-                             shop.TOY_SCRIPTS[key], out))
+        if not refused and (_sc := shop.item_script(key)):
+            # the item's SHOW: its CANON itemfx script on the main LCD
+            # (item-show audit 2026-07-23: this used to read a 7-entry
+            # hand-map of toys, so the textbook/dumbbell/music player/
+            # grow capsule flashed text while their scripts sat written
+            # and their ripped art sat unused)
+            return ("done", ("item_use", shop.ICON_KEYS[key], _sc, out))
         if not refused and key == "digimemory" and mem:
             # the heir redeems the ancestor: the bag closes and the canon
             # inherit fx plays on the LCD (_after_shop's waiting route)

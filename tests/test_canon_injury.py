@@ -8,7 +8,7 @@ decompile's BattleInjury table adapted (fatigue/mood coefficients left
 with their dead systems), LOCAL bouts only, the vitamin as the canon
 guard, one-dose cure in the pill's own grammar.
 """
-from tuipet import petbattle
+from tuipet import petbattle, petbody
 from tuipet.pet import Pet
 from tuipet.petbase import BATTLE_INJ_TABLE
 
@@ -94,11 +94,20 @@ def test_the_bandage_is_in_the_catalog():
     assert e and e["name"] == "Bandage" and e["category"] == "Care"
 
 
-def test_the_vitamin_guard_burns_down_on_the_clock():
+def test_the_vitamin_guard_burns_at_one_per_game_minute(monkeypatch):
+    """P0a (plan audit 2026-07-23): the guard decayed `dt / 60.0` -- 60x
+    too slow under THE UNIT LAW (dt IS game-minutes) -- so one 500b
+    capsule bought ~24 REAL HOURS of immunity and silently disarmed the
+    whole injury system shipped a release earlier.
+
+    The pin this replaces ticked 60 and asserted "< 1440.0", which
+    passed with the bug present.  This one pins the RATE, so a 60x
+    regression cannot hide."""
+    monkeypatch.setattr(petbody.random, "random", lambda: 0.99)   # no other rolls fire
     p = _pet()
     p.strength = 0
     p.add_item("vitamin")
     p.use_item("vitamin")
-    assert p.vitamin_lapse == 1440.0
-    p.tick(60.0)                                               # one game-minute
-    assert p.vitamin_lapse < 1440.0
+    assert p.vitamin_lapse == 1440.0        # one game DAY of protection
+    p.tick(10.0)
+    assert p.vitamin_lapse == 1430.0        # 1:1 with game-min (the bug gave 1439.83)

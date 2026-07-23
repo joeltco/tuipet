@@ -160,11 +160,14 @@ class CareMixin:
     # gauge is `obedience` (0..100).  Refusals stay SOFT (standing rule);
     # discipline is the tantrum economy, not a leash. -----------------------
     def _open_praise(self):
-        """A win or a mega drill opens a ~10 game-min praise window."""
+        """A win or a mega drill opens a 600 game-min praise window
+        (= ~10 REAL minutes; see THE UNIT LAW in petbody._tick_life --
+        the label used to read "10 game-min", the P0b mislabel)."""
         self.praise_window = self.world_seconds + 600.0
 
     def _open_scold(self):
-        """The tantrum's answer window: ~10 game-min before it counts."""
+        """The tantrum's answer window: 600 game-min (~10 REAL minutes)
+        before ignoring it counts."""
         self.scold_window = self.world_seconds + 600.0
 
     def _calm_discipline_call(self):
@@ -469,7 +472,9 @@ class CareMixin:
         if self.strength >= 4 and getattr(self, "vitamin_lapse", 0.0) > 0:
             return _Refused("Effort is full and the vitamin is working.")
         self.strength = 4
-        self.vitamin_lapse = 1440.0          # game-min of injury protection
+        # 1440 game-min == ONE GAME DAY (~24 real minutes of play).  Burns
+        # down by dt in petbody._tick_life -- see THE UNIT LAW there.
+        self.vitamin_lapse = 1440.0
         return "Effort brims — and it guards!"
 
     def _bandage(self):

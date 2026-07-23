@@ -116,10 +116,36 @@ FLAVORS = {k: v[5] for k, v in CATALOG.items()}   # the dossier taglines
 # foods ride the EAT fx on their DVPet strip; toys ride their canon itemfx
 # script (the AnimationType painters shipped since the DVPet era)
 FOOD_KEYS = frozenset(k for k, v in CATALOG.items() if v[3] == "Food")
-TOY_SCRIPTS = {"ball": "Bounce", "skateboard": "Ride",
-               "xylophone": "InteractXylophone", "video_game": "Play",
-               "television": "InteractTelevision", "bubble_bath": "Bathe",
-               "cold_shower": "Shower"}
+# Items whose use has its OWN door and must never be hijacked by a
+# generic item show: the memory chip's inherit flow, the two road
+# transports and the road's Life Recovery (all spent on the march), and
+# the Revive Floppy -- its canon type is Play, but it is used on a DEAD
+# pet and the bag is unreachable at the grave, so that show could only
+# ever be wrong or unplayable (item-show audit 2026-07-23).
+_OWN_FLOW = frozenset({"digimemory", "town_transport", "disaster_transport",
+                       "life_recovery", "revive_floppy"})
+
+
+def item_script(key):
+    """The canon SHOW for a catalog item, or None.
+
+    ONE SOURCE (item-show audit 2026-07-23, Joel: "is all of that
+    already wired in?"): items.csv carries an AnimationType for every
+    row, and our icon key `i:N` IS that row id -- so the mapping is
+    free.  This replaces TOY_SCRIPTS, a 7-entry hand-map that
+    duplicated the column and left 19 items with ripped art and no
+    show at all.  Returns None for anything without an implemented
+    script, for own-door items, and for `f:` consumables -- food-sheet
+    items are EATEN (foods.csv has no AnimationType at all) and ride
+    the eat fx, exactly like the pill."""
+    if key in _OWN_FLOW:
+        return None
+    icon = ICON_KEYS.get(key, "")
+    if not icon.startswith("i:"):
+        return None
+    from . import itemfx
+    act = (data.consumable_by_key(icon) or {}).get("action") or ""
+    return act if act in itemfx.SCRIPTS else None
 
 # old-catalog keys -> their heirs (the save-heal maps bags 1:1 on load;
 # nobody loses goods when the shelf turns over)
