@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.212 — THE WIN GATE STOPS LYING (2026-07-23)
+
+THE WIN GATE STOPS LYING: the 12-of-15 evolution requirement rolls, so a win that replaces an older win moves the counter by nothing — you can win three times and watch it sit still. The checklist now tells you how many STRAIGHT wins you actually need from here.
+
 ## 0.5.211 — YOUR PET FIDGETS NOW (2026-07-23)
 
 YOUR PET FIDGETS NOW: it does a little squirming dance when a poop is building, and yawns and stretches as bedtime gets close. Both animations were drawn long ago and never once played — now they do, quietly, while it idles.
