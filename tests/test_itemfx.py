@@ -184,3 +184,74 @@ def test_every_wired_script_actually_exists():
     for k in shop.CATALOG:
         sc = shop.item_script(k)
         assert sc is None or sc in itemfx.SCRIPTS, (k, sc)
+
+
+# ---- the eat show for food-sheet consumables (2026-07-23, Joel: "do the
+# eat show for the consumables too") -----------------------------------------
+
+def _bag_on(pet, key):
+    """A bag panel with the cursor placed ON `key`.  ShopPanel REMEMBERS
+    its tab+cursor between panels (_LAST_POS, a shipped QOL feature), so
+    a pin must never assume it opens at row 0 -- that pollution is what
+    made these pass alone and fail in file order."""
+    from tuipet import shop, shopscreen
+    shopscreen._LAST_POS.clear()
+    pan = shopscreen.ShopPanel(pet, start_mode="bag")
+    want = shop.CATALOG[key][0]
+    for _ in range(40):                       # walk tabs, then rows
+        cur = [ln for ln in pan.text().plain.splitlines()
+               if ln.lstrip().startswith("▸")]
+        if cur and want in cur[0]:
+            return pan
+        pan.key("down" if cur else "right")
+    raise AssertionError(f"never reached {key} in the bag")
+
+
+def test_every_food_sheet_item_is_eaten():
+    """The canon rule is the SHEET: foods.csv has no AnimationType column
+    because eating IS the animation.  So the six food-sheet CONSUMABLES
+    eat like the pill does -- they used to flash bare text over ripped
+    art -- and no actual food regresses."""
+    from tuipet import shop
+    for k in ("vitamin", "energy_drink", "slim_drink", "sleeping_pill",
+              "caffeine_pill", "anti_evo_chip"):
+        assert shop.item_is_eaten(k), k
+    for k in shop.FOOD_KEYS:
+        assert shop.item_is_eaten(k), k
+
+
+def test_an_item_is_never_both_eaten_and_scripted():
+    """`f:` eats, `i:` takes a script -- the two doors never overlap."""
+    from tuipet import shop
+    for k in shop.CATALOG:
+        assert not (shop.item_is_eaten(k) and shop.item_script(k)), k
+
+
+def test_the_bag_returns_the_eat_show_for_a_consumable():
+    """The panel contract: using a food-sheet consumable closes the bag
+    and hands the LCD an eat show carrying that item's OWN icon."""
+    from tuipet.pet import Pet
+    for key, icon in (("energy_drink", "f:17"), ("vitamin", "f:5"),
+                      ("sleeping_pill", "f:34")):
+        p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
+        p.world_seconds = 600.0
+        p.strength = 0
+        p._set_energy(4)
+        p.add_item(key)
+        pan = _bag_on(p, key)
+        res = pan.key("enter")
+        assert res and res[0] == "done", (key, res)
+        assert res[1][0] == "eat" and res[1][1] == icon, (key, res)
+
+
+def test_the_sleeping_pill_eats_first_then_sleeps():
+    """The one risky interaction: the pill's show must still be an EAT
+    (the fx owns the whole arena paint, so the sleep lands after it)."""
+    from tuipet.pet import Pet
+    p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
+    p.world_seconds = 600.0
+    p.add_item("sleeping_pill")
+    pan = _bag_on(p, "sleeping_pill")
+    res = pan.key("enter")
+    assert res[1][0] == "eat"
+    assert p.asleep                            # ...and it did go to sleep

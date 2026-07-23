@@ -267,7 +267,7 @@ The canon mapping is FREE, we simply never read it: our icon key
       `itemfx.SCRIPTS`, only the wiring is missing**: `music_player`
       → Play, `textbook` → Study, `dumbbell` → Lift, `grow_capsule`
       → Study, `revive_floppy` → Play.  Zero new animation work.
-- [ ] **The Vitamin (and every `f:` consumable) is a separate case.**
+- [x] **SHIPPED v0.5.208 — the Vitamin (and every `f:` consumable).**
       `f:5` is literally the DVPet "Vitamin" (4 frames, 24×24) — but
       **foods.csv has NO AnimationType column**, because food-sheet
       items are EATEN.  Their canon show is the `eat` fx we already

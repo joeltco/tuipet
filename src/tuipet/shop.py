@@ -126,6 +126,21 @@ _OWN_FLOW = frozenset({"digimemory", "town_transport", "disaster_transport",
                        "life_recovery", "revive_floppy"})
 
 
+def item_is_eaten(key):
+    """True when USING this item should play the EAT show.
+
+    The canon rule is the SHEET (item-show audit 2026-07-23, Joel "do
+    the eat show for the consumables too"): foods.csv carries no
+    AnimationType column at all, because eating IS the animation --
+    exactly how the pill already works ("the pill is EATEN, the
+    source's EATING action, same as meat", pill-anim fix 2026-07-18).
+    So every `f:` item eats: the 11 foods as before, plus the six
+    food-sheet CONSUMABLES that used to flash bare text -- both
+    drinks, both pills, the vitamin and the anti-evo chip.  `i:`
+    items take a script instead (see item_script)."""
+    return ICON_KEYS.get(key, "").startswith("f:")
+
+
 def item_script(key):
     """The canon SHOW for a catalog item, or None.
 

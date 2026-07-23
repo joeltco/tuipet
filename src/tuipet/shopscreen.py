@@ -199,10 +199,14 @@ class ShopPanel:
             return None
         from .petbase import _Refused
         refused = isinstance(out, _Refused)      # kept the item: no show plays
-        if not refused and key in shop.FOOD_KEYS:
-            # the bag CLOSES and the meal plays on the LCD through its own
-            # DVPet strip -- the eat fx the feed menu rides (TUIPET catalog
-            # 2026-07-18; the _after_shop route was waiting for this)
+        if not refused and shop.item_is_eaten(key):
+            # the bag CLOSES and the item is EATEN on the LCD through its
+            # own DVPet strip -- the eat fx the feed menu rides (TUIPET
+            # catalog 2026-07-18; the _after_shop route was waiting for
+            # this).  Gated on the SHEET now, not FOOD_KEYS (item-show
+            # audit 2026-07-23): the food-sheet CONSUMABLES -- both
+            # drinks, both pills, the vitamin, the anti-evo chip -- are
+            # eaten too, and used to flash bare text over ripped art.
             return ("done", ("eat", shop.ICON_KEYS.get(key, "f:0"), out))
         if not refused and (_sc := shop.item_script(key)):
             # the item's SHOW: its CANON itemfx script on the main LCD
