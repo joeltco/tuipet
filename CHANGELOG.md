@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.201 — YOUR LOCK, ON THE CARD (2026-07-23)
+
+YOUR LOCK, ON THE CARD: every battle now shows the timing grade you locked (mega / normal / miss) on the status card for the whole fight — training always showed its grade, battles never did. No more losing with no idea why.
+
 ## 0.5.200 — THE BATTLE BAR NO LONGER EATS YOUR MASH (2026-07-23)
 
 THE BATTLE BAR NO LONGER EATS YOUR MASH: pressing SPACE through the battle intro used to lock the timing bar instantly at the left edge — a miss you never aimed. The bar now arms half a second after it appears, so only a deliberate press locks it. Your training megas were always real; now battles are too.
