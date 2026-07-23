@@ -78,7 +78,7 @@ def keys_markup():
     guide wraps onto line 3: the line only holds 71 cells."""
     k = f"b {theme.KEY}"
     return (
-        f"[{k}]f[/] feed [dim](meat·pill)[/]  [{k}]c[/] clean  [{k}]s[/] lights  [{k}]v[/] assist  [{k}]m[/] battle\n"
+        f"[{k}]f[/] feed [dim](meat·pill)[/]  [{k}]c[/] clean  [{k}]s[/] lights  [{k}]v[/] assist  [{k}]p[/] discipline  [{k}]m[/] battle\n"
         f"[{k}]a[/] adventure  [{k}]r[/] raid  [{k}]u[/] cup  [{k}]l[/] lobby [dim](pvp)[/]  [{k}]t[/] train  [{k}]x[/] DNA  [{k}]d[/] digicore\n"
         f"[{k}]n[/] eggs  [{k}]o[/] shop  [{k}]i[/] bag  [{k}]e[/] scenes  [{k}]g[/] options  [{k}]b[/] bug  [{k}]?[/] help  [{k}]q[/] quit"
     )
@@ -132,13 +132,12 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("INJURY IS BACK (canon): battles can wound — "
-                 "especially losses in poor condition — and a hurt pet "
-                 "can't fight until you treat it with the BANDAGE (new "
-                 "in the shop, the device's second med). A Vitamin now "
-                 "also guards against injury for a day. Plus the "
-                 "Pendulum rule: a shaky bar lock costs nothing, and "
-                 "every fight names what's dragging you before the bell.")
+    WHATS_NEW = ("DISCIPLINE IS BACK (canon): press P to praise or "
+                 "scold. Your pet now throws the occasional tantrum — "
+                 "scold it for +25 manners; ignoring it costs a care "
+                 "mistake. Wins and clean training strikes open proud "
+                 "moments worth praising (+10). The manners gauge lives "
+                 "on the DigiCore PERSON page.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -150,6 +149,7 @@ class TuiPetApp(ActionsMixin, App):
         # story (bar tidy 2026-07-18).
         ("f", "feed", "Feed"), ("c", "clean", "Clean"),
         ("s", "sleep", "Lights"), ("v", "assist", "Assistant"),
+        ("p", "discipline", "Discipline"),
         ("m", "battle", "Battle"),
         ("a", "adventure", "Adventure"),
         ("r", "raid", "Raid"), ("u", "tournament", "Cup"),
@@ -1351,6 +1351,8 @@ class TuiPetApp(ActionsMixin, App):
         elif p.strength == 0: msg = f"{name}'s effort gauge is empty — train it! ([b]T[/])"
         elif p.poop >= 3:     msg = f"{name} needs cleaning! ([b]C[/])"
         elif p.energy <= 0:   msg = f"{name} is exhausted! ([b]S[/] — rest)"
+        elif p.discipline_call:
+            msg = f"{name} is acting up! ([b]P[/] — scold it)"
         elif p.is_frail():
             left = max(0, 5 - p.care_mistakes)
             msg = (f"{name} is getting frail — "

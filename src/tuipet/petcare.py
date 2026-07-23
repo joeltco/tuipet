@@ -153,15 +153,54 @@ class CareMixin:
         self._set_anim("eat", 1.4)
         return "Took the pill."
 
-    # ---- discipline: praise / scold (PhysicalState) --------------------------
+    # ---- discipline: praise / scold, RESTORED (canon restoration B,
+    # 2026-07-23, Joel: "it was wrongfully stripped... whatever is canon
+    # bring back").  The device pair: SCOLD answers the tantrum call,
+    # PRAISE answers a proud moment (a battle win, a mega drill).  The
+    # gauge is `obedience` (0..100).  Refusals stay SOFT (standing rule);
+    # discipline is the tantrum economy, not a leash. -----------------------
     def _open_praise(self):
-        """A NO-OP: the praise window left with the discipline system."""
+        """A win or a mega drill opens a ~10 game-min praise window."""
+        self.praise_window = self.world_seconds + 600.0
 
     def _open_scold(self):
-        """A NO-OP: the scold window left with the discipline system."""
+        """The tantrum's answer window: ~10 game-min before it counts."""
+        self.scold_window = self.world_seconds + 600.0
 
     def _calm_discipline_call(self):
-        """A NO-OP: the tantrum left with the discipline system."""
+        """Bedtime (and canBattle, per canon) placates an open tantrum --
+        no reward, no penalty, the moment just passes."""
+        if self.discipline_call:
+            self.discipline_call = False
+            self.scold_window = 0.0
+
+    def praise(self):
+        """PRAISE: inside a proud-moment window it pays obedience +10 and
+        the cheer; outside one, nothing -- the no-praise-farming rule
+        (from the pre-strip discipline audit)."""
+        if (_g := self._guard()) is not None:
+            return _g
+        if self.world_seconds <= getattr(self, "praise_window", 0.0):
+            self.praise_window = 0.0
+            self._set_obedience(self.obedience + 10)
+            self._set_anim("happy", 1.8)
+            return f"{self.name} beams with pride!"
+        self._set_anim("happy", 1.0)
+        return f"{self.name} looks pleased — but unsure why."
+
+    def scold(self):
+        """SCOLD: answering an open tantrum pays obedience +25 and the
+        scolded sulk; scolding a calm pet just makes it sulk, no gain."""
+        if (_g := self._guard()) is not None:
+            return _g
+        if self.discipline_call:
+            self.discipline_call = False
+            self.scold_window = 0.0
+            self._set_obedience(self.obedience + 25)
+            self._set_anim("sad", 1.8)
+            return "Scolded — lesson learned."
+        self._set_anim("sad", 1.4)
+        return f"{self.name} sulks — it did nothing wrong."
 
     def clean(self):
         """PhysicalState.clean: wash the filth off the floor.  (The mood and

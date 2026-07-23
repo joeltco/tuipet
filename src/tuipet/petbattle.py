@@ -197,6 +197,8 @@ class BattleMixin:
         # live 2026-07-17; the adaptation stands)
         if self.weight > self._base_weight():
             self._set_weight(max(self._base_weight(), self.weight - 2))
+        if success:
+            self._open_praise()      # a clean strike is a proud moment (discipline B)
         self._set_anim("happy" if success else "sad", 1.8)
         return True
 
@@ -302,6 +304,7 @@ class BattleMixin:
         if not won:
             return ""
         self.wins += 1
+        self._open_praise()          # a win is a proud moment (discipline B)
         # DMX canon: defeating an enemy pays experience toward LEVEL (the
         # LV line gates)
         self.exp += EXP_PER_WIN

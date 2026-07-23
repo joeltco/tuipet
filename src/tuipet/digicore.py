@@ -378,6 +378,8 @@ def build_pages(pet):
         # DISPOSITION trait, which is alive; label polish 2026-07-17)
         ("Type", pet.personality()), ("Nature", disp),
         ("Appetite", appetite), ("Pace", temperament),
+        # the manners gauge, LIVE again (canon restoration B, 2026-07-23)
+        ("Manners", f"{getattr(pet, 'obedience', 0)}/100"),
     ]
     core = data.load_digicore_icons().get(pet.num)
     if core:

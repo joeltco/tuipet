@@ -811,8 +811,14 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
         self.calories = _clamp(value, -CALORIE_LIMIT, CALORIE_LIMIT)
 
     def _set_obedience(self, value):
-        """A NO-OP: the obedience meter left with the discipline system
-        (pinned at its default; write-sites stay as inert citations)."""
+        """LIVE again (canon restoration B, 2026-07-23, Joel: "whatever
+        is canon bring back"): the gauge clamps 0..100 and every canon
+        write-site that spent the strip as an inert citation -- clean's
+        reward, the lights mistake, the weight-limit penalty, the
+        surrender effects, the stage seeds -- resumes paying.  What it
+        does NOT touch: refusals (the soft-refusal calibration is a
+        standing rule) and LINES_SPEC gates."""
+        self.obedience = _clamp(int(value), 0, 100)  # noqa: F405
 
     def _set_mood(self, value):
         """A NO-OP: the mood meter left with the mood system (BASIC VPET

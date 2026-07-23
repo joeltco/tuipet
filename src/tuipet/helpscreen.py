@@ -32,6 +32,10 @@ HELP = [
     ("fat) takes the pill; battle INJURY", 0),
     ("takes a Bandage from the bag. Both", 0),
     ("block fights and whisper to death.", 0),
+    ("p discipline - praise & scold:", 1),
+    ("  scold a tantrum (+manners), praise", 0),
+    ("  a proud win; ignored tantrums", 0),
+    ("  cost a care mistake", 0),
     # the alarm legend (#8): the ring count is the message
     ("Alarms count the urgency: one beep", 0),
     ("routine, two a mess, three urgent.", 0),

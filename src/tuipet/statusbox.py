@@ -610,6 +610,26 @@ def tournament(app):
     app.stats_w.update("\n".join(lines))
 
 
+def discipline(app):
+    """The praise/scold picker's card (canon restoration B): the gauge,
+    the open moment, and what each verb would land."""
+    p, T = app.pet, theme
+    app.stats_w.border_subtitle = gen_subtitle(p)
+    if p.discipline_call:
+        moment = f"[{T.NEG}]acting up![/]"
+    elif p.world_seconds <= getattr(p, "praise_window", 0.0):
+        moment = f"[{T.POS}]a proud moment[/]"
+    else:
+        moment = "[dim]calm[/]"
+    lines = [f"[b]{p.name[:14]}[/] [dim]· lessons[/]", DIV,
+             f"Manners  {bar(p.obedience, 11, T.POS)} {p.obedience}",
+             f"Moment   {moment}", DIV,
+             "[dim]scold a tantrum: +25[/]",
+             "[dim]praise a proud win: +10[/]",
+             "[dim]ignored tantrums cost ✗[/]"]
+    app.stats_w.update("\n".join(lines))
+
+
 def training(app):
     """The 0.5 drill's card (2026-07-17): one timing bar, so one card --
     the four-drill readouts left with the classic training system."""
@@ -742,12 +762,13 @@ def _registry():
     """Panel class -> painter.  Built lazily: importing every screen at
     module import would be a cycle magnet."""
     from . import (assistscreen, backgroundscreen, battlescreen, bugscreen,
-                   deathscreen, digicorescreen, dnascreen, eggguidescreen,
-                   eggselectscreen, feedscreen, helpscreen, lobbyscreen,
-                   optionsscreen, raidscreen, shopscreen, titlescreen,
-                   tournamentscreen, training as training_mod)
+                   deathscreen, digicorescreen, disciplinescreen, dnascreen,
+                   eggguidescreen, eggselectscreen, feedscreen, helpscreen,
+                   lobbyscreen, optionsscreen, raidscreen, shopscreen,
+                   titlescreen, tournamentscreen, training as training_mod)
     return (
         (titlescreen.TitlePanel, title),
+        (disciplinescreen.DisciplinePanel, discipline),
         (eggselectscreen.EggSelectPanel, eggselect),
         (tournamentscreen.TournamentPanel, tournament),
         (training_mod.TrainingPanel, training),

@@ -221,6 +221,26 @@ class ActionsMixin:
             self.screen_w.start_fx("spit")
         self.repaint()
 
+    def action_discipline(self):
+        # praise & scold, RESTORED (canon restoration B, 2026-07-23).
+        # The asleep poke follows the care-key law: wake + refuse this
+        # press; youth outranks sleep like every other gate.
+        from . import disciplinescreen
+        p = self.pet
+        if (g := p._guard(asleep_blocks=False)) is not None:
+            self._do(g); return
+        if p.stage in ("Egg", "Fresh"):
+            self._do("Too young for lessons."); return
+        if p.asleep:
+            self._do(p._disturbed()); return
+        self._open_mode(disciplinescreen.DisciplinePanel(p),
+                        self._after_discipline)
+
+    def _after_discipline(self, msg):
+        if msg:
+            self.flash(msg)
+        self.repaint()
+
     def action_battle(self):
         # DM20's battle icon as a first-class action (Joel 2026-07-23
         # "should we add battles action... like dm20 does it?" -> "yeah

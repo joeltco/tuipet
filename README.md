@@ -121,7 +121,7 @@ explore, then grow, then manage:
 | **u** | tournament cup | **?** | help |
 | **l** | online lobby | **q** | quit |
 | **t** | train | **ENTER** | accept a found gift |
-| **x** | DNA | | |
+| **x** | DNA | **p** | discipline (praise·scold) |
 
 SPACE works wherever ENTER does, and PageUp/PageDown leap through every
 long list.

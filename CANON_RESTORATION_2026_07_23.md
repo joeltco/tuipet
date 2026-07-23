@@ -16,7 +16,7 @@ pre-strip DVPet machine (recovered from git, 5a853e4~1) is the
 CONSTANTS reference, not a paste-back: it was woven through the very
 app systems that stay dead.
 
-## RELEASE A — INJURY (the second ailment)              [x] v0.5.205
+## RELEASE A — INJURY (the second ailment)              SHIPPED v0.5.205
 
 - [x] A1 `injured` state + lifetime `injuries` count.  Battles can
       wound (LOCAL recorded bouts; online stays L17 body-billing
@@ -38,7 +38,7 @@ app systems that stay dead.
       same care-alarm cascade as sickness.
 - [x] A4 Board/help/news + pins (test_canon_injury.py).
 
-## RELEASE B — DISCIPLINE (praise & scold)              [x] v0.5.206
+## RELEASE B — DISCIPLINE (praise & scold)              SHIPPED v0.5.206
 
 - [x] B1 The GAUGE: the frozen `obedience` field (0..100) is live
       again; `_set_obedience` clamps instead of no-opping, so the

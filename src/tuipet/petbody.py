@@ -590,6 +590,23 @@ class BodyMixin:
         # restoration 2026-07-23; TIME LAW-clean: only while the sim ticks)
         if getattr(self, "vitamin_lapse", 0.0) > 0:
             self.vitamin_lapse = max(0.0, self.vitamin_lapse - dt / 60.0)
+        # THE TANTRUM (canon restoration B, 2026-07-23 -- adapted
+        # checkDisciplineCall): an awake pet AT HOME acts up about once
+        # per 90 game-min; SCOLD inside the window pays obedience +25,
+        # IGNORING it past the window costs a care mistake and -5 (canon:
+        # ignored calls cost).  Never on the road, never asleep.
+        if (not self.asleep and not getattr(self, "away", False)
+                and self.stage not in ("Egg", "Fresh")):
+            if self.discipline_call:
+                if self.world_seconds > getattr(self, "scold_window", 0.0):
+                    self.discipline_call = False
+                    self.scold_window = 0.0
+                    self.care_mistakes += 1
+                    self._set_obedience(self.obedience - 5)
+            elif random.random() < dt / (60.0 * 90.0):
+                self.discipline_call = True
+                self._open_scold()
+                self._set_anim("angry", 2.0)      # the emote-free grumble
         # the DSprite sickness (clone rules, 2026-07-17): caught per game-min
         # from filth (never on the road -- countFilth reads 0 away) or from
         # overweight steps
