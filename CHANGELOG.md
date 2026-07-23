@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.207 — ITEMS PUT ON A SHOW (2026-07-23)
+
+ITEMS PUT ON A SHOW: the textbook now opens and pages while your pet studies, the dumbbell gets lifted, the grow capsule is read, the music player plays — animations that were fully drawn but never wired. Also fixed: a Vitamin's injury guard was lasting essentially forever instead of a day.
+
 ## 0.5.206 — DISCIPLINE IS BACK (canon) (2026-07-23)
 
 DISCIPLINE IS BACK (canon): press P to praise or scold. Your pet now throws the occasional tantrum — scold it for +25 manners; ignoring it costs a care mistake. Wins and clean training strikes open proud moments worth praising (+10). The manners gauge lives on the DigiCore PERSON page.
