@@ -132,12 +132,12 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("NO MORE 5/10 AT THE BELL: a raid's intro frames (the "
-                 "banner and the foe reveal) carry no HP and fell back to "
-                 "the classic battle's literal 5 — so your tank read 5/10 "
-                 "through the intro, snapping to 10/10 when the fight "
-                 "started. The fallback is raid-aware now: 10/10 from the "
-                 "very first banner frame.")
+    WHATS_NEW = ("STATUS CARDS HOLD THEIR LINES: a full card audit found "
+                 "text running off the 26-column card and wrapping — the "
+                 "DNA header with a long pet name, the feed dossier, a "
+                 "memorial's long cause of death. All pre-fit now, and a "
+                 "40-state sweep test renders every card with worst-case "
+                 "names and numbers so a run-off can never ship again.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

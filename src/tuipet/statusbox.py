@@ -23,7 +23,10 @@ from . import persistence
 from . import theme
 from .arena import bar, hearts
 
-DIV = "[dim]" + "─" * 26 + "[/]"
+CARD_W = 26   # the card interior: #stats width 30 - round border 2 - padding 2
+#               (run-off sweep 2026-07-23: wider lines WRAP inside the box and
+#               shove the card's tail off the bottom; fit-fixes ship pre-clipped)
+DIV = "[dim]" + "─" * CARD_W + "[/]"
 
 
 # ---- shared helpers (moved from app.py; the old _names stay importable) ----
@@ -209,7 +212,9 @@ def grave_lines(pet):
         "",
         f"Lived    {age_compact(pet.age_seconds)}",
         f"Reached  {pet.stage}",
-        f"Cause    {getattr(pet, 'death_cause', '') or 'unknown'}",
+        # pre-fit: a long cause ran the 26-col card (run-off sweep
+        # 2026-07-23) -- the label row holds 17 cause chars
+        f"Cause    {(getattr(pet, 'death_cause', '') or 'unknown')[:17]}",
         f"Attrib   {pet.attribute}",
         f"Record   {pet.wins}W / {pet.battles}",
         DIV,
@@ -284,15 +289,19 @@ def feed(app):
     p, m = app.pet, app.mode
     # both rows disclose in FULL, weight included -- the meat row used to
     # hide its +1 while the pill admitted its +5 (feed audit 2026-07-19)
-    row = ("Meat — hunger +1 · weight +1,",
-           "Pill — cures sickness, effort +1,"
-           )[min(getattr(m, "cursor", 0), 1)]
-    tail = ("the staple", "energy +7 · weight +5")[min(getattr(m, "cursor", 0), 1)]
+    # pre-fit to the 26-col card (run-off sweep 2026-07-23: the meat row
+    # ran 29 and wrapped the card) -- full disclosure kept, across three
+    # short rows instead of two long ones
+    sel = min(getattr(m, "cursor", 0), 1)
+    row = ("Meat — hunger +1,", "Pill — cures sickness,")[sel]
+    tail = ("weight +1 · the staple", "effort +1 · energy +7")[sel]
+    tail2 = ("", "weight +5")[sel]
     card(app, "Feed", [
         f"Hunger   {hearts(p.hunger)}",
         f"Effort   {hearts(p.strength)}",
         f"Weight   {p.weight}g" + ("   [b]sick[/]" if p.sick else ""),
-        "", f"[b]{row}[/]", f"[b]{tail}[/]" if tail else "",
+        "", f"[b]{row}[/]", f"[b]{tail}[/]",
+        f"[b]{tail2}[/]" if tail2 else "",
         "", "[dim]↑↓ pick  ENTER feed[/]"],
         subtitle=gen_subtitle(p))
 
@@ -674,7 +683,10 @@ def dna(app):
     last_rows = [f"[dim]{s}[/]" for s in textwrap.wrap(m.last or "", 24)[:2]]
     last_rows += [""] * (2 - len(last_rows))
     lines = [
-        f"[b]{p.name[:14]}[/] [dim]· DNA · {screen}[/]", DIV,
+        # dynamic fit (run-off sweep 2026-07-23: a 14-char name + 'DNA ·
+        # generate' ran 30 cols): the NAME gives way, the tail stays whole
+        f"[b]{p.name[:max(4, CARD_W - 9 - len(screen))]}[/]"
+        f" [dim]· DNA · {screen}[/]", DIV,
         f"Bits     [{T.COIN}]{p.bits}[/]",
         f"Field    {data.pretty_field(f)}" + ("  [dim](own)[/]" if same else ""),
         f"Banked   {own}     Charged {chg}",
