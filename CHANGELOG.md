@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.204 — BATTLES STOP STARVING YOUR PET (2026-07-23)
+
+BATTLES STOP STARVING YOUR PET: every bout sheds weight, and it could grind a pet 30g below its species base — a huge hidden accuracy penalty that grew the MORE you fought. Weight now floors at the species base, like training and travel always did. If your pet is thin, feed it back up — every gram toward base is hit chance back.
+
 ## 0.5.203 — DUEL WITH OPEN EYES (2026-07-23)
 
 DUEL WITH OPEN EYES: a tamer's saved lock now shows in the lobby — on the roster blurb, the challenge menu and the invite prompt ("Agumon · Champion · lock mega") — and the fight header shows both locks. A lock swings a duel hard now; nobody should accept one blind.
