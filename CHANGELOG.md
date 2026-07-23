@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.184 — NO MORE 5/10 AT THE BELL (2026-07-23)
+
+NO MORE 5/10 AT THE BELL: a raid's intro frames (the banner and the foe reveal) carry no HP and fell back to the classic battle's literal 5 — so your tank read 5/10 through the intro, snapping to 10/10 when the fight started. The fallback is raid-aware now: 10/10 from the very first banner frame.
+
 ## 0.5.183 — THE BOSS GETS A STAGE (2026-07-23)
 
 THE BOSS GETS A STAGE: the raid page was cramming the 16px boss edge-to-edge in a 16px band — head on the header, feet on a wall of text that DUPLICATED the status card (pool, tries, rank, countdown, twice each on one screen). The LCD is pure scene now, the family law: a tall 10-row stage with sky above the boss and the arena floor under its feet, one context line, and every number lives once — on the card, which now also carries the leaderboard.
