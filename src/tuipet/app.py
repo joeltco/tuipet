@@ -132,16 +132,13 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("QUALITY OF LIFE, ROUND 4 — the lobby feels the network: "
-                 "a dead connection fails fast instead of freezing "
-                 "\"Connecting…\" for ten seconds, the banner says whether "
-                 "you dropped or never got through, ENTER retries right "
-                 "now instead of waiting out the backoff, chat sent while "
-                 "offline says it's queued, the ladder page can time out "
-                 "and retry, long login messages scroll instead of "
-                 "clipping, and your password shows its last letter while "
-                 "you type it — so the account you create is the one you "
-                 "meant.")
+    WHATS_NEW = ("THE RECOVERY DOZE: a drained pet's nap no longer wakes "
+                 "after one bar — lights off, it now sleeps straight "
+                 "through until half its energy is back (and past empty it "
+                 "recovers double-speed), so you don't have to babysit a "
+                 "wake-and-drain loop. Lights on still rouses it. And an "
+                 "empty tank finally says so: status reads \"exhausted\" "
+                 "instead of \"ok\".")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

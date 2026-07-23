@@ -67,3 +67,77 @@ def test_the_light_coming_back_resets_the_wait():
 # (test_a_sick_pets_nap_runs_a_fixed_hour left with the sickness system -- BASIC VPET 2026-07-17)
 
 
+# --- THE RECOVERY DOZE (Joel 2026-07-23: "nap system is fucked up. 0 energy,
+# turn lights off, naps after a few seconds, one bar fills, wakes up...  its a
+# care mistake if im not babysitting") -- a drained pet's doze HOLDS in the
+# dark until half the tank is back, instead of checkNap's fixed hour waking it
+# still spent.  Lights on still rouses it; a lit room never holds the doze.
+
+def _dozer(**kw):
+    """A pet mid-doze with the fixed hour already up (awake_lapse at limit)."""
+    p = _pet(energy=0, max_energy=10, **kw)
+    p.lights = False
+    p.asleep = p.nap = True
+    p.awake_lapse = p.awake_limit
+    return p
+
+
+def test_a_drained_doze_holds_in_the_dark_until_half_the_tank(monkeypatch):
+    monkeypatch.setattr("tuipet.petbody.random.randrange", lambda n: n // 2)
+    p = _dozer()
+    p._tick_asleep(1.0)
+    assert p.asleep and p.nap              # the hour is up, the tank is not: HOLD
+    woke_at = None
+    for _ in range(1000):
+        p._tick_asleep(1.0)
+        if not p.asleep:
+            woke_at = p.energy
+            break
+    assert woke_at is not None, "the recovery doze must still END"
+    assert woke_at >= p.max_energy // 2    # ...but only once half the tank is back
+
+
+def test_a_lit_room_never_holds_the_doze(monkeypatch):
+    monkeypatch.setattr("tuipet.petbody.random.randrange", lambda n: n // 2)
+    p = _dozer()
+    p.lights = True
+    p._tick_asleep(1.0)
+    assert not p.asleep                    # the fixed-hour wake, as before
+
+
+def test_a_rested_doze_keeps_the_fixed_hour(monkeypatch):
+    monkeypatch.setattr("tuipet.petbody.random.randrange", lambda n: n // 2)
+    p = _dozer()
+    p._set_energy(p.max_energy)            # nothing to recover
+    p._tick_asleep(1.0)
+    assert not p.asleep                    # no hold for a full tank
+
+
+def test_a_past_empty_doze_recovers_at_the_drained_cadence(monkeypatch):
+    """NegativeEnergyGain's spirit reaches the doze: past empty, the nap
+    accumulator runs double, so the deepest hole climbs out fastest."""
+    monkeypatch.setattr("tuipet.petbody.random.randrange", lambda n: n // 2)
+
+    def ticks_to_first_gain(p):
+        e0 = p.energy
+        for i in range(1, 500):
+            p._tick_asleep(1.0)
+            if p.energy > e0:
+                return i
+        return 999
+
+    drained, empty = _dozer(), _dozer()
+    drained._set_energy(-4)
+    assert ticks_to_first_gain(drained) * 2 <= ticks_to_first_gain(empty) + 1
+
+
+def test_an_empty_tank_reads_exhausted_not_ok():
+    """Joel 2026-07-23: '0 energy, status is ok instead of sleepy.'"""
+    p = _pet(energy=0, max_energy=24)
+    assert p.status_word() == "exhausted"
+    p._set_energy(-2)
+    assert p.status_word() == "exhausted"  # past empty counts
+    p._set_energy(12)
+    assert p.status_word() != "exhausted"
+
+

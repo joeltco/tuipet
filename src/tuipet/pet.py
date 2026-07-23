@@ -1051,6 +1051,10 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
             return "starving"
         if self.poop >= 3:
             return "needs cleaning"
+        # an empty tank OUTRANKS the mood words (Joel 2026-07-23: "0 energy,
+        # status is ok instead of sleepy") -- same tier the HUD nag uses
+        if self.energy <= 0:
+            return "exhausted"
         # sleepy keys on the pet's own bedtime window now (the night phase
         # left with the day/night system -- BASIC VPET 2026-07-17)
         if self._in_sleep_window() and not self.asleep and self.energy < self.max_energy // 2:

@@ -194,7 +194,10 @@ class BodyMixin:
             # accumulator residue rolls into the sleep meter, nap=false
             self.sleep_lapse = max(0.0, self.sleep_lapse - awake_inc * dt)
             self._nap_cycle = getattr(self, "_nap_cycle", 0.0) + dt
-            _nap_energy(2 if bonus else 1)
+            # a doze taken PAST EMPTY recovers at the drained cadence
+            # (NegativeEnergyGain's spirit -- real sleep already doubles for
+            # a drained pet; the recovery-doze rework, Joel 2026-07-23)
+            _nap_energy(2 if bonus or self.energy < 0 else 1)
             if (self._nap_cycle >= CHANGE_NAP_TO_SLEEP + self.restless * NAP_TO_SLEEP_RESTLESS
                     and self._in_sleep_window() is not False):   # a line pet's day-doze
                 #                          never becomes the night; bedtime does that
@@ -214,7 +217,19 @@ class BodyMixin:
             if iw is False:                      # LINES_SPEC §5: 7:00 sharp, no jitter
                 self._wake()
         elif self.awake_lapse >= self.awake_limit:
-            self._wake()                         # nap wakes take the nap roll inside
+            if self.nap and not self.lights and self.energy < self.max_energy // 2:
+                # THE RECOVERY DOZE (Joel 2026-07-23: "nap system is fucked
+                # up. 0 energy... naps after a few seconds, one bar fills,
+                # wakes up... its a care mistake if im not babysitting"):
+                # a drained pet's doze no longer ends on checkNap's fixed
+                # hour still spent -- it HOLDS in the dark until half the
+                # tank is back, then wakes rested enough to stand.  One
+                # consolidated nap instead of a wake/drain churn the player
+                # had to babysit.  Lights on still rouses it (toggle_lights),
+                # and a lit room never holds the doze.
+                self.awake_lapse = self.awake_limit
+            else:
+                self._wake()                     # nap wakes take the nap roll inside
         # hungerDecay: asleep the stomach drains only ABOVE the floor
         # (SleepMinHungerDecay=3) -- one heart overnight, then it holds
         if self.hunger > SLEEP_MIN_HUNGER_DECAY:
