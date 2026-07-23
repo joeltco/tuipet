@@ -132,11 +132,12 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE GLOOM CLOUD: a discouraged pet finally shows it — "
-                 "the sulk now wears a little storm-cloud emote beside "
-                 "its head, the true opposite of the happy sunshine "
-                 "dance. Real extracted art that's been sitting unused "
-                 "in the sprite files, wired up at last.")
+    WHATS_NEW = ("ROAD SAFETY: a Sleep Pill can no longer be taken on the "
+                 "road — it used to freeze the march in a nap that never "
+                 "ended. And when a spent pet plants its feet out there, "
+                 "the message now names the real ways out (warp to a town "
+                 "or head home) instead of promising a rest the road "
+                 "can't give.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

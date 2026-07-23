@@ -654,10 +654,11 @@ class AdventurePanel(menu.SubHost):
             if self._refuse_t > 0 or self._refused:
                 # the refusal only ever fires PAST EMPTY (stop_travel_prob:
                 # negative energy only) -- say so, or the bare "SPACE urge"
-                # invites a dead mash (QOL sweep 2026-07-23)
-                out = ("rest ⚡ · T warp" if self.adv.held_transports()
-                       else "rest refills ⚡")
-                return f"[b]Refuses — spent![/]  [dim]{out} · ESC[/]"
+                # invites a dead mash (QOL sweep 2026-07-23).  HONEST outs
+                # only (energy audit 2026-07-23): energy cannot rise on the
+                # road itself -- a town's rest or home are the ways out.
+                out = ("T warp · " if self.adv.held_transports() else "")
+                return f"[b]Refuses — spent![/]  [dim]{out}ESC home[/]"
             if self._scene is not None:
                 s, t = self._scene, self._scene["t"]
                 if s["grade"] is None and t >= INV_WALK_T:

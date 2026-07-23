@@ -529,6 +529,13 @@ class CareMixin:
         hours the pill's sleep is the daytime DOZE shape instead (the
         shipped lights-out nap), which sleeps off the energy debt and can
         become the night when the window arrives."""
+        if getattr(self, "away", False):
+            # the ROAD is no bed (adventure energy audit 2026-07-23): the
+            # march waits out pet.asleep, but the life sim is PAUSED in
+            # every mode (the TIME LAW's one-law freeze), so a road sleep
+            # never ends -- the pill froze the march FOREVER, ESC home the
+            # only way out.  Refused, pill kept.
+            return _Refused("Not on the road — no bed out here.")  # noqa: F405
         if self.asleep:
             return _Refused("It's already asleep.")
         self._fall_asleep()

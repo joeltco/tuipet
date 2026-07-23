@@ -101,9 +101,12 @@ def test_the_panel_plants_its_feet_and_space_re_issues(monkeypatch):
         assert pan.text()
     assert pan.adv.loc == loc0                         # the march is halted
     # the strip says WHY (past-empty is the only trigger) instead of the
-    # bare "SPACE urge" that invited a dead mash (QOL sweep 2026-07-23)
+    # bare "SPACE urge" that invited a dead mash (QOL sweep 2026-07-23);
+    # honest outs only (energy audit 2026-07-23): no false "rest refills"
+    # promise -- energy cannot rise on the road, town warp or home are it
     assert "Refuses" in pan.strip() and "spent" in pan.strip()
-    assert "rest" in pan.strip() and "⚡" in pan.strip()
+    assert "ESC home" in pan.strip()
+    assert "rest refills" not in pan.strip()
     pan.key("space")                                   # urge it on: still spent
     assert pan._refused and pan._refuse_t == REFUSE_T  # ...it refuses again
     p._set_energy(p.max_energy)                        # rested (a town would do this)
@@ -111,3 +114,23 @@ def test_the_panel_plants_its_feet_and_space_re_issues(monkeypatch):
         pan.anim()                                     # let the shake finish
     pan.key("space")                                   # urge it on, rested
     assert not pan._refused and pan.adv.loc > loc0     # the walk re-issued
+
+
+def test_a_sleep_pill_cannot_freeze_the_march(monkeypatch):
+    """SOFTLOCK (energy audit 2026-07-23): the roadside-nap branch waits
+    out pet.asleep, but the life sim is PAUSED in every mode (the TIME
+    LAW's one-law freeze) -- a Sleep Pill used on the road put the pet
+    to sleep FOREVER, march frozen, ESC home the only exit.  The pill
+    is refused on the road now (and kept -- the _Refused contract)."""
+    pan = _on_the_road(monkeypatch)
+    p = pan.pet
+    p.away = True          # the teleport's flag (the harness skips the landing)
+    p.add_item("sleeping_pill")
+    msg = p.use_item("sleeping_pill")
+    assert "road" in str(msg)
+    assert not p.asleep
+    assert p.inventory.get("sleeping_pill") == 1   # refusal keeps the pill
+    loc0 = pan.adv.loc
+    for _ in range(TRAVEL_TICKS * 3):
+        pan.anim()
+    assert pan.adv.loc > loc0                      # the march still marches
