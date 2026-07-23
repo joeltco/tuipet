@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.193 — THE GLOOM CLOUD (2026-07-23)
+
+THE GLOOM CLOUD: a discouraged pet finally shows it — the sulk now wears a little storm-cloud emote beside its head, the true opposite of the happy sunshine dance. Real extracted art that's been sitting unused in the sprite files, wired up at last.
+
 ## 0.5.192 — A RICHER WORLD (2026-07-23)
 
 A RICHER WORLD: adventure digs now match the land — fish by the seafloor, steak in the mountains, video games in the city — and each map's FINAL zone digs a rare tier worth the march. Every town shop got character too: each map sells a regional specialty (the hardest region stocks the Revive Floppy), and all 26 towns now carry a different signature good — no two shops in the world are alike.
