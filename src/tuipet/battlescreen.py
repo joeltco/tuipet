@@ -76,7 +76,11 @@ def mega_window(pet):
     en = max(0, pet.energy) / pet.max_energy if pet.max_energy else 0
     ag = min((pet.age_seconds / DAY_LENGTH) / 5, 1)
     o = min(1.0, wr * 0.2 + hu * 0.2 + st * 0.2 + ag * 0.2 + en * 0.2)
-    w = 1 + int(o * 3) * 2
+    # FLOORED at 3px (timing rework 2026-07-23): the marker steps every
+    # 100ms, so the old 1px floor was a 100ms target -- physically
+    # impossible in a terminal.  3px = 300ms, the honest minimum; care
+    # still pays (3/5/7).
+    w = max(3, 1 + int(o * 3) * 2)
     c = w // 2
     return 12 - c, 12 + c
 
@@ -215,6 +219,7 @@ class BattlePanel:
         self._last_m = None          # timeline marker edges -> per-event sfx
         self.bar = 0                 # the timing bar
         self.bar_dir = 1
+        self._bar_hist = []          # trailing marker steps (the lock's latency grace)
         self.mega_lo, self.mega_hi = mega_window(pet)
         self.locked = None           # the locked hit-type
         self._lock_frame = 0         # frame the bar locked: skip debounce anchor
@@ -294,6 +299,7 @@ class BattlePanel:
     def anim(self):
         self.frame_i += 1
         if self.phase == "ready":
+            self._bar_hist = (self._bar_hist + [self.bar])[-strikefx.LOCK_GRACE:]
             self.bar += self.bar_dir
             if self.bar >= BAR_MAX or self.bar <= 0:
                 self.bar_dir = -self.bar_dir
@@ -326,12 +332,11 @@ class BattlePanel:
         return menu.hints(("SPACE", "hurry"), ("ESC", "end it"))
 
     def _lock_bar(self):
-        if self.pet.battles >= 999 or self.mega_lo <= self.bar <= self.mega_hi:
-            t = "mega"
-        elif self.mega_lo - 5 <= self.bar <= self.mega_hi + 5:
-            t = "normal"
-        else:
-            t = "miss"
+        # ONE grading source with the drill (strikefx.grade_lock: the
+        # latency grace, the 2px marker, the veteran rule)
+        t = strikefx.grade_lock(self._bar_hist + [self.bar],
+                                self.mega_lo, self.mega_hi,
+                                veteran=self.pet.battles >= 999)
         self.sfx = "confirm" if t != "miss" else "refuse"
         self._start_fight(t)
 

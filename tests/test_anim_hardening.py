@@ -151,7 +151,10 @@ def test_condition_tiers():
 
 def test_condition_widens_the_mega_window():
     """Care pays into SKILL, 0.5-style (2026-07-17): the clone's mega_window
-    scores winrate/hunger/effort/energy/age and widens the zone 1 -> 7px."""
+    scores winrate/hunger/effort/energy/age and widens the zone 3 -> 7px.
+    (Was 1 -> 7: the 1px starved zone fell to the timing rework 2026-07-23
+    -- one 100ms step was physically impossible; test_timing_honesty owns
+    the floor pin.)"""
     from tuipet import training
     top = Pet(num=100, stage="Champion", hunger=4, strength=4, obedience=500)
     top.energy = top.max_energy
@@ -162,7 +165,7 @@ def test_condition_widens_the_mega_window():
     low = Pet(num=100, stage="Champion", hunger=0, strength=0, obedience=500)
     low.energy = 0
     lo2, hi2 = training.mega_window(low)
-    assert hi2 - lo2 + 1 == 1                      # the starved zone
+    assert hi2 - lo2 + 1 == 3                      # the starved zone (floored)
     assert (lo + hi) / 2 == (lo2 + hi2) / 2 == 12  # centred on the bar
 
 

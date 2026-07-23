@@ -39,6 +39,32 @@ _FONT_3X5 = {
 }
 
 
+LOCK_GRACE = 2   # trailing marker steps forgiven on a bar lock (10Hz: ~200ms)
+
+
+def grade_lock(hist, mega_lo, mega_hi, veteran=False):
+    """ONE grading rule for every bar lock (the drill and the bout ran
+    hand-copies).  Reflex honesty (timing rework 2026-07-23, Joel: "i hit
+    the center every time, what are you talking about"): the marker steps
+    every 100ms and a seen-centered press lands ~200-300ms later (human
+    reaction + terminal latency), so the lock grades the BEST of now and
+    the last LOCK_GRACE steps -- the same honesty the hazard dodge got.
+    The 2px-wide marker counts BOTH its pixels (grading bar's left pixel
+    alone failed a visually-inside lock on the low approach).  The
+    normal shoulder (window ±5) stays strict on the pressed position.
+    veteran: battles >= 999 never whiffs -- VERBATIM v0.4.12 (DSprite
+    truth, drill audit 2026-07-19; not a cheat shim, do not "fix" it).
+    hist: recent marker positions, the LIVE one last."""
+    if veteran:
+        return "mega"
+    recent = hist[-(LOCK_GRACE + 1):]
+    if any(mega_lo - 1 <= b <= mega_hi for b in recent):
+        return "mega"
+    if mega_lo - 5 <= hist[-1] <= mega_hi + 5:
+        return "normal"
+    return "miss"
+
+
 def timing_bar(bar, mega_lo, mega_hi):
     """The canon timing bar, pixel for pixel from the source's
     TRAINING_MINIGAME render (Joel 2026-07-15: 'do it canon style'):

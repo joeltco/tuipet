@@ -28,6 +28,7 @@ Nothing here is faked.
 from __future__ import annotations
 from . import data, grid, menu
 from . import adventure
+from . import strikefx
 from .adventure import Adventure, MAX_LIVES, ZONES
 from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, POS, NEG  # noqa: F401  (theme.apply propagation)
 
@@ -348,7 +349,7 @@ class AdventurePanel(menu.SubHost):
         self._scene = {"t": 0, "icon": self._find_icon(key), "key": key,
                        "name": name, "grade": None,
                        "meter": {"bar": 0, "dir": 1, "left": DIG_METER_T,
-                                 "lo": lo, "hi": hi}}
+                                 "lo": lo, "hi": hi, "hist": []}}
 
     def _find_icon(self, key):
         """The find at HAND size, ~8px beside the 16px mon (old-build rule:
@@ -375,6 +376,7 @@ class AdventurePanel(menu.SubHost):
         s = self._scene
         if s["t"] >= INV_WALK_T and s["grade"] is None:
             m = s["meter"]                    # the meter owns the beat
+            m["hist"] = (m["hist"] + [m["bar"]])[-strikefx.LOCK_GRACE:]
             m["bar"] += m["dir"]
             if m["bar"] >= BAR_MAX or m["bar"] <= 0:
                 m["dir"] = -m["dir"]
@@ -408,19 +410,17 @@ class AdventurePanel(menu.SubHost):
             #                                       scramble left it at (A1)
 
     def _lock_dig(self):
-        """The spade falls: grade the marker against the shared mega window
-        (battles >= 999 never whiffs -- DSprite truth, the verbatim battle/
-        drill rule).  Mega banks a SECOND copy of the find on the spot;
-        normal keeps the honest single; a wide miss still scrapes the find
-        out -- the meter is pure upside, only the verdict changes."""
+        """The spade falls: grade through the ONE lock source
+        (strikefx.grade_lock -- the latency grace, the 2px marker, the
+        verbatim battles >= 999 never-whiff rule; this was the THIRD
+        hand-copy, timing rework 2026-07-23).  Mega banks a SECOND copy
+        of the find on the spot; normal keeps the honest single; a wide
+        miss still scrapes the find out -- the meter is pure upside,
+        only the verdict changes."""
         s = self._scene
         m = s.pop("meter")
-        if self.pet.battles >= 999 or m["lo"] <= m["bar"] <= m["hi"]:
-            g = "mega"
-        elif m["lo"] - 5 <= m["bar"] <= m["hi"] + 5:
-            g = "normal"
-        else:
-            g = "miss"
+        g = strikefx.grade_lock(m["hist"] + [m["bar"]], m["lo"], m["hi"],
+                                veteran=self.pet.battles >= 999)
         s["grade"] = g
         if g == "mega":
             self.pet.add_item(s["key"])       # the bonus copy, banked at the lock

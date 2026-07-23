@@ -58,6 +58,7 @@ class TrainingPanel:
         self.phase = "bar"            # bar -> shoot -> done
         self.bar = 0
         self.bar_dir = 1
+        self._bar_hist = []           # trailing marker steps (the lock's latency grace)
         self.mega_lo, self.mega_hi = mega_window(pet)
         self.grade = None             # mega / normal / miss
         self.success = False
@@ -72,6 +73,7 @@ class TrainingPanel:
     def anim(self):
         self.frame_i += 1
         if self.phase == "bar":
+            self._bar_hist = (self._bar_hist + [self.bar])[-strikefx.LOCK_GRACE:]
             self.bar += self.bar_dir
             if self.bar >= BAR_MAX or self.bar <= 0:
                 self.bar_dir = -self.bar_dir
@@ -91,15 +93,12 @@ class TrainingPanel:
                     self.auto_close = ("done", self.result)
 
     def _lock(self):
-        # battles >= 999: VERBATIM v0.4.12 (DSprite truth, drill audit
-        # 2026-07-19) -- a maxed battle counter never whiffs.  Not a cheat
-        # shim; do not "fix" it.
-        if self.pet.battles >= 999 or self.mega_lo <= self.bar <= self.mega_hi:
-            g = "mega"
-        elif self.mega_lo - 5 <= self.bar <= self.mega_hi + 5:
-            g = "normal"
-        else:
-            g = "miss"
+        # ONE grading source with the bout (strikefx.grade_lock: the
+        # latency grace, the 2px marker, and the verbatim v0.4.12
+        # battles >= 999 never-whiff rule, which lives there now)
+        g = strikefx.grade_lock(self._bar_hist + [self.bar],
+                                self.mega_lo, self.mega_hi,
+                                veteran=self.pet.battles >= 999)
         self.grade = g
         self.success = g != "miss"
         self.pet.saved_hit_type = g
