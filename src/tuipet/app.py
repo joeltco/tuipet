@@ -132,12 +132,12 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("AN HONEST TIMING BAR: if you saw the marker hit the "
-                 "center, you hit the center — the lock now forgives the "
-                 "split second between your eyes and your keyboard, the "
-                 "whole 2-pixel marker counts, and the center zone never "
-                 "shrinks below a humanly possible size. Same bar in "
-                 "training and every battle.")
+    WHATS_NEW = ("THE BATTLE BAR NO LONGER EATS YOUR MASH: pressing "
+                 "SPACE through the battle intro used to lock the timing "
+                 "bar instantly at the left edge — a miss you never "
+                 "aimed. The bar now arms half a second after it "
+                 "appears, so only a deliberate press locks it. Your "
+                 "training megas were always real; now battles are too.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

@@ -92,3 +92,33 @@ def test_the_dig_meter_grades_through_the_grace_too():
     pan._lock_dig()
     assert pan._scene["grade"] == "mega"
     assert "×2" in pan._find_msg                           # the bonus copy banked
+
+
+def test_the_intro_mash_cannot_lock_the_bar():
+    """THE bug behind "im getting my ass kicked" (Joel 2026-07-23: "i was
+    already landing megas every time in training"): training has no
+    intro, the battle does -- mashing SPACE through the banner, the very
+    next press hit the just-started bar at the LEFT EDGE and locked a
+    miss/normal before the player ever started timing.  His save wore
+    the fingerprint: training megas, saved form "normal".  A lock now
+    arms LOCK_ARM_T ticks after the bar appears; ESC stays live."""
+    from tuipet.battlescreen import LOCK_ARM_T
+    pan = BattlePanel(_pet())
+    pan.key("space")                          # mash: skip the intro
+    assert pan.phase == "ready"
+    pan.key("space")                          # mash: the very next press
+    assert pan.battle is None                 # NOT locked at the left edge
+    for _ in range(LOCK_ARM_T):
+        pan.anim()
+    pan.bar = (pan.mega_lo + pan.mega_hi) // 2
+    pan.key("space")                          # a deliberate, timed lock
+    assert pan.battle is not None and pan.locked == "mega"
+
+
+def test_escape_stays_live_through_the_arm_window():
+    """Backing out was never a timed action -- the mash guard must not
+    trap the player in the ready screen."""
+    pan = BattlePanel(_pet())
+    pan.key("space")                          # skip the intro
+    assert pan.key("escape") == ("done", None)
+    assert pan.ran_away

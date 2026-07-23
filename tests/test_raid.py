@@ -275,6 +275,8 @@ def test_the_raid_bout_reports_its_dealt_damage():
     pan.client.raid = _view(_mega())
     pan.key("space")
     pan.sub.key("space")                                    # skip the intro
+    for _ in range(6):
+        pan.sub.anim()                                      # past the mash-arm window
     pan.sub.bar = (pan.sub.mega_lo + pan.sub.mega_hi) // 2
     pan.sub.key("space")                                    # lock: RaidBout builds
     bout = pan.sub.battle

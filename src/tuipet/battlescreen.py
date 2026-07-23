@@ -54,6 +54,14 @@ CHARGE = 4                                      # the classic V-pet shoot frame 
 # timeline tuning (ticks per beat, 1 tick == 0.1s); slowed for a readable vpet pace
 BANNER_FLASHES, BANNER_HOLD = 3, 4
 SKIP_DEBOUNCE = 6                                # ticks after the bar LOCKS before skip keys register
+LOCK_ARM_T = 5                                   # ticks after the bar APPEARS before a lock registers
+#                                                  (the intro-mash guard, Joel 2026-07-23 "i was
+#                                                  already landing megas every time in training":
+#                                                  training has no intro, the battle does -- the
+#                                                  banner mash's next press hit the just-started
+#                                                  bar at the LEFT EDGE and locked a miss before
+#                                                  the player ever started timing.  Same class as
+#                                                  the hazard dodge's mash bleed.)
 REVEAL_T = 12                                    # 1.2s opponent reveal/taunt (startBattle)
 FACEOFF_T = 9                                    # 0.9s stare-down
 WINDUP_T = 9                                     # 0.9s charge / rear-back before firing
@@ -220,6 +228,7 @@ class BattlePanel:
         self.bar = 0                 # the timing bar
         self.bar_dir = 1
         self._bar_hist = []          # trailing marker steps (the lock's latency grace)
+        self._ready_frame = 0        # frame the bar appeared (the intro-mash guard)
         self.mega_lo, self.mega_hi = mega_window(pet)
         self.locked = None           # the locked hit-type
         self._lock_frame = 0         # frame the bar locked: skip debounce anchor
@@ -312,6 +321,7 @@ class BattlePanel:
             self._emit_sfx()
         elif self.phase == "intro":
             self.phase = "ready"
+            self._ready_frame = self.frame_i
         else:
             if self.battle is None or self.battle.over:
                 self._enter_result()
@@ -345,9 +355,12 @@ class BattlePanel:
             if k in ("space", "enter", "escape"):
                 self.i = len(self.timeline) - 1
                 self.phase = "ready"
+                self._ready_frame = self.frame_i
             return None
         if self.phase == "ready":
             if k in ("space", "enter"):
+                if self.frame_i - self._ready_frame < LOCK_ARM_T:
+                    return None            # the intro mash bleeding in -- not a timed lock
                 self._lock_bar()
             elif k == "escape":
                 self.ran_away = True
