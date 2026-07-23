@@ -132,14 +132,14 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("ONE FIGHT, ONE CARD · ONE SHOP, ONE LOOK: every battle "
-                 "now shows the same live status card — HP bars, foe, "
-                 "verdict — whether it's a cup bout, a wild on the road, "
-                 "the town cup, or a raid volley (the road used to show "
-                 "generic vitals mid-fight). And the town egg market moved "
-                 "onto the shop's own Eggs tab: same tab bar, same shelf, "
-                 "same dossier as every other counter — no more one-off "
-                 "grid screen. One shop family everywhere.")
+    WHATS_NEW = ("DEAD FOES DON'T SHOOT: battles used to resolve both "
+                 "volleys at once, so a foe you just dropped to zero still "
+                 "landed its return shot AFTER its bar emptied — and the "
+                 "replay had to show the ghost hit. The engine now resolves "
+                 "in the order the theater plays: your volley first, and a "
+                 "killing blow ends the round on the spot. NPC bracket "
+                 "matches flip a coin for initiative so no entrant gains "
+                 "an edge from list order.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

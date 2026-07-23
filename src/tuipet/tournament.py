@@ -413,8 +413,12 @@ def _mk_entrant(rec, trophy, open_mega):
 
 def _npc_winner(a, b):
     """An NPC match runs the REAL 0.5 engine (2026-07-17): two wild Sides,
-    full HP race -- exactly how DVPet auto-fought its brackets."""
+    full HP race.  Initiative is a COIN (death-is-final 2026-07-22): the
+    engine resolves the 'me' side's volley first now, so a fixed argument
+    order would hand every bracket's first-listed entrant the edge."""
     from . import battle
+    if random.random() < 0.5:
+        a, b = b, a
     sa, sb = battle.Side.wild(a["num"]), battle.Side.wild(b["num"])
     _seq, ahp, bhp = battle.generate(sa, sb)
     if ahp == bhp:

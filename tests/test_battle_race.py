@@ -208,3 +208,27 @@ def test_the_result_note_tells_margin_draw_or_why():
     pan.battle.me = _side(hunger=1)
     pan.battle.foe = _side()
     assert "hungry" in pan._result_note()
+
+
+def test_a_zeroed_foe_never_returns_fire():
+    """Death is final within the round (Joel 2026-07-22: 'why are foes
+    still shooting after their energy bars are at 0?').  The old exchange
+    was simultaneous: a foe dropped to 0 by your volley still landed its
+    shot after its bar emptied — and the theater HAD to animate it (the
+    landed-blow law).  The engine resolves player-first now, matching the
+    theater's order: the killing volley ends the round."""
+    me, foe = _side(), _side()
+    rng_vals = iter([0.0, 0.0] * 400)          # every roll: 2 dmg, every hit lands
+
+    def rng():
+        return next(rng_vals)
+
+    seq, my_hp, foe_hp = battle.generate(me, foe, rounds=20, rng=rng)
+    assert foe_hp == 0 and my_hp > 0
+    last = seq[-1]
+    assert last[0] is True                     # the killing volley landed
+    assert last[2] is False, "posthumous return fire"
+    # every earlier round the foe legitimately answered
+    assert all(r[2] for r in seq[:-1])
+    # and the fight took exactly ceil(5/2)=3 rounds: no post-death rounds
+    assert len(seq) == 3

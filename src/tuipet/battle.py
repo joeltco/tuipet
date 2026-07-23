@@ -150,7 +150,18 @@ class Side:
 
 def generate(me, foe, rounds=ROUNDS_LOCAL, rng=None):
     """The whole fight: [(my_hit, my_dmg, foe_hit, foe_dmg), ...] plus final
-    HPs.  A simultaneous double-KO flips a fair coin on who whiffs."""
+    HPs.
+
+    DEATH IS FINAL within a round (Joel 2026-07-22: "why are foes still
+    shooting after their energy bars are at 0?"): the theater plays the
+    player's volley first, and the engine now resolves in that same order
+    -- a side dropped to 0 by the round's earlier volley never returns
+    fire.  The old exchange was simultaneous, so a freshly-KO'd foe still
+    landed its shot AFTER its bar hit zero (and a double-KO needed a coin
+    flip on who whiffs -- both leave with it).  NOTE for the lobby: a
+    mixed-version peer computes the old fight from the same seed, so
+    reports disagree and the ladder simply doesn't credit until both
+    sides run this build."""
     rng = rng or random.random
     my_hp, foe_hp = HP, HP
     p_me, p_foe = me.hit_chance(foe), foe.hit_chance(me)
@@ -162,14 +173,10 @@ def generate(me, foe, rounds=ROUNDS_LOCAL, rng=None):
         my_hit = rng() < p_me
         foe_dmg = foe.roll_damage(rng)
         foe_hit = rng() < p_foe
-        if my_hit and foe_hit:
-            if my_hp - foe_dmg <= 0 and foe_hp - my_dmg <= 0:
-                if rng() < 0.5:
-                    foe_hit = False
-                else:
-                    my_hit = False
         if my_hit:
             foe_hp -= my_dmg
+            if foe_hp <= 0:
+                foe_hit = False          # no posthumous return fire
         if foe_hit:
             my_hp -= foe_dmg
         seq.append((my_hit, my_dmg, foe_hit, foe_dmg))
