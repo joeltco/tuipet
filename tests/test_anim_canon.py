@@ -100,3 +100,26 @@ def test_battle_strong_hit_sfx_branches_on_double():
     assert _sfx("fire_out", False) == "attack"
     assert _sfx("hit", True) == "strongHit"
     assert _sfx("hit", False) == "attackHit"
+
+
+def test_a_duplicate_slot_sheet_still_dances():
+    """Joel 2026-07-22: 'why does bubbmon not have a dancing animation?
+    theres only one frame' — Bubbmon's sheet fills slots 4/5/7 with ONE
+    rip, so the happy dance ([5,7]) and poopdance ([4,5]) flipped between
+    identical images.  _flip_frames alternates with a different REAL frame
+    of the same species instead; a distinct-slot species is untouched."""
+    from tuipet import data
+    from tuipet.arena import _flip_frames
+    _, by = data.load_sprites()
+    rec = by[1574]                                # Bubbmon
+    fr = rec["frames"]
+    first = next(f for f in fr if f)
+    assert fr[5] == fr[7]                         # the sheet quirk, pinned
+    for role in ("happy", "poop"):
+        out = _flip_frames(data.ROLES[role], fr, first)
+        a, b = fr[out[0]], fr[out[1]]
+        assert a != b, f"{role}: still a frozen flip"
+    # a full sheet keeps its canon frames exactly
+    full = by[29]["frames"]                       # Agumon
+    assert _flip_frames(data.ROLES["happy"], full,
+                        next(f for f in full if f)) == data.ROLES["happy"]

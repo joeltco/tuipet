@@ -132,11 +132,14 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE EGG WEARS ITS NAME: the carousel's status card now "
-                 "titles the digitama you're browsing — matching an egg to "
-                 "its egg-guide entry used to mean matching the art by eye. "
-                 "The hatch line still names only the destined BABY: an egg "
-                 "will never promise to hatch an egg.")
+    WHATS_NEW = ("BUBBMON DANCES: a few sprite sheets fill several pose "
+                 "slots with one identical frame — Bubbmon's happy dance "
+                 "and poopdance flipped between two copies of the same "
+                 "image, freezing solid. When a pose-flip resolves to one "
+                 "bitmap, the dance now alternates with a different REAL "
+                 "frame of the same species (its bob), so every mon moves "
+                 "when it celebrates. Nothing is drawn — rips only, as "
+                 "always.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

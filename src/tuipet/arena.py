@@ -50,6 +50,24 @@ _FX = data.load_effects()
 GRAVESTONE = _FX.get("grave", [None])[0]      # real DVPet death.png
 
 
+def _flip_frames(frames, _fr, first):
+    """A pose-flip needs two DIFFERENT rips (Joel 2026-07-22: "why does
+    bubbmon not have a dancing animation?  theres only one frame").  A
+    few sheets fill a role's slots with one identical frame -- Bubbmon's
+    4/5/7 are the same rip, freezing its happy dance ([5,7]) and its
+    poopdance ([4,5]) solid.  When every slot resolves to the same bitmap,
+    alternate with a DIFFERENT real frame of the same species (the bob
+    pair first) -- motion from the rips it actually has, nothing drawn."""
+    if len(frames) < 2:
+        return frames
+    fs = [(_fr[i] if i < len(_fr) else None) or first for i in frames]
+    if any(f != fs[0] for f in fs):
+        return frames
+    alt = next((j for j in (1, 0, 8, 6) if j < len(_fr) and _fr[j]
+                and _fr[j] != fs[0]), None)
+    return [frames[0], alt] if alt is not None else frames
+
+
 #                                                     every canon sprite fits inside; things leave
 #                                                     the screen only off the LEFT or RIGHT edge,
 #                                                     on occasion -- never the top or bottom.)
@@ -98,7 +116,7 @@ class Screen(FxMixin, Static):
             roles = data.ROLES
         _fr = rec["frames"]
         first = next((f for f in rec["frames"] if f), rec["frames"][0])
-        frames = roles.get(pet.anim, [0])
+        frames = _flip_frames(roles.get(pet.anim, [0]), _fr, first)
         # stepFrame: a GERIATRIC pet idles on spriteNum+9 -- the aged shuffle
         # toggles the dejected/collapse frames (canon re-audit 2026-07)
         if (pet.anim in ("idle", "walk") and pet.num != -1
