@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.177 — THE MORNING TELLS THE TRUTH (2026-07-22)
+
+THE MORNING TELLS THE TRUTH: a good-morning roll used to say 'woke up beaming!' even over a nearly empty energy gauge — a cut-short night (a dawn re-sleep, a midnight bedtime, the 7:00-sharp wake) can end before the tank refills, and beaming over one bar read as a bug. A good morning on a drained tank now says 'up — still weary…'. The sleep audit behind it verified the refill math (a full night fully refills, drained pets recover double) and every action door on a sleeper (refuse or wake-and-grumble, never a silent drain).
+
 ## 0.5.176 — EVERY MON MOVES WHEN IT SHOULD (2026-07-22)
 
 EVERY MON MOVES WHEN IT SHOULD: a roster scan found ~35 species whose sheets fill a pose-flip with one identical frame — Bubbmon's dance was frozen solid, others froze their tantrums, startles or wash. Those flips now alternate with a different REAL frame of the same species (its bob), so celebration and agitation always MOVE. Sleep stays exempt on purpose: a still sleeper is the pose. Nothing is drawn — rips only, as always.
