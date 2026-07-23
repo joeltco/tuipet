@@ -149,14 +149,16 @@ def _side(**kw):
 
 def test_the_saved_form_steadies_or_shakes_the_aim():
     """#3: the timing bar's grade only ever tiered damage EV while the
-    fight was decided by hit_chance -- the one interactive moment barely
-    moved outcomes.  A mega now adds 0.05 accuracy, a miss costs it."""
+    fight was decided by hit_chance.  SUPERSEDED scale (lock rework
+    2026-07-23, Joel "FIX IT"): ±0.05 aim-only left perfect play losing
+    every 4th fight -- a lock is now ±0.10 aim AND ∓0.10 guard on the
+    foe's roll (test_timing_honesty owns the full-contract pin)."""
     foe = _side()
     normal = _side().hit_chance(foe)
     mega = _side(hit_type="mega").hit_chance(foe)
     miss = _side(hit_type="miss").hit_chance(foe)
-    assert abs(mega - normal - 0.05) < 1e-9
-    assert abs(normal - miss - 0.05) < 1e-9
+    assert abs(mega - normal - 0.10) < 1e-9
+    assert abs(normal - miss - 0.10) < 1e-9
 
 
 def test_coach_line_names_the_biggest_fixable_drag():

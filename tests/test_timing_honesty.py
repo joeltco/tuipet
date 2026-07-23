@@ -10,6 +10,8 @@ a LOCK_GRACE of trailing steps, the 2px marker counting both its
 pixels, and the window floored at 3px (a 1px window was a 100ms
 target -- physically impossible in a terminal).
 """
+import pytest
+
 from tuipet import strikefx
 from tuipet.battlescreen import BattlePanel, mega_window
 from tuipet.pet import Pet
@@ -153,3 +155,22 @@ def test_every_fight_wears_its_lock_on_the_card():
     pan.key("space")                            # the lock
     statusbox.battle(app)
     assert "Lock" in app.stats_w.s and "mega" in app.stats_w.s
+
+
+def test_the_lock_is_decisive_aim_and_guard():
+    """Lock rework 2026-07-23 (Joel: "FIX IT" -- measured, not guessed:
+    aim-only ±0.05 left perfect play at 66-72%, losing every 4th fight
+    to the foe's own rolls).  A lock now works BOTH ends: aim ±0.10 on
+    my roll, guard ∓0.10 on THEIRS.  Perfect fresh play ~80%, trained
+    ~90% -- and equal locks cancel EXACTLY, so PvP stays fair."""
+    from tuipet.battle import Side
+    mega = Side(100, stage="Champion", attribute="Free", hit_type="mega")
+    norm = Side(100, stage="Champion", attribute="Free", hit_type="normal")
+    mega2 = Side(100, stage="Champion", attribute="Free", hit_type="mega")
+    miss = Side(100, stage="Champion", attribute="Free", hit_type="miss")
+    base = norm.hit_chance(Side(100, stage="Champion", attribute="Free"))
+    assert mega.hit_chance(norm) - base == pytest.approx(0.10)   # aim
+    assert norm.hit_chance(mega) - base == pytest.approx(-0.10)  # guard
+    assert mega.hit_chance(mega2) == pytest.approx(base)         # locks cancel
+    assert miss.hit_chance(norm) - base == pytest.approx(-0.10)  # a shank exposes
+    assert norm.hit_chance(miss) - base == pytest.approx(0.10)

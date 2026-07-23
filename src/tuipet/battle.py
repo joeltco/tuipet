@@ -128,15 +128,22 @@ class Side:
              + min(self.trainings_total / 9999 * 0.2, 0.2)
              + self._condition()
              + _tri(self.attribute, other.attribute)
-             # the timing bar's real stake (gameplay polish #3, 2026-07-22):
-             # the saved form only ever tiered damage EV (1.9/1.5/1.2 per
-             # landed hit) while the fight was decided here -- the one
-             # interactive combat moment barely moved outcomes.  A clean
-             # mega now steadies the aim too, a shanked drill shakes it;
-             # symmetric for every Side (cards carry hit_type; wilds are
-             # "normal"; the drill rulings -- effort/weight move win or
-             # lose -- are untouched, the STAKE just reaches the arena)
-             + {"mega": 0.05, "miss": -0.05}.get(self.hit_type, 0.0))
+             # the timing bar's real stake, DECISIVE (lock rework
+             # 2026-07-23, Joel: "i hit the fucking center each time" --
+             # measured: a mega lock at ±0.05 aim-only won just 66-72%,
+             # perfect play still ate every 4th fight because the FOE's
+             # rolls dominate the 5-HP race).  A clean lock now works
+             # BOTH ends: aim +0.10, and the OTHER side's guard term
+             # below drags an unlocked foe's rolls down 0.10 -- fresh
+             # perfect play ~80%, trained ~90%.  Symmetric for every
+             # Side, so equal locks cancel EXACTLY in PvP (cards carry
+             # hit_type; wilds are "normal"; the drill rulings --
+             # effort/weight move win or lose -- are untouched)
+             + {"mega": 0.10, "miss": -0.10}.get(self.hit_type, 0.0)
+             # the GUARD half: my clean form steadies my defense --
+             # a mega-locked opponent is harder to hit, a shanked one
+             # is exposed
+             + {"mega": -0.10, "miss": 0.10}.get(other.hit_type, 0.0))
         return min(1.0, max(0.0, p))
 
     def roll_damage(self, rng):

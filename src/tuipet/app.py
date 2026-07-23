@@ -132,11 +132,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("YOUR LOCK, ON THE CARD: every battle now shows the "
-                 "timing grade you locked (mega / normal / miss) on the "
-                 "status card for the whole fight — training always "
-                 "showed its grade, battles never did. No more losing "
-                 "with no idea why.")
+    WHATS_NEW = ("THE LOCK DECIDES: a clean mega lock on the battle "
+                 "bar now steadies your aim AND your guard — hitting "
+                 "the center wins about 4 fights in 5 even untrained, "
+                 "9 in 10 trained. Equal locks cancel in PvP, so it "
+                 "stays fair. If you hit the center, you win.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
