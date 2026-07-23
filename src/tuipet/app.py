@@ -132,14 +132,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE DODGE IS REAL NOW: ducking an ambush used to make the "
-                 "attacker blink out of existence mid-air — the sail-past "
-                 "hid it behind your mon's own pixels for the whole beat, "
-                 "so a clean SPACE-dodge looked like a glitch. The strike "
-                 "now WHIFFS: the pouncer pulls up short of your crouch and "
-                 "visibly retreats off the right edge, on screen for every "
-                 "tick of the beat. Ducking finally looks as good as it "
-                 "feels.")
+    WHATS_NEW = ("THE EGG WEARS ITS NAME: the carousel's status card now "
+                 "titles the digitama you're browsing — matching an egg to "
+                 "its egg-guide entry used to mean matching the art by eye. "
+                 "The hatch line still names only the destined BABY: an egg "
+                 "will never promise to hatch an egg.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

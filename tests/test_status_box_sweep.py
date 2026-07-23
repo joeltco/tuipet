@@ -172,3 +172,20 @@ def test_every_painter_lives_in_statusbox():
         assert "statusbox." in body, f"{name} grew a body outside statusbox"
         assert "stats_w.update" not in body or name == "_status_card" \
             or "statusbox" in body
+
+
+def test_the_egg_carousel_card_names_the_egg():
+    """Joel 2026-07-22: 'shouldnt the egg carousel screen show the name of
+    the egg?' -- the browsed digitama had no label anywhere, so matching
+    it to its egg-guide entry meant matching art by eye.  The card wears
+    the egg's TITLE now; the hatch line still names the BABY only (the
+    egg-must-not-promise-an-egg ruling is untouched)."""
+    from tuipet import egg as egg_mod
+    from tuipet.eggselectscreen import EggSelectPanel
+    app = _app()
+    pan = EggSelectPanel(app.pet)
+    assert pan.n, "starters must populate the carousel"
+    txt = _card(app, pan)
+    idx = pan.carousel[pan.i]
+    assert egg_mod.hatch_name(idx) in txt          # the egg's own name
+    assert egg_mod.destined_name(idx) in txt       # the baby, unchanged

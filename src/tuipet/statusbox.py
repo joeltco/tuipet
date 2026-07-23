@@ -248,8 +248,16 @@ def eggselect(app):
             data.canonical_num(targets[0]) not in persistence.get_album()
         badge = ("[b]★ never raised[/]" if fresh
                  else {"temp": "[dim]this gen only[/]"}.get(state, "[dim]ready[/]"))
+    # the egg wears its NAME (Joel 2026-07-22: "shouldnt the egg carousel
+    # screen show the name of the egg?") -- the browsed digitama had no
+    # label anywhere, so matching it to its egg-guide entry meant matching
+    # art by eye.  The old title ruling only banned the egg's name on the
+    # HATCH line (an egg must not promise to hatch an egg); the egg's own
+    # title over the dossier is exactly what that line left room for.
+    ename = "???" if state == "locked" else egg_mod.hatch_name(idx)
     scene = backgrounds.name(backgrounds.scene_for_egg(idx))
-    card(app, "New Egg", [f"[dim]{m.i + 1} of {m.n} · {m.locked} locked[/]", "",
+    card(app, "New Egg", [f"[dim]{m.i + 1} of {m.n} · {m.locked} locked[/]",
+                          f"[b]{ename[:22]}[/]", "",
                           "Destined to hatch", f"  [b]{shown}[/]",
                           f"  {badge}", "",
                           f"Home   {scene[:18]}", "",
