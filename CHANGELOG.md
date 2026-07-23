@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.187 — QUALITY OF LIFE, ROUND 1 (2026-07-23)
+
+QUALITY OF LIFE, ROUND 1: ESC now ends a decided battle in one press (SPACE still hurries beat by beat, and the hints show on the strip), skip presses no longer vanish at round boundaries, a sick pet's feed menu opens right on the Pill, and a spent pet on the road tells you it needs rest instead of begging to be urged.
+
 ## 0.5.186 — EASIER ON THE EARS (2026-07-23)
 
 EASIER ON THE EARS: fresh installs now start at 50% volume instead of full blast. Your saved volume setting is untouched — this only picks the starting point for new tamers (Options → Sound to taste, as always).
