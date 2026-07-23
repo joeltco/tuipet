@@ -230,6 +230,52 @@ sprite with animation sequence"]
 - [ ] Add `"bandage": "Bandaging"` to `shop.TOY_SCRIPTS` (rename that
       constant — it is now the item→script map, not just toys).
 
+### E2b — THE ITEM-SHOW GAP (measured 2026-07-23, Joel: "we have the
+### vitamin sprite, correct? is all of that already wired in?")
+
+No — and it is not just the vitamin.  **All 26 non-food catalog items
+carry a full 4-frame ripped strip.  Only 7 (every one of them a toy)
+play any show at all.**  The other 19 flash a line of text.
+
+The canon mapping is FREE, we simply never read it: our icon key
+`i:N` **is** the items.csv row id, and that sheet has an
+`AnimationType` column for every row.  Verified:
+
+| item | canon AnimationType | script written? | wired? |
+|------|--------------------|-----------------|--------|
+| bandage | `Bandaging` | no (E2 writes it) | NO |
+| music_player | `Play` | **yes** | NO |
+| textbook | `Study` | **yes** | NO |
+| dumbbell | `Lift` | **yes** | NO |
+| grow_capsule | `Study` | **yes** | NO |
+| revive_floppy | `Play` | **yes** | NO |
+| port_potty | `PortToilet` | no | NO |
+| x_antibody / dna_crystal | `ItemEvol` | no | NO |
+| digimemory | `Inherit` | no (has its own flow) | NO |
+| town/disaster transport | `*Transport` | no (own flows) | NO |
+| life_recovery | `Recover` | no | NO |
+| the 7 toys | (various) | yes | yes |
+
+- [ ] **FIVE FREE WINS — art exists, script already written in
+      `itemfx.SCRIPTS`, only the wiring is missing**: `music_player`
+      → Play, `textbook` → Study, `dumbbell` → Lift, `grow_capsule`
+      → Study, `revive_floppy` → Play.  Zero new animation work.
+- [ ] **The Vitamin (and every `f:` consumable) is a separate case.**
+      `f:5` is literally the DVPet "Vitamin" (4 frames, 24×24) — but
+      **foods.csv has NO AnimationType column**, because food-sheet
+      items are EATEN.  Their canon show is the `eat` fx we already
+      ship (the pill rides exactly this: "the pill is EATEN, the
+      source's EATING action, same as meat").  Fix: let `f:` Care
+      consumables fire the `eat` fx with their own icon — today
+      `shopscreen` gates that on `FOOD_KEYS`, so Care items fall
+      through to a bare text flash.  Covers vitamin, energy_drink,
+      slim_drink, sleeping_pill, caffeine_pill, anti_evo_chip.
+- [ ] **Retire the hand-map.**  `shop.TOY_SCRIPTS` is a 7-entry
+      hand-maintained partial duplicate of a canon column that exists
+      for all 26 items.  Read `AnimationType` off the icon key
+      instead (single-source rule), keeping `itemfx.NO_FX` +
+      own-flow items as the explicit exclusions.
+
 ### E3 — Dead show code (measured, not guessed)
 
 fx kinds the painter fully implements but **nothing ever fires**:
