@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.194 — ROAD SAFETY (2026-07-23)
+
+ROAD SAFETY: a Sleep Pill can no longer be taken on the road — it used to freeze the march in a nap that never ended. And when a spent pet plants its feet out there, the message now names the real ways out (warp to a town or head home) instead of promising a rest the road can't give.
+
 ## 0.5.193 — THE GLOOM CLOUD (2026-07-23)
 
 THE GLOOM CLOUD: a discouraged pet finally shows it — the sulk now wears a little storm-cloud emote beside its head, the true opposite of the happy sunshine dance. Real extracted art that's been sitting unused in the sprite files, wired up at last.
