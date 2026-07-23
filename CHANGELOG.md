@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.208 — EVERY CONSUMABLE IS EATEN NOW (2026-07-23)
+
+EVERY CONSUMABLE IS EATEN NOW: vitamins, both drinks, the sleep and caffeine pills and the anti-evo chip all play the eating animation with their own ripped artwork, instead of flashing a line of text. The pill always worked this way — now the whole shelf does.
+
 ## 0.5.207 — ITEMS PUT ON A SHOW (2026-07-23)
 
 ITEMS PUT ON A SHOW: the textbook now opens and pages while your pet studies, the dumbbell gets lifted, the grow capsule is read, the music player plays — animations that were fully drawn but never wired. Also fixed: a Vitamin's injury guard was lasting essentially forever instead of a day.
