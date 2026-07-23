@@ -15,6 +15,112 @@ still untouched: TIME LAW, DSprite mortality, LINES_SPEC.
 
 ---
 
+## ⚠ PLAN AUDIT (2026-07-23, Joel: "audit the plan")
+
+The plan was written without checking the clock, and the clock breaks
+it.  Findings, severity first.  **THE UNIT LAW below governs every
+duration constant in this arc.**
+
+### THE UNIT LAW — dt IS GAME-MINUTES, 1:1
+
+`tick(dt)`'s dt is world-SECONDS, and one world-second IS one
+game-minute.  Confirmed three independent ways:
+- `SICK_POOP_P` is documented "per minute" and coded `random() < p*dt`
+- `awake_limit 480 + sleep_limit 960 = 1440 = DAY_LENGTH` (a game day
+  of 1440 game-min in 1440 world-seconds)
+- `sleep_lapse += dt * ...` accumulates straight against `sleep_limit`
+
+**Therefore tuipet's clock runs 60× faster than the device's**, and a
+canon duration constant CANNOT be copied as-is.  The codebase already
+knew: `FILTH_SICK_BOUND = 200  # FilthSickChanceBound 12000 real-min
+-> /60 game scale`, and petbase:76 warns a faithful port "collapses
+mood within ~15 real-min on the compressed clock."
+
+### P0 — TWO SHIPPED BUGS (v0.5.205/206), fix before any new work
+
+- [ ] **P0a — the Vitamin's injury guard is effectively PERMANENT.**
+      `_vitamin` sets `vitamin_lapse = 1440.0` (intended: 1 game-day)
+      and `petbody:592` decays it `dt / 60.0`.  Under the unit law
+      that is 60× too slow: it needs **86,400 game-min ≈ 24 real hours
+      of play** to expire.  One 500b Vitamin disarms the entire injury
+      system shipped one release earlier.  Fix: decay by `dt`.
+- [ ] **P0b — unit mislabels in shipped comments (and in this board's
+      first draft).**  The tantrum's `dt / (60.0*90.0)` is one per
+      5400 game-min (= ~90 REAL min of play), not the "~1/90 game-min"
+      the comment claims.  `praise_window`/`scold_window = +600.0` are
+      600 game-min (= 10 real min), not "10 game-min".  The BEHAVIOUR
+      is what Joel was told; only the labels are wrong — but D1 was
+      specced in these same wrong units, so correct them before
+      anyone copies the pattern again.
+
+### P1 — D1 AS WRITTEN WOULD BREAK D3 (the plan contradicts itself)
+
+Canon fade at face value, on tuipet's 60×-compressed clock:
+- neutral cadence 120 game-min → **−2 every 2 real min = −60/hour**
+- tantrum reward +25 per ~90 real min ≈ **+17/hour**
+- **net ≈ −43/hour → every gauge parks at 0**
+
+With D3 layered on, *every* pet ends permanently disobedient — the
+exact inverse of D3's promise ("a well-raised pet NEVER refuses").
+D1 must **scale** the cadence (the `/60` precedent) and be sized
+against the measured reward rate, not copied.
+
+### P2 — D3's "ONE DOOR" CLAIM IS FALSE, and the real doors leak
+
+`check_refused` has exactly three callers: `pet.py:741` (mode change),
+`jogress.py:143`, and `petbattle.py:219` (`can_battle`).
+**Feed and train never call it.**  So:
+- "feed/train/battle only" needs NEW plumbing at feed and train —
+  materially bigger than boarded
+- the two existing callers are **jogress and mode-change, both OUTSIDE
+  the approved scope**; making `check_refused` manners-aware would
+  silently start refusing evolution paths.  Any D3 work needs an
+  explicit carve-out so those two keep their energy-only behaviour.
+
+### P3 — OBEDIENCE SCALE COLLISION (shipped, and it poisons D3)
+
+Canon `MAX_OBEDIENCE = 150`; v0.5.206 clamps 0..100 and the card reads
+"/100".  Canon seeds are `ROOKIE_OBED_DEFAULT = 25` and
+`ROOKIE_OBED_BAD = 0` — so under D3's proposed "under ~25" threshold a
+freshly-evolved Rookie is **born at or below the disobedience line**.
+That is inherited, not earned.  Rule the scale (rescale seeds to /100,
+or raise the clamp to 150) BEFORE picking D3's threshold.
+
+### P4 — INJURY SHIPPED WITHOUT ITS CANON RECOVERY
+
+Canon heals injuries on a clock: `MIN/MAX_INJ_LENGTH = 1,12` recovery
+lapses × `INJ_LAPSE_MIN = 29` game-min, and the pre-strip code ticked
+`inj_length` down ("injLapse: the injury heals over time").  **The
+`inj_length` field is still in every save, dormant.**  Shipped
+behaviour: `injured` clears ONLY via the Bandage (`petcare:482`).
+Consequences:
+- the sibling ailment has a FREE, infinite cure (the F-menu pill)
+  while injury's only cure is a **300b shop-only item** — asymmetric
+- not a hard softlock (adventure/raid/train are not injury-gated, so
+  bits stay earnable) but a broke+injured player grinds while hurt
+- [ ] RULE IT: restore the canon lapse (revive `inj_length`), or keep
+      bandage-only and say so on the board as a deliberate deviation.
+
+### P5 — "TOO HURT TO FIGHT" ISN'T LITERALLY TRUE
+
+`battle_condition` blocks chosen bouts and every cup door, but
+adventure is not injury-gated and road ambushes are ungated by design
+— so an injured pet still fights wilds.  Consistent with the energy
+grammar (same carve-out), but the wording overpromises.  Ruling
+wanted, not necessarily a fix.
+
+### Revised order (supersedes "Suggested order" below)
+
+0. **P0a + P0b** (shipped bugs; P0a silently disables injury)
+1. **P4 ruling** (injury recovery) — cheap, and it changes D's shape
+2. **D2** (overfeed) — genuinely independent, small, no clock risk
+3. **P3 ruling**, then **D1 with a SCALED cadence**
+4. **D3** only after D1's real numbers are observed, with feed/train
+   plumbing built and the jogress/mode-change carve-out pinned
+5. **E1 + E2**, then **E3 + E4**
+
+---
+
 ## D — THE CARE LOOP (the "real vpet" trio)
 
 The three that make a creature: the gauge breathes, feeding is a
@@ -33,10 +139,12 @@ decision, and a neglected pet has a will of its own.
         keep it)
       - TIME LAW-clean: it rides the sim tick, so it only runs on the
         main view like everything else.
-      ⚠ OPEN: canon's scale is 0..150 with 150 the cap; tuipet's
-      restored gauge is 0..100.  Either rescale the dec (2 → ~1.3) or
-      keep 2 and accept a slightly brisker fade.  **Recommend: keep 2**
-      — brisker is better for a session game, and it makes D3 reachable.
+      ⚠⚠ SUPERSEDED BY THE AUDIT (P1): those cadences are DEVICE
+      real-minutes.  Copied onto tuipet's 60×-compressed clock they
+      drain −60/hour against a +17/hour reward — every gauge parks at
+      0 and D3 inverts.  The cadence MUST be scaled (`/60` precedent)
+      and sized against measured reward rates.  Also see P3: the
+      0..100 vs canon 0..150 scale must be ruled first.
 
 - [ ] **D2 — OVERFEED PENALTY.**  Today a full-belly feed is a free
       head-shake that quietly ticks `overeat` for the evolution OF
@@ -58,8 +166,12 @@ decision, and a neglected pet has a will of its own.
         raising, this punishes neglect)
       - the cure is raising, not waiting: answer tantrums, scold, the
         gauge climbs, obedience returns
-      - `check_refused` is the ONE door (it already exists as the
-        stub the strip left); the energy auto-refuse stays as-is
+      - ⚠⚠ CORRECTED BY THE AUDIT (P2): `check_refused` is NOT the one
+        door.  Feed and train never call it; its only callers are
+        mode-change, jogress and `can_battle`.  Feed/train need NEW
+        plumbing, and jogress/mode-change need an explicit carve-out
+        so they keep their energy-only behaviour.  The energy
+        auto-refuse stays as-is everywhere.
       - refusal shows the head-shake + costs nothing else (no mistake,
         no meter hit) — the refusal IS the consequence
       ⚠ OPEN: which commands can be refused?  **Recommend: feed,
@@ -204,10 +316,19 @@ and Options→Keys (auto from BINDINGS).  Pinned by tests.
 
 ## Open questions for Joel (nothing ships on these until ruled)
 
-1. D1 fade rate: keep canon dec 2 on a 0..100 gauge (brisker), or
-   rescale to canon's 0..150 feel?
+1. ~~D1 fade rate~~ → superseded by P1: the question is now **how far
+   to scale** the cadence, answered after the reward rate is measured.
 2. D2: care mistake on every stuffing, or only on repeat stuffing?
-3. D3: refusable commands — feed/train/battle only (recommended), or
-   wider?
+3. ~~D3 refusable commands~~ → still feed/train/battle (recommended),
+   but see P2: it needs real plumbing plus a jogress/mode-change
+   carve-out, and P3's scale ruling first.
 4. F: bag-only Bandage (recommended), or spend bar cells?
 5. E3: wire or delete `poopdance` / `yawn` / `toilet`?
+   (⚠ a deletion needs a NAMED order — the removals rule.)
+6. **P3: obedience scale** — rescale the canon seeds onto 0..100, or
+   raise the clamp to canon's 150?
+7. **P4: injury recovery** — restore the canon heal-over-time lapse
+   (`inj_length`, still dormant in every save), or keep bandage-only
+   as a deliberate deviation?
+8. **P5:** should injury block the ROAD too, or is "too hurt to fight"
+   understood as chosen-fights-only (matching the energy grammar)?
