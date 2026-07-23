@@ -504,7 +504,9 @@ def test_restart_offer_renders_its_own_page():
     pan.confirm_restart = True
     page = pan.text().plain
     assert "Restart into the new version" in page
-    assert "ENTER restart now" in page
+    # the keys moved to the strip with the footer purge (QOL 2026-07-23):
+    # the in-LCD footer duplicated the strip word for word
+    assert "restart now" in pan.strip()
 
 
 def test_auto_off_still_names_the_version(monkeypatch):

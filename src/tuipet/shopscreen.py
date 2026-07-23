@@ -29,6 +29,8 @@ the sealed Digimental waves tease there on the egg-carousel cadence.
 from __future__ import annotations
 import textwrap
 
+from rich.text import Text
+
 from . import data
 from . import shop
 from . import persistence
@@ -51,6 +53,12 @@ _HONOR_PLATE = ["╭" + "─" * (menu.IC_W - 2) + "╮",
                 "╰" + "─" * (menu.IC_W - 2) + "╯"]
 
 
+# where you left off, per session: the HOME shop/bag reopen on the last
+# (tab, cursor) instead of Food/row 0 every restock run (QOL 2026-07-23).
+# Session-only by design -- a fresh launch starts fresh.
+_LAST_POS = {}
+
+
 class ShopPanel:
     def __init__(self, pet, start_mode="shop", bag_only=False, town_id=None,
                  start_tab=None):
@@ -66,6 +74,15 @@ class ShopPanel:
             if start_tab in tabs:
                 self.tab = tabs.index(start_tab)
         self.cursor = 0
+        # per-tab cursor memory for this visit: tabbing away and back no
+        # longer dumps you at row 0 (QOL 2026-07-23)
+        self._tab_pos = {}
+        self._mode_pos = {}             # (tab, cursor) per shop/bag side
+        if town_id is None and start_tab is None and not bag_only:
+            self.tab, self.cursor = _LAST_POS.get(start_mode, (0, 0))
+        self._retarget = False          # the stack under the cursor just
+        #                                 emptied: eat ONE act-press so a
+        #                                 mash can't hit the neighbor
         self.frame_i = 0
         self.sfx = None
         self.msg = ""                   # transient footer flash (last verdict)
@@ -199,21 +216,41 @@ class ShopPanel:
         self.sfx = "error" if refused else "confirm"   # a kept item is a NO
         return None
 
+    def _remember_pos(self):
+        """Session memory: the HOME shop/bag reopen where you left off."""
+        if self.town is None and not self.bag_only:
+            _LAST_POS[self.mode] = (self.tab, self.cursor)
+
+    def _check_retarget(self, e):
+        """After a bag use/sell: if that emptied the stack, the list shifts
+        under the cursor -- arm the one-press guard so a mashed R/ENTER
+        can't silently hit the neighbor (QOL 2026-07-23)."""
+        key = e.get("key")
+        if key is not None and all(r.get("key") != key for r in self._rows()):
+            self._retarget = True
+
     def key(self, k):
         rows = self._rows()
         n = len(rows)
         tabs = self._tabs()
+        if k in ("left", "h", "right", "l", "up", "k", "down", "j",
+                 "pageup", "pagedown", "tab"):
+            self._retarget = False           # the player re-aimed on purpose
         if k == "tab" and not self.bag_only:
+            self._tab_pos[(self.mode, self.tab)] = self.cursor
+            self._mode_pos[self.mode] = (self.tab, self.cursor)
             self.mode = "bag" if self.mode == "shop" else "shop"
-            self.tab, self.cursor = 0, 0
+            self.tab, self.cursor = self._mode_pos.get(self.mode, (0, 0))
             self._flash("Your bag." if self.mode == "bag" else "Welcome back!")
             return None
         if k in ("left", "h"):
+            self._tab_pos[(self.mode, self.tab)] = self.cursor
             self.tab = (self.tab - 1) % len(tabs)
-            self.cursor = 0
+            self.cursor = self._tab_pos.get((self.mode, self.tab), 0)
         elif k in ("right", "l"):
+            self._tab_pos[(self.mode, self.tab)] = self.cursor
             self.tab = (self.tab + 1) % len(tabs)
-            self.cursor = 0
+            self.cursor = self._tab_pos.get((self.mode, self.tab), 0)
         elif k in ("up", "k") and n:
             self.cursor = (self.cursor - 1) % n
         elif k in ("down", "j") and n:
@@ -236,15 +273,31 @@ class ShopPanel:
                     msg, self.sfx = shop.buy(self.pet, e)
                     self._flash(msg)
             else:
-                return self._use(e)
+                if self._retarget:
+                    self._retarget = False
+                    self._flash(f"now on {e['name']} — press again")
+                    self.sfx = "cancel"
+                    return None
+                r = self._use(e)
+                if r is not None:
+                    self._remember_pos()   # a toy/inherit exit closes the bag
+                    return r
+                self._check_retarget(e)
         elif k == "r" and self.mode == "bag" and n:
             e = rows[self.cursor % n]
+            if self._retarget:
+                self._retarget = False
+                self._flash(f"now on {e['name']} — press again")
+                self.sfx = "cancel"
+                return None
             msg, self.sfx = shop.sell(self.pet, e)
             self._flash(msg)
+            self._check_retarget(e)
         elif k in ("escape", "o", "i"):
             # carry a still-live verdict home (round 31: keying on self.sfx
             # was dead -- the app consumes sfx every frame, so buy-then-
             # leave never showed its verdict)
+            self._remember_pos()
             return ("done", self.msg if self.msg_t > 0 else None)
         return None
 
@@ -348,6 +401,16 @@ class ShopPanel:
 
         empty = ("(shelves empty)" if self.mode == "shop"
                  else "(none of these owned)")
+        def dim_if_short(label, e, i):
+            """Affordability at a GLANCE: an unaffordable row renders dim
+            across the whole shelf, not just as the selected row's "short
+            Xb" dossier tail (QOL 2026-07-23).  The selected row keeps the
+            ▸ inversion -- its dossier already spells out the shortfall."""
+            if i != self.cursor and e.get("price", 0) > self.pet.bits:
+                return Text(("  " + label)[:menu.W].ljust(menu.W) + "\n",
+                            style=DIM)
+            return label
+
         def fmt(e, i):
             if self.mode == "shop":
                 if e.get("title_id") is not None:
@@ -357,16 +420,21 @@ class ShopPanel:
                         return "%-18s %3s %7s" % (("★ " + e["name"])[:18], "", "worn")
                     if e.get("owned"):
                         return "%-18s %3s %7s" % (e["name"][:18], "", "owned")
-                    return "%-18s %3s %6db" % (e["name"][:18], "", e["price"])
+                    return dim_if_short(
+                        "%-18s %3s %6db" % (e["name"][:18], "", e["price"]), e, i)
                 if e.get("egg_idx") is not None:     # digitama: owned/price
-                    tag = "owned" if e.get("owned") else "%6db" % e["price"]
-                    return "%-18s %3s %7s" % (e["name"][:18], "", tag.strip())
+                    if e.get("owned"):
+                        return "%-18s %3s %7s" % (e["name"][:18], "", "owned")
+                    return dim_if_short(
+                        "%-18s %3s %7s" % (e["name"][:18], "",
+                                           ("%6db" % e["price"]).strip()), e, i)
                 held = self.pet.inventory.get(e["key"], 0)
                 mark = ("x%d" % held) if held else ""
                 nm = ("▾" + e["name"][:17]) if e.get("deal") else e["name"][:18]
                 if self.town is not None and e.get("left", 1) <= 0:
                     return "%-18s %3s %6s" % (nm, mark, "out")
-                return "%-18s %3s %6db" % (nm, mark, e["price"])
+                return dim_if_short(
+                    "%-18s %3s %6db" % (nm, mark, e["price"]), e, i)
             return "%-18s x%-3d %5db" % (e["name"][:18], e.get("count", 1),
                                          shop.resell_price(e))
 

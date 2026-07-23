@@ -84,8 +84,12 @@ def test_account_panel_speaks_the_hint_language():
     #                                                    only (round 35)
 
 
-def test_theme_picker_footer_matches_its_strip():
-    """LCD said 'ESC cancel' while the strip said 'ESC revert' — one wording."""
+def test_theme_picker_keys_ride_the_strip_only():
+    """LCD said 'ESC cancel' while the strip said 'ESC revert' — one wording.
+    (Superseded by the footer purge, QOL 2026-07-23: the in-LCD footer
+    duplicated the strip word for word, so it's GONE — the strip is the
+    single key surface, same round-35 grammar as the account panel.)"""
     from tuipet.themescreen import ThemePanel
     pan = ThemePanel()
-    assert "ESC revert" in pan.text().plain
+    assert "ESC" not in pan.text().plain           # keys ride the STRIP only
+    assert "revert" in Text.from_markup(pan.strip()).plain

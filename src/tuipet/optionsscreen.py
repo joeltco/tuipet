@@ -125,7 +125,10 @@ class SoundPanel:
         out.append_text(menu.blanks(5))
         out.append_text(menu.note(self.msg or self._DESC[self._ROWS[self.cursor]],
                                   tick=self.frame_i))
-        out.append_text(menu.footer("↑↓ pick  ENTER go  ESC back"))
+        # no in-LCD key footer: the strip owns the keys, and this one was
+        # STATIC -- it contradicted the strip on the volume row ("↑↓ pick
+        # ENTER go" vs "←→ volume · ENTER hear it").  QOL sweep 2026-07-23.
+        out.right_crop(1)
         return out
 
 
@@ -443,7 +446,7 @@ class OptionsPanel(menu.SubHost):
             out.append_text(menu.blanks(1))
             out.append_text(menu.note("Your save is already written."))
             out.append_text(menu.blanks(2))
-            out.append_text(menu.footer("ENTER restart now   ESC later"))
+            out.right_crop(1)          # the strip owns the keys (QOL 2026-07-23)
             return out
         if self.confirm:
             out.append_text(menu.blanks(1))
@@ -452,7 +455,7 @@ class OptionsPanel(menu.SubHost):
             out.append_text(menu.blanks(1))
             out.append_text(menu.row(f"type YES:  {self.buf}_", True))
             out.append_text(menu.blanks(2))
-            out.append_text(menu.footer("ENTER confirm   ESC keep everything"))
+            out.right_crop(1)          # the strip owns the keys (QOL 2026-07-23)
             return out
         for i, row in enumerate(_ROWS):
             out.append_text(menu.row(f"{_LABEL[row]:<16} {self._value(row)[:18]}",
@@ -460,5 +463,5 @@ class OptionsPanel(menu.SubHost):
         out.append_text(menu.blanks(7 - len(_ROWS)))
         out.append_text(menu.note(self.msg or _DESC[_ROWS[self.cursor]],
                                   tick=self.frame_i))
-        out.append_text(menu.footer("↑↓ pick  ENTER go  ESC out"))
+        out.right_crop(1)              # the strip owns the keys (QOL 2026-07-23)
         return out

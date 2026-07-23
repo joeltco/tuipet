@@ -132,12 +132,14 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("QUALITY OF LIFE, ROUND 1: ESC now ends a decided battle "
-                 "in one press (SPACE still hurries beat by beat, and the "
-                 "hints show on the strip), skip presses no longer vanish "
-                 "at round boundaries, a sick pet's feed menu opens right "
-                 "on the Pill, and a spent pet on the road tells you it "
-                 "needs rest instead of begging to be urged.")
+    WHATS_NEW = ("QUALITY OF LIFE, ROUND 2 — menus & shops: the shop "
+                 "remembers where you left off (per tab, and across "
+                 "visits), prices you can't afford show dim across the "
+                 "whole shelf, emptying a stack in the bag can no longer "
+                 "sneak your next press onto a neighbor, the Album and "
+                 "Egg Guide wrap top to bottom and page inside the book, "
+                 "and the menu screens dropped their stale key footers — "
+                 "the hint strip is the one true key line.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

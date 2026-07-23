@@ -96,3 +96,141 @@ def test_round_anim_strip_prompts_the_hurry_keys():
 def test_feed_opens_on_the_pill_when_sick_and_meat_when_well():
     assert FeedPanel(_pet(sick=True)).cursor == 1     # Pill
     assert FeedPanel(_pet()).cursor == 0              # Meat
+
+
+# ============ Batch 2: menus & shops =========================================
+
+def _fresh_shop(pet=None, **kw):
+    from tuipet import shopscreen
+    shopscreen._LAST_POS.clear()
+    return shopscreen.ShopPanel(pet or _pet(bits=5000), **kw)
+
+
+# ---- M1/M6: album + egg guide wrap; detail views page ----------------------
+
+def test_album_and_eggguide_lists_wrap_both_ends():
+    from tuipet.albumscreen import AlbumPanel
+    from tuipet.eggguidescreen import EggGuidePanel
+    for pan in (AlbumPanel(_pet()), EggGuidePanel()):
+        pan.key("up")
+        assert pan.i == pan.n - 1, type(pan).__name__   # top wraps to bottom
+        pan.key("down")
+        assert pan.i == 0, type(pan).__name__           # ...and back
+
+
+def test_detail_views_honor_the_page_keys():
+    from tuipet.albumscreen import AlbumPanel
+    pan = AlbumPanel(_pet())
+    pan.key("enter")                       # open the book
+    assert pan.detail
+    i0 = pan.i
+    pan.key("pagedown")
+    assert pan.i != i0                     # the leap lands (was a dead key)
+    pan.key("pageup")
+    assert pan.i == i0
+
+
+# ---- M4/M7: shop cursor memory ----------------------------------------------
+
+def test_shop_tabs_remember_their_cursor():
+    pan = _fresh_shop()
+    pan.key("down")
+    pan.key("down")
+    here = pan.cursor
+    assert here != 0
+    pan.key("right")                       # tab away...
+    assert pan.cursor == 0
+    pan.key("left")                        # ...and back
+    assert pan.cursor == here
+
+
+def test_shop_bag_toggle_keeps_both_positions():
+    p = _pet(bits=5000)
+    p.add_item("energy_drink")
+    p.add_item("energy_drink")
+    from tuipet import shopscreen
+    pan = shopscreen.ShopPanel(p)
+    pan.key("right")
+    pan.key("down")
+    shop_pos = (pan.tab, pan.cursor)
+    pan.key("tab")                         # into the bag
+    assert pan.mode == "bag"
+    pan.key("tab")                         # back to the shop
+    assert (pan.tab, pan.cursor) == shop_pos
+
+
+def test_home_shop_reopens_where_you_left_off():
+    from tuipet import shopscreen
+    p = _pet(bits=5000)
+    pan = _fresh_shop(p)
+    pan.key("right")
+    pan.key("down")
+    pos = (pan.tab, pan.cursor)
+    pan.key("escape")                      # leave the shop
+    again = shopscreen.ShopPanel(p)
+    assert (again.tab, again.cursor) == pos
+    # town doors and explicit tabs are NOT hijacked by the memory
+    town = shopscreen.ShopPanel(p, town_id=0, start_tab="Eggs")
+    assert town.cursor == 0
+
+
+# ---- M2: emptying a stack can't silently retarget a mash --------------------
+
+def test_selling_the_last_of_a_stack_guards_the_next_press():
+    p = _pet(bits=100)
+    p.add_item("energy_drink")             # one of these...
+    p.add_item("slim_drink")                 # ...and a neighbor
+    pan = _fresh_shop(p, start_mode="bag")
+    pan.key("right")                       # the drinks live on the Items tab
+    keys = [r.get("key") for r in pan._rows()]
+    pan.cursor = keys.index("energy_drink")
+    pan.key("r")                           # sell the LAST one: stack empties
+    assert pan._retarget                   # the guard is armed
+    held0 = dict(p.inventory)
+    pan.key("r")                           # the mash press...
+    assert p.inventory == held0            # ...sells NOTHING
+    assert "now on" in pan.msg             # and says where the cursor sits
+    pan.key("r")                           # a deliberate press works again
+    assert p.inventory != held0
+
+
+def test_moving_the_cursor_disarms_the_retarget_guard():
+    p = _pet(bits=100)
+    p.add_item("energy_drink")
+    p.add_item("slim_drink")
+    pan = _fresh_shop(p, start_mode="bag")
+    pan.key("right")                       # the drinks live on the Items tab
+    keys = [r.get("key") for r in pan._rows()]
+    pan.cursor = keys.index("energy_drink")
+    pan.key("r")
+    assert pan._retarget
+    pan.key("down")                        # re-aiming on purpose...
+    assert not pan._retarget               # ...clears the guard
+
+
+# ---- M3: affordability at a glance ------------------------------------------
+
+def test_unaffordable_shelf_rows_render_dim():
+    from tuipet.theme import DIM
+    pan = _fresh_shop(_pet(bits=0))        # broke: everything is short
+    out = pan.text()
+    assert any(sp.style == DIM and out.plain[sp.start:sp.end].strip()
+               and "b" in out.plain[sp.start:sp.end]
+               for sp in out.spans), "no dim shelf row for a broke tamer"
+
+
+# ---- M5: the strip owns the keys (no contradicting footers) -----------------
+
+def test_menu_family_footers_are_gone():
+    """The Sound footer said "↑↓ pick ENTER go" while its strip said
+    "←→ volume · ENTER hear it" -- both visible at once.  The strip is
+    the single key surface now (QOL 2026-07-23)."""
+    from tuipet.optionsscreen import OptionsPanel, SoundPanel
+    from tuipet.themescreen import ThemePanel
+    sp = SoundPanel(lambda: True, lambda: None)
+    assert "ENTER go" not in sp.text().plain
+    op = OptionsPanel(_pet(), lambda: True, lambda: None)
+    assert "ENTER go" not in op.text().plain
+    tp = ThemePanel(_pet())
+    assert "ENTER keep" not in tp.text().plain
+    assert "keep" in tp.strip()            # ...because the strip carries it

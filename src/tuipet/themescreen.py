@@ -82,5 +82,6 @@ class ThemePanel:
         out.append_text(menu.blanks(max(0, 8 - len(self.names))))
         out.append_text(menu.note(
             _NOTES.get(self.names[self.cursor], "live preview as you move")))
-        out.append_text(menu.footer("↑↓ preview  ENTER keep  ESC revert"))
+        out.right_crop(1)              # the strip owns the keys -- this footer
+        #                                duplicated it word for word (QOL 2026-07-23)
         return out

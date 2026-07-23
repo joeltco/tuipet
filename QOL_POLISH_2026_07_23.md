@@ -29,23 +29,25 @@ one release per batch.
 
 ## Batch 2 — menus & shops
 
-- [ ] M1 Album + Egg Guide lists are the ONLY cursor lists that don't
+- [x] M1 Album + Egg Guide lists are the ONLY cursor lists that don't
       wrap top↔bottom (their own detail views DO wrap ←→).  Wrap them.
-- [ ] M2 Bag: using/selling the last of a stack shifts the list under
+- [x] M2 Bag: using/selling the last of a stack shifts the list under
       the cursor → next press hits a NEIGHBOR item.  Anchor the cursor.
-- [ ] M3 Shop shelf shows affordability only on the selected row — dim
+- [x] M3 Shop shelf shows affordability only on the selected row — dim
       the price on rows you can't afford, whole shelf at a glance.
-- [ ] M4 Shop tabs reset cursor to 0 on every tab/bag switch — per-tab
+- [x] M4 Shop tabs reset cursor to 0 on every tab/bag switch — per-tab
       cursor memory for the panel's lifetime.
-- [ ] M5 Sound/Options/Themes render a static footer that CONTRADICTS
+- [x] M5 Sound/Options/Themes render a static footer that CONTRADICTS
       the live strip ("↑↓ pick ENTER go" vs "←→ volume").  The strip
       owns the keys — drop the stale footers.
-- [ ] M6 Album/Egg-Guide DETAIL views step one entry per ←→ with no
+- [x] M6 Album/Egg-Guide DETAIL views step one entry per ←→ with no
       PgUp/PgDn, while the lists they came from page fine.  Route page
       keys in detail too.
-- [ ] M7 Shop always reopens Food/row 0 — remember last (tab, cursor)
+- [x] M7 Shop always reopens Food/row 0 — remember last (tab, cursor)
       per session and reopen there.
-- [ ] M8 (low) At the exact end rows, ↑↓ wraps but PgUp/PgDn clamps —
+- [~] M8 RULED OUT: menu.page_step's docstring pins the clamp
+      as deliberate law ("wrapping past the end reads as a
+      bug") -- the step/page split stands.  At the exact end rows, ↑↓ wraps but PgUp/PgDn clamps —
       two idioms disagree at the same spot.  Page keys wrap when
       already at the end.
 

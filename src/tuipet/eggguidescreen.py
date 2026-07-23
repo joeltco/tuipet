@@ -73,15 +73,21 @@ class EggGuidePanel:
                 self.i = (self.i - 1) % self.n
             elif k in ("right", "l", "down", "j"):
                 self.i = (self.i + 1) % self.n
+            elif k == "pageup":                # the list's leap, in the story too
+                self.i = (self.i - (VIS - 1)) % self.n
+            elif k == "pagedown":
+                self.i = (self.i + (VIS - 1)) % self.n
             elif k == "escape":
                 self.detail = False
             elif k == "n":                     # n (the opening key) closes the book
                 return ("done", None)
             return None
+        # the list wraps like every sibling cursor list (and like this
+        # screen's own detail view) -- QOL sweep 2026-07-23
         if k in ("up", "k"):
-            self.i = max(0, self.i - 1)
+            self.i = (self.i - 1) % self.n
         elif k in ("down", "j"):
-            self.i = min(self.n - 1, self.i + 1)
+            self.i = (self.i + 1) % self.n
         elif k == "pageup":                  # page jumps, lobby-chat style
             self.i = max(0, self.i - (VIS - 1))
         elif k == "pagedown":
