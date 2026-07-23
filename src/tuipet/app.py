@@ -132,12 +132,13 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("DUEL WITH OPEN EYES: a tamer's saved lock now shows "
-                 "in the lobby — on the roster blurb, the challenge "
-                 "menu and the invite prompt (\"Agumon · Champion · "
-                 "lock mega\") — and the fight header shows both locks. "
-                 "A lock swings a duel hard now; nobody should accept "
-                 "one blind.")
+    WHATS_NEW = ("BATTLES STOP STARVING YOUR PET: every bout sheds "
+                 "weight, and it could grind a pet 30g below its "
+                 "species base — a huge hidden accuracy penalty that "
+                 "grew the MORE you fought. Weight now floors at the "
+                 "species base, like training and travel always did. "
+                 "If your pet is thin, feed it back up — every gram "
+                 "toward base is hit chance back.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

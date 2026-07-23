@@ -260,7 +260,14 @@ class BattleMixin:
         # hazard KNOCK pushes past empty.  Fighting on empty still bills the
         # body through the hit formula (Side._condition's energy term).
         self._set_energy(max(0, self.energy - BATTLE_ENERGY_COST))
-        self._set_weight(max(1, self.weight - BATTLE_WEIGHT_COST))
+        # floored at the species BASE, not at 1 (weight floor law -- the
+        # SAME ruling training got 2026-07-17 and the march drain always
+        # had; battles were the one sink still grinding to a skeleton.
+        # Caught live 2026-07-23: Joel's 52-bout Greymon ground from base
+        # 40g to 10g = the MAX weight penalty, -0.10 vs every ideal
+        # wild's +0.10 -- a hidden 20-point swing that ate his mega lock
+        # and read as "still getting my ass handed to me")
+        self._set_weight(max(self._base_weight(), self.weight - BATTLE_WEIGHT_COST))
         if online:
             return ""
         self.battles += 1

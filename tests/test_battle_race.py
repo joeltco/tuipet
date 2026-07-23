@@ -234,3 +234,20 @@ def test_a_zeroed_foe_never_returns_fire():
     assert all(r[2] for r in seq[:-1])
     # and the fight took exactly ceil(5/2)=3 rounds: no post-death rounds
     assert len(seq) == 3
+
+
+def test_a_battle_never_grinds_weight_below_the_species_base():
+    """The weight floor law reaches battles (2026-07-23, the "still
+    getting my ass handed to me" bug): training floors its weight shed
+    at the species base (ruling 2026-07-17) and the march drain always
+    did -- record_battle was the one sink still flooring at 1g.  Joel's
+    real 52-bout Greymon ground from base 40 to 10g = the maximum
+    weight penalty, a hidden 20-point hit-chance swing vs ideal-weight
+    wilds that no screen explained."""
+    p = _pet()
+    base = p._base_weight()
+    p._set_weight(base + 2)
+    p.record_battle(True, {"num": 4, "stage": "Champion", "attribute": "Data"})
+    assert p.weight == base                    # bills down TO base...
+    p.record_battle(True, {"num": 4, "stage": "Champion", "attribute": "Data"})
+    assert p.weight == base                    # ...and never past it
