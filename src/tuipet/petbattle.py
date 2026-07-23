@@ -255,6 +255,10 @@ class BattleMixin:
         the classic battle.)"""
         if source == "pvp":
             online = True
+        # a battle SPENDS energy, so it floors at 0 (the energy floor law,
+        # D3 ruling 2026-07-23 -- adventure.py's constants block): only a
+        # hazard KNOCK pushes past empty.  Fighting on empty still bills the
+        # body through the hit formula (Side._condition's energy term).
         self._set_energy(max(0, self.energy - BATTLE_ENERGY_COST))
         self._set_weight(max(1, self.weight - BATTLE_WEIGHT_COST))
         if online:

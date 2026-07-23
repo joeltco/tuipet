@@ -152,3 +152,22 @@ def test_the_grand_chain_names_the_missing_season(monkeypatch):
     grand = tournament.trophy_by_id(248)           # Winter grand: prelim 170 (Fall)
     msg = tournament._eligibility_rest(p, grand)
     assert msg and "first" in msg and "Fall cup" in msg
+
+
+def test_a_drained_pet_is_refused_at_every_cup_door(on_date):
+    """D4 ruling 2026-07-23 (keep, now pinned): the energy audit's "cups
+    have no energy gate" was the board overstating -- every entry path
+    (hourly, featured, town) runs battle_condition, the ONE bout-condition
+    source (audit 2026-07-19), so a pet under BATTLE_MIN_ENERGY never
+    starts a bracket.  The town door's pin lives in test_town_cup."""
+    on_date(WED)
+    p = _pet(energy=5)                            # under the 10 gate
+    t = tournament.featured_now(p)
+    assert "drained" in tournament.eligibility_featured(p, t)
+    on_date(ODAIBA)                               # festival: every slot open
+    sched = tournament.schedule(p)
+    slot = next(i for i, tid in enumerate(sched)
+                if tid >= 0
+                and tournament._eligibility_rest(p, tournament.trophy_by_id(tid)) is None)
+    tr = tournament.trophy_by_id(sched[slot])
+    assert "drained" in tournament.eligibility_at(p, tr, slot)

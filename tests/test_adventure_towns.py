@@ -122,3 +122,29 @@ def test_the_town_sell_slot_opens_the_bag():
     t.key("enter")
     assert type(t.sub).__name__ == "ShopPanel"
     assert t.sub.mode == "bag" and t.sub.bag_only     # use/sell only, no buying
+
+
+def test_a_spent_pet_rests_to_half_the_tank():
+    """D1 ruling 2026-07-23: a town rest reaches AT LEAST half the tank.
+    The old flat +6 was one battle's worth -- Joel: "i seen it fill energy,
+    then go to 0 after a battle" -- and a pet KNOCKED past empty warping
+    into town came back still flat on the ground."""
+    p = _pet()
+    p._set_energy(-3)                          # knocked past empty (hazards)
+    a = Adventure(p, zone=_town_zone())
+    a._rest_up()
+    assert p.energy == p.max_energy // 2       # back on its feet
+
+
+def test_an_already_rested_pet_still_tops_up():
+    """Above half a tank the rest keeps its old +TOWN_REST_ENERGY top-up,
+    clamped at the tank -- a near-full pet leaves town full."""
+    p = _pet()
+    p._set_energy(p.max_energy // 2 + 1)
+    a = Adventure(p, zone=_town_zone())
+    a._rest_up()
+    assert p.energy == p.max_energy // 2 + 1 + adventure.TOWN_REST_ENERGY
+    p._set_energy(p.max_energy - 2)
+    a._resting = False
+    a._rest_up()
+    assert p.energy == p.max_energy            # clamped at the tank

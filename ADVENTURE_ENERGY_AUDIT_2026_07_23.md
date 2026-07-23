@@ -24,8 +24,9 @@ COSTS
   no-cup only) — a bracket is 3-5 matches = −15..−25
 
 GAINS
-- Town waypoint arrival / town-warp: +6 (TOWN_REST_ENERGY).  That is
-  ALL a town gives.
+- Town waypoint arrival / town-warp: rest to at least HALF the tank,
+  +6 (TOWN_REST_ENERGY) top-up when already above it (D1 ruling
+  2026-07-23; was a flat +6 — one battle's worth).
 - Energy Drink (bag): set to FULL — but the bag is only reachable
   inside town hubs on the road
 - Nothing else.  The pet's life sim is PAUSED in every mode (the TIME
@@ -51,30 +52,51 @@ one battle's worth.
       road** (there is no rest out there; see the map above).  It now
       names the only real outs: `T warp · ESC home`.
 
-## DESIGN FINDINGS — Joel's ruling wanted
+## DESIGN FINDINGS — RULED 2026-07-23 (Joel: "lets fix d1-4 however
+## you recommend") — shipped v0.5.195
 
-- [ ] D1 **Town rest is one battle's worth.**  +6 vs battle −5; the
-      arrival strip says "rested up", the module doc says "refills".
-      Options: (a) town rest = FULL tank (it already costs the win
-      streak — that's the gamble); (b) rest to HALF tank, floor +6;
-      (c) keep 6, reword the strip/doc to stop over-promising.
-- [ ] D2 **Energy stops mattering at 0 on the road.**  Battles floor
-      at 0 and wilds are ungated, so a pet on empty chain-fights all
-      day with zero consequence.  Options: (a) fighting on an empty
-      tank pushes past empty (unfloor battle cost → the planted-feet
-      system finally fires from fighting, not just hazards);
-      (b) an empty-tank fighter takes a hit-chance penalty (the
-      weight/belly lever grammar); (c) keep — energy is march fuel
-      only.
-- [ ] D3 **Inconsistent floors**: march and battle floor at 0, the
-      hazard's −2 does not.  Hazards being the only negative source
-      makes the refusal system nearly unreachable.  Resolve with D2's
-      choice (one floor rule for all three).
-- [ ] D4 **Cups have no energy gate and bill −5 per match** (home and
-      town cups both).  A chosen SINGLE battle gates at energy ≥ 10;
-      a 5-match bracket gates at nothing.  Options: (a) can_enter
-      requires ≥ 10 like any chosen fight; (b) cup matches bill less
-      (−2) since the bracket multiplies them; (c) keep.
+- [x] D1 **Town rest is one battle's worth** → **(b) rest to at least
+      HALF the tank.**  `_rest_up` is now
+      `max(energy + 6, max_energy // 2)`: a spent (even knocked-
+      negative) pet leaves town standing on half a tank — two battles
+      and change, not one — while an above-half pet keeps the +6
+      top-up, clamped at full.  "Rested up" and the module doc now
+      tell the truth.  A full tank was rejected (it would zero the
+      Energy Drink and make towns a total reset; the streak break
+      should gate a REST, not a refuel-to-max).  Pins:
+      test_adventure_towns half-tank + top-up tests.
+- [x] D2 **"Energy stops mattering at 0"** → **the board OVERSTATED —
+      the consequence already ships.**  Side._condition (battle.py)
+      bills the energy meter into every hit roll: a full ten-point
+      hit-chance swing between a fresh tank and an empty one, and
+      coach_line reports "energy ran low".  Option (b) was already
+      built; nothing added.  Now pinned:
+      test_an_empty_tank_already_fights_worse.
+      (Unflooring battles — option (a) — was rejected on arithmetic:
+      ~8 wilds/zone × −5 = −40 on a 24 tank; every ordinary run would
+      strand mid-zone.)
+- [x] D3 **Inconsistent floors** → **named THE ENERGY FLOOR LAW: a
+      SPEND floors at zero, a KNOCK pushes past it.**  Marching and
+      battling are exertion the pet chooses to pay — an empty tank
+      can't fund them, so both floor at 0.  A hazard pounce is DAMAGE
+      — being blindsided knocks past empty, and ONLY that plants the
+      pet's feet (the refusal system's trigger stays rare and
+      dramatic, per the soft-refusal calibration).  The floors were
+      never inconsistent, just unnamed.  Law documented at
+      adventure.py's constants block + hazard_hit + record_battle;
+      pinned: test_the_energy_floor_law_spend_vs_knock.
+- [x] D4 **"Cups have no energy gate"** → **the board was WRONG —
+      every cup door already gates.**  can_enter alone doesn't check
+      energy, but every ENTRY path runs battle_condition (the ONE
+      bout-condition source, audit 2026-07-19): hourly
+      eligibility (tournament.py:283), eligibility_at (:297),
+      eligibility_featured (:305), and the town cup
+      (townscreen.py:99).  A pet under BATTLE_MIN_ENERGY (10) never
+      starts a bracket.  A bracket entered at 10 can floor at 0
+      mid-cup — by the floor law that's "comes home spent", and the
+      D2 hit-term makes late matches honestly harder.  Kept; pinned:
+      test_a_drained_pet_is_refused_at_every_cup_door (+ the town
+      door's existing pin in test_town_cup).
 
 ## Verified clean
 

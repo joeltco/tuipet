@@ -13,7 +13,8 @@ its own wild pool; the zone BOSS FIGHT -- reaching the end opens the gate boss
 fails, a survivable loss lets the pet face it again); TRAVEL DRAIN -- each
 marched leg tires (energy), burns the calorie buffer (weight trims toward base)
 and tops the effort gauge, so a run comes home spent; TOWNS -- a mid-zone
-waypoint refills lives + energy and suppresses encounters; and PROGRESSION --
+waypoint refills lives, rests energy to at least half the tank and suppresses
+encounters; and PROGRESSION --
 pet.adv_progress tracks zones conquered (the frontier index); felling a zone's
 boss unlocks the next, and the ZonePickPanel lets the player embark on any
 unlocked zone; and FINDS -- a marched step may spot loot from the zone's own
@@ -46,6 +47,13 @@ HAZARD_CHANCE = 0.06      # per marched step -- an ambush pounce on the road
 #                           eating it costs a small energy toll
 HAZARD_ENERGY = 2         # the toll for eating a pounce (a SMALL hit -- the
 #                           march drain is 1 per 4 legs for scale)
+# THE ENERGY FLOOR LAW (D3 ruling 2026-07-23): a SPEND floors at zero, a
+# KNOCK pushes past it.  Marching and battling are exertion the pet chooses
+# to pay -- an empty tank can't fund them, so both floor at 0 (_march_drain
+# here, record_battle in petbattle.py).  A hazard pounce is DAMAGE -- being
+# blindsided can knock the pet past empty (hazard_hit, unfloored), and only
+# that: negative energy is what plants its feet (check_stop_travel) and
+# strands the run on the refuse strip's outs (T warp / ESC home).
 # REPLAY DIFFICULTY (Joel 2026-07-21 "do the replay difficulty scaling"): a
 # CONQUERED zone re-run is a VETERAN ROAD -- the same species fight TRAINED,
 # through the real hit-formula terms (Side.hit_chance's trainings + winning-
@@ -86,7 +94,9 @@ WALK_DRAIN_EVERY = 4      # a drain tick every N marched legs
 TRAVEL_ENERGY_DEC = 1     # energy spent per drain tick
 TRAVEL_CALORIE_DEC = 1    # calories burned per drain tick
 TRAVEL_EFFORT_CAP = 4     # walking tops the effort gauge (pet.strength) up to here
-TOWN_REST_ENERGY = 6      # a town waypoint restores this much energy on top of lives
+TOWN_REST_ENERGY = 6      # a town rest's top-up when already above half a tank;
+#                           the rest itself reaches AT LEAST max_energy // 2
+#                           (D1 ruling 2026-07-23 -- see _rest_up)
 
 # the 26 real zones (5 maps: 7/7/3/2/7) are built from data/zones.csv +
 # enemies.csv (data.load_maps).  Each run wears ONE biome (own-game law): the
@@ -534,11 +544,16 @@ class Adventure:
                 + (SCORE_CONQUEST if self.done else 0))
 
     def _rest_up(self):
-        """A town rest, wherever it comes from (waypoint or warp): lives and
-        energy back -- and the WIN STREAK breaks.  The push-on gamble in one
-        place: rest for safety, pay with the chain."""
+        """A town rest, wherever it comes from (waypoint or warp): lives back,
+        energy rested to at least HALF the tank (topped by TOWN_REST_ENERGY
+        when already above it) -- and the WIN STREAK breaks.  The push-on
+        gamble in one place: rest for safety, pay with the chain.  (D1 ruling
+        2026-07-23: the old flat +6 was one battle's worth -- "rested up" that
+        a single fight erased; half a tank makes the words true, and a pet
+        KNOCKED past empty warping in comes back standing.)"""
         self.lives = MAX_LIVES
-        self.pet._set_energy(self.pet.energy + TOWN_REST_ENERGY)
+        self.pet._set_energy(max(self.pet.energy + TOWN_REST_ENERGY,
+                                 self.pet.max_energy // 2))
         self.streak = 0
 
     def chain(self, won):
@@ -557,7 +572,9 @@ class Adventure:
 
     def hazard_hit(self):
         """Eat the pounce: the small energy toll.  Single source -- the panel
-        reports the missed dodge, the ENGINE applies the cost."""
+        reports the missed dodge, the ENGINE applies the cost.  UNFLOORED by
+        the energy floor law (a KNOCK, not a spend): this is the one road
+        source that pushes past empty and trips the planted-feet refusal."""
         self.pet._set_energy(self.pet.energy - HAZARD_ENERGY)
         self.last = "Ambushed on the road!"
 

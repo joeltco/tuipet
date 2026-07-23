@@ -132,12 +132,12 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("ROAD SAFETY: a Sleep Pill can no longer be taken on the "
-                 "road — it used to freeze the march in a nap that never "
-                 "ended. And when a spent pet plants its feet out there, "
-                 "the message now names the real ways out (warp to a town "
-                 "or head home) instead of promising a rest the road "
-                 "can't give.")
+    WHATS_NEW = ("A REAL NIGHT'S REST: an adventure town now rests your "
+                 "pet to at least HALF its energy tank (it used to give "
+                 "one battle's worth — 'rested up' that a single fight "
+                 "erased). Above half, towns still top you up toward "
+                 "full. The win streak still breaks — rest for safety, "
+                 "pay with the chain.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

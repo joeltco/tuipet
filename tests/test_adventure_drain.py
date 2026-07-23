@@ -4,6 +4,8 @@ Pins the march's toll: each leg tires (energy), burns the calorie buffer (weight
 trims toward the species base) and tops the effort gauge -- so a run comes home
 spent.  The drain lands on marched STEPS only, not on encounter/boss legs.
 """
+import pytest
+
 from tuipet import adventure
 from tuipet.adventure import (Adventure, WALK_DRAIN_EVERY, TRAVEL_EFFORT_CAP,
                               INTERACTIVE_STEPS)
@@ -79,3 +81,34 @@ def test_the_energy_pip_rides_the_march_strip(monkeypatch):
         if pan.travelling:
             break
     assert "⚡" in pan.strip()                            # energy shown while marching
+
+
+def test_the_energy_floor_law_spend_vs_knock():
+    """D3 ruling 2026-07-23 -- THE ENERGY FLOOR LAW: a SPEND floors at
+    zero, a KNOCK pushes past it.  Marching (pinned above) and battling
+    are exertion the pet chooses to pay -- an empty tank can't fund them;
+    a hazard pounce is DAMAGE, the one road source of negative energy,
+    and negative energy is what plants the pet's feet."""
+    p = _pet()
+    p._set_energy(3)
+    p.record_battle(True)                        # a battle SPENDS...
+    assert p.energy == 0                         # ...flooring at empty
+    a = Adventure(p, zone=_bossless())
+    a.hazard_hit()                               # a pounce KNOCKS...
+    assert p.energy == -adventure.HAZARD_ENERGY  # ...past empty, unfloored
+
+
+def test_an_empty_tank_already_fights_worse():
+    """D2 ruling 2026-07-23 (keep, now pinned): the energy audit's
+    "fighting at 0 has no consequence" was the board overstating --
+    Side._condition bills the energy meter into every hit roll, a full
+    ten-point swing between a fresh tank and an empty one (and the coach
+    line calls it out)."""
+    from tuipet.battle import Side
+    p = _pet()
+    foe = Side.wild(p.num)
+    p._set_energy(p.max_energy)
+    fresh = Side.of_pet(p).hit_chance(foe)
+    p._set_energy(0)
+    empty = Side.of_pet(p).hit_chance(foe)
+    assert fresh - empty == pytest.approx(0.1)   # the meter's real bill
