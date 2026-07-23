@@ -206,3 +206,26 @@ def test_the_heal_beat_renders_a_celebration(monkeypatch):
     cap = _capture(pan, monkeypatch)
     assert _in_window(_ink(cap["placements"][0]))
     assert "second wind" in pan.strip()
+
+
+@pytest.mark.parametrize("wx", WXS)
+def test_a_clean_dodge_keeps_the_whiffing_pouncer_visible(wx, monkeypatch):
+    """The dodge fix (2026-07-22, Joel: 'the space to dodge mechanic was
+    glitchy'): the old sail-past hid the pouncer behind the pet's columns
+    for the whole tail — a successful duck read as the attacker blinking
+    out of existence.  The whiff retreats out the RIGHT edge: visible at
+    every tail tick, never sharing ink with the croucher."""
+    from tuipet.adventurescreen import HZ_END_T
+    impact = HZ_TELE_T + HZ_LUNGE_T
+    for k in range(HZ_END_T - 2):             # the tail (the last ticks clip
+        pan = _on_road(wx)                    #  out through the edge, lawful)
+        pan._hazard = {"t": impact + k,
+                       "enemy": adventure.ZONES[0]["randoms"][0],
+                       "dodged": True, "hit": False}
+        cap = _capture(pan, monkeypatch)
+        pet = _ink(cap["placements"][0])
+        pounce = set(cap["overlay"])
+        assert pounce, f"tail tick {k}: the whiffing pouncer must render"
+        assert {p for p in pounce if _in_window({p})}, \
+            f"tail tick {k}: pouncer fully clipped"
+        assert not (pounce & pet), f"tail tick {k}: shared ink"

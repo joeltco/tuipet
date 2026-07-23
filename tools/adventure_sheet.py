@@ -174,7 +174,7 @@ def _hazard():
     p._hazard["t"] = HZ_TELE_T + HZ_LUNGE_T // 2
     show("hazard charge (pouncer in)", p)
     p._hazard.update(t=HZ_TELE_T + HZ_LUNGE_T + 4, dodged=True)
-    show("hazard duck (pass-by)", p)
+    show("hazard duck (the WHIFF retreats right, visible)", p)
     p._hazard.update(dodged=False, hit=True,
                      t=HZ_TELE_T + HZ_LUNGE_T + 2)
     show("hazard eaten (burst + hurt)", p)

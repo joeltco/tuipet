@@ -131,6 +131,17 @@ overlaps, invisible actors, and contract drift INSIDE that safe window.
   prints the post-clip buffer).  The D1 sweep test is the countermeasure —
   it must assert on PRE-clip placements, not the painted buffer.
 
+## Addendum — THE DODGE (the audit's actual instigator, fixed v0.5.173)
+
+- [x] **The successful dodge blinked the attacker out of existence.**  The
+  "sails past, exits LEFT" tail hid the pouncer whenever its box touched
+  the pet's columns — and with the pet at the wall (A1) that was the
+  ENTIRE tail.  Two 16px sprites cannot cross a 32px window without one
+  hiding, so the duck now makes the strike WHIFF: the pouncer pulls up
+  short of the crouch and retreats out the RIGHT edge — the pet's free
+  side, visible at every tick of the beat.  Pinned per-tick at four march
+  positions in the placement sweep.
+
 ## Clean bills
 
 Encounters (handoff, return, no stale frames), the boss gate faceoff (4px

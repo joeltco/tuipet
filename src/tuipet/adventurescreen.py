@@ -915,17 +915,26 @@ class AdventurePanel(menu.SubHost):
             # its PADDED box in the overlap guards)
             bm = grid.prep((fr[pose] if pose < len(fr) else None) or fr[0],
                            ph=ROWS * 2)
-            bw = grid.width(bm) if bm else 0
             oy = grid.FLOOR - len(bm) if bm else grid.TOP
             if t < impact:                        # charging in from the right
                 p = (t - HZ_TELE_T) / max(1, HZ_LUNGE_T - 1)
                 x = round(grid.X1 - (grid.X1 - (px + pw)) * min(1.0, p))
                 if bm and x >= px + pw:           # never share the pet's cell
                     overlay = strikefx.blit(bm, x, oy)
-            elif h["dodged"]:                     # sails past, exits LEFT
+            elif h["dodged"]:                     # the WHIFF (dodge fix
+                # 2026-07-22, Joel: "the space to dodge mechanic was
+                # glitchy"): the old sail-past hid the pouncer whenever its
+                # box touched the pet's columns -- and with the pet at the
+                # wall (audit A1) that was the ENTIRE tail, so a clean duck
+                # played as the attacker blinking out of existence.  Two
+                # 16px sprites cannot cross a 32px window without one
+                # hiding, so the duck now makes the strike WHIFF: the
+                # pouncer pulls up short of the crouch and retreats out the
+                # RIGHT edge -- the free side of the pet, visible for the
+                # whole beat, never a hidden frame.
                 p = (t - impact) / max(1, HZ_END_T - 1)
-                x = round((px + pw) - ((px + pw) - (grid.X0 - bw)) * p)
-                if bm and (x + bw <= px or x >= px + pw):   # the leap-over gap
+                x = round((px + pw) + (grid.X1 - (px + pw)) * p)
+                if bm and x >= px + pw:           # never share the pet's cell
                     overlay = strikefx.blit(bm, x, oy)
             else:                                 # eaten: the burst covers the beat
                 hitfx = data.load_effects().get("hit")
