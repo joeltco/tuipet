@@ -37,7 +37,11 @@ class AccountPanel:
         self.field = "pw" if name else "name"
         self.note = note
         self.sfx = None
+        self.frame_i = 0                # the note's marquee clock
         self.captures_text = True       # typing a name/password — never treat q as quit
+
+    def anim(self):
+        self.frame_i += 1
 
     def strip(self):
         # "field", the grammar sweep's verb -- the lobby's login strip and
@@ -79,11 +83,19 @@ class AccountPanel:
         # LCD (the box CLIPS overflow live -- lobby audit 2026-07-04; the
         # password renders as 1-cell stars, so its char slice is safe)
         nm = _tail(self.name_buf + ("_" if self.field == "name" else ""), _FIELD_W)
-        pw = ("*" * len(self.pw_buf) + ("_" if self.field == "pw" else ""))[-_FIELD_W:]
+        # the LAST typed character shows in plain while the field is active
+        # (the phone-keyboard pattern): the first login CREATES the account,
+        # so an unverifiable typo became the permanent sync password
+        # (QOL sweep 2026-07-23).  Leaving the field stars it fully.
+        stars = ("*" * (len(self.pw_buf) - 1) + self.pw_buf[-1]
+                 if self.field == "pw" and self.pw_buf else "*" * len(self.pw_buf))
+        pw = (stars + ("_" if self.field == "pw" else ""))[-_FIELD_W:]
         t.append("  name:     ", style=DIM)
         t.append(nm + "\n", style=INK_B if self.field == "name" else INK)
         t.append("  password: ", style=DIM)
         t.append(pw + "\n\n", style=INK_B if self.field == "pw" else INK)
         # keys ride the strip (round 35: the in-LCD hint line doubled it)
-        t.append(f"  {self.note[:38]}", style=DIM)
+        # the note MARQUEES when over-wide (QOL sweep 2026-07-23: the hard
+        # [:38] clip ate the actionable tail of long server rejections)
+        t.append_text(menu.footer_note("  " + self.note, tick=self.frame_i))
         return t

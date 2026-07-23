@@ -76,31 +76,31 @@ one release per batch.
 
 ## Batch 4 — town & online
 
-- [ ] O1 Lobby/raid websocket connect has NO open_timeout — a dead
+- [x] O1 Lobby/raid websocket connect has NO open_timeout — a dead
       host freezes "Connecting…" ~10s.  (submit_bug already caps at
       its timeout; cloudsync at 3s.)  Cap it at ~5s.  (net.py:51)
-- [ ] O2 FIRST-ever failed connect mislabeled "Connection lost —
+- [x] O2 FIRST-ever failed connect mislabeled "Connection lost —
       reconnecting…" — branch on _had_welcome: never-connected reads
       "Can't reach the lobby — retrying…".
-- [ ] O3 Chat sent while the socket is down vanishes from the input
+- [x] O3 Chat sent while the socket is down vanishes from the input
       with no feedback (it IS queued) — status line: "Offline —
       message queued, will send on reconnect."  (lobby + DM twin)
-- [ ] O4 No key to hurry the 30s reconnect backoff — Enter/R while
+- [x] O4 No key to hurry the 30s reconnect backoff — Enter/R while
       reconnecting resets the backoff and retries now.
-- [ ] O5 "Connecting…" is static text — animate trailing dots so the
+- [x] O5 "Connecting…" is static text — animate trailing dots so the
       wait shows liveness.
-- [ ] O6 Ladder page "fetching the rankings…" forever if the reply
+- [x] O6 Ladder page "fetching the rankings…" forever if the reply
       never lands — after a few seconds: "couldn't reach the ladder —
       TAB retry / ESC back".
-- [ ] O7 Login-rejection note hard-clipped at 38 cols loses the
+- [x] O7 Login-rejection note hard-clipped at 38 cols loses the
       actionable tail — marquee it like every other over-wide line.
-- [ ] O8 (low) First-launch password field: no way to verify what you
+- [x] O8 (low) First-launch password field: no way to verify what you
       typed before it becomes your permanent sync password — minimal
       reveal (hold-to-peek or length cue).
-- [ ] O9 Startup cloud pull blocks launch ~3s silently when offline —
+- [x] O9 Startup cloud pull blocks launch ~3s silently when offline —
       print "checking cloud save…" before the blocking pull
       (matches _preflight's pre-UI print style).
-- [ ] O10 (low) Town hub re-enters with cursor forced to row 0 every
+- [x] O10 (low) Town hub re-enters with cursor forced to row 0 every
       stop on a multi-town run — keep the last choice for the session.
 
 ## Ruled out during the audit (do NOT do)

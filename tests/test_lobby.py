@@ -62,6 +62,9 @@ def test_reconnect_shows_status_not_a_dead_banner():
     s.connected = False
     s.reconnecting = True
     pan = _panel(s)
+    pan.client._had_welcome = True     # a real session existed: this is a DROP
+    #                                    (never-connected reads "Can't reach" --
+    #                                    QOL sweep 2026-07-23)
     pan.anim()
     assert "reconnecting" in pan.status
     s.connected, s.reconnecting = True, False

@@ -320,3 +320,128 @@ def test_space_is_a_gift_alias_on_the_home_view():
     from tuipet.app import TuiPetApp
     keys = [b[0] for b in TuiPetApp.BINDINGS if b[1] == "gift"]
     assert keys == ["enter,space"]
+
+
+# ============ Batch 4: town & online =========================================
+
+# ---- O1/O4: fast-fail connects, hurryable backoff ---------------------------
+
+def test_the_live_socket_caps_its_open_and_offers_a_hurry():
+    from tuipet.net import _WsClient
+    assert _WsClient._open_timeout <= 6.0     # a dead host fails FAST
+    c = _WsClient.__new__(_WsClient)
+    c.retry_now()
+    assert c._hurry                           # the flag the sliced sleep watches
+
+
+def test_retry_now_cuts_the_backoff_and_resets_the_ramp():
+    import asyncio
+    from tuipet import net
+
+    class _Probe(net._WsClient):
+        def __init__(self):
+            self.uri = "ws://127.0.0.1:9"      # nothing listens: instant refuse
+            self._stop = False
+            self.tries = 0
+
+        def _login_msg(self):
+            return {}
+
+        def _on_connect(self):
+            pass
+
+        def _on_disconnect(self):
+            pass
+
+        async def _send_loop(self):
+            await asyncio.sleep(999)
+
+        def _on_retry_wait(self):
+            self.tries += 1
+            if self.tries == 1:
+                self.retry_now()               # hurry the FIRST wait...
+            else:
+                self._stop = True              # ...then end the probe
+
+    async def go():
+        p = _Probe()
+        t0 = asyncio.get_event_loop().time()
+        await asyncio.wait_for(p.run(), timeout=30)
+        return p, asyncio.get_event_loop().time() - t0
+
+    p, took = asyncio.run(go())
+    assert p.tries == 2
+    assert took < net._WsClient._backoff0 + 4  # the hurried wait was ~instant
+
+
+# ---- O2: a first-ever failed connect never claims a lost connection ---------
+
+def test_first_connect_failure_is_not_a_lost_connection():
+    from tuipet import lobbyscreen
+    pan = lobbyscreen.LobbyPanel.__new__(lobbyscreen.LobbyPanel)
+    pan.client = type("C", (), {"_had_welcome": False})()
+    assert "Can't reach the lobby" in pan._down_status()
+    pan.client._had_welcome = True             # a real session existed
+    assert "Connection lost" in pan._down_status()
+
+
+# ---- O6: the ladder page can time out and retry -----------------------------
+
+def test_a_stalled_ladder_fetch_says_so_and_tab_retries():
+    from tuipet import lobbyscreen
+    pan = lobbyscreen.LobbyPanel.__new__(lobbyscreen.LobbyPanel)
+    pan.pet, pan.phase, pan.sub = _pet(), "ladder", None
+    asked = {"n": 0}
+    pan.client = type("C", (), {"ladder": None,
+                                "ladder_get": lambda self: asked.__setitem__(
+                                    "n", asked["n"] + 1)})()
+    pan._mq, pan._ladder_asked = 0, 0
+    assert "fetching" in pan._text_ladder().plain
+    pan._mq = 60                               # ~6s later, still nothing
+    page = pan._text_ladder().plain
+    assert "couldn't reach the ladder" in page and "TAB retry" in page
+    pan._key_ladder("tab")                     # the promised retry
+    assert asked["n"] == 1 and pan.phase == "ladder"
+    pan.client.ladder = {"season": "2026-07", "top": [], "you": [0, 0]}
+    pan._key_ladder("tab")                     # with data, TAB is the way back
+    assert pan.phase == "lobby"
+
+
+# ---- O7/O8: the account panel -----------------------------------------------
+
+def test_login_note_marquees_instead_of_clipping():
+    from tuipet.accountscreen import AccountPanel
+    long_note = ("That name is already registered — pick another one "
+                 "or type its password to log in.")
+    pan = AccountPanel(note=long_note)
+    first = pan.text().plain
+    for _ in range(120):                       # let the marquee walk
+        pan.anim()
+    assert pan.text().plain != first, "an over-wide note must scroll"
+
+
+def test_password_peeks_its_last_char_only_while_typing():
+    from tuipet.accountscreen import AccountPanel
+    pan = AccountPanel()
+    for ch in "joel":
+        pan.key(ch)
+    pan.key("tab")                             # -> the password field
+    for ch in "secret7":
+        pan.key(ch)
+    page = pan.text().plain
+    assert "******7" in page                   # last char peeks
+    assert "secret7" not in page               # never the whole thing
+    pan.key("tab")                             # leave the field...
+    assert "7" not in pan.text().plain.split("password:")[1].split("\n")[0]
+
+
+# ---- O10: the town hub keeps your last pick for the session -----------------
+
+def test_town_hub_remembers_the_last_choice():
+    from tuipet import townscreen
+    townscreen._LAST_CURSOR[0] = 0
+    pan = townscreen.TownPanel(_pet(), town_id=0)
+    pan.key("down")
+    pan.key("down")
+    again = townscreen.TownPanel(_pet(), town_id=1)
+    assert again.cursor == pan.cursor == 2

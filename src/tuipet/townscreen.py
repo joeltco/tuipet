@@ -17,11 +17,16 @@ _MENU = (("shop", "Shop"), ("eggs", "Eggs"), ("sell", "Sell"),
          ("cup", "Town Cup"), ("leave", "Leave"))
 
 
+# the session's last hub pick: a multi-town run re-entered every hub on
+# "shop" (QOL sweep 2026-07-23).  Session-only, like the shop's memory.
+_LAST_CURSOR = [0]
+
+
 class TownPanel(menu.SubHost):
     def __init__(self, pet, town_id=None):
         self.pet = pet
         self.town_id = town_id
-        self.cursor = 0
+        self.cursor = _LAST_CURSOR[0] % len(_MENU)
         self.sub = None
         self.tourney = None            # a running town-cup bracket (sub is its match)
         self._cup_done = False         # the cup runs ONCE per town visit
@@ -43,8 +48,10 @@ class TownPanel(menu.SubHost):
             return None
         if k in ("up", "k"):
             self.cursor = (self.cursor - 1) % len(_MENU)
+            _LAST_CURSOR[0] = self.cursor
         elif k in ("down", "j"):
             self.cursor = (self.cursor + 1) % len(_MENU)
+            _LAST_CURSOR[0] = self.cursor
         elif k in ("enter", "space"):
             key = _MENU[self.cursor][0]
             if key == "shop":

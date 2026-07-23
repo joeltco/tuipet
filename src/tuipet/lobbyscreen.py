@@ -193,6 +193,8 @@ class LobbyPanel(BoutMixin, ChatMixin):
     # ---- per-tick refresh (the 0.1s interval clock calls this) -----------
     def anim(self):
         self._mq = getattr(self, "_mq", 0) + 1   # drives long-field marquees
+        if getattr(self, "phase", None) == "login" and getattr(self, "entry", None):
+            self.entry.anim()                    # the login note's marquee clock
         # session replays advance first (they render whatever the wire does)
         if self.bshow is not None:
             b = self.bshow
@@ -310,7 +312,7 @@ class LobbyPanel(BoutMixin, ChatMixin):
             self._seen_ids = None                  # a refilled roster is not a wave of joins
             self._sent_invites.clear()             # connection ids died with the drop
             if self.phase == "lobby":
-                self.status = "Connection lost — reconnecting…"
+                self.status = self._down_status()
             self._was_down = True
         elif s.connected and getattr(self, "_was_down", False):
             self._was_down = False
@@ -516,12 +518,34 @@ class LobbyPanel(BoutMixin, ChatMixin):
         if self.phase == "ladder":
             return self._key_ladder(k)
         return self._key_lobby(k)
+    def _down_status(self):
+        """The banner while the client retries.  "Lost" only when a session
+        EXISTED: a first-ever failed connect (offline, wrong server) used to
+        claim a drop that never happened (QOL sweep 2026-07-23)."""
+        return ("Connection lost — reconnecting…"
+                if getattr(self.client, "_had_welcome", False)
+                else "Can't reach the lobby — retrying…")
+
     def _key_ladder(self, k):
         # q/g trimmed (grammar sweep 2026-07-18): they were unexplained
         # extra closes that shadowed q=quit / g=options muscle memory
+        if k == "tab" and self._ladder_stalled():
+            # the timed-out page promises "TAB retry" -- deliver it; with
+            # data on screen TAB stays the way back (QOL sweep 2026-07-23)
+            if self.client:
+                self.client.ladder_get()
+            self._ladder_asked = getattr(self, "_mq", 0)
+            return None
         if k in ("escape", "tab"):
             self.phase = "lobby"
         return None
+
+    def _ladder_stalled(self):
+        """No reply ~5s after the ask (the 10 Hz clock) -- offline right as
+        TAB was pressed used to strand 'fetching…' forever."""
+        lad = getattr(self.client, "ladder", None) if self.client else None
+        return lad is None and (getattr(self, "_mq", 0)
+                                - getattr(self, "_ladder_asked", 0)) > 50
     def _text_ladder(self):
         """The monthly rankings: online PvP wins, top ten, your rank, and the
         days left in the season.  Data is the server's ladder message; a page
@@ -530,7 +554,11 @@ class LobbyPanel(BoutMixin, ChatMixin):
         lad = getattr(self.client, "ladder", None) if self.client else None
         if not lad:
             t.append("  LADDER\n\n", style=INK_B)
-            t.append("  fetching the rankings…\n", style=DIM)
+            if self._ladder_stalled():
+                t.append("  couldn't reach the ladder —\n", style=DIM)
+                t.append("  TAB retry · ESC back\n", style=DIM)
+            else:
+                t.append("  fetching the rankings…\n", style=DIM)
             return t
         t.append(f"  LADDER  season {lad.get('season', '?')}\n", style=INK_B)
         # no blank separator rows: header + tagline + top-8 + you + season is
@@ -631,6 +659,7 @@ class LobbyPanel(BoutMixin, ChatMixin):
             # month.  TAB because every letter belongs to the chat input.
             if self.client:
                 self.client.ladder_get()       # refresh; the page renders live
+            self._ladder_asked = getattr(self, "_mq", 0)   # the fetch clock
             self.phase = "ladder"
             return None
         if k == "escape":
@@ -674,10 +703,12 @@ class LobbyPanel(BoutMixin, ChatMixin):
             return None
         if k == "enter":
             self.scroll = 0                    # speaking snaps the view live
+            down = self.state is not None and not self.state.connected
             if self.pm_to is not None:
                 if self.buf.strip():
                     self.client.pm(self.pm_to[0], self.buf.strip(), self.pm_to[1])
-                    self.status = f"✉ sent to {self.pm_to[1]}"
+                    self.status = (f"✉ queued for {self.pm_to[1]} — offline"
+                                   if down else f"✉ sent to {self.pm_to[1]}")
                 self.pm_to, self.buf = None, ""
             elif self.buf.strip():
                 txt = self.buf.strip()
@@ -686,6 +717,16 @@ class LobbyPanel(BoutMixin, ChatMixin):
                     self._slash(txt)
                 else:
                     self.client.chat(txt)
+                    if down:
+                        # the line vanishes from the input and only reappears
+                        # on the server echo -- SAY it's queued, or a laggy
+                        # send reads as a lost message (QOL sweep 2026-07-23)
+                        self.status = "Offline — queued, sends on reconnect."
+            elif down and getattr(self.state, "reconnecting", False):
+                # an empty ENTER while down = "try again NOW"
+                if self.client is not None and hasattr(self.client, "retry_now"):
+                    self.client.retry_now()
+                    self.status = "Retrying now…"
             else:
                 others = self._others()
                 if others and not self.rost_hidden:   # no acting on an unseen pick

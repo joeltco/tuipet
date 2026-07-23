@@ -43,12 +43,23 @@ class _WsClient:
 
     _backoff0 = 2.0
     _backoff_cap = 30.0
+    # a dead host must fail FAST into the retry path: the library default
+    # (~10s) froze "Connecting…" for the whole wait.  submit_bug and
+    # cloudsync always capped their opens; the LIVE loop was the only one
+    # left uncapped (QOL sweep 2026-07-23).
+    _open_timeout = 6.0
+
+    def retry_now(self):
+        """Hurry the backoff: the player knows the wifi is back."""
+        self._hurry = True
 
     async def run(self):
         backoff = self._backoff0
+        self._hurry = False
         while not self._stop:
             try:
-                async with websockets.connect(self.uri, max_size=WIRE_READ_MAX) as ws:
+                async with websockets.connect(self.uri, max_size=WIRE_READ_MAX,
+                                              open_timeout=self._open_timeout) as ws:
                     self._ws = ws
                     await ws.send(json.dumps(self._login_msg()))
                     self._on_connect()
@@ -67,8 +78,18 @@ class _WsClient:
             if self._stop:
                 break
             self._on_retry_wait()
-            await asyncio.sleep(backoff)
-            backoff = min(backoff * 2, self._backoff_cap)
+            # sliced sleep so retry_now() (a UI-thread bool flip) can cut a
+            # 30s backoff short -- the player watching "reconnecting…" had
+            # no key to hurry it (QOL sweep 2026-07-23)
+            waited = 0.0
+            while waited < backoff and not self._hurry and not self._stop:
+                await asyncio.sleep(0.2)
+                waited += 0.2
+            if self._hurry:
+                self._hurry = False
+                backoff = self._backoff0       # a deliberate retry resets the ramp
+            else:
+                backoff = min(backoff * 2, self._backoff_cap)
         self._on_stopped()
 
     # hooks -- default no-ops

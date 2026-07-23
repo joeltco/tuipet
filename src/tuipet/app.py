@@ -132,14 +132,16 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("QUALITY OF LIFE, ROUND 3 — home & care: satiety, "
-                 "auto-clean and a hired assistant now wear little badges "
-                 "on the status card, the feed menu warns when Meat would "
-                 "be refused, the lights LED actually follows the lights, "
-                 "SPACE accepts gifts too, keys pressed during a care "
-                 "show answer with a soft click instead of dead silence, "
-                 "and at the grave N really does open the new-egg "
-                 "carousel like the card promises.")
+    WHATS_NEW = ("QUALITY OF LIFE, ROUND 4 — the lobby feels the network: "
+                 "a dead connection fails fast instead of freezing "
+                 "\"Connecting…\" for ten seconds, the banner says whether "
+                 "you dropped or never got through, ENTER retries right "
+                 "now instead of waiting out the backoff, chat sent while "
+                 "offline says it's queued, the ladder page can time out "
+                 "and retry, long login messages scroll instead of "
+                 "clipping, and your password shows its last letter while "
+                 "you type it — so the account you create is the one you "
+                 "meant.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -1416,6 +1418,11 @@ def main():
     if persistence.sync_enabled():
         try:
             name, pw = persistence.get_account()
+            if name:
+                # the pull BLOCKS the launch up to its timeout -- offline,
+                # that read as a silent ~3s hang (QOL sweep 2026-07-23);
+                # same pre-UI print style as _preflight's warnings
+                print("checking cloud save…", flush=True)
             cloudsync.sync_down_at_startup(_lobby_uri(), name, pw)
         except Exception:
             pass

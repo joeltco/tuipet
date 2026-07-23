@@ -98,6 +98,9 @@ class ChatMixin:
             self.dm_scroll = 0                 # speaking snaps the view live
             if self.buf.strip() and self.dm_peer and self.client:
                 self.client.pm(self.dm_peer[0], self.buf.strip(), self.dm_peer[1])
+                if self.state is not None and not self.state.connected:
+                    # the lobby twin's queued note (QOL sweep 2026-07-23)
+                    self.status = "Offline — queued, sends on reconnect."
             self.buf = ""
             return None
         if k == "up":
@@ -302,6 +305,10 @@ class ChatMixin:
             t.append("▲ older — PgUp/PgDn · ESC back to live"[:w], style=DIM)
         else:
             line = self.status
+            if line.endswith("…") and ("Connecting" in line or "retry" in line
+                                       or "reconnecting" in line or "Retrying" in line):
+                # liveness: the static wait line read as a hang (QOL 2026-07-23)
+                line = line[:-1] + "." * (1 + (mq // 5) % 3)
             if self.rost_hidden and line == HINTS_OPEN:
                 # the box is folded: ↑↓ drive the log now, not the roster pick
                 line = HINTS_FOLDED
