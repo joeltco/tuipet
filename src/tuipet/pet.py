@@ -92,6 +92,8 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
     discipline_call: bool = False   # DVPet _disciplineCall: a tantrum begging to be disciplined
     fatigue_length: float = 0.0     # DVPet _fatigueLength (game-min remaining; >0 == fatigued)
     inj_length: float = 0.0         # DVPet _injLength (game-min until the injury heals)
+    obed_v: int = 0                 # manners-heal marker: 0 = a save from the era when
+    #                                 _set_obedience was a NO-OP (see persistence)
     vitamin_lapse: float = 0.0      # DVPet _vitaminLapse (game-min of injury-worsening protection)
     bandage_lapse: float = 0.0      # DVPet _bandageLapse: bandage indicator after mending an injury (getBandage)
     nutr_protein: int = 0           # DVPet _protein (0..MaxProtein), from a meaty diet
@@ -817,8 +819,15 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
         reward, the lights mistake, the weight-limit penalty, the
         surrender effects, the stage seeds -- resumes paying.  What it
         does NOT touch: refusals (the soft-refusal calibration is a
-        standing rule) and LINES_SPEC gates."""
-        self.obedience = _clamp(int(value), 0, 100)  # noqa: F405
+        standing rule) and LINES_SPEC gates.
+
+        SCALE = canon MAX_OBEDIENCE 150 (P3 ruling 2026-07-23, from the
+        plan audit).  v0.5.206 clamped 0..100 while EVERY constant that
+        writes here -- the clean reward, the lights slip, the surrender
+        set (15), the seeds (Fresh 75 / InTraining 50 / Rookie 50-25-0)
+        -- is calibrated against 150, so the low clamp quietly distorted
+        all of them."""
+        self.obedience = _clamp(int(value), 0, MAX_OBEDIENCE)  # noqa: F405
 
     def _set_mood(self, value):
         """A NO-OP: the mood meter left with the mood system (BASIC VPET

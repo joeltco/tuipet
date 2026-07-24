@@ -112,7 +112,20 @@ OBEDIENCE_DISPO_COEF = 1            # ObedienceChangeDispositionCoefficient (SUB
 # cadence (sunny 180 / neutral 120 / sour 60 game-min), and each dec event also
 # bills the mess (ObedienceChangeFilthScale x piles).  MinObedienceAsleep 150
 # == MaxObedience: the lapse can never run asleep (shipped-config quirk).
-OBEDIENCE_LAPSE_MIN = {0: 120.0, 1: 180.0, -1: 60.0}   # ObedienceLapseMin[/High/Low]
+# THE DISCIPLINE FADE (D1, 2026-07-23): manners drain while AWAKE, so
+# discipline is a practice and not a high-water mark.  Canon's SHAPE and
+# its 3:2:1 disposition ratio are kept verbatim; the CADENCE is scaled
+# x5 because canon's minutes are DEVICE real-minutes and tuipet's clock
+# runs 60x faster (THE UNIT LAW).  Sized against the measured reward
+# rate rather than copied -- the plan audit proved a raw port drains
+# ~60/hour against ~17/hour of reward, parking every pet at 0 and
+# inverting D3's promise.  At x5: neutral is -2 per 10 real min
+# (-12/hour) against a tantrum's +25 per ~90 real min (+17/hour), so an
+# attentive tamer climbs and a neglectful one sinks.
+_LAPSE_SCALE = 5
+OBEDIENCE_LAPSE_MIN = {0: 120.0 * _LAPSE_SCALE,        # ObedienceLapseMin
+                       1: 180.0 * _LAPSE_SCALE,        # ...High disposition
+                       -1: 60.0 * _LAPSE_SCALE}        # ...Low disposition
 OBEDIENCE_LAPSE_DEC = 2             # ObedienceLapseDec (same for all dispositions)
 OBEDIENCE_FILTH_SCALE = -1          # ObedienceChangeFilthScale
 # checkRefusedOff: an UNSCOLDED refusal expires on its own -- the pet got away

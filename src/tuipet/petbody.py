@@ -604,6 +604,22 @@ class BodyMixin:
             self.inj_length = max(0.0, self.inj_length - dt)
             if self.inj_length <= 0:
                 self.injured = False
+        # THE DISCIPLINE FADE (D1, 2026-07-23): canon obedienceLapse --
+        # manners drain while AWAKE on a disposition-shaded cadence, and
+        # each fire ALSO bills the mess (ObedienceChangeFilthScale x
+        # piles).  Never while asleep: canon's MinObedienceAsleep equals
+        # MaxObedience, which makes the lapse unreachable in sleep, and
+        # canon's MinObedienceAsleep equals MaxObedience, which makes the
+        # lapse unreachable in sleep -- _tick_life DOES run for a
+        # sleeper, so the awake test is explicit.  Cadence is scaled --
+        # see OBEDIENCE_LAPSE_MIN.
+        self._obed_t = (getattr(self, "_obed_t", 0.0) + dt) if not self.asleep else 0.0
+        _lapse = OBEDIENCE_LAPSE_MIN.get(self._disposition(),      # noqa: F405
+                                         OBEDIENCE_LAPSE_MIN[0])   # noqa: F405
+        while self._obed_t >= _lapse:
+            self._obed_t -= _lapse
+            self._set_obedience(self.obedience + OBEDIENCE_LAPSE_DEC * -1   # noqa: F405
+                                + OBEDIENCE_FILTH_SCALE * self.poop)        # noqa: F405
         # THE TANTRUM (canon restoration B, 2026-07-23 -- adapted
         # checkDisciplineCall): an awake pet AT HOME acts up about once
         # per 5400 game-min (~90 REAL minutes of play -- the label used to

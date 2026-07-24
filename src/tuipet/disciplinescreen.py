@@ -4,13 +4,14 @@ bring back").
 
 The device pair as a two-row picker: PRAISE answers a proud moment (a
 battle win, a mega drill — a ~10 game-min window), SCOLD answers the
-tantrum call.  The gauge is obedience 0..100.  Wrong-moment verbs cost
+tantrum call.  The gauge is obedience 0..MAX_OBEDIENCE (canon 150).  Wrong-moment verbs cost
 nothing but land nothing (the no-praise-farming rule); refusals stay
 soft — discipline is the tantrum economy, not a leash.
 """
 from __future__ import annotations
 
 from . import menu
+from .petbase import MAX_OBEDIENCE
 from .theme import INK, INK_B, DIM, SEL  # noqa: F401  (theme.apply propagation)
 
 _ROWS = (
@@ -64,7 +65,7 @@ class DisciplinePanel:
         return "all calm — neither will land"
 
     def text(self):
-        out = menu.header("DISCIPLINE", f"manners {self.pet.obedience}/100")
+        out = menu.header("DISCIPLINE", f"manners {self.pet.obedience}/{MAX_OBEDIENCE}")
         for i, (label, desc) in enumerate(_ROWS):
             sel = i == self.cursor
             out.append(f" {'▸' if sel else ' '} {label:<8}", style=SEL if sel else INK_B)

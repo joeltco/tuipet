@@ -21,9 +21,15 @@ def _pet(**kw):
 
 
 def test_the_gauge_is_live_and_clamped():
+    """The cap is canon MAX_OBEDIENCE (P3 ruling 2026-07-23): v0.5.206
+    clamped 0..100 while every constant writing here -- the clean
+    reward, the surrender set (15), the stage seeds -- is calibrated
+    against 150, so the low clamp silently distorted all of them."""
+    from tuipet.petbase import MAX_OBEDIENCE
+    assert MAX_OBEDIENCE == 150
     p = _pet()
     p._set_obedience(500)
-    assert p.obedience == 100
+    assert p.obedience == MAX_OBEDIENCE
     p._set_obedience(-50)
     assert p.obedience == 0
 
@@ -164,3 +170,81 @@ def test_the_show_survives_the_obedience_clamp():
     pan.cursor = 0
     assert p.obedience == 100
     assert pan.key("enter")[1][1] == "cheer"
+
+
+# ---- D1: the fade (2026-07-23) ---------------------------------------------
+
+def test_manners_fade_while_awake():
+    """Canon obedienceLapse -- discipline is a PRACTICE, not a high-water
+    mark.  Cadence is scaled x5 (THE UNIT LAW: canon's minutes are device
+    real-minutes and our clock runs 60x faster); neutral works out to -2
+    per 10 real minutes, against a tantrum's +25 per ~90."""
+    from tuipet import petbody
+    import tuipet.petbody as pb
+    old = pb.random.random
+    pb.random.random = lambda: 0.99          # no tantrum/sickness rolls
+    try:
+        p = _pet(obedience=100, disposition=0)
+        p._set_energy(p.max_energy)
+        p.awake_limit = 9e9                  # keep it up: a 600-min tick would
+        p.sleep_limit = 9e9                  # otherwise reach bedtime mid-test
+        p.tick(600.0)                        # 600 game-min == 10 real min
+        assert p.obedience == 98
+        p.poop = 2                           # each fire also bills the mess
+        p.tick(600.0)
+        assert p.obedience == 94
+    finally:
+        pb.random.random = old
+    assert petbody is not None
+
+
+def test_a_sour_pet_fades_faster_than_a_sunny_one():
+    """Canon's 3:2:1 disposition ratio survives the scaling."""
+    from tuipet.petbase import OBEDIENCE_LAPSE_MIN
+    assert OBEDIENCE_LAPSE_MIN[-1] < OBEDIENCE_LAPSE_MIN[0] < OBEDIENCE_LAPSE_MIN[1]
+
+
+def test_a_sleeper_never_fades():
+    """Canon MinObedienceAsleep == MaxObedience makes the lapse
+    unreachable in sleep, and the fade rides the awake path only."""
+    import tuipet.petbody as pb
+    old = pb.random.random
+    pb.random.random = lambda: 0.99
+    try:
+        p = _pet(obedience=100)
+        p.asleep = True
+        p.lights = False
+        # assert the INVARIANT for as long as it actually sleeps -- a long
+        # single tick just wakes it (the 7:00-sharp rule) and then it
+        # fades legitimately, which would test nothing
+        slept = 0
+        for _ in range(30):
+            if not p.asleep:
+                break
+            p.tick(30.0)
+            slept += 1
+            assert p.obedience == 100, f"faded in its sleep after {slept} ticks"
+        assert slept >= 5
+    finally:
+        pb.random.random = old
+
+
+def test_dead_meter_saves_get_one_manners_heal():
+    """_set_obedience was a NO-OP for the whole BASIC VPET era, so every
+    pet on disk sits at the dataclass default 0 -- "worst-raised pet
+    alive" through no fault of its tamer, and D3 would call every one of
+    them disobedient.  Seed those saves once, marked so a neglected pet
+    cannot reset its gauge by restarting."""
+    from tuipet import persistence as P
+    from tuipet.petbase import FRESH_OBEDIENCE, ROOKIE_OBED_DEFAULT
+    base = dict(num=93, name="Greymon", stage="Champion", attribute="Vaccine",
+                world_seconds=600.0, age_seconds=600.0)
+    pet, _ = P.pet_from_save(dict(base, obedience=0))
+    assert pet.obedience == ROOKIE_OBED_DEFAULT and pet.obed_v == 1
+    kept, _ = P.pet_from_save(dict(base, obedience=3, obed_v=1))
+    assert kept.obedience == 3                      # no restart reset
+    fresh, _ = P.pet_from_save(dict(base, stage="Fresh", obedience=0))
+    assert fresh.obedience == FRESH_OBEDIENCE
+    # a save already carrying real manners is never overwritten
+    rich, _ = P.pet_from_save(dict(base, obedience=90))
+    assert rich.obedience == 90

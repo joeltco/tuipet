@@ -18,6 +18,8 @@ import time
 from dataclasses import asdict, fields
 
 from .pet import Pet
+from .petbase import (FRESH_OBEDIENCE, IN_TRAINING_OBEDIENCE,
+                      ROOKIE_OBED_DEFAULT)
 
 # the IO plumbing + the egg-bank migration live in their own modules
 # (tier-4 split 2026-07-17); the old names keep resolving from here
@@ -713,6 +715,18 @@ def pet_from_save(data, strict=False):
     # their TUIPET heirs (catalog turnover 2026-07-18)
     if isinstance(data.get("inventory"), dict):
         _heal_bag(data["inventory"])
+    # THE MANNERS HEAL, once per save (D1/P3, 2026-07-23).  _set_obedience
+    # was a NO-OP for the whole BASIC VPET era, so every pet on disk sits
+    # at the dataclass default 0 -- "worst-raised pet alive" through no
+    # fault of its tamer.  Seed those saves to the stage's canon starting
+    # manners the first time they load under the live meter.  The marker
+    # makes it ONCE: without it, a genuinely neglected pet could reset its
+    # gauge by restarting.  (Same shape as the egg_order_v migration.)
+    if not data.get("obed_v") and not data.get("dead"):
+        seed = {"Fresh": FRESH_OBEDIENCE, "InTraining": IN_TRAINING_OBEDIENCE}
+        if float(data.get("obedience") or 0) <= 0:
+            data["obedience"] = seed.get(data.get("stage"), ROOKIE_OBED_DEFAULT)
+        data["obed_v"] = 1
     valid = {f.name for f in fields(Pet)}
     kwargs = {k: v for k, v in data.items() if k in valid}
     # (the full_health backfill left with the classic battle -- the 0.5 HP

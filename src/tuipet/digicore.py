@@ -9,6 +9,7 @@ system left 2026-07-16; is_injured() is hard False).
 """
 from __future__ import annotations
 from . import data
+from . import petbase as _petbase
 from . import backgrounds as _bgs
 from . import egg as _egg
 from . import evolution, lines
@@ -379,7 +380,7 @@ def build_pages(pet):
         ("Type", pet.personality()), ("Nature", disp),
         ("Appetite", appetite), ("Pace", temperament),
         # the manners gauge, LIVE again (canon restoration B, 2026-07-23)
-        ("Manners", f"{getattr(pet, 'obedience', 0)}/100"),
+        ("Manners", f"{getattr(pet, 'obedience', 0)}/{_petbase.MAX_OBEDIENCE}"),
     ]
     core = data.load_digicore_icons().get(pet.num)
     if core:

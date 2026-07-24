@@ -611,6 +611,7 @@ def tournament(app):
 
 
 def discipline(app):
+    from .petbase import MAX_OBEDIENCE as _MAXOBED
     """The praise/scold picker's card (canon restoration B): the gauge,
     the open moment, and what each verb would land."""
     p, T = app.pet, theme
@@ -622,7 +623,10 @@ def discipline(app):
     else:
         moment = "[dim]calm[/]"
     lines = [f"[b]{p.name[:14]}[/] [dim]· lessons[/]", DIV,
-             f"Manners  {bar(p.obedience, 11, T.POS)} {p.obedience}",
+             # bar() takes a PERCENT -- the gauge is 0..MAX_OBEDIENCE (150,
+             # canon), so scale it or a 100/150 pet reads as full
+             f"Manners  {bar(p.obedience * 100 // _MAXOBED, 11, T.POS)}"
+             f" {p.obedience}",
              f"Moment   {moment}", DIV,
              "[dim]scold a tantrum: +25[/]",
              "[dim]praise a proud win: +10[/]",
