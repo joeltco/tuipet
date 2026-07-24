@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.228 — FESTIVAL PRESENTS ON THE ROAD (2026-07-24)
+
+FESTIVAL PRESENTS ON THE ROAD: adventuring on a holiday, some of what you dig up is a wrapped SURPRISE present — opened on the spot, pulled from the gift pool up to the rare tier. On top of the festival's double bits and extra loot the road already gave you.
+
 ## 0.5.227 — PRESENTS ARE A REAL SURPRISE NOW (2026-07-24)
 
 PRESENTS ARE A REAL SURPRISE NOW: when your pet brings you a gift it hands over a WRAPPED present — you find out what is inside only when it is opened, and it can be any of dozens of goods, not the same few. On a festival your pet gifts about three times as often, and those presents reach nicer items.
