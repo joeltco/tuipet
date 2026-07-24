@@ -74,3 +74,81 @@ Tests that will catch a bad refactor: `test_itemfx.py` (the show doors),
 `test_town_shop_economy.py`, `test_adventure_finds.py`, `test_feed.py`,
 `test_canon_injury.py`, `test_shop*.py`.  Full suite ~1635 at time of
 writing; lint baseline 263.
+
+---
+
+## 5. SPRITE SURVEY — 2026-07-23 (Joel: "see if there're unused item
+## sprites from dvpet and dsprite")
+
+### DSprite contributes ZERO sprites — by standing rule
+
+`ANIM_REFERENCE.md`: "DSprite = DESIGN reference only (**its art is
+banned**)".  `TUIPET_ITEMS.md`: "DSprite is the mechanics grammar, DVPet
+is the art."  shopscreen's `_icon` docstring says the same from the code
+side: "DSprite consumables have no rips → the cell stays quiet."  There
+is no DSprite item art in the repo to go looking for.  **All item art is
+and stays DVPet.**
+
+### The DVPet extraction is COMPLETE — nothing is left in the sheets
+
+Verified by geometry, not by assumption:
+
+| sheet | cells | claimed by a csv row | unclaimed |
+|-------|-------|---------------------|-----------|
+| `spritesFood0.png` (24px, 6px gutter, 4/col) | 57 cols | 57 | **0** |
+| `spritesItems0.png` (16px, 1px gutter, 9/col) | 84 cols | 84 | **0** |
+
+`foods.csv` = 59 rows, `items.csv` = 84 rows; `icons.json.gz` packages
+**143 = 59 + 84**.  Every food and item DVPet ships already has its
+frame-0 rip in the package.  (Two food columns are shared: Supplement/AI
+Supplement and Food Pill/AI Food Pill sit on the same art.)
+
+### But 87 of the 143 packaged sprites are DARK
+
+Reachability computed over ALL paths, per the E4 METHOD RULE — not a
+literal grep.  Counted as reachable: `shop.CATALOG` icons (37), raw-key
+literals in src (8: `f:0 f:43 f:44 f:58 i:14 i:66 i:81 i:82`), and the
+Digimental crests, which reach the screen through a VARIABLE
+(`shopscreen._icon` builds `"i:%d" % iid` from `Pet._CREST_IDS`, 11 ids
+i:15-25).  Also confirmed dark-by-data: `evolutions.csv` as shipped has
+**no item columns at all**, so no `ev_item` / `give_item` path revives
+anything.  Town shelves resolve only through `key_for_icon` → CATALOG.
+
+**Reachable 56 · ORPHANED 87.**  Full list:
+`/tmp/.../scratchpad/orphans.txt`, regenerable from §4's command.
+
+| group | n | examples |
+|-------|---|----------|
+| Real FOODS with no tuipet presence | 22 | Fruit, Banana, Bread, Rice, Milk, Egg, Cheese, Salmon, Broccoli, Beans, Nuts, Oats, Honey, Ice Cream, Chicken Soup, Orange, Guava, 3 Peppers, Bitter Herbs, Burnt Food |
+| MED / attribute-chip family | 16 | Med, Elixir, **Vitamin G ("Recovers Injury")**, Miracle Drink, Gold Pill, Supplement, Food Pill, HP Chip (+G), Vaccine/Data/Virus Chip (+G), Omni Chip G |
+| Spirit evolution items | 20 | i:43-62, the 10 Human + 10 Beast spirits |
+| Other ItemEvol relics | 9 | Digitron, Horn Helmet, Grey Claws, Water Bottle, Torn Tatter, White/Black Wings, Metal Armor, Flaming Wings |
+| Capsules (gacha, "A random surprise") | 10 | i:68-77, two of them `AngrySurprise` |
+| Toys / Study / Interact | 8 | Hedonism 101, Book, Stuffed Animal, Board Game, Computer Game, Toy Car, Balloon, Trampoline |
+| Transports | 2 | Zone Transport (i:28), Continent Transport (i:31) |
+
+Notes that matter for the refactor, NOT proposals:
+- **`f:16 Vitamin G` is literally "Recovers Injury"** — DVPet's own art
+  for the ailment restored today.  The Bandage (i:80) took that slot.
+- The chip family is welded to attributes/stress/mood, and **mood and
+  stress are app-invented systems that stay stripped** (CANON
+  RESTORATION ruling).  Most of those 16 have no live stat to move.
+- The 29 ItemEvol relics are dormant because the DATA is dormant, which
+  is a standing rule ("dormant data stays dormant"), not an oversight.
+- **17 of the 22 authored `shopConsumable.csv` town overrides are
+  DROPPED** at load because the catalog has no entry for them (`i:28`,
+  `i:31`, and 15 chips/foods) — only 5 survive.  That is the mechanical
+  root of diversity-audit F4 ("the towns' authored shelves are 2
+  variants one SKU apart").
+
+### One more un-extracted thing: FRAMES, not items
+
+`tools/extract_icons.py` pulls **4 frames per item column; all 84
+columns have all 9 painted** (755 painted frames in the sheet).  DVPet
+addresses them as `spriteNum + k` down the column (`SpriteObj` line 191:
+`col = spriteNum / sheetRows`), and offsets up to +10 appear in the View
+code — so rows 4-8 are plausibly real animation steps for some
+`AnimationType`s.  **Which types actually step past frame 3 has NOT been
+established** and must be read out of the item flow, not guessed.
+
+**Nothing above is a decision.**  Joel names what gets built.
