@@ -133,10 +133,12 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE HOME SHOP HAS A DAILY DEAL: one good, half off, "
-                 "rotating every day — check the ▾ mark. And town deals no "
-                 "longer repeat two days running, so there is always a "
-                 "fresh bargain to hunt.")
+    WHATS_NEW = ("THE FESTIVALS SHOW ON SCREEN NOW: on each holiday a "
+                 "little decoration appears in your pet\'s corner — candy "
+                 "at Halloween, a present at Christmas, a Crest on Odaiba "
+                 "Memorial Day, cake for New Year. The festival bonuses "
+                 "(double bits, shop sales, festival eggs) were already "
+                 "there; now the day looks the part too.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

@@ -172,6 +172,57 @@ def _sick_mark_up(pet):
 
 _HIDDEN_STATUS_ICONS: set[str] = set()             # add keys here to hide a scene mark
 
+# ---------------------------------------------------------------------------
+# HOLIDAY DECORATIONS (2026-07-24, Joel: "wire it up").  A small festival
+# prop tucks into the arena's top-left corner on a holiday -- ambient, over
+# the same festival bonuses (double bits, sales, festival eggs) that were
+# already live.  Three ride REAL ripped icons already aboard (candy, cake, a
+# Digi-crest for the Odaiba anniversary); the present is the one DRAWN prop,
+# design "A" (Joel approved it) -- an outline box with a centre ribbon and a
+# bow, which reads as a gift at 8x8 where a solid blob would not.  Drawing is
+# a deliberate exception to real-rips-only, made for a generic prop (not
+# creature art) at Joel's call.
+_PRESENT = ["01000010",
+            "00100100",
+            "11111111",
+            "10011001",
+            "10011001",
+            "10011001",
+            "10011001",
+            "11111111"]
+
+# holiday name (tournament.HOLIDAYS) -> its decoration.  "present" is the
+# drawn prop; every other value is a load_icons() key (frame 0 is used).
+HOLIDAY_DECOR = {
+    "Halloween Festival": "f:7",     # candy
+    "Christmas Festival": "present",
+    "Odaiba Memorial Day": "i:15",   # the Crest of Courage -- the '01 flagship
+    "New Year Festival": "f:6",      # cake
+}
+
+
+def _holiday_decor(today=None):
+    """TODAY's festival decoration sprite (cropped rows), or None.
+
+    Food icons are stored at 3x (24px cells over an 8px native sprite -- a
+    clean integer upscale), so a food-keyed decoration is downsampled back
+    to its true 8x8 to fit the corner.  That is REVERSING a known upscale,
+    lossless, not a lossy shrink.  Item icons (the crest) are already
+    native-size, and the present is the drawn 8x8 prop."""
+    from . import tournament
+    key = HOLIDAY_DECOR.get(tournament.holiday(today))
+    if key is None:
+        return None
+    if key == "present":
+        return _PRESENT
+    frames = data.load_icons().get(key)
+    if not frames:
+        return None
+    sprite = frames[0]
+    if key.startswith("f:"):                 # 3x food cell -> native 8x8
+        sprite = [r[::3] for r in sprite[::3]]
+    return grid._crop(sprite)
+
 
 def _effect_overlay(pet, frame_i, cols, px_h, tick=0):
     """The scene's overlay actors: filth piles, the sleep Zzz, the sick skull.
@@ -180,6 +231,12 @@ def _effect_overlay(pet, frame_i, cols, px_h, tick=0):
     pts = []
     if pet.dead:
         return pts
+    # a festival prop in the TOP-LEFT corner (2026-07-24): ambient, shown for
+    # a live pet OR an egg.  It sits where a resting pet (centred, x~12..28)
+    # does not reach; a roamer may briefly pass in front, exactly like poop.
+    deco = _holiday_decor()
+    if deco:
+        pts += _blit(deco, grid.X0, grid.TOP)
     if pet.poop:                                          # sized piles in the slot grid
         pts += _filth_pts(pet, tick, px_h=px_h)
     if pet.num == -1:
