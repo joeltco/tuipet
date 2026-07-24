@@ -123,6 +123,37 @@ wanted, not necessarily a fix.
 
 ---
 
+## ✅ D — THE CARE LOOP: ALL SHIPPED (v0.5.213-215)
+
+- D1 fade  v0.5.214 (cadence SCALED x5 per the audit, not copied)
+- D2 overfeed  v0.5.213
+- D3 earned disobedience  v0.5.215 (separate `manners_refusal` door;
+  clean/pill/bandage and an empty belly are never refusable; the
+  jogress + mode-change evolution doors keep their energy-only rule)
+- P3 scale -> canon 150, + a one-time manners heal for dead-meter saves
+- P4 injury recovery  v0.5.213 (canon lapse, scaled)
+
+## E4 — THE SYSTEMATIC AUDIT (opened 2026-07-23)
+
+**Finding #1 (SHIPPED v0.5.216) — a duplicate I introduced.**
+poopdance + yawn have fired since **v0.2.337** from app.py's own idle
+roll (gated on the bowel fraction and `pet.near_bedtime()`).  v0.5.211
+"restored" them a second time.  Cause: the survey grepped for a literal
+`start_fx("name")` and that call site passes a VARIABLE
+(`random.choice(specials)`) -- the same miss that hid `losing`.
+Duplicate removed; a one-source pin now guards it.
+
+⚠ **METHOD RULE for the rest of E4:** never conclude "nothing fires
+this" from a literal-string grep.  Resolve call sites that pass
+variables, and confirm against git history before calling something
+dead.
+
+- [ ] Remaining: walk every player-visible outcome (care verbs, item
+      uses, battle/cup/raid/lobby verdicts, evolution, hatch, death,
+      adventure beats) against what it actually plays, using the
+      method rule above.  Known un-checked: raid verdicts, jogress,
+      hatch, lights, lobby outcomes.
+
 ## D — THE CARE LOOP (the "real vpet" trio)
 
 The three that make a creature: the gauge breathes, feeding is a
