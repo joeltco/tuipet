@@ -165,3 +165,33 @@ def test_the_signature_pass_closed_the_never_found_gap():
     never = {k for k in shop.CATALOG if k not in found}
     # grant-only treats + the one legendary that has no zone left to sign
     assert never == {"cookie", "cupcake", "digimemory"}, never
+
+
+# ---- D6: P6's town placement, RATIFIED 2026-07-24 ---------------------------
+
+def test_the_chips_town_placement_is_ratified_not_accidental():
+    """D6 (Joel: "ratify it").  Adding the seven chips in P6 un-dropped ten
+    canon shopConsumable overrides, so the attribute chips now stock on
+    many town shelves.  That was a SIDE EFFECT at first; Joel ratified it,
+    so it is now a decision on the record -- and the exact spread is
+    DVPet's own (shopConsumable.csv), not hand-placed by us.
+
+    Pinned so that if a future override edit silently drops these again,
+    this fails and the ratified placement is defended rather than lost.
+    """
+    import collections
+    town = collections.Counter()
+    for t in range(26):
+        for _sid, k, _o, _p in shop._town_rows(t):
+            town[k] += 1
+    # the base chips reach most towns; the golden/omni tier fewer, exactly
+    # as the canon override table deals them
+    assert town["vaccine_chip"] >= 12, town["vaccine_chip"]
+    assert town["virus_chip"] >= 12, town["virus_chip"]
+    assert town["data_chip"] >= 12, town["data_chip"]
+    assert town["omni_chip_g"] >= 8, town["omni_chip_g"]
+    # ...and rarity still bites: a rare chip is one-per-town-per-day
+    for t in range(26):
+        for e in shop.town_stock(t, pet=None):
+            if e["key"].endswith("chip") or e["key"].endswith("chip_g"):
+                assert e["left"] <= shop.tier_stock(e["key"]) <= 2, (t, e["key"])

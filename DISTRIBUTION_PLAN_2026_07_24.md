@@ -133,3 +133,28 @@ hard constraint this arc has to be designed around.
 - Invent an economy: no new currencies, no gacha, no loot boxes.
 - Sell an ailment cure (R3's symmetry) — this rules out the Elixir and
   Vitamin G that two of the dropped overrides want.
+
+---
+
+## 6. RULINGS RECEIVED
+
+- **D1 = STOCK + FIND** (not price).  Shipped v0.5.219: tier derived from
+  price, one curve drives both a town's daily ceiling and the road roll.
+- **D3 = BOTH.**  Towns already dealt 26 unique guest goods; zones now
+  carry 26 unique signature finds.  Shipped v0.5.219.
+- **D4 = distinct loot for the 8 factorynight zones** -- solved by the
+  per-zone signatures.  Shipped v0.5.219.
+- **D6 = RATIFIED** (2026-07-24).  P6's side effect stands: the attribute
+  chips stock across many town shelves (base chips ~15-16 towns, golden
+  ~12, per the canon shopConsumable override table).  Now a decision on
+  the record, pinned in test_distribution.py so an override edit can't
+  silently drop it.
+
+### Still open (lower stakes)
+
+- **D5** -- the 3 items still unfindable (cookie, cupcake, digimemory)
+  are grant-only BY DESIGN; leaving them so is the current default.
+- **D7** -- the 10 still-dropped town overrides.  Two of them
+  (Elixir f:15, Vitamin G f:16) are paid ailment cures that R3 forbids
+  selling; the rest are chips/foods with no catalog entry.  No action
+  taken -- awaiting a ruling or a decision to leave them dropped.
