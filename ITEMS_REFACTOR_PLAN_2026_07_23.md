@@ -339,3 +339,49 @@ Run against the draft above; findings folded back in where marked.
   drifting from CATALOG again.  P3 should ship with a pin that the tab
   map's category names all exist in CATALOG — that pin would have caught
   `"Fruit"` years ago.
+
+---
+
+## 10. ARC CLOSED — P1-P6 shipped 2026-07-23/24
+
+| phase | what shipped | release |
+|-------|--------------|---------|
+| P1 | catalog entry -> named record (`shop.Item`) | (no user-visible change) |
+| P2 | `touches` + the dormant-stat pin; `where`; `tier` declared | — |
+| P3 | 8 categories, the two lying names retired | v0.5.217 |
+| P4 | sub-headers in the Items tab (R1=b) | v0.5.217 |
+| P5 | R3 free symmetric cures · R4 canon Textbook · R8 eraser rehoused | v0.5.217 |
+| P6 | the 7 attribute chips | v0.5.218 |
+| P7 | (absorbed into P4 -- the dead `"Fruit"` went with the tab map) | — |
+
+**Goal 1 (one grouping, not three) is DONE and pinned.**  CATALOG,
+`use_item`'s dispatch comments and the tab map now agree, and
+`test_the_tab_grammar_names_only_real_categories` is the ratchet.
+
+**Goal 2 (every item earns its slot) is DONE and pinned.**  No item aims
+at a dormant stat or a no-op meter; every home item declares an effect.
+
+**Goal 3 (a distribution hook) is READY.**  `tier` is declared and
+deliberately empty on all 44 entries.
+
+Catalog: **37 -> 44**.  Suite 1635 -> **1789**.  Lint 263 -> **262**.
+
+### What the NEXT arc (distribution) inherits
+
+- `tier` empty on 44 items; `where` populated (3 road, 41 home).
+- **17 of 22 authored `shopConsumable.csv` town overrides are still
+  dropped** for want of a catalog entry.  P6 added 7 items; re-check
+  which of those 17 now resolve -- that is free town diversity.
+- `BIOME_FINDS` is keyed to zone SLOT NUMBER, not zone identity
+  (diversity-audit F1).  Zone EXCLUSIVES require changing that keying.
+- Coverage is lopsided: `energy` is touched by 12 items, `hunger` by 10,
+  `weight` by 9 -- and ~20 other live stats have exactly one item each.
+- Still unserved by any item: calories, overeat, bits, dna_applied,
+  saved_hit_type, wins, battles, dp, auto_care, discipline_call.
+
+### Standing refusals recorded by P6 (do not quietly reverse)
+
+Reviving **Taste** (`_change_rank`) or **compensateAttributes**
+(`_compensate_attrs`) needs a NAMED order -- both are defined and never
+called, and both were the reason a whole family of dark items stayed
+dark.  `test_items_p6.py` pins each refusal with its reason.
