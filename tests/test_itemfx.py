@@ -155,8 +155,9 @@ def test_the_free_wins_are_wired():
     from tuipet import shop
     assert shop.item_script("textbook") == "Study"
     assert shop.item_script("dumbbell") == "Lift"
-    assert shop.item_script("music_player") == "Play"
     assert shop.item_script("grow_capsule") == "Study"
+    # (music_player used to resolve to its canon "Play" here; it is now an
+    #  override -- see test_the_music_player_borrows_the_musical_show)
 
 
 def test_own_door_items_are_never_hijacked():
@@ -368,11 +369,26 @@ def test_the_evolution_chips_borrow_the_study_show():
     assert "Study" in itemfx.SCRIPTS
 
 
-def test_the_override_is_ONLY_the_two_non_evolving_chips():
+def test_the_music_player_borrows_the_musical_show():
+    """The Music Player's canon Play type is the WASH-sound recreation show
+    -- wrong for a waking SONG.  Remapped (Joel 2026-07-24) to the Xylophone's
+    musical interaction: the same NOTE beats, its own i:9 icon."""
+    from tuipet import shop
+    assert shop.item_script("music_player") == "InteractXylophone"
+    assert shop.item_script("music_player") != "Play"
+    # the xylophone it borrows from is untouched
+    assert shop.item_script("xylophone") == "InteractXylophone"
+    # the show is a real, well-formed script
+    assert "InteractXylophone" in itemfx.SCRIPTS
+
+
+def test_the_override_is_ONLY_the_deliberate_remaps():
     """A guard: the remap must not silently swallow a real ItemEvol path
     (the crest Digimentals, which fire an actual evolution via their own
-    door) or any other item."""
-    assert set(itemfx._SCRIPT_OVERRIDE) == {"dna_crystal", "x_antibody"}
+    door) or any other item.  Exactly three entries, each ruled by Joel:
+    the two non-evolving chips -> Study, the music player -> the note show."""
+    assert set(itemfx._SCRIPT_OVERRIDE) == {"dna_crystal", "x_antibody",
+                                            "music_player"}
 
 
 def test_a_bag_use_fires_the_show_for_all_three():

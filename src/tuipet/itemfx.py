@@ -172,13 +172,21 @@ SCRIPTS = {
                             28: {"p": 1}}},
 }
 
-# AnimationType OVERRIDES: an item whose canon type has no usable show maps
-# to a fitting one HERE (Joel 2026-07-24).  The DNA Crystal and X-Antibody
+# AnimationType OVERRIDES: an item whose canon type reads WRONG here maps to
+# a fitting one instead (Joel 2026-07-24).  The DNA Crystal and X-Antibody
 # both carry items.csv's `ItemEvol` -- the EVOLUTION animation -- but neither
 # evolves the pet (one banks DNA, the other raises the X state), so the
 # evolution show would be a lie.  Study reads right for both: the pet
 # absorbing data / the X-program.
-_SCRIPT_OVERRIDE = {"dna_crystal": "Study", "x_antibody": "Study"}
+#
+# The Music Player's canon `Play` type is the WASH-sound recreation show
+# (splashy `wash` beats on a floor mat) -- fine for a toy, wrong for the
+# gentle waking SONG this item is (Joel 2026-07-24 "a fitting animation").
+# It borrows the Xylophone's musical interaction: the same select/click NOTE
+# beats, the pet bopping to a tune.  Two music goods, one musical show --
+# the xylophone plays its own i:63 icon, the player its i:9, same act.
+_SCRIPT_OVERRIDE = {"dna_crystal": "Study", "x_antibody": "Study",
+                    "music_player": "InteractXylophone"}
 
 # AnimationTypes that deliberately have NO item fx: Idling (canon plays
 # nothing), plus every system with its own door (transports / ItemEvol /
