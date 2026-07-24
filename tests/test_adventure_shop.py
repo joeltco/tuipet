@@ -113,8 +113,7 @@ def test_every_sold_category_has_a_home_in_the_tab_grammar():
     tabbed = set()
     for _name, cats in shopscreen.GROUPS:
         tabbed |= set(cats or ())
-    sold = {cat for (_n, _i, price, cat, _e, _f) in shop.CATALOG.values()
-            if price is not None}
+    sold = {v.category for v in shop.CATALOG.values() if v.price is not None}
     assert sold <= tabbed, f"untabbed categories: {sold - tabbed}"
 
 

@@ -25,17 +25,34 @@ class Item(NamedTuple):
     instead of `v[3]`, which was the actual complaint (scoping board
     P-A).
 
-    Still a tuple, so indexing and 6-field unpacking keep working: this
-    phase is a rename, not a behaviour change.  P2 widens this with the
-    distribution fields (`tier`, `where`, `touches`); when it does, the
-    6-field unpack at `shelf_rows` is the one site that must move to
-    named access first (plan audit A4)."""
+    Still a tuple, so indexing keeps working.  The first SIX fields are
+    the authored contract and must never be reordered -- P2 appended to
+    the end, and anything later appends further.
+
+    P2 (2026-07-23) added the last three:
+
+    * `touches` -- the LIVE pet stats this item's `use_item` handler
+      moves DIRECTLY.  This is the yardstick for "redo them all to fit
+      everything we got going on" (plan §2 goal 2): a pin walks it and
+      fails if an item aims at a stat that is dormant or does not exist.
+      Side channels are deliberately NOT listed -- `_set_energy` bills
+      obedience when a drop lands in the red, and `_disturbed()` bills a
+      care mistake, but those belong to those helpers, not to the item.
+    * `where` -- "home" (usable from the bag) or "road" (spent on the
+      march; the home bag refuses it).  Replaces reading intent out of
+      refusal STRINGS (scoping board P-F).
+    * `tier` -- rarity slot.  DECLARED, NOT POPULATED: it is the hook the
+      distribution arc attaches to (plan §7), and populating it here
+      would be inventing an economy nobody has ruled on."""
     name: str
     icon: str
     price: int | None       # None = never sold (grant-only treats)
     category: str
     effect: str             # the text mirroring use_item (see plan §1g)
     flavor: str
+    touches: tuple = ()     # LIVE pet stats the handler moves directly
+    where: str = "home"     # "home" | "road"
+    tier: str | None = None  # distribution arc populates this
 
 
 # ============================ THE TUIPET CATALOG ============================
@@ -99,9 +116,79 @@ _AUTHORED = {
     "life_recovery":      ("Life Recovery",    "i:27", 1000, "Adventure", "restore adventure lives on the road", "a second wind"),
 }
 
+# ---------------------------------------------------------------------------
+# WHAT EACH ITEM ACTUALLY MOVES (items refactor P2, 2026-07-23)
+#
+# Read out of petcare.use_item's handlers one by one -- NOT inferred from
+# the effect text, which is the very thing that can drift (plan §1g).
+# Every name here is a real Pet dataclass field; test_catalog_touches.py
+# proves that and proves none of them is a DORMANT stat.
+#
+# Omitted on purpose: the indirect billing inside shared helpers.
+# `_set_energy` stings obedience when a drop lands in the red and
+# `_disturbed()` books a care mistake -- those are the helpers' effects,
+# not the item's, and listing them would make every energy item look like
+# a discipline item.
+_TOUCHES = {
+    # ---- FOOD ----
+    "fish": ("hunger",),
+    "vegetable": ("hunger", "weight"),
+    "tuna": ("hunger", "energy"),
+    "cake": ("hunger", "energy", "weight"),
+    "cupcake": ("hunger", "energy"),
+    "cookie": ("hunger", "energy"),
+    "candy": ("hunger", "energy"),
+    "cheese_burger": ("hunger", "weight", "care_mistakes"),
+    "giga_meal": ("hunger", "energy", "weight"),
+    "steak": ("hunger", "full_until"),
+    "poison_mushroom": ("dead",),          # _die(): the one lethal entry
+    # ---- CARE ----
+    "energy_drink": ("energy",),
+    "slim_drink": ("weight",),
+    "vitamin": ("strength", "vitamin_lapse"),
+    "bandage": ("injured", "inj_length"),
+    "sleeping_pill": ("asleep", "lights", "nap"),
+    "caffeine_pill": ("sleep_lapse",),     # or the _bed_postpone_t grace channel
+    "music_player": ("asleep", "lights", "nap", "awake_lapse"),
+    "textbook": ("care_mistakes",),
+    "port_potty": ("poop", "poop_sizes", "auto_clean_until"),
+    # ---- GROWTH ----
+    "dumbbell": ("stage_trainings",),
+    "grow_capsule": ("stage_seconds",),
+    "anti_evo_chip": ("evo_blocked",),
+    "x_antibody": ("x_antibody",),
+    "dna_crystal": ("dna_owned",),
+    "revive_floppy": ("dead",),
+    "digimemory": ("vaccine", "data_power", "virus", "digimemory"),
+    # ---- TOYS ----
+    "ball": ("weight",),
+    "skateboard": ("weight", "energy"),
+    "xylophone": ("energy",),
+    "video_game": ("energy", "weight"),
+    "television": ("energy", "weight"),
+    "bubble_bath": ("poop", "poop_sizes"),
+    "cold_shower": ("energy", "asleep"),   # runs its OWN disturb, so: asleep
+    # ---- ADVENTURE ----
+    # Empty by design: from the HOME bag these three only refuse.  Their
+    # real work is adventure-run state (the march's location, its lives),
+    # which is not Pet state and does not belong in this namespace.
+    # `where="road"` is what carries that meaning.
+    "town_transport": (),
+    "disaster_transport": (),
+    "life_recovery": (),
+}
+
+_ROAD_ONLY = frozenset({"town_transport", "disaster_transport",
+                        "life_recovery"})
+
 # THE catalog: the authored table, field-named.  Everything downstream
 # reads this, never `_AUTHORED`.
-CATALOG = {_k: Item(*_v) for _k, _v in _AUTHORED.items()}
+CATALOG = {
+    _k: Item(*_v,
+             touches=_TOUCHES.get(_k, ()),
+             where="road" if _k in _ROAD_ONLY else "home")
+    for _k, _v in _AUTHORED.items()
+}
 
 # the road's shelf unlocks by CLEARING MAPS (the profile `maps` set): once a
 # tamer has beaten a continent, the transports/recovery it needs go on sale.
@@ -327,10 +414,9 @@ def entry(key):
     renders in the bag at a nominal resale), then vitems (Digimentals)."""
     c = CATALOG.get(key)
     if c is not None:
-        name, _icon, price, cat, _eff, _fl = c
-        return {"key": key, "name": name,
-                "price": price if price is not None else 100,
-                "category": cat}
+        return {"key": key, "name": c.name,
+                "price": c.price if c.price is not None else 100,
+                "category": c.category}
     v = data.load_vitems().get(key)
     if not isinstance(v, dict):
         return None
