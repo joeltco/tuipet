@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.230 — THE MUSIC PLAYER PLAYS MUSIC (2026-07-24)
+
+THE MUSIC PLAYER PLAYS MUSIC: using it now runs the musical note show — your pet bopping to the tune — instead of the splashy recreation animation it borrowed before. A small thing, but a waking song should sound like one.
+
 ## 0.5.229 — EVERY GOOD HAS A HOME TOWN (2026-07-24)
 
 EVERY GOOD HAS A HOME TOWN: a few items — the tuna, the cheese burger, the ball — were on the home shelf and out on the road, but no town ever stocked them. The town guest slots now fill the gaps first, so every buyable good is sold in at least one town somewhere.
