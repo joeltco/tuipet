@@ -722,15 +722,29 @@ def _guest_deal():
     towns 11+12 were byte-identical shops).  The pool is the UNGATED
     priced catalog minus Adventure (its map-clear gate must hold) and
     minus the Poison Mushroom (a town's one signature good is never a
-    trap -- the raid-pool rule).  26 towns, 28 candidates: every town's
+    trap -- the raid-pool rule).  26 towns, 36 candidates: every town's
     guest is unique game-wide.  crc32-ordered, so the deal is STABLE --
     a town's character stays permanent (the guest-good law); the daily
-    deal already rotates."""
+    deal already rotates.
+
+    COVERAGE FIRST (2026-07-24, Joel "pull them into town rotation"): the
+    guest slot exists for VARIETY, so it fills gaps before it spends a slot
+    on a good already sold in some town's authored base.  15 goods live in a
+    base somewhere; the other 21 need a guest slot to appear anywhere, and 21
+    fits in 26 slots with room to spare -- yet the old pure-crc32 order let a
+    few slots land on base-covered goods, stranding tuna, cheese_burger and
+    the ball in NO town at all.  Sorting the not-in-any-base goods to the
+    FRONT covers every one of the 21 (still crc32 WITHIN each band, so the
+    deal stays stable), and the leftover slots go to base-covered goods."""
     import zlib
     pool = [k for k, v in CATALOG.items()
             if v.price is not None and v.category != "Adventure"
             and k != "poison_mushroom"]
-    pool.sort(key=lambda k: zlib.crc32(f"guest2:{k}".encode()))
+    base_anywhere = set()
+    for tid in _town_maps():
+        base_anywhere.update(k for _sid, k, _o, _p in _base_rows(tid))
+    pool.sort(key=lambda k: (k in base_anywhere,
+                             zlib.crc32(f"guest2:{k}".encode())))
     taken, out = set(), {}
     for tid in sorted(_town_maps()):
         stocked = {k for _sid, k, _o, _p in _base_rows(tid)}

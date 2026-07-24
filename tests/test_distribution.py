@@ -96,6 +96,23 @@ def test_every_zone_has_a_unique_signature_find():
     assert len(set(sig.values())) == 26, "two zones share a signature"
 
 
+def test_every_buyable_good_appears_in_some_town():
+    """Coverage-first guest draw (2026-07-24, Joel "pull them into town
+    rotation"): no buyable good is dark -- every priced non-Adventure item
+    (poison excepted, never a town good) is sold by at least one town, via
+    its authored base or the guest slot.  The 21 not-in-any-base goods fit
+    the 26 guest slots with room to spare, so a future item that pushes the
+    non-base count past 26 -- silently stranding one -- fails HERE."""
+    buyable = {k for k, v in shop.CATALOG.items()
+               if v.price is not None and v.category != "Adventure"
+               and k != "poison_mushroom"}
+    covered = set(shop._guest_deal().values())
+    for tid in shop._town_maps():
+        covered.update(k for _sid, k, _o, _p in shop._base_rows(tid))
+    dark = buyable - covered
+    assert not dark, f"buyable goods no town sells: {sorted(dark)}"
+
+
 def test_a_signature_actually_rides_its_zones_pool():
     for zi, key in adv.ZONE_SIGNATURE.items():
         assert key in adv.ZONES[zi]["find_keys"], (zi, key)

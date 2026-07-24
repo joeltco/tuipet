@@ -133,11 +133,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("FESTIVAL PRESENTS ON THE ROAD: adventuring on a holiday, "
-                 "some of what you dig up is a wrapped SURPRISE present — "
-                 "opened on the spot, pulled from the gift pool up to the "
-                 "rare tier. On top of the festival\'s double bits and "
-                 "extra loot the road already gave you.")
+    WHATS_NEW = ("EVERY GOOD HAS A HOME TOWN: a few items — the tuna, the "
+                 "cheese burger, the ball — were on the home shelf and out "
+                 "on the road, but no town ever stocked them. The town "
+                 "guest slots now fill the gaps first, so every buyable "
+                 "good is sold in at least one town somewhere.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
