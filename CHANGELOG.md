@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.224 — THREE ITEMS GET THEIR ANIMATIONS (2026-07-24)
+
+THREE ITEMS GET THEIR ANIMATIONS: the Port. Potty now plays its real toilet sequence, and the DNA Crystal and X-Antibody show a study animation instead of a bare line of text. Every item in the game now has a proper show when you use it.
+
 ## 0.5.223 — A LEANER GUIDE (2026-07-24)
 
 A LEANER GUIDE: the how-to-play help stays focused on the systems. For any item's price and effect, the shop and bag show it live the moment you land on it — that is the item reference, right where you decide.
