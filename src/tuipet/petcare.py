@@ -314,12 +314,31 @@ class CareMixin:
     # _erase_mistake (their items left the catalog; the textbook rides
     # _erase_mistakes_all).  Nothing live called any of them.)
 
-    def _pick_gift(self):
-        """The present pool (BASIC VPET 2026-07-16): a uniform pick from the
-        DSprite catalog's treat tier (fruits and small care goods) -- the
-        DVPet per-item GiftChance table left with the item system."""
-        pool = ("fish", "cake", "energy_drink", "ball")
-        return random.choice(pool)
+    # never a gift: a trap, a road tool, an heirloom, or a premium you'd feel
+    # cheated to unwrap for free.  (Road items are already excluded by the
+    # where=="home" test; listed here for intent.)
+    _GIFT_BANNED = frozenset({"poison_mushroom", "digimemory", "revive_floppy",
+                              "town_transport", "disaster_transport",
+                              "life_recovery"})
+
+    def _pick_gift(self, festival=False):
+        """A SURPRISE present (2026-07-24, Joel: "presents should be just
+        that, a surprise" / "make these items actually work").  Where the
+        old pool was four fixed treats, a gift is now a TIER-WEIGHTED pick
+        from the whole giftable catalog -- mostly a common treat, now and
+        then something nicer, so you never quite know what you'll unwrap.
+
+        A FESTIVAL present reaches one tier higher (up to rare); an ordinary
+        day tops out at uncommon.  Legendary goods and the banned set are
+        never gifts."""
+        from . import shop
+        cap = shop.TIER_ORDER.index("rare" if festival else "uncommon")
+        pool = [k for k, v in shop.CATALOG.items()
+                if k not in self._GIFT_BANNED and v.where == "home"
+                and shop.TIER_ORDER.index(v.tier or "common") <= cap]
+        weights = [shop.tier_weight(k) for k in pool]
+        return random.choice(pool) if not weights \
+            else random.choices(pool, weights=weights, k=1)[0]
 
     def claim_gift(self):
         """ClockTic.giftEnd: the present lands in the bag and the pet cheers."""

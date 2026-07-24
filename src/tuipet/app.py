@@ -133,12 +133,12 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE FESTIVALS SHOW ON SCREEN NOW: on each holiday a "
-                 "little decoration appears in your pet\'s corner — candy "
-                 "at Halloween, a present at Christmas, a Crest on Odaiba "
-                 "Memorial Day, cake for New Year. The festival bonuses "
-                 "(double bits, shop sales, festival eggs) were already "
-                 "there; now the day looks the part too.")
+    WHATS_NEW = ("PRESENTS ARE A REAL SURPRISE NOW: when your pet brings "
+                 "you a gift it hands over a WRAPPED present — you find out "
+                 "what is inside only when it is opened, and it can be any "
+                 "of dozens of goods, not the same few. On a festival your "
+                 "pet gifts about three times as often, and those presents "
+                 "reach nicer items.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -991,6 +991,10 @@ class TuiPetApp(ActionsMixin, App):
             elif getattr(self, "_pending_evolve", None) is not None and self.screen_w.fx is None:
                 old_num, self._pending_evolve = self._pending_evolve, None
                 self.screen_w.start_fx("evolve", old_num=old_num)
+            elif getattr(self, "_pending_gift_reveal", None) and self.screen_w.fx is None:
+                # the present is opened: the surprise reveal lands now (2026-07-24)
+                reveal, self._pending_gift_reveal = self._pending_gift_reveal, None
+                self._do(reveal)
             elif self._dying_fx:               # dying beat finished: saved, or the memorial
                 self._dying_fx = False
                 hits = getattr(self, "_revive_hits", 0)

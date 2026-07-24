@@ -441,7 +441,10 @@ class ActionsMixin:
         msg = self.pet.claim_gift()
         if msg:
             self.screen_w.start_fx("gift", icon=key)   # gifting() amble, chains to cheer (giftEnd)
-            self._do(msg)
+            # the SURPRISE: hold the reveal until the present is opened at the
+            # end of the amble (2026-07-24) -- a tease now, the contents then.
+            self._pending_gift_reveal = msg
+            self._do("A present! Let's see what it is…")
 
     def action_clean(self):
         if self.screen_w.fx is not None:        # let the current care animation finish before acting again

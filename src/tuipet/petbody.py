@@ -994,7 +994,13 @@ class BodyMixin:
                 or self.current_mood() == "Unhappy"
                 or getattr(self, "away", False)):   # checkGiftCall gates on _isHome:
             return                                  # presents are found AT HOME
+        # a FESTIVAL pet is more generous: the roll narrows by the multiplier
+        # so presents come more often, and they reach a tier higher (2026-07-24)
+        from . import tournament
+        fest = tournament.holiday() is not None
         chance = int(OBEDIENCE_REFUSAL_CAP - self.obedience + GIFT_CHANCE_FACTOR)
+        if fest:
+            chance = max(1, chance // GIFT_FESTIVAL_MULT)   # noqa: F405
         if chance > 0 and random.randrange(chance) == 0:
-            self.gift = self._pick_gift()
+            self.gift = self._pick_gift(festival=fest)
 

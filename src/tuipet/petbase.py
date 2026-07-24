@@ -174,6 +174,7 @@ REFUSE_TRAVEL_DISPO = 35.0          # RefuseTravelDispositionCoefficient
 # gift call (config.csv col 1): a HAPPY pet may find you a present
 GIFT_CHANCE_MIN = 57.0              # GiftChanceMin: game-min between rolls
 GIFT_CHANCE_FACTOR = 70             # GiftChanceFactor
+GIFT_FESTIVAL_MULT = 3             # a festival pet gifts ~3x as often (2026-07-24)
 GIFT_CHANCE_MOOD_COEFF = 0.5        # GiftChanceMoodCoefficient
 # trained battle HP (config.csv col 1): the HP drill GROWS fullHealthPoints
 STARTING_HEALTH_POINTS = 5          # StartingHealthPoints (resetToEgg)

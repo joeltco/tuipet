@@ -33,7 +33,8 @@ def _pet(**kw):
 def test_gift_roll_narrows_with_care(monkeypatch):
     # isolate the ROLL: the pool's own per-item GiftChance rolls (canonical)
     # otherwise add empty-pool noise
-    monkeypatch.setattr(Pet, "_pick_gift", lambda self: "f:8")
+    monkeypatch.setattr(Pet, "_pick_gift", lambda self, festival=False: "f:8")
+    monkeypatch.setattr("tuipet.tournament.holiday", lambda today=None: None)
     spoiled = _pet(mood=300, obedience=90)     # chance = 100-90+0+70 = 80
     neglected = _pet(mood=150, obedience=0)    # chance = 100-0+75+70 = 245
     def gifts(p, seed):
@@ -115,7 +116,8 @@ def test_mood_samples_every_five_game_minutes():
 def test_gifts_are_found_at_home_only(monkeypatch):
     """checkGiftCall gates on _isHome (play/gift audit 2026-07-06): on the
     road there are no presents -- and the roll resumes at homecoming."""
-    monkeypatch.setattr(Pet, "_pick_gift", lambda self: "f:8")
+    monkeypatch.setattr(Pet, "_pick_gift", lambda self, festival=False: "f:8")
+    monkeypatch.setattr("tuipet.tournament.holiday", lambda today=None: None)
     monkeypatch.setattr(random, "randrange", lambda n: 0)   # the roll always hits
     p = _pet(mood=300, obedience=90)
     p.away = True
