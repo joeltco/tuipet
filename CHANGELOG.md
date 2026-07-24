@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.214 — MANNERS DRIFT NOW (2026-07-23)
+
+MANNERS DRIFT NOW: discipline fades slowly while your pet is awake (faster if there is mess on the floor), so keeping it well-raised is a habit rather than a one-time chore. The gauge also runs to 150 like the real device, and old saves get seeded to their proper starting manners.
+
 ## 0.5.213 — FOOD IS A DECISION NOW (2026-07-23)
 
 FOOD IS A DECISION NOW: stuffing a full pet piles on weight and counts as a care slip — it still shakes its head first, so you get the warning free. And injuries heal on their own over 5-60 minutes of play; the Bandage now buys off the wait instead of being the only cure.
