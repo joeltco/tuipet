@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.229 — EVERY GOOD HAS A HOME TOWN (2026-07-24)
+
+EVERY GOOD HAS A HOME TOWN: a few items — the tuna, the cheese burger, the ball — were on the home shelf and out on the road, but no town ever stocked them. The town guest slots now fill the gaps first, so every buyable good is sold in at least one town somewhere.
+
 ## 0.5.228 — FESTIVAL PRESENTS ON THE ROAD (2026-07-24)
 
 FESTIVAL PRESENTS ON THE ROAD: adventuring on a holiday, some of what you dig up is a wrapped SURPRISE present — opened on the spot, pulled from the gift pool up to the rare tier. On top of the festival's double bits and extra loot the road already gave you.
