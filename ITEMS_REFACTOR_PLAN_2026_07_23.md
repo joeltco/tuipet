@@ -176,7 +176,52 @@ that costs more than the drift it prevents.
 
 ---
 
+## 5b. RULINGS RECEIVED — 2026-07-23
+
+**R1 = (b) SUB-HEADERS.**  Categories become visible as headings INSIDE
+the Items tab; the tab bar stays 4 wide.  This sidesteps audit A2's
+38-cell truncation entirely — sub-headers scroll with the list, so the
+category count is no longer capped by the bar.  P3 and P4 both run.
+
+**R2 = RENAME.**  Adopt §4's set: Food · Medicine · Care · Training ·
+Play · Evolution · Legacy · Adventure (+ Armor-Spirit for eggs,
+untouched).  "Medical" and "Evolution" stop lying.
+
+**R3 = BOTH CURES FREE, on the care menu.**  The Bandage joins the `F`
+menu beside the Pill — free, infinite, always available.  Ailments cost
+TIME, not bits.  Rationale of record: care actions on this device are
+buttons, not purchases, so the free Pill was the correct half of the
+asymmetry and the paid Bandage was the wrong one.
+
+> ⚠ **CONSEQUENCE NEEDING AN EXPLICIT NOD (removals need NAMED orders).**
+> Once the cure is free, the 300b `bandage` CATALOG entry is a pure trap
+> — it would sell what the F menu gives away.  The option Joel selected
+> reads "CATALOG: bandage removed or demoted", which authorises the
+> direction but not which.  **Default taken: REMOVE the catalog entry;
+> the i:80 sprite keeps its job as the F menu's bandage icon and the
+> `Bandaging` itemfx show is retained unchanged.**  Joel can veto.
+> `LEGACY_KEYS` must map `bandage` → nothing-owed so existing saves that
+> bought one this afternoon are healed, not broken.
+
+**R4 = TEXTBOOK BACK TO CANON `+Obedience`.**  DVPet items.csv row 0 is
+`+Obedience -Mood -Stress`; the mood/stress halves are dead systems, so
+only the obedience half lands.  This gives the restored discipline
+system its first item support (§1f).
+
+> ⚠ **CONSEQUENCE NEEDING A SPRITE RULING.**  "A new item takes the
+> eraser role" — but *erase ALL care mistakes* is a **tuipet-invented
+> effect with no DVPet source item**, so there is no canon sprite that
+> means it.  Picking one myself would be inventing.  Candidates from the
+> dark pool are listed at R8.  **Not defaulted — R8 is open.**
+
 ## 6. RULINGS NEEDED (Joel's call — I will not pick these)
+
+- **R8 (NEW, created by R4)** — which sprite carries the mistake-eraser?
+  It has no canon item.  Nearest dark-pool candidates: `i:2` Book
+  (`+Obedience +Mood`, but that duplicates the Textbook's new job),
+  `f:4` Med / `f:15` Elixir (read as medicine, not absolution), `i:5`
+  Board Game.  Alternative: the eraser effect is **retired** rather than
+  rehoused — but that is a removal and needs a named order.
 
 - **R1 — Do categories become VISIBLE?**  Today they are not (§1b).
   Options: (a) leave invisible, categories stay bookkeeping; (b) group
