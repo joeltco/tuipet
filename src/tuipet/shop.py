@@ -12,8 +12,30 @@ like the real devices -- the shop sells goods, never digitama.
 """
 from __future__ import annotations
 from functools import lru_cache
+from typing import NamedTuple
 
 from . import data
+
+
+class Item(NamedTuple):
+    """One catalog entry, with its fields NAMED (items refactor P1,
+    2026-07-23).  The authored table below stays a plain aligned tuple
+    literal -- it reads better as a table and the churn of 37 keyword
+    calls buys nothing -- but every CONSUMER now says `.category`
+    instead of `v[3]`, which was the actual complaint (scoping board
+    P-A).
+
+    Still a tuple, so indexing and 6-field unpacking keep working: this
+    phase is a rename, not a behaviour change.  P2 widens this with the
+    distribution fields (`tier`, `where`, `touches`); when it does, the
+    6-field unpack at `shelf_rows` is the one site that must move to
+    named access first (plan audit A4)."""
+    name: str
+    icon: str
+    price: int | None       # None = never sold (grant-only treats)
+    category: str
+    effect: str             # the text mirroring use_item (see plan §1g)
+    flavor: str
 
 
 # ============================ THE TUIPET CATALOG ============================
@@ -26,7 +48,9 @@ from . import data
 # pristine rip: it now feeds only the 11 Digimentals; the consumable shelf
 # is THIS table.  price None = never sold (birthday-only treats).
 # key: (name, icon, price, category, effect-text mirroring use_item, tagline)
-CATALOG = {
+# -- authored positionally, then wrapped into `Item` (P1) so every reader
+# gets named fields.  Keep the alignment: this table is meant to be read.
+_AUTHORED = {
     # ---- FOOD (eaten on the LCD through their own 4-frame strips) ----------
     "fish":            ("Fish",            "f:1",  50,   "Food", "hunger +1", "the everyday catch"),
     "vegetable":       ("Vegetable",       "f:3",  150,  "Food", "hunger +1 · weight -1", "crunchy diet fare"),
@@ -75,6 +99,10 @@ CATALOG = {
     "life_recovery":      ("Life Recovery",    "i:27", 1000, "Adventure", "restore adventure lives on the road", "a second wind"),
 }
 
+# THE catalog: the authored table, field-named.  Everything downstream
+# reads this, never `_AUTHORED`.
+CATALOG = {_k: Item(*_v) for _k, _v in _AUTHORED.items()}
+
 # the road's shelf unlocks by CLEARING MAPS (the profile `maps` set): once a
 # tamer has beaten a continent, the transports/recovery it needs go on sale.
 # key -> how many maps must be cleared.  Same earned-access rule as the eggs.
@@ -101,7 +129,7 @@ def adventure_open(key, prog=None):
 # loot maps back through this to a real, usable entry.
 _BY_ICON = {}
 for _k, _v in CATALOG.items():
-    _BY_ICON.setdefault(_v[1], _k)
+    _BY_ICON.setdefault(_v.icon, _k)
 
 
 def key_for_icon(icon):
@@ -109,13 +137,13 @@ def key_for_icon(icon):
     return _BY_ICON.get(icon)
 
 # compat views over the one table (shelf text / icons / tests import these)
-EFFECTS = {k: v[4] for k, v in CATALOG.items()}
-ICON_KEYS = {k: v[1] for k, v in CATALOG.items()}
-FLAVORS = {k: v[5] for k, v in CATALOG.items()}   # the dossier taglines
+EFFECTS = {k: v.effect for k, v in CATALOG.items()}
+ICON_KEYS = {k: v.icon for k, v in CATALOG.items()}
+FLAVORS = {k: v.flavor for k, v in CATALOG.items()}   # the dossier taglines
 
 # foods ride the EAT fx on their DVPet strip; toys ride their canon itemfx
 # script (the AnimationType painters shipped since the DVPet era)
-FOOD_KEYS = frozenset(k for k, v in CATALOG.items() if v[3] == "Food")
+FOOD_KEYS = frozenset(k for k, v in CATALOG.items() if v.category == "Food")
 # Items whose use has its OWN door and must never be hijacked by a
 # generic item show: the memory chip's inherit flow, the two road
 # transports and the road's Life Recovery (all spent on the march), and
@@ -280,10 +308,10 @@ def catalog():
     from . import persistence
     prog = persistence.get_progress()
     out = []
-    for k, (name, _icon, price, cat, _eff, _fl) in CATALOG.items():
-        if price is not None and adventure_open(k, prog):   # road shelf gated by maps
-            out.append({"key": k, "name": name, "price": price,
-                        "category": cat})
+    for k, v in CATALOG.items():
+        if v.price is not None and adventure_open(k, prog):  # road shelf gated by maps
+            out.append({"key": k, "name": v.name, "price": v.price,
+                        "category": v.category})
     for k, v in data.load_vitems().items():
         if isinstance(v, dict) and v.get("category") == ARMOR_CATEGORY \
                 and digimental_open(k, prog):
@@ -482,8 +510,8 @@ def _econ_stub(key):
     """A synthetic econ row for non-authored shelf rows (guest/regional):
     catalog price, standard factors, capped stock -- no money printer."""
     v = CATALOG[key]
-    return {"price": v[2], "sale_factor": 2, "resell_factor": 2,
-            "max_stock": 2, "is_food": v[3] in ("Food", "Fruit"),
+    return {"price": v.price, "sale_factor": 2, "resell_factor": 2,
+            "max_stock": 2, "is_food": v.category in ("Food", "Fruit"),
             "consumable_id": -1}
 
 
@@ -520,7 +548,7 @@ def _base_rows(town_id):
     sk = _MAP_SPECIALTY.get(_town_maps().get(town_id))
     if sk and sk not in {k for _sid, k, _o, _p in rows}:
         rows.append((f"regional:{town_id}", sk, _econ_stub(sk),
-                     CATALOG[sk][2]))
+                     CATALOG[sk].price))
     return rows
 
 
@@ -538,7 +566,7 @@ def _guest_deal():
     deal already rotates."""
     import zlib
     pool = [k for k, v in CATALOG.items()
-            if v[2] is not None and v[3] != "Adventure"
+            if v.price is not None and v.category != "Adventure"
             and k != "poison_mushroom"]
     pool.sort(key=lambda k: zlib.crc32(f"guest2:{k}".encode()))
     taken, out = set(), {}
@@ -561,7 +589,7 @@ def _town_rows(town_id):
     gk = _guest_deal().get(town_id)
     if gk:
         rows.append((f"guest:{town_id}", gk, _econ_stub(gk),
-                     CATALOG[gk][2]))
+                     CATALOG[gk].price))
     return rows
 
 
