@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.223 — A LEANER GUIDE (2026-07-24)
+
+A LEANER GUIDE: the how-to-play help stays focused on the systems. For any item's price and effect, the shop and bag show it live the moment you land on it — that is the item reference, right where you decide.
+
 ## 0.5.222 — THE GUIDE HOLDS THE FULL ITEM LIST (2026-07-24)
 
 THE GUIDE HOLDS THE FULL ITEM LIST: press ? and scroll to ITEMS — every good in the game, grouped by category with its price, effect and rarity. It reads straight from the shop, so it can never fall out of date.
