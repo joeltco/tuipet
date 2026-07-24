@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.216 — FIDGETS BACK IN RHYTHM (2026-07-23)
+
+FIDGETS BACK IN RHYTHM: your pet's poop-dance and bedtime yawn were briefly firing twice as often as intended — they were already wired long ago and got wired a second time by mistake. One trigger again, at the pace they were meant to have.
+
 ## 0.5.215 — A NEGLECTED PET TALKS BACK (2026-07-23)
 
 A NEGLECTED PET TALKS BACK: let its manners fall far enough and it starts blowing off feeding, training and fights. Raise it well and it NEVER refuses — and it will always let you clean it, heal it, and feed it when it is starving, no matter how sour it gets.
