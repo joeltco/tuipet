@@ -195,3 +195,42 @@ def test_the_chips_town_placement_is_ratified_not_accidental():
         for e in shop.town_stock(t, pet=None):
             if e["key"].endswith("chip") or e["key"].endswith("chip_g"):
                 assert e["left"] <= shop.tier_stock(e["key"]) <= 2, (t, e["key"])
+
+
+# ---- D7: the still-dropped town overrides STAY dropped (2026-07-24) ----------
+
+def test_the_ten_dropped_overrides_stay_dropped():
+    """D7 (Joel: "leave them dropped").  shopConsumable.csv authors 22 town
+    overrides; 10 point at icons with no catalog entry and are silently
+    skipped at load.  Ruled: leave them so -- adding them would mean either
+    inventing items (no economy is being invented) or, for two of them,
+    selling an ailment cure that R3 forbids.
+
+    Pinned as a DECISION, not an accident: if a later item pass gives one
+    of these icons a catalog key, this fails and forces the choice back
+    into the open instead of silently un-dropping a town good.
+    """
+    import csv
+    dropped = []
+    with open("src/tuipet/data/shopConsumable.csv") as fh:
+        for r in csv.DictReader(fh):
+            isfood = str(r.get("IsFood", "")).strip().lower() in ("true", "1")
+            cid = r.get("ConsumableID")
+            if cid is None:
+                continue
+            icon = ("f:" if isfood else "i:") + str(int(cid))
+            if shop.key_for_icon(icon) is None:
+                dropped.append(icon)
+    assert set(dropped) == {"i:28", "i:31", "f:26", "f:27", "f:40",
+                            "f:39", "f:31", "f:56", "i:81", "i:82"}
+
+
+def test_the_forbidden_cures_are_the_reason_two_must_stay_dropped():
+    """f:15 Elixir (cures sickness) and f:16 Vitamin G (cures injury) are
+    NOT among the dropped overrides -- but the CSV's own cure items must
+    never gain a sellable catalog key, because R3 made both cures free.
+    This is the load-bearing half of D7."""
+    assert shop.key_for_icon("f:15") is None      # Elixir
+    assert shop.key_for_icon("f:16") is None      # Vitamin G
+    for key, v in shop.CATALOG.items():
+        assert "sick" not in v.touches and "injured" not in v.touches, key

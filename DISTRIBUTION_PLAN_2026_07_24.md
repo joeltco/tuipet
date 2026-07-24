@@ -150,11 +150,22 @@ hard constraint this arc has to be designed around.
   the record, pinned in test_distribution.py so an override edit can't
   silently drop it.
 
-### Still open (lower stakes)
+- **D7 = LEAVE THEM DROPPED** (2026-07-24).  The 10 unmatched town
+  overrides stay unmatched.  Adding them would mean inventing items (no
+  economy is being invented) or selling an ailment cure (R3 forbids the
+  Elixir and Vitamin G).  Pinned in test_distribution.py as a DECISION,
+  so a later item pass that gives one of those icons a key fails the pin
+  and forces the choice back into the open.
+
+### Still open (lowest stakes)
 
 - **D5** -- the 3 items still unfindable (cookie, cupcake, digimemory)
   are grant-only BY DESIGN; leaving them so is the current default.
-- **D7** -- the 10 still-dropped town overrides.  Two of them
-  (Elixir f:15, Vitamin G f:16) are paid ailment cures that R3 forbids
-  selling; the rest are chips/foods with no catalog entry.  No action
-  taken -- awaiting a ruling or a decision to leave them dropped.
+
+---
+
+## 7. ARC CLOSED
+
+D1, D3, D4 shipped v0.5.219; D6 ratified + pinned; D7 ruled + pinned.
+Only D5 remains, and its default (grant-only stays grant-only) needs no
+action.  The distribution arc is complete.
