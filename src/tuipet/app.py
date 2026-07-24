@@ -30,6 +30,7 @@ from . import sound
 from . import update as update_check
 from . import cloudsync
 from .pet import Pet
+from .petbase import POOPDANCE_AT
 
 from . import theme
 # arena.py owns the LCD renderer; pull the names app.py and the tests still
@@ -132,11 +133,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("A NEGLECTED PET TALKS BACK: let its manners fall "
-                 "far enough and it starts blowing off feeding, training "
-                 "and fights. Raise it well and it NEVER refuses — and "
-                 "it will always let you clean it, heal it, and feed it "
-                 "when it is starving, no matter how sour it gets.")
+    WHATS_NEW = ("FIDGETS BACK IN RHYTHM: your pet's poop-dance and "
+                 "bedtime yawn were briefly firing twice as often as "
+                 "intended — they were already wired long ago and got "
+                 "wired a second time by mistake. One trigger again, at "
+                 "the pace they were meant to have.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
@@ -1031,7 +1032,7 @@ class TuiPetApp(ActionsMixin, App):
             if (not p.dead and p.stage != "Egg" and not p.asleep
                     and p.anim in ("idle", "walk")):
                 specials = []
-                if getattr(p, "_poop_t", 0) >= 0.8 * p._poop_interval:
+                if getattr(p, "_poop_t", 0) >= POOPDANCE_AT * p._poop_interval:
                     specials.append("poopdance")
                 if p.near_bedtime():
                     specials.append("yawn")      # the full yawning() stretch fx
@@ -1108,16 +1109,6 @@ class TuiPetApp(ActionsMixin, App):
                 self.screen_w.fx["snds"] = {18: poop_snd}
             else:
                 self.beep(poop_snd, bell=False)
-        # the BODY TELLS (restored 2026-07-23): the sim rolls a special
-        # idle and posts it here -- a poop dance while the need builds, a
-        # yawn as bedtime nears.  Same mailbox pattern as the assistant
-        # below; both fx were painted long ago and never fired.  Ambient,
-        # so it yields to any running show and never interrupts.
-        tell = getattr(p, "idle_fx", None)
-        if tell:
-            p.idle_fx = None
-            if self.screen_w.fx is None and self.mode is None and not p.dead:
-                self.screen_w.start_fx(tell)
         # AI Assistant rounds (checkAutoCare): play the visit, flash the quit notes
         ev = getattr(p, "assist_event", None)
         if ev and self.screen_w.fx is None:
