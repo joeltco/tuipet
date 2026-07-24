@@ -253,7 +253,7 @@ class ShopPanel:
         old = p.num
         key = e["key"]
         # the chip clears its payload on success; the inherit fx needs it
-        mem = dict(p.digimemory) if key == "digimemory" else None
+        mem = dict(p.peek_memory()) if key == "digimemory" else None
         out = p.use_item(key)
         if p.num != old:                        # a crest egg fired the armor jump
             return ("done", ("evolve", old))

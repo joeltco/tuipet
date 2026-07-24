@@ -138,6 +138,7 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
     last_birthday: int = 0          # last celebrated age-day
     evol_bonus: int = 0             # _bonus: birthday/win-rate credit fed into evolution odds
     digimemory: dict = _dcf(default_factory=dict)   # held inheritance data (item 32 payload)
+    wild_memories: list = _dcf(default_factory=list)  # FOUND-chip payloads (queue; 2026-07-24)
     birthday_note: str = ""         # transient: the HUD's birthday announcement
     saved_from_death: int = 0       # _savedFromDeath: each rescue raises the next bar
     death_banked: bool = False      # this death's etch/seed ceremony already ran

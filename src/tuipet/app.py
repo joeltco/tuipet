@@ -133,10 +133,13 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("SWEETS ON THE ROAD: the Cupcake and Cookie — treats "
-                 "you could only ever be gifted before — now turn up as "
-                 "finds in the gentle early zones, right alongside Candy. "
-                 "Still can't be bought; now they can be dug up.")
+    WHATS_NEW = ("WILD DIGIMEMORY CHIPS: dug-up memory chips used to be "
+                 "silent keepsakes — now each one carries a stranger's "
+                 "faint trace, a small boost to one of your Vaccine, Data "
+                 "or Virus powers. They turn up deep in the Factory Night "
+                 "zones. An inherited chip from your own line still comes "
+                 "first and hits far harder; the wild ones are a little "
+                 "something for the road.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

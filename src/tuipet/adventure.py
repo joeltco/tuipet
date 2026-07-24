@@ -186,9 +186,9 @@ BIOME_FINDS = {
     "city":         ("video_game", "television", "energy_drink",
                      "cheese_burger", "skateboard"),
     "datatunnel":   ("energy_drink", "anti_evo_chip", "video_game",
-                     "caffeine_pill"),
+                     "caffeine_pill", "digimemory"),
     "factorynight": ("anti_evo_chip", "dumbbell", "energy_drink",
-                     "sleeping_pill"),
+                     "sleeping_pill", "digimemory"),
     "volcano":      ("steak", "energy_drink", "cold_shower", "dumbbell"),
     "desert":       ("tuna", "energy_drink", "vitamin", "slim_drink"),
 }

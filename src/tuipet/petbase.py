@@ -233,6 +233,11 @@ MIN_MISTAKE_DAY_DEC = 1             # MinMissedDayForBonusDec
 # lifespan leg left with the lifespan clock -- DSprite mortality 2026-07-22;
 # old chips' "seconds" payloads load fine and are simply not applied.)
 DIGIMEMORY_ATTR_COEF = 0.01         # DigimemoryAttributeCoefficient
+# A WILD (found) digimemory's payload -- Joel 2026-07-24 "make wild chips
+# carry a random payload".  A single random attribute, well under the +15
+# base attribute chip: a stranger's faint trace, not a maxed ancestor's.
+WILD_MEMORY_MIN = 5
+WILD_MEMORY_MAX = 15
 # (the birthday grants speak the TUIPET catalog keys since 2026-07-18 --
 # the raw DVPet food ids landed items the strict bag could neither show
 # nor use, a reward the player never received; item review 2026-07-18)

@@ -445,6 +445,12 @@ def prev_gen_estate():
     tw = {int(k) if str(k).lstrip("-").isdigit() else k: v
           for k, v in (last.get("trophies_won") or {}).items()}
     inv = _heal_bag(dict(last.get("inventory") or {}))
+    # digimemory items never ride the estate bag (2026-07-24): the inherited
+    # PAYLOAD travels via the bank channel (take_digimemory -> _grant re-adds
+    # exactly one chip), and a WILD chip's trace is within-life loot that
+    # fades with its finder.  Carrying the item without its payload would
+    # deal the heir a dud -- the very thing the no-traps rule forbids.
+    inv.pop("digimemory", None)
     return {"bits": int(last.get("bits", 0)),
             "inventory": inv,
             "trophies": int(last.get("trophies", 0)),

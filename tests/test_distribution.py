@@ -163,10 +163,10 @@ def test_the_signature_pass_closed_the_never_found_gap():
     for z in adv.ZONES:
         found.update(z["find_keys"])
     never = {k for k in shop.CATALOG if k not in found}
-    # D5 (2026-07-24): cookie + cupcake made findable alongside candy.
-    # digimemory is the ONE deliberate hold-out -- a wild chip has no
-    # payload, so a found one does nothing; inheritance-only BY DESIGN.
-    assert never == {"digimemory"}, never
+    # D5 fully closed 2026-07-24: cookie + cupcake joined candy, and once
+    # wild chips carry a random payload (test_wild_memory.py) digimemory
+    # became real loot too.  Nothing is unfindable now.
+    assert never == set(), never
 
 
 def test_the_grant_only_treats_are_findable_like_candy():
@@ -180,20 +180,16 @@ def test_the_grant_only_treats_are_findable_like_candy():
         assert k in found, k                       # ...but findable
 
 
-def test_a_wild_digimemory_stays_unfindable_because_it_would_be_a_dud():
-    """The reason digimemory is the one hold-out: a FOUND chip carries no
-    ancestor payload, so using it does nothing.  A dud in the loot pool is
-    what the no-traps rule forbids -- so it stays inheritance-only."""
-    from tuipet.pet import Pet
-    from tuipet.petbase import _Refused
+def test_a_found_digimemory_is_no_longer_a_dud():
+    """This pin used to assert digimemory STAYED unfindable because a wild
+    chip did nothing.  Joel then ruled "make wild chips carry a random
+    payload" -- so a found chip now holds a stranger's trace and is real
+    loot.  Full lifecycle lives in test_wild_memory.py; this guards the
+    reversal so the old dud behaviour can't creep back."""
     found = set()
     for z in adv.ZONES:
         found.update(z["find_keys"])
-    assert "digimemory" not in found
-    p = Pet(num=100, stage="Champion", attribute="Vaccine")
-    p.world_seconds = 600.0
-    p.add_item("digimemory")                       # a wild one: empty
-    assert isinstance(p.use_item("digimemory"), _Refused)
+    assert "digimemory" in found
 
 
 # ---- D6: P6's town placement, RATIFIED 2026-07-24 ---------------------------

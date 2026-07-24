@@ -793,20 +793,49 @@ class CareMixin:
         self.save_from_death()
         return "It LIVES."
 
+    def stash_wild_memory(self):
+        """A FOUND digimemory carries a random payload (2026-07-24, Joel:
+        "make wild chips carry a random payload").  Where an INHERITED chip
+        holds a maxed ancestor's etched Va/D/Vi (tens to hundreds), a wild
+        one holds a stranger's faint trace -- a small single-attribute
+        imprint well under the +15 base chip.  Queued in `wild_memories`
+        so it never collides with the single inherited-payload slot; the
+        queue keeps one-chip-one-payload true no matter how many are held."""
+        total = random.randint(WILD_MEMORY_MIN, WILD_MEMORY_MAX)  # noqa: F405
+        field = random.choice(("vaccine", "data", "virus"))
+        mem = {"name": "A stranger", "vaccine": 0, "data": 0, "virus": 0}
+        mem[field] = total
+        self.wild_memories.append(mem)
+        return mem
+
+    def peek_memory(self):
+        """The payload the NEXT chip use will apply -- inherited first, then
+        the oldest wild trace.  The inherit fx needs the numbers BEFORE
+        use_item consumes them (shopscreen._use)."""
+        if self.digimemory:
+            return self.digimemory
+        return self.wild_memories[0] if self.wild_memories else {}
+
     def _inherit_memory(self):
-        """The Digimemory chip (DVPet item 32, anim Inherit): the ancestor's
-        etched Va/D/Vi joins this pet's powers (petbase DIGIMEMORY_* law).
+        """The Digimemory chip (DVPet item 32, anim Inherit): a payload's
+        Va/D/Vi joins this pet's powers (petbase DIGIMEMORY_* law).  An
+        INHERITED chip's etched ancestor data takes priority; failing that,
+        a FOUND chip spends the oldest wild trace (2026-07-24).  A chip with
+        no payload of either kind -- a bare estate husk -- stays mute.
         (The chip's lifespan hours left with the lifespan clock -- DSprite
-        mortality 2026-07-22; an OLD chip's "seconds" payload loads fine and
-        is simply not applied.)  A chip with no payload aboard -- the estate
-        husk -- stays a mute keepsake."""
-        mem = self.digimemory
+        mortality 2026-07-22; an OLD chip's "seconds" payload is ignored.)"""
+        inherited = bool(self.digimemory)
+        mem = self.digimemory or (self.wild_memories[0]
+                                  if self.wild_memories else None)
         if not mem:
-            return _Refused("The chip is silent.")
+            return _Refused("The chip is silent.")  # noqa: F405
         self.vaccine += int(mem.get("vaccine", 0) or 0)
         self.data_power += int(mem.get("data", 0) or 0)
         self.virus += int(mem.get("virus", 0) or 0)
-        self.digimemory = {}
+        if inherited:
+            self.digimemory = {}
+        else:
+            self.wild_memories.pop(0)
         return f"{mem.get('name', 'The ancestor')}'s power lives on!"
 
     def _super_carrot(self):
