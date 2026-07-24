@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.227 — PRESENTS ARE A REAL SURPRISE NOW (2026-07-24)
+
+PRESENTS ARE A REAL SURPRISE NOW: when your pet brings you a gift it hands over a WRAPPED present — you find out what is inside only when it is opened, and it can be any of dozens of goods, not the same few. On a festival your pet gifts about three times as often, and those presents reach nicer items.
+
 ## 0.5.226 — THE FESTIVALS SHOW ON SCREEN NOW (2026-07-24)
 
 THE FESTIVALS SHOW ON SCREEN NOW: on each holiday a little decoration appears in your pet's corner — candy at Halloween, a present at Christmas, a Crest on Odaiba Memorial Day, cake for New Year. The festival bonuses (double bits, shop sales, festival eggs) were already there; now the day looks the part too.
