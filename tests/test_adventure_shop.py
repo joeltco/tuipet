@@ -123,7 +123,7 @@ def test_the_unlocked_road_shelf_renders_on_the_items_tab(monkeypatch):
     monkeypatch.setattr(persistence, "get_progress", lambda: {"maps": {0, 1}})
     pan = ShopPanel(_pet())
     pan.tab = pan._tabs().index("Items")
-    keys = {e["key"] for e in pan._rows()}
+    keys = {e["key"] for e in pan._rows() if not e.get("header")}
     assert {"town_transport", "disaster_transport", "life_recovery"} <= keys
     txt = pan.text().plain                     # the smoke walk renders too
     assert "Items" in txt
@@ -133,7 +133,7 @@ def test_the_town_counter_sells_its_authored_transports():
     from tuipet.shopscreen import ShopPanel
     pan = ShopPanel(_pet(), town_id=0)         # authored SID1/SID2 = the warps
     pan.tab = pan._tabs().index("Items")
-    keys = {e["key"] for e in pan._rows()}
+    keys = {e["key"] for e in pan._rows() if not e.get("header")}
     assert {"town_transport", "disaster_transport"} <= keys
     pan.text()                                 # render walk
 
@@ -146,5 +146,5 @@ def test_a_held_road_item_shows_in_the_bag():
     seen = set()
     for i in range(len(pan._tabs())):
         pan.tab = i
-        seen |= {e["key"] for e in pan._rows()}
+        seen |= {e["key"] for e in pan._rows() if not e.get("header")}
     assert "town_transport" in seen

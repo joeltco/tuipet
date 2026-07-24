@@ -38,12 +38,27 @@ from . import persistence
 from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SEL  # noqa: F401  (theme.apply propagation)
 from . import menu
 
-# the classic tab grammar (v0.5.0): the DSprite categories fold into the
+# the classic tab grammar (v0.5.0): the catalog's categories fold into the
 # four tabs the shop always had.  Honors is shop-only (titles never bag).
-GROUPS = (("Food", ("Food", "Fruit")),
-          ("Items", ("Care", "Evolution", "Medical", "Toy", "Adventure")),
+#
+# ITEMS REFACTOR P4 (2026-07-23, Joel ruled R1=b "sub-headers"): the tab
+# BAR stays four wide -- it is 38 cells and silently truncates, so eight
+# tabs would need 68 and simply vanish (plan audit A2).  Instead the
+# Items tab now GROUPS its seven categories under dim sub-headers, which
+# scroll with the list and are therefore not capped by the bar at all.
+#
+# The dead "Fruit" category was REMOVED here: no catalog item ever
+# carried it (a DSprite-era leftover), so the Food tab listed a category
+# that could never match.  Not to be confused with data_shop's
+# FOOD_CATEGORIES, a different namespace that IS live for food_ranks.
+GROUPS = (("Food", ("Food",)),
+          ("Items", ("Medicine", "Care", "Training", "Play", "Evolution",
+                     "Legacy", "Adventure")),
           ("Eggs", (shop.ARMOR_CATEGORY,)),
           ("Honors", None))
+
+# the tab whose rows carry sub-headers (the only one holding >1 category)
+_GROUPED_TAB = "Items"
 
 # the honors crest: a drawn text plate, like the old CLOSED sign -- a
 # title has no item sprite and hand-drawing ART is banned; a plate isn't
@@ -134,6 +149,55 @@ class ShopPanel:
             return [g for g, _ in GROUPS]
         return [g for g, cats in GROUPS if cats is not None]
 
+    def _grouped(self, rows, tab_name, cats):
+        """P4: sort the Items tab by CATEGORY and slip a dim sub-header in
+        front of each run.  Header rows are NOT selectable -- `_snap` walks
+        the cursor past them, and every consumer guards on `.get("header")`.
+
+        Only the Items tab groups: it is the one tab holding more than one
+        category, and a header over a single-category list is noise."""
+        if tab_name != _GROUPED_TAB or not rows:
+            return rows
+        order = [c for c in shop.CATEGORY_ORDER if c in set(cats or ())]
+        def rank(e):
+            c = e.get("category", "")
+            return (order.index(c) if c in order else len(order), e["name"])
+        out, last = [], None
+        for e in sorted(rows, key=rank):
+            cat = e.get("category", "")
+            if cat != last:
+                last = cat
+                out.append({"header": cat, "name": cat, "category": cat})
+            out.append(e)
+        return out
+
+    @staticmethod
+    def _is_header(e):
+        return bool(e) and e.get("header") is not None
+
+    def _snap(self, rows, idx, step=1):
+        """Move OFF a header row in `step` direction; never loops forever
+        (a list of nothing but headers can't happen, but guard anyway)."""
+        n = len(rows)
+        if not n:
+            return 0
+        idx %= n
+        for _ in range(n):
+            if not self._is_header(rows[idx]):
+                return idx
+            idx = (idx + step) % n
+        return idx
+
+    def _normalize_cursor(self, rows):
+        """Never leave the cursor parked on a header (opening a tab, a
+        list that shrank under it, restored session position)."""
+        if not rows:
+            self.cursor = 0
+            return
+        self.cursor = min(self.cursor, len(rows) - 1)
+        if self._is_header(rows[self.cursor]):
+            self.cursor = self._snap(rows, self.cursor, 1)
+
     def _rows(self):
         tabs = self._tabs()
         name = tabs[self.tab % len(tabs)]
@@ -148,9 +212,12 @@ class ShopPanel:
             if self.town is not None:      # the town counter: authored stock
                 if name == "Eggs":         # the digitama band, shop-row shape
                     return shop.town_egg_rows(self.town)
-                return [e for e in shop.town_stock(self.town, pet=self.pet)
-                        if e["category"] in cats]
-            return [e for e in shop.catalog() if e["category"] in cats]
+                return self._grouped(
+                    [e for e in shop.town_stock(self.town, pet=self.pet)
+                     if e["category"] in cats], name, cats)
+            return self._grouped(
+                [e for e in shop.catalog() if e["category"] in cats],
+                name, cats)
         out = []
         for k, n in self.pet.inventory.items():
             e = shop.entry(k)
@@ -160,7 +227,7 @@ class ShopPanel:
                     e["sell_price"] = shop.town_sell_price(k, self.town)
                 out.append(e)
         out.sort(key=lambda e: e["name"])      # by the name you SEE, not the key
-        return out
+        return self._grouped(out, name, cats)
 
     # ---- keys ----
     def _buy_title(self, e):
@@ -233,11 +300,13 @@ class ShopPanel:
         under the cursor -- arm the one-press guard so a mashed R/ENTER
         can't silently hit the neighbor (QOL 2026-07-23)."""
         key = e.get("key")
-        if key is not None and all(r.get("key") != key for r in self._rows()):
+        if key is not None and all(r.get("key") != key for r in self._rows()
+                                   if not self._is_header(r)):
             self._retarget = True
 
     def key(self, k):
         rows = self._rows()
+        self._normalize_cursor(rows)
         n = len(rows)
         tabs = self._tabs()
         if k in ("left", "h", "right", "l", "up", "k", "down", "j",
@@ -248,24 +317,33 @@ class ShopPanel:
             self._mode_pos[self.mode] = (self.tab, self.cursor)
             self.mode = "bag" if self.mode == "shop" else "shop"
             self.tab, self.cursor = self._mode_pos.get(self.mode, (0, 0))
+            self._normalize_cursor(self._rows())
             self._flash("Your bag." if self.mode == "bag" else "Welcome back!")
             return None
         if k in ("left", "h"):
             self._tab_pos[(self.mode, self.tab)] = self.cursor
             self.tab = (self.tab - 1) % len(tabs)
             self.cursor = self._tab_pos.get((self.mode, self.tab), 0)
+            self._normalize_cursor(self._rows())
         elif k in ("right", "l"):
             self._tab_pos[(self.mode, self.tab)] = self.cursor
             self.tab = (self.tab + 1) % len(tabs)
             self.cursor = self._tab_pos.get((self.mode, self.tab), 0)
+            self._normalize_cursor(self._rows())
         elif k in ("up", "k") and n:
-            self.cursor = (self.cursor - 1) % n
+            self.cursor = self._snap(rows, (self.cursor - 1) % n, -1)
         elif k in ("down", "j") and n:
-            self.cursor = (self.cursor + 1) % n
+            self.cursor = self._snap(rows, (self.cursor + 1) % n, 1)
         elif k in ("pageup", "pagedown"):     # the shelf/bag leap (help audit 2026-07-21)
-            self.cursor = menu.page_step(self.cursor, n, 5, k)
+            step = menu.page_step(self.cursor, n, 5, k)
+            # a leap can land ON a header: walk the way the leap was
+            # going, then back off if that ran out of list
+            self.cursor = self._snap(rows, step,
+                                     1 if k == "pagedown" else -1)
         elif k in ("enter", "space") and n:
             e = rows[self.cursor % n]
+            if self._is_header(e):        # a sub-header is a label, not a buy
+                return None
             if self.mode == "shop":
                 if e.get("title_id") is not None:
                     msg, self.sfx = self._buy_title(e)
@@ -292,6 +370,8 @@ class ShopPanel:
                 self._check_retarget(e)
         elif k == "r" and self.mode == "bag" and n:
             e = rows[self.cursor % n]
+            if self._is_header(e):
+                return None
             if self._retarget:
                 self._retarget = False
                 self._flash(f"now on {e['name']} — press again")
@@ -306,6 +386,11 @@ class ShopPanel:
             # leave never showed its verdict)
             self._remember_pos()
             return ("done", self.msg if self.msg_t > 0 else None)
+        # a buy/sell/use can RESHAPE the list under the cursor -- a sold-out
+        # town row drops away, a spent stack empties -- and that can slide a
+        # sub-header under it.  Re-snap on the way out so the cursor is never
+        # parked on a label between one keypress and the next render (P4).
+        self._normalize_cursor(self._rows())
         return None
 
     # ---- render ----
@@ -386,7 +471,7 @@ class ShopPanel:
         p = self.pet
         tabs = self._tabs()
         rows = self._rows()
-        self.cursor = min(self.cursor, max(0, len(rows) - 1))
+        self._normalize_cursor(rows)
         if self.mode == "shop":
             out = menu.header("SHOP", f"{p.bits}b")
         else:
@@ -400,10 +485,13 @@ class ShopPanel:
         out.append(self._bar_text(tabs), style=INK_B)
 
         tw = menu.W - menu.IC_W - 2
-        if rows:
-            sel = rows[self.cursor]
+        sel = rows[self.cursor] if rows else None
+        if sel is not None and not self._is_header(sel):
             menu.icon_info(out, self._icon(sel), self._info(sel, tw))
         else:
+            # empty tab, or (defensively) a header the snap somehow left
+            # selected: the dossier goes quiet rather than rendering a label
+            # as if it were a product
             out.append_text(menu.blanks(menu.IC_ROWS))
 
         empty = ("(shelves empty)" if self.mode == "shop"
@@ -419,6 +507,12 @@ class ShopPanel:
             return label
 
         def fmt(e, i):
+            if self._is_header(e):
+                # owns its whole line: dim, no ▸ cursor (it can't be selected).
+                # "── Medicine ──────" to the panel width, so the eye reads a
+                # RULE rather than another buyable row.
+                label = "─ %s " % e["header"]
+                return Text((label + "─" * menu.W)[:menu.W] + "\n", style=DIM)
             if self.mode == "shop":
                 if e.get("title_id") is not None:
                     # blank mark column so the price column holds still when

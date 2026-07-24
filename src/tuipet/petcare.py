@@ -404,25 +404,28 @@ class CareMixin:
             "giga_meal": self._giga_meal,
             "steak": self._premium_meat,
             "poison_mushroom": self._deadly,
-            # ---- CARE -------------------------------------------------------
-            "energy_drink": self._energy_drink,
-            "slim_drink": self._super_carrot,
+            # ---- MEDICINE ---------------------------------------------------
             "vitamin": self._vitamin,
             "bandage": self._bandage,
+            # ---- CARE -------------------------------------------------------
             "sleeping_pill": self._sleep_pill,
             "caffeine_pill": self._caffeine,
             "music_player": self._alarm,
             "textbook": self._erase_mistakes_all,
             "port_potty": self._smart_potty,
-            # ---- GROWTH -----------------------------------------------------
+            # ---- TRAINING ---------------------------------------------------
+            "energy_drink": self._energy_drink,
+            "slim_drink": self._super_carrot,
             "dumbbell": self._training_pack,
+            # ---- EVOLUTION --------------------------------------------------
             "grow_capsule": self._time_gear,
             "anti_evo_chip": self._anti_evo,
             "x_antibody": self._x_item,
             "dna_crystal": self._dna_crystal,
+            # ---- LEGACY -----------------------------------------------------
             "revive_floppy": self._revive_item,
             "digimemory": self._inherit_memory,
-            # ---- TOYS (small LIVE dials; the SHOW is fired by the bag panel)
+            # ---- PLAY (small LIVE dials; the SHOW is fired by the bag panel)
             "ball": lambda: self._toy(weight=-1, msg="A grand kickabout!"),
             "skateboard": lambda: self._toy(weight=-2, energy=-1,
                                             msg="It shreds!"),

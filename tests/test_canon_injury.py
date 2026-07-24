@@ -91,7 +91,7 @@ def test_an_injured_pet_still_eats():
 def test_the_bandage_is_in_the_catalog():
     from tuipet import shop
     e = shop.entry("bandage")
-    assert e and e["name"] == "Bandage" and e["category"] == "Care"
+    assert e and e["name"] == "Bandage" and e["category"] == "Medicine"
 
 
 def test_the_vitamin_guard_burns_at_one_per_game_minute(monkeypatch):

@@ -151,7 +151,7 @@ def test_the_shelf_shows_what_you_already_hold():
     pan.tab = 1                               # the Items tab
     rows = pan._rows()
     pan.cursor = next(i for i, e in enumerate(rows)
-                      if e["key"] == "energy_drink")
+                      if e.get("key") == "energy_drink")
     plain = pan.text().plain
     assert "x2" in plain                      # the held marker on the row
     assert "hold x2" in plain                 # and the dossier info row
@@ -161,7 +161,7 @@ def test_the_info_prices_a_shortfall():
     p = _pet(bits=100)
     pan = ShopPanel(p)
     pan.tab = 1                               # Items: a 300b good sits early
-    row = next(e for e in pan._rows() if e["price"] == 300)
+    row = next(e for e in pan._rows() if e.get("price") == 300)
     info = pan._info(row, 26)
     assert any("short 200b" in line for line in info)
 
@@ -267,7 +267,8 @@ def test_every_item_wears_its_own_dvpet_art():
     assert "i:68" not in shop.ICON_KEYS.values()      # no capsule pods left
     pan = ShopPanel(_pet())
     for pan.tab in range(len(pan._tabs()) - 1):       # every goods tab
-        assert all(any(l.strip() for l in pan._icon(e)) for e in pan._rows())
+        assert all(any(l.strip() for l in pan._icon(e))
+                   for e in pan._rows() if not e.get("header"))
 
 
 def test_the_toys_turn_live_dials():

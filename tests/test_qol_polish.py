@@ -139,7 +139,12 @@ def test_shop_tabs_remember_their_cursor():
     here = pan.cursor
     assert here != 0
     pan.key("right")                       # tab away...
-    assert pan.cursor == 0
+    # an unvisited tab opens at its FIRST SELECTABLE row -- which is row 0
+    # on a flat tab, and row 1 on the grouped Items tab whose row 0 is a
+    # sub-header (items refactor P4)
+    rows = pan._rows()
+    assert pan.cursor == (1 if rows and rows[0].get("header") else 0)
+    assert not rows[pan.cursor].get("header")
     pan.key("left")                        # ...and back
     assert pan.cursor == here
 

@@ -80,36 +80,40 @@ _AUTHORED = {
     "cupcake":         ("Cupcake",         "f:55", None, "Food", "hunger +1 · energy +1", "a birthday's reward"),
     "cookie":          ("Cookie",          "f:54", None, "Food", "hunger +1 · energy +1", "a birthday's treat"),
     "candy":           ("Candy",           "f:7",  None, "Food", "hunger +1 · energy +1", "a consolation sweet"),
-    # ---- CARE ---------------------------------------------------------------
-    "energy_drink":    ("Energy Drink",    "f:17", 200,  "Care", "energy to FULL", "instant pep"),
-    "slim_drink":      ("Slim Drink",      "f:23", 100,  "Care", "weight -10", "the crash diet"),
-    "vitamin":         ("Vitamin",         "f:5",  500,  "Care", "effort FULL · injury guard", "effort in a capsule"),
-    "bandage":         ("Bandage",         "i:80", 300,  "Care", "treats an injury", "the second med, restored"),
+    # ---- MEDICINE (the two ailments: sick and injured) ----------------------
+    "vitamin":         ("Vitamin",         "f:5",  500,  "Medicine", "effort FULL · injury guard", "effort in a capsule"),
+    "bandage":         ("Bandage",         "i:80", 300,  "Medicine", "treats an injury", "the second med, restored"),
+    # ---- CARE (upkeep: sleep, lights, filth, the mistake slate) -------------
     "sleeping_pill":   ("Sleep Pill",      "f:34", 300,  "Care", "sleep now", "lights out, no argument"),
     "caffeine_pill":   ("Caffeine Pill",   "f:38", 300,  "Care", "bedtime pushed later", "tonight runs long"),
     "music_player":    ("Music Player",    "i:9",  300,  "Care", "wake now, no grudge", "a gentle waking song"),
     "textbook":        ("Textbook",        "i:0",  1500, "Care", "erase ALL care mistakes", "study the slate clean"),
     "port_potty":      ("Port. Potty",     "i:83", 2000, "Care", "clean + auto-clean 24h", "it cleans itself"),
-    # ---- GROWTH -------------------------------------------------------------
-    "dumbbell":        ("Dumbbell",        "i:7",  300,  "Evolution", "training +10", "reps in a box"),
+    # ---- TRAINING (the body: effort, weight, drills) ------------------------
+    "energy_drink":    ("Energy Drink",    "f:17", 200,  "Training", "energy to FULL", "instant pep"),
+    "slim_drink":      ("Slim Drink",      "f:23", 100,  "Training", "weight -10", "the crash diet"),
+    "dumbbell":        ("Dumbbell",        "i:7",  300,  "Training", "training +10", "reps in a box"),
+    # ---- EVOLUTION (the gates: growth, locks, X, DNA) -----------------------
     "grow_capsule":    ("Grow Capsule",    "i:78", 500,  "Evolution", "growth +120min", "time in a bottle"),
     "anti_evo_chip":   ("Anti-Evo Chip",   "f:32", 1000, "Evolution", "toggle evolution lock", "holds this form"),
     "x_antibody":      ("X-Antibody",      "i:79", 2000, "Evolution", "the X-Antibody takes hold", "the X factor"),
     "dna_crystal":     ("DNA Crystal",     "i:35", 1500, "Evolution", "+10 own-Field DNA banked", "a Field's worth of code"),
+    # ---- LEGACY (death and inheritance -- NOT medicine, which is why the
+    # old "Medical" name had to go: it never held a med) ---------------------
     # i:64 (the notched-square disk glyph): i:32 is DVPet's own Digimemory
     # sprite, and two catalog entries sharing an icon broke key_for_icon
     # (consistency audit 2026-07-21) -- the floppy wears its own rip now
-    "revive_floppy":   ("Rev. Floppy",     "i:64", 2500, "Medical", "raise the dead", "one more chance"),
-    "digimemory":      ("Digimemory",      "i:32", None, "Medical", "the ancestor's Va·D·Vi", "its data lives on"),
-    # ---- TOYS (the shows the engine already ships; small LIVE stat dials:
+    "revive_floppy":   ("Rev. Floppy",     "i:64", 2500, "Legacy", "raise the dead", "one more chance"),
+    "digimemory":      ("Digimemory",      "i:32", None, "Legacy", "the ancestor's Va·D·Vi", "its data lives on"),
+    # ---- PLAY (the shows the engine already ships; small LIVE stat dials:
     # exercise sheds weight, couch time buys energy at a weight price) --------
-    "ball":            ("Ball",            "i:3",  100,  "Toy", "play! weight -1", "a grand kickabout"),
-    "skateboard":      ("Skateboard",      "i:6",  500,  "Toy", "ride! weight -2 · energy -1", "shred the living room"),
-    "xylophone":       ("Xylophone",       "i:63", 800,  "Toy", "a recital · energy +2", "music hath charms"),
-    "video_game":      ("Video Game",      "i:65", 600,  "Toy", "couch time · energy +2 · weight +1", "one more level…"),
-    "television":      ("Television",      "i:10", 1000, "Toy", "deep couch · energy +3 · weight +1", "glued to the screen"),
-    "bubble_bath":     ("Bubble Bath",     "i:26", 400,  "Toy", "washes the filth, with style", "rubber duck included"),
-    "cold_shower":     ("Cold Shower",     "i:67", 300,  "Toy", "a bracing wake · energy +2", "brrr. effective."),
+    "ball":            ("Ball",            "i:3",  100,  "Play", "play! weight -1", "a grand kickabout"),
+    "skateboard":      ("Skateboard",      "i:6",  500,  "Play", "ride! weight -2 · energy -1", "shred the living room"),
+    "xylophone":       ("Xylophone",       "i:63", 800,  "Play", "a recital · energy +2", "music hath charms"),
+    "video_game":      ("Video Game",      "i:65", 600,  "Play", "couch time · energy +2 · weight +1", "one more level…"),
+    "television":      ("Television",      "i:10", 1000, "Play", "deep couch · energy +3 · weight +1", "glued to the screen"),
+    "bubble_bath":     ("Bubble Bath",     "i:26", 400,  "Play", "washes the filth, with style", "rubber duck included"),
+    "cold_shower":     ("Cold Shower",     "i:67", 300,  "Play", "a bracing wake · energy +2", "brrr. effective."),
     # ---- ADVENTURE (the road's own shelf -- cleared maps open it) -----------
     "town_transport":     ("Town Transport",   "i:29", 500,  "Adventure", "on the road: T-warp to a town + rest", "a Birdramon ride"),
     "disaster_transport": ("Disaster Transp.", "i:30", 250,  "Adventure", "on the road: T-dash to the boss + ambush", "a Garudamon ride"),
@@ -438,7 +442,8 @@ def shelf(cat):
 # shelf tabs in PLAY order -- everyday care first, the relics last (shop
 # polish 2026-07-17: the old alphabetical order opened the shop on a
 # two-item Armor-Spirit tab).  Unknown categories append alphabetically.
-CATEGORY_ORDER = ("Care", "Food", "Evolution", "Medical", "Toy",
+CATEGORY_ORDER = ("Food", "Medicine", "Care", "Training", "Play",
+                  "Evolution", "Legacy",
                   "Adventure", ARMOR_CATEGORY)
 
 
@@ -597,7 +602,7 @@ def _econ_stub(key):
     catalog price, standard factors, capped stock -- no money printer."""
     v = CATALOG[key]
     return {"price": v.price, "sale_factor": 2, "resell_factor": 2,
-            "max_stock": 2, "is_food": v.category in ("Food", "Fruit"),
+            "max_stock": 2, "is_food": v.category == "Food",
             "consumable_id": -1}
 
 
