@@ -23,13 +23,18 @@ def test_meat_fills_a_heart_and_weighs():
 
 
 def test_meat_refused_at_a_full_belly_counts_the_overeat():
-    # canon gates 2026-07-18: a PURE refuse -- the counter ticks (the
-    # evolution OF gates read it) but no weight, no mistake, no bowel shove
+    """SUPERSEDED by D2 (the overfeed penalty, 2026-07-23): the refuse was
+    "penalty-free", which made feeding the one care verb a player could
+    not get wrong.  Canon overeatPenalty bills it -- weight piles on and
+    it counts as a care slip -- and the pet still head-shakes first, so
+    nothing is charged before the warning.  The bowel shove stays out
+    (that leg left with its system)."""
     p = _pet(hunger=FULL_HUNGER, weight=20)
-    of0, m0 = p.overeat, p.mistake_day
+    of0, cm0 = p.overeat, p.care_mistakes
     msg = p.feed_meat()
-    assert "full" in msg and p.overeat == of0 + 1
-    assert p.weight == 20 and p.mistake_day == m0
+    assert "full" in msg and p.overeat == of0 + 1     # the OF gate still reads it
+    assert p.weight == 21                             # ...and it costs
+    assert p.care_mistakes == cm0 + 1
     assert p.hunger == FULL_HUNGER
 
 

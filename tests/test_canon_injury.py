@@ -111,3 +111,29 @@ def test_the_vitamin_guard_burns_at_one_per_game_minute(monkeypatch):
     assert p.vitamin_lapse == 1440.0        # one game DAY of protection
     p.tick(10.0)
     assert p.vitamin_lapse == 1430.0        # 1:1 with game-min (the bug gave 1439.83)
+
+
+def test_a_wound_heals_on_its_own_clock(monkeypatch):
+    """P4 ruling (plan audit 2026-07-23): v0.5.205 shipped injury with NO
+    canon recovery, leaving a 300b shop-only Bandage as the only cure
+    while sickness has a free infinite one.  Canon heals a wound on a
+    clock (randint(1,12) lapses); the Bandage now buys off the WAIT
+    rather than being the only door."""
+    p = _pet()
+    p._set_weight(p._base_weight() + 10)
+    monkeypatch.setattr(petbattle.random, "random", lambda: 0.0)
+    monkeypatch.setattr(petbattle.random, "randint", lambda a, b: a)   # shortest wound
+    p.record_battle(False, {"num": 4, "stage": "Champion", "attribute": "Data"})
+    assert p.injured and p.inj_length > 0
+    monkeypatch.setattr(petbody.random, "random", lambda: 0.99)        # no new rolls
+    p.tick(p.inj_length / 2)
+    assert p.injured                                   # still hurt halfway
+    p.tick(p.inj_length + 1)
+    assert not p.injured and p.inj_length == 0         # time closed it
+
+
+def test_the_bandage_buys_off_the_wait():
+    p = _pet(injured=True, inj_length=999.0)
+    p.add_item("bandage")
+    p.use_item("bandage")
+    assert not p.injured and p.inj_length == 0.0

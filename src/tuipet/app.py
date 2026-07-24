@@ -132,11 +132,12 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE WIN GATE STOPS LYING: the 12-of-15 evolution "
-                 "requirement rolls, so a win that replaces an older win "
-                 "moves the counter by nothing — you can win three times "
-                 "and watch it sit still. The checklist now tells you how "
-                 "many STRAIGHT wins you actually need from here.")
+    WHATS_NEW = ("FOOD IS A DECISION NOW: stuffing a full pet piles "
+                 "on weight and counts as a care slip — it still shakes "
+                 "its head first, so you get the warning free. And "
+                 "injuries heal on their own over 5-60 minutes of play; "
+                 "the Bandage now buys off the wait instead of being the "
+                 "only cure.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

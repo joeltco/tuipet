@@ -301,6 +301,11 @@ class BattleMixin:
             if chance and random.random() < chance / BATTLE_INJ_BOUND:  # noqa: F405
                 self.injured = True
                 self.injuries += 1                       # the lifetime count
+                # canon injLapse: the wound also carries how long it takes
+                # to heal on its own (P4 ruling 2026-07-23) -- the Bandage
+                # skips the wait, it is no longer the only cure
+                self.inj_length = random.randint(
+                    MIN_INJ_LENGTH, MAX_INJ_LENGTH) * INJ_LAPSE_MIN  # noqa: F405
         if not won:
             return ""
         self.wins += 1

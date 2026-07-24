@@ -597,6 +597,13 @@ class BodyMixin:
         # SCALED (the /60 precedent at FILTH_SICK_BOUND), never copied.
         if getattr(self, "vitamin_lapse", 0.0) > 0:
             self.vitamin_lapse = max(0.0, self.vitamin_lapse - dt)
+        # canon injLapse: a wound heals on its own clock (P4 ruling
+        # 2026-07-23).  Same unit law -- inj_length is game-minutes, so
+        # it burns by dt.  The Bandage skips the wait; time closes it.
+        if self.injured and self.inj_length > 0:
+            self.inj_length = max(0.0, self.inj_length - dt)
+            if self.inj_length <= 0:
+                self.injured = False
         # THE TANTRUM (canon restoration B, 2026-07-23 -- adapted
         # checkDisciplineCall): an awake pet AT HOME acts up about once
         # per 5400 game-min (~90 REAL minutes of play -- the label used to

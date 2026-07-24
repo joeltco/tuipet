@@ -497,6 +497,18 @@ BATTLE_MIN_ENERGY = 10              # the source's battle gate (canon gates 2026
 # InTraining baby.  "Bad" condition = starving, drained, weight >= 8g
 # off base, or already sick.  A live vitamin is the canon guard
 # (good_v 0 / bad_v 25 -- the vitamin's second job on the device).
+# INJURY RECOVERY (P4 ruling 2026-07-23): canon heals a wound on a clock
+# -- `randint(1, 12) * InjLapseMin` game-min -- and v0.5.205 shipped the
+# ailment WITHOUT it, leaving a 300b shop-only Bandage as the only cure
+# while its sibling ailment has a free infinite one.  Restored, with the
+# lapse SCALED: canon's 29 is device real-minutes, which under THE UNIT
+# LAW would be 29 real SECONDS here (an injury gone before you noticed),
+# while the flat /60 precedent would run up to 5.8 real HOURS (longer
+# than any session).  300 game-min = 5 real minutes a lapse, so a wound
+# lasts 5-60 real minutes of play.  The Bandage stays the INSTANT cure:
+# it now buys time rather than being the only door.
+MIN_INJ_LENGTH, MAX_INJ_LENGTH = 1, 12  # Min/MaxInjLength, canon
+INJ_LAPSE_MIN = 300                     # game-min per lapse (canon 29 = device real-min)
 BATTLE_INJ_BOUND = 1000
 BATTLE_INJ_TABLE = {"good_v": 0, "good_nv": 3, "bad_v": 25, "bad_nv": 100}
 BATTLE_INJ_LOSS = 50                # BattleInjuryWonFactor, added on a LOSS

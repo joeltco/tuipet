@@ -108,9 +108,19 @@ class CareMixin:
             self._set_anim("refuse", 1.0)
             return "Clean up first!"
         if self.hunger >= FULL_HUNGER:
-            self.overeat += 1                    # the OF-gate signal, penalty-free
+            # THE OVERFEED PENALTY (D2, 2026-07-23): canon overeatPenalty
+            # bills a stuffed pet -- weight piles on and it counts as a
+            # care slip.  This branch was "penalty-free", which made
+            # feeding the one care verb you could not get wrong; a vpet's
+            # food has to be a decision.  The pet head-shakes FIRST, so
+            # nothing is charged before you have been warned.  (The bag's
+            # own foods refuse at a full belly and the assistant only
+            # serves at hunger 0, so this is the single stuffing door.)
+            self.overeat += 1                    # the OF-gate signal (evolution)
+            self._set_weight(self.weight + 1)
+            self.care_mistakes += 1
             self._set_anim("refuse", 1.0)
-            return f"{self.name} is too full!"
+            return f"{self.name} is too full! (✗ overfed)"
         if self.asleep:
             self._disturbed()
         self._last_meal_starving = self.hunger == 0          # eat(): wolfed down
@@ -485,6 +495,7 @@ class CareMixin:
         if not self.injured:
             return _Refused("Nothing to bandage.")  # noqa: F405
         self.injured = False
+        self.inj_length = 0.0        # the wait is what the Bandage buys off
         self._set_anim("happy", 1.4)
         return "All patched up!"
 
