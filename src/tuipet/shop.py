@@ -343,10 +343,12 @@ def item_script(key):
     the eat fx, exactly like the pill."""
     if key in _OWN_FLOW:
         return None
+    from . import itemfx
+    if key in itemfx._SCRIPT_OVERRIDE:      # a canon type with no usable show,
+        return itemfx._SCRIPT_OVERRIDE[key]  # remapped to a fitting one (2026-07-24)
     icon = ICON_KEYS.get(key, "")
     if not icon.startswith("i:"):
         return None
-    from . import itemfx
     act = (data.consumable_by_key(icon) or {}).get("action") or ""
     return act if act in itemfx.SCRIPTS else None
 

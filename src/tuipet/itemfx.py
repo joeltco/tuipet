@@ -153,7 +153,32 @@ SCRIPTS = {
                            8: {"i": 1, "p": 9},
                            13: {"i": 2, "p": 9},
                            18: {"i": 3, "p": 9}}},
+    # portToilet() -> poopToilet(flush=false): the potty sits beside the pet,
+    # who sits on it (pose 4) and STRAINS -- canon rocks it left/right 3px
+    # every 3 beats (moveLeft/moveRight 3 -> our 1); at beat 18 the poop
+    # lands (pose 5, relief + the poop sound), back to neutral at 28, and it
+    # chains into cheer.  flush=false means no wash beat (the portable potty
+    # is self-cleaning by its OWN effect, not shown), so the sequence ends
+    # here rather than at canon's 37.
+    "PortToilet": {"steps": 32, "end": "cheer", "layout": "near",
+                   "snds": {18: "poop"},
+                   "rows": {0:  {"i": _fr(1), "p": 4},
+                            3:  {"p": 4, "pdx": -1},
+                            6:  {"p": 4, "pdx": 1},
+                            9:  {"p": 4, "pdx": -1},
+                            12: {"p": 4, "pdx": 1},
+                            15: {"p": 4, "pdx": -1},
+                            18: {"p": 5, "pdx": 1},
+                            28: {"p": 1}}},
 }
+
+# AnimationType OVERRIDES: an item whose canon type has no usable show maps
+# to a fitting one HERE (Joel 2026-07-24).  The DNA Crystal and X-Antibody
+# both carry items.csv's `ItemEvol` -- the EVOLUTION animation -- but neither
+# evolves the pet (one banks DNA, the other raises the X state), so the
+# evolution show would be a lie.  Study reads right for both: the pet
+# absorbing data / the X-program.
+_SCRIPT_OVERRIDE = {"dna_crystal": "Study", "x_antibody": "Study"}
 
 # AnimationTypes that deliberately have NO item fx: Idling (canon plays
 # nothing), plus every system with its own door (transports / ItemEvol /

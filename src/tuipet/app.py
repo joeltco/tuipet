@@ -133,10 +133,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("A LEANER GUIDE: the how-to-play help stays focused on "
-                 "the systems. For any item's price and effect, the shop "
-                 "and bag show it live the moment you land on it — that is "
-                 "the item reference, right where you decide.")
+    WHATS_NEW = ("THREE ITEMS GET THEIR ANIMATIONS: the Port. Potty now "
+                 "plays its real toilet sequence, and the DNA Crystal and "
+                 "X-Antibody show a study animation instead of a bare line "
+                 "of text. Every item in the game now has a proper show "
+                 "when you use it.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

@@ -318,3 +318,83 @@ def test_the_bandage_show_only_plays_when_it_treats_something():
     outcome, item, _msg = pan2.key("enter")[1]
     assert outcome == "bandaged" and item["key"] == "i:80"
     assert not p.injured
+
+
+# ---- the last three show gaps closed (2026-07-24, Joel: "wire porttoilet
+# and use study for the chips") ----------------------------------------------
+
+def test_every_item_has_a_show_path():
+    """41 of 44 items showed correctly; port_potty, dna_crystal and
+    x_antibody flashed bare text.  Now every item either eats, plays a
+    script, or rides its own door -- none falls through to a text flash."""
+    from tuipet import shop
+    for k in shop.CATALOG:
+        has = (k in shop._OWN_FLOW
+               or shop.item_is_eaten(k)
+               or bool(shop.item_script(k)))
+        assert has, f"{k} has no show path"
+
+
+def test_the_port_potty_plays_its_canon_sequence():
+    """DVPet portToilet() -> poopToilet(false): the pet sits (pose 4) and
+    strains, the poop lands at beat 18 (pose 5 + the poop sound), back to
+    neutral, into cheer.  No wash beat -- flush=false."""
+    from tuipet import shop
+    assert shop.item_script("port_potty") == "PortToilet"
+    sc = itemfx.SCRIPTS["PortToilet"]
+    assert sc["end"] == "cheer"
+    assert sc["snds"] == {18: "poop"}
+    poses = [itemfx.state("PortToilet", b, 16, 16, 40)[1] for b in (0, 15, 18, 28)]
+    assert poses == [4, 4, 5, 1]            # sit/strain -> relief -> neutral
+
+
+def test_the_port_potty_never_leaves_the_window():
+    """The layout law: every beat, both icon sizes, stays in the arena."""
+    from tuipet import grid
+    for iw, ih in ((8, 8), (16, 16)):
+        for step in range(itemfx.SCRIPTS["PortToilet"]["steps"]):
+            _f, _p, ix, iy, _dx, _dy = itemfx.state("PortToilet", step, iw, ih, 40)
+            assert ix >= grid.X0 and ix + iw <= grid.X1, (step, iw, ix)
+            assert 0 <= iy <= 40 - ih, (step, ih, iy)
+
+
+def test_the_evolution_chips_borrow_the_study_show():
+    """DNA Crystal and X-Antibody carry items.csv's ItemEvol type but do
+    NOT evolve, so the evolution animation would lie.  Remapped to Study
+    (Joel 2026-07-24): the pet absorbing data / the X-program."""
+    from tuipet import shop
+    assert shop.item_script("dna_crystal") == "Study"
+    assert shop.item_script("x_antibody") == "Study"
+    assert "Study" in itemfx.SCRIPTS
+
+
+def test_the_override_is_ONLY_the_two_non_evolving_chips():
+    """A guard: the remap must not silently swallow a real ItemEvol path
+    (the crest Digimentals, which fire an actual evolution via their own
+    door) or any other item."""
+    assert set(itemfx._SCRIPT_OVERRIDE) == {"dna_crystal", "x_antibody"}
+
+
+def test_a_bag_use_fires_the_show_for_all_three():
+    from tuipet.pet import Pet
+    from tuipet.shopscreen import ShopPanel
+
+    def use(key, setup=None):
+        p = Pet(num=100, stage="Champion", attribute="Vaccine")
+        p.world_seconds = 600.0
+        p.bits = 9999
+        if setup:
+            setup(p)
+        p.add_item(key)
+        pan = ShopPanel(p, start_mode="bag")
+        pan.tab = pan._tabs().index("Items")
+        rows = pan._rows()
+        pan.cursor = next(i for i, e in enumerate(rows) if e.get("key") == key)
+        return pan.key("enter")
+
+    r = use("port_potty", lambda p: (setattr(p, "poop", 2),
+                                     setattr(p, "poop_sizes", [1, 2])))
+    assert r[1][0] == "item_use" and r[1][2] == "PortToilet"
+    for k in ("dna_crystal", "x_antibody"):
+        r = use(k)
+        assert r[1][0] == "item_use" and r[1][2] == "Study", k
