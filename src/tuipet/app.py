@@ -133,13 +133,10 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("WILD DIGIMEMORY CHIPS: dug-up memory chips used to be "
-                 "silent keepsakes — now each one carries a stranger's "
-                 "faint trace, a small boost to one of your Vaccine, Data "
-                 "or Virus powers. They turn up deep in the Factory Night "
-                 "zones. An inherited chip from your own line still comes "
-                 "first and hits far harder; the wild ones are a little "
-                 "something for the road.")
+    WHATS_NEW = ("THE GUIDE HOLDS THE FULL ITEM LIST: press ? and scroll "
+                 "to ITEMS — every good in the game, grouped by category "
+                 "with its price, effect and rarity. It reads straight "
+                 "from the shop, so it can never fall out of date.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
