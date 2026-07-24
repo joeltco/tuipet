@@ -2,9 +2,11 @@
 
 Joel 2026-07-23: "we gotta refactor the items system after we are done."
 
-**STATUS: NOT STARTED.**  Nothing here is agreed — this is the MAP, written
-before a session compaction so the work can start cold.  What the refactor
-should actually *change* is Joel's call; §3 lists candidates only.
+**STATUS: SUPERSEDED / CLOSED.**  This was the pre-compaction MAP.  The
+actual work ran through `ITEMS_REFACTOR_PLAN_2026_07_23.md` (P1-P6, closed
+§10, shipped v0.5.216-218) and then `DISTRIBUTION_PLAN_2026_07_24.md`
+(D1-D7, closed, shipped v0.5.219-221).  Kept for the survey below; the
+candidate list in §3 is history, not open work.
 
 ---
 
