@@ -159,6 +159,7 @@ class AdventurePanel(menu.SubHost):
         self._town_prompt = False     # standing at a town: visit the hub or walk on
         self._town_sub = False        # the current sub is the TownPanel, not a fight
         self._find = None             # a loot key spotted, awaiting dig/pass
+        self._find_present = False     # ...and is it a wrapped festival present?
         self._scene = None            # a running investigateLeft playbook
         self._find_msg = None         # the reveal line (sealed until the beat)
         self._hazard = None           # a running ambush: {"t","enemy","dodged","hit"}
@@ -295,6 +296,7 @@ class AdventurePanel(menu.SubHost):
             self._start_boss(r[1])
         elif isinstance(r, tuple) and r[0] == "find":
             self._find = r[1]                 # a glint: wait for the player to choose
+            self._find_present = len(r) > 2 and r[2]   # a festival present?
         elif isinstance(r, tuple) and r[0] == "hazard":
             self._hazard = {"t": 0, "enemy": r[1], "dodged": False, "hit": False}
             self.sfx = "cancel"               # the rustle: the warning thunk
@@ -341,14 +343,23 @@ class AdventurePanel(menu.SubHost):
         from . import shop
         from .battlescreen import mega_window
         key, self._find = self._find, None
+        present, self._find_present = self._find_present, False
         self.pet.add_item(key)                # a CATALOG key: real, usable loot
         if key == "digimemory":               # a WILD chip carries a random
             self.pet.stash_wild_memory()      # trace (2026-07-24) -- one per item
         self.adv.finds += 1
         name = (shop.entry(key) or {}).get("name", "loot")
-        self._find_msg = f"Dug up {name}!"
+        # a festival present is dug up WRAPPED (the present box) and the
+        # contents revealed like a home gift; a plain find shows its own icon
+        if present:
+            from .arenafx import _PRESENT
+            self._find_msg = f"A present! It's {name}!"
+            icon = _PRESENT
+        else:
+            self._find_msg = f"Dug up {name}!"
+            icon = self._find_icon(key)
         lo, hi = mega_window(self.pet)        # the SHARED care-widened window
-        self._scene = {"t": 0, "icon": self._find_icon(key), "key": key,
+        self._scene = {"t": 0, "icon": icon, "key": key,
                        "name": name, "grade": None,
                        "meter": {"bar": 0, "dir": 1, "left": DIG_METER_T,
                                  "lo": lo, "hi": hi, "hist": []}}

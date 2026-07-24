@@ -82,6 +82,10 @@ STREAK_CAP = 2.0          # ...capped at DOUBLE (the festival double's scale).
 #                           with the chain.
 HOLIDAY_BITS_MULT = 2     # festival purse: bounties pay double on a holiday
 HOLIDAY_FIND_MULT = 2     # more loot spills on the road during a festival
+FESTIVAL_PRESENT_CHANCE = 0.34   # ...and a third of festival finds are a
+#                                  wrapped SURPRISE from the gift pool, not the
+#                                  zone's loot -- home gifts are home-only, so
+#                                  this is how the road celebrates (2026-07-24)
 POST_FIGHT_GRACE = 1      # legs of encounter immunity after ANY fight (canon
 #                           getBattleImmunity on a win, widened so the pet always
 #                           takes a clear step between fights -- no same-spot re-jump)
@@ -608,13 +612,19 @@ class Adventure:
         chance = FIND_CHANCE * (HOLIDAY_FIND_MULT if self.holiday else 1)
         if random.random() >= chance:
             return None
+        # a FESTIVAL road present: a wrapped surprise from the gift pool
+        # (up to rare), dug up like any find but revealed like a gift.  Home
+        # gifts never fire on the road (checkGiftCall is _isHome), so this is
+        # the road's own festival delight (2026-07-24).
+        if self.holiday and random.random() < FESTIVAL_PRESENT_CHANCE:
+            return (self.pet._pick_gift(festival=True), True)
         # TIERED FIND RARITY (D1, 2026-07-24): the pool used to be a flat
         # random.choice, so a zone's legendary signature turned up exactly as
         # often as its cheapest snack.  Weighted by the same tier ladder the
         # shelves read -- common 8 : uncommon 4 : rare 2 : legendary 1.
         from . import shop
         weights = [shop.tier_weight(k) for k in pool]
-        return random.choices(list(pool), weights=weights, k=1)[0]
+        return (random.choices(list(pool), weights=weights, k=1)[0], False)
 
     def _roll_hazard(self):
         """An ambush pounce this leg, or None: town ground is safe, and the
@@ -771,8 +781,10 @@ class Adventure:
             return "arrived"
         find = self._roll_find()
         if find is not None:
-            self.last = "Something glints on the road."
-            return ("find", find)
+            key, present = find
+            self.last = ("A present sits on the road!" if present
+                         else "Something glints on the road.")
+            return ("find", key, present)
         haz = self._roll_hazard()
         if haz is not None:
             self.last = "Something rustles ahead!"

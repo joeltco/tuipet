@@ -133,12 +133,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("PRESENTS ARE A REAL SURPRISE NOW: when your pet brings "
-                 "you a gift it hands over a WRAPPED present — you find out "
-                 "what is inside only when it is opened, and it can be any "
-                 "of dozens of goods, not the same few. On a festival your "
-                 "pet gifts about three times as often, and those presents "
-                 "reach nicer items.")
+    WHATS_NEW = ("FESTIVAL PRESENTS ON THE ROAD: adventuring on a holiday, "
+                 "some of what you dig up is a wrapped SURPRISE present — "
+                 "opened on the spot, pulled from the gift pool up to the "
+                 "rare tier. On top of the festival\'s double bits and "
+                 "extra loot the road already gave you.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
