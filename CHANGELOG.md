@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.222 — THE GUIDE HOLDS THE FULL ITEM LIST (2026-07-24)
+
+THE GUIDE HOLDS THE FULL ITEM LIST: press ? and scroll to ITEMS — every good in the game, grouped by category with its price, effect and rarity. It reads straight from the shop, so it can never fall out of date.
+
 ## 0.5.221 — WILD DIGIMEMORY CHIPS (2026-07-24)
 
 WILD DIGIMEMORY CHIPS: dug-up memory chips used to be silent keepsakes — now each one carries a stranger's faint trace, a small boost to one of your Vaccine, Data or Virus powers. They turn up deep in the Factory Night zones. An inherited chip from your own line still comes first and hits far harder; the wild ones are a little something for the road.
