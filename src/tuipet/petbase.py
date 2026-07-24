@@ -538,6 +538,12 @@ BATTLE_INJ_LOSS = 50                # BattleInjuryWonFactor, added on a LOSS
 BATTLE_INJ_BAD_AGE = 10             # BattleInjuryBadAgeFactor (elder OR baby)
 DEATH_INJ_P = 7.5e-5                # the death whisper while hurt (sick's scale)
 PILL_ENERGY_GAIN = 7                    # the DSprite pill (feed menu, BASIC VPET 2026-07-16)
+# THE ERASER, rehoused 2026-07-23 (Joel: "one at a time, own item").  Both
+# numbers are DVPet's own, not tuned: foods.csv row 18 (Miracle Drink) is the
+# only consumable in either sheet with Mistake = -1, and it carries Energy 12.
+MIRACLE_ENERGY_GAIN = 12
+# items.csv row 0 (Textbook) = Obedience +20, on the canon 150 scale.
+TEXTBOOK_OBEDIENCE = 20
 PILL_WEIGHT_GAIN = 5
 STOMACH_CAPACITY = 4                    # legacy fallback only -- see stomach_capacity()
 # canon stomach (food audit 2026-07-15): capacity is a PER-SPECIES field

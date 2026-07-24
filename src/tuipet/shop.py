@@ -82,12 +82,16 @@ _AUTHORED = {
     "candy":           ("Candy",           "f:7",  None, "Food", "hunger +1 · energy +1", "a consolation sweet"),
     # ---- MEDICINE (the two ailments: sick and injured) ----------------------
     "vitamin":         ("Vitamin",         "f:5",  500,  "Medicine", "effort FULL · injury guard", "effort in a capsule"),
-    "bandage":         ("Bandage",         "i:80", 300,  "Medicine", "treats an injury", "the second med, restored"),
+    # (the BANDAGE left the shelf 2026-07-23, R3 "make them symmetric":
+    #  its cure is a FREE care-menu action beside the Pill now, so a 300b
+    #  entry would have sold what the F menu gives away.  The i:80 rip and
+    #  its Bandaging show both keep their jobs on that menu.)
+    "miracle_drink":   ("Miracle Drink",   "f:18", 7777, "Medicine", "ONE care slip erased · energy +12", "the expensive absolution"),
     # ---- CARE (upkeep: sleep, lights, filth, the mistake slate) -------------
     "sleeping_pill":   ("Sleep Pill",      "f:34", 300,  "Care", "sleep now", "lights out, no argument"),
     "caffeine_pill":   ("Caffeine Pill",   "f:38", 300,  "Care", "bedtime pushed later", "tonight runs long"),
     "music_player":    ("Music Player",    "i:9",  300,  "Care", "wake now, no grudge", "a gentle waking song"),
-    "textbook":        ("Textbook",        "i:0",  1500, "Care", "erase ALL care mistakes", "study the slate clean"),
+    "textbook":        ("Textbook",        "i:0",  1500, "Care", "obedience +20", "study makes a good pupil"),
     "port_potty":      ("Port. Potty",     "i:83", 2000, "Care", "clean + auto-clean 24h", "it cleans itself"),
     # ---- TRAINING (the body: effort, weight, drills) ------------------------
     "energy_drink":    ("Energy Drink",    "f:17", 200,  "Training", "energy to FULL", "instant pep"),
@@ -150,11 +154,11 @@ _TOUCHES = {
     "energy_drink": ("energy",),
     "slim_drink": ("weight",),
     "vitamin": ("strength", "vitamin_lapse"),
-    "bandage": ("injured", "inj_length"),
+    "miracle_drink": ("care_mistakes", "energy"),
     "sleeping_pill": ("asleep", "lights", "nap"),
     "caffeine_pill": ("sleep_lapse",),     # or the _bed_postpone_t grace channel
     "music_player": ("asleep", "lights", "nap", "awake_lapse"),
-    "textbook": ("care_mistakes",),
+    "textbook": ("obedience",),
     "port_potty": ("poop", "poop_sizes", "auto_clean_until"),
     # ---- GROWTH ----
     "dumbbell": ("stage_trainings",),
@@ -287,7 +291,7 @@ LEGACY_KEYS = {
     "best_fruit": "tuna", "normal_fruit": "fish", "worst_fruit": "vegetable",
     "deadly_fruit": "poison_mushroom", "junk_food": "cheese_burger",
     "premium_meat": "steak", "super_carrot": "slim_drink",
-    "care_mistake_eraser": "textbook", "alarm_clock": "music_player",
+    "care_mistake_eraser": "miracle_drink", "alarm_clock": "music_player",
     "time_gear": "grow_capsule", "training_pack": "dumbbell",
     "poop_clean_pill": "port_potty",
     # the inheritance chip circulated under its raw icon key -- a key the

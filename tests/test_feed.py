@@ -13,7 +13,7 @@ def _pet(**kw):
 
 
 def test_the_menu_is_meat_or_pill():
-    assert [k for k, _ in ROWS_MENU] == ["meat", "pill"]
+    assert [k for k, _ in ROWS_MENU] == ["meat", "pill", "bandage"]
 
 
 def test_meat_fills_a_heart_and_weighs():

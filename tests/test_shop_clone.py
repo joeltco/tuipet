@@ -51,11 +51,13 @@ def test_the_item_effects_apply():
     r = _pet(care_mistakes=2)
     r.add_item("textbook")
     r.use_item("textbook")
-    assert r.care_mistakes == 0                # the Textbook studies ALL away
+    assert r.obedience > 0                    # the Textbook TEACHES now (R4)
 
 
 def test_a_refusal_keeps_the_item():
-    p = _pet(care_mistakes=0)
+    from tuipet.petbase import MAX_OBEDIENCE
+    p = _pet()
+    p.obedience = MAX_OBEDIENCE               # the Textbook's refusal (R4)
     p.add_item("textbook")
     out = p.use_item("textbook")
     assert p.inventory.get("textbook") == 1   # not consumed

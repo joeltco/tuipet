@@ -133,11 +133,15 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("FIDGETS BACK IN RHYTHM: your pet's poop-dance and "
-                 "bedtime yawn were briefly firing twice as often as "
-                 "intended — they were already wired long ago and got "
-                 "wired a second time by mistake. One trigger again, at "
-                 "the pace they were meant to have.")
+    WHATS_NEW = ("THE ITEM SHELF, REORGANISED: goods now sit under real "
+                 "headings — Medicine, Care, Training, Play, Evolution, "
+                 "Legacy — instead of one long Items list. BANDAGES ARE "
+                 "FREE: press F and the Bandage sits beside the Pill, so "
+                 "neither sickness nor injury costs bits any more (a "
+                 "bought one clears out of your bag). The TEXTBOOK now "
+                 "teaches obedience like it always did on the real "
+                 "device, and the new MIRACLE DRINK forgives one care "
+                 "slip at a time.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

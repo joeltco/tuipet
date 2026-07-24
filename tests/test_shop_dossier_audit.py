@@ -63,9 +63,13 @@ def test_care_shelf_matches_its_blurbs():
     p = _pet()
     _use(p, "vitamin")
     assert p.strength == 4                                    # "effort to FULL"
-    p = _pet(care_mistakes=7)
+    p = _pet()
+    p.obedience = 40
     _use(p, "textbook")
-    assert p.care_mistakes == 0                               # "erase ALL"
+    assert p.obedience == 60                                  # "obedience +20"
+    p = _pet(care_mistakes=7)
+    _use(p, "miracle_drink")
+    assert p.care_mistakes == 6                        # "ONE care slip erased"
     p = _pet(poop=2)
     p.poop_sizes = [1, 2]
     _use(p, "port_potty")

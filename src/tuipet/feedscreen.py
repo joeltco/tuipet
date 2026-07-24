@@ -77,16 +77,21 @@ CURSOR_X = grid.X0
 
 # (the third, description field was dead data -- displayed nowhere; the
 # status card carries the real disclosure.  Trimmed, feed audit 2026-07-19.)
-ROWS_MENU = [("meat", "Meat"), ("pill", "Pill")]
+# R3 (2026-07-23, Joel "make them symmetric"): the BANDAGE joins the Pill
+# here as a free, always-available cure.  Two ailments, two care BUTTONS --
+# the 300b shelf entry is gone; ailments cost time, not bits.
+ROWS_MENU = [("meat", "Meat"), ("pill", "Pill"), ("bandage", "Bandage")]
 
 
 class FeedPanel:
     def __init__(self, pet):
         self.pet = pet
-        # a sick pet opens on the PILL: the HUD nag says "feed it the pill",
-        # and meat would only be refused -- don't make the cure two extra
-        # presses in the most-repeated care loop (QOL sweep 2026-07-23)
-        self.cursor = 1 if pet.sick else 0
+        # an AILING pet opens on its own cure: the HUD nag names it, and
+        # meat would only be refused -- don't make the cure extra presses in
+        # the most-repeated care loop (QOL sweep 2026-07-23; the bandage leg
+        # joined with R3).  Sick outranks hurt when both are true: sickness
+        # is the older, louder alarm.
+        self.cursor = 1 if pet.sick else (2 if pet.is_injured() else 0)
         self.frame_i = 0
 
     def anim(self):
@@ -97,7 +102,10 @@ class FeedPanel:
 
     def key(self, k):
         if k in ("up", "k", "down", "j"):
-            self.cursor = 1 - self.cursor
+            # a THIRD row retired the old two-row toggle (1 - cursor), which
+            # silently ignored direction and could never reach row 2
+            step = -1 if k in ("up", "k") else 1
+            self.cursor = (self.cursor + step) % len(ROWS_MENU)
         elif k in ("enter", "space"):
             kind, label = ROWS_MENU[self.cursor]
             if kind == "meat":
@@ -109,6 +117,17 @@ class FeedPanel:
                 if "full" in msg:
                     return ("done", ("full", {"key": "f:0", "name": "Meat"}, msg))
                 return ("done", ("refused", {"key": "f:0", "name": "Meat"}, msg))
+            if kind == "bandage":
+                msg = self.pet.heal_bandage()
+                from .petbase import _Refused
+                if isinstance(msg, _Refused) or "patched" not in str(msg):
+                    return ("done", ("refused", {"key": "i:80",
+                                                 "name": "Bandage"}, str(msg)))
+                # the bandage is WORN, not eaten: its own canon Bandaging
+                # script plays (items.csv i:80 AnimationType), the show that
+                # was written for it on 2026-07-23
+                return ("done", ("bandaged", {"key": "i:80",
+                                              "name": "Bandage"}, str(msg)))
             was_sick = self.pet.sick   # (the is_injured() leg was the dead
             #                              injury system's hard-False stub;
             #                              feed audit 2026-07-19)

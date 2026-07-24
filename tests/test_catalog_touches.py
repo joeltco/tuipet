@@ -104,11 +104,10 @@ def test_touches_has_no_duplicates(key):
     assert len(t) == len(set(t)), key
 
 
-def test_the_two_ailment_cures_are_declared_distinct():
-    """Sick and injured are separate ailments with separate meds; if a
-    refactor ever merges them this fails loudly.  (R3 moves both cures to
-    the free care menu -- when that lands, the bandage ENTRY goes away
-    and this pin comes with it.)"""
-    if "bandage" in shop.CATALOG:
-        assert "injured" in shop.CATALOG["bandage"].touches
-        assert "sick" not in shop.CATALOG["bandage"].touches
+def test_no_shelf_item_sells_an_ailment_cure():
+    """R3 landed: sick and injured are BOTH cured free from the care
+    menu, so no catalog entry may move either flag.  If one ever does,
+    the symmetry has quietly broken."""
+    for key, v in shop.CATALOG.items():
+        assert "sick" not in v.touches, key
+        assert "injured" not in v.touches, key

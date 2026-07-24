@@ -52,7 +52,7 @@ def test_category_order_covers_every_live_category():
 
 
 def test_medicine_holds_the_ailment_cures_and_legacy_holds_the_dead():
-    assert shop.CATALOG["bandage"].category == "Medicine"
+    assert shop.CATALOG["miracle_drink"].category == "Medicine"
     assert shop.CATALOG["vitamin"].category == "Medicine"
     assert shop.CATALOG["revive_floppy"].category == "Legacy"
     assert shop.CATALOG["digimemory"].category == "Legacy"
@@ -142,7 +142,7 @@ def test_a_cursor_parked_on_a_header_is_snapped_off_before_acting():
     on a label by anything (session memory, a list that shrank) is moved
     to a real row before ENTER is interpreted."""
     p = _pet()
-    p.add_item("bandage")
+    p.add_item("vitamin")
     pan = ShopPanel(p, start_mode="bag")
     pan.tab = pan._tabs().index("Items")
     rows = pan._rows()
@@ -156,7 +156,7 @@ def test_acting_on_a_header_does_nothing(monkeypatch):
     disabled, ENTER and R on a label must still refuse -- so the guard
     holds even if some future path reaches the branch un-normalized."""
     p = _pet()
-    p.add_item("bandage")
+    p.add_item("vitamin")
     pan = ShopPanel(p, start_mode="bag")
     pan.tab = pan._tabs().index("Items")
     monkeypatch.setattr(ShopPanel, "_normalize_cursor",
@@ -167,7 +167,7 @@ def test_acting_on_a_header_does_nothing(monkeypatch):
     assert pan.key("enter") is None
     pan.cursor = hdr
     assert pan.key("r") is None
-    assert p.inventory.get("bandage") == 1      # nothing was consumed or sold
+    assert p.inventory.get("vitamin") == 1      # nothing was consumed or sold
 
 
 def test_the_panel_still_fits_the_lcd_with_headers():
@@ -189,7 +189,7 @@ def test_the_panel_still_fits_the_lcd_with_headers():
 
 def test_the_dossier_goes_quiet_rather_than_pricing_a_label():
     p = _pet()
-    p.add_item("bandage")
+    p.add_item("vitamin")
     pan = ShopPanel(p, start_mode="bag")
     pan.tab = pan._tabs().index("Items")
     rows = pan._rows()

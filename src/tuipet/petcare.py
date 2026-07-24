@@ -406,12 +406,12 @@ class CareMixin:
             "poison_mushroom": self._deadly,
             # ---- MEDICINE ---------------------------------------------------
             "vitamin": self._vitamin,
-            "bandage": self._bandage,
+            "miracle_drink": self._miracle_drink,
             # ---- CARE -------------------------------------------------------
             "sleeping_pill": self._sleep_pill,
             "caffeine_pill": self._caffeine,
             "music_player": self._alarm,
-            "textbook": self._erase_mistakes_all,
+            "textbook": self._textbook,
             "port_potty": self._smart_potty,
             # ---- TRAINING ---------------------------------------------------
             "energy_drink": self._energy_drink,
@@ -553,13 +553,60 @@ class CareMixin:
             self.sleep_lapse = max(0.0, self.sleep_lapse - self.sleep_limit * 0.25)
         return "Wide awake for a while yet."
 
-    def _erase_mistakes_all(self):
-        """The Textbook: study away EVERY care mistake (the source eraser's
-        canon strength -- the one-at-a-time nerf left with the old shelf)."""
+    def _miracle_drink(self):
+        """THE ERASER, rehoused and nerfed (Joel 2026-07-23: "one at a
+        time, own item").  foods.csv row 18 is DVPet's own answer -- the
+        ONLY consumable in either sheet carrying `Mistake = -1` -- so the
+        eraser did not need inventing, only finding.
+
+        Why it matters enough to keep at all: care mistakes are a DEATH
+        clock, not a gate.  20 kills outright, an Ultimate/Mega dies at 5
+        once two game-days into the stage, and the hazard ladder gets
+        100x worse from 5 to 20.  The counter resets on every evolution
+        -- but 241 of 417 Megas are TERMINAL, and for those it never
+        resets again.  This drink is the only way back.
+
+        Canon: Energy +12, Mistake -1.  Its -Mood and -Life legs are
+        dropped: mood is a verified no-op meter and the lifespan clock
+        left with DSprite mortality (2026-07-22)."""
         if self.care_mistakes <= 0:
-            return _Refused("No mistakes to erase.")
-        self.care_mistakes = 0
-        return "Every mistake, studied away."
+            return _Refused("Nothing on the slate to erase.")   # noqa: F405
+        self.care_mistakes -= 1
+        self._set_energy(self.energy + MIRACLE_ENERGY_GAIN)   # noqa: F405
+        left = self.care_mistakes
+        return ("One slip, forgiven." if not left
+                else f"One slip forgiven — {left} still on the slate.")
+
+    def _textbook(self):
+        """THE TEXTBOOK, back to canon (Joel 2026-07-23: R4).  items.csv
+        row 0 is `+Obedience -Mood +Stress`; mood and stress are stripped
+        systems, so only the obedience leg lands -- and it is the FIRST
+        item support the restored discipline system has ever had.
+
+        Refused at a full gauge like every other care sibling, so it
+        can't be burned for nothing."""
+        if self.obedience >= MAX_OBEDIENCE:                   # noqa: F405
+            return _Refused(f"{self.name} is already a model pupil.")  # noqa: F405
+        before = self.obedience
+        self._set_obedience(self.obedience + TEXTBOOK_OBEDIENCE)  # noqa: F405
+        return f"Studied hard. (+{self.obedience - before} obedience)"
+
+    def heal_bandage(self):
+        """THE BANDAGE, now a FREE care-menu action beside the Pill
+        (Joel 2026-07-23, R3 "make them symmetric").  Care actions on
+        this device are BUTTONS, not purchases -- the free Pill was the
+        correct half of the old asymmetry and the 300b item was the
+        wrong one.  Ailments cost time, not bits.
+
+        Mirrors feed_pill's shape: guarded, and healing a sleeper
+        DISTURBS it first."""
+        if (_g := self._guard(asleep_blocks=False)) is not None:
+            return _g
+        if not self.injured:
+            return _Refused("Nothing to bandage.")            # noqa: F405
+        if self.asleep:
+            self._disturbed()
+        return self._bandage()
 
     def _dna_crystal(self):
         """+10 banked DNA in the pet's own Field (the live DNA bank; skips

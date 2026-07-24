@@ -190,6 +190,11 @@ class ActionsMixin:
         starving = getattr(self.pet, "_last_meal_starving", False)
         if outcome == "fed" and self.pet.anim == "eat":
             self.screen_w.start_fx("eat", icon, pet=self.pet, starving=starving)   # SFX per-bite in the fx loop
+        elif outcome == "bandaged":
+            # WORN, not eaten: the canon Bandaging script (items.csv i:80)
+            # on the main LCD -- the same route the bag used to take before
+            # R3 moved the cure onto the free care menu
+            self.screen_w.start_fx("item", icon=icon, script="Bandaging")
         elif outcome == "healed":
             # the pill is EATEN (decompile EATING state): the same eat fx as
             # meat, on the ripped pill bite strip (pill-anim fix 2026-07-18)

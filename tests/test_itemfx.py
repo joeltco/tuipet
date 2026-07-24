@@ -291,24 +291,30 @@ def test_the_bandage_never_leaves_the_window():
             assert iy + ih <= grid.FLOOR, (step, ih, iy)
 
 
-def test_the_bandage_is_auto_wired_by_the_canon_column():
-    """No hand-map entry was needed: items.csv row 80 already says
-    Bandaging, so writing the script wired the item by itself."""
-    from tuipet import shop
-    assert shop.item_script("bandage") == "Bandaging"
+def test_the_bandage_keeps_its_canon_animation_name():
+    """The show survived R3 intact.  The bandage left the SHELF (its cure
+    is a free care-menu action now), but items.csv row 80 still says
+    Bandaging and the script is still the thing that plays -- only the
+    door changed, from the bag to the F menu."""
+    from tuipet import data
+    assert (data.consumable_by_key("i:80") or {}).get("action") == "Bandaging"
+    assert "Bandaging" in itemfx.SCRIPTS
 
 
 def test_the_bandage_show_only_plays_when_it_treats_something():
-    """A refused bandage keeps the item AND plays nothing."""
+    """A refused bandage plays nothing; a real cure plays Bandaging."""
     from tuipet.pet import Pet
+    from tuipet.feedscreen import FeedPanel, ROWS_MENU
+    row = [k for k, _l in ROWS_MENU].index("bandage")
     p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
     p.world_seconds = 600.0
-    p.add_item("bandage")
-    pan = _bag_on(p, "bandage")
-    assert pan.key("enter") is None                   # healthy: refused, no show
-    assert p.inventory.get("bandage") == 1
+    pan = FeedPanel(p)
+    pan.cursor = row
+    assert pan.key("enter")[1][0] == "refused"        # healthy: no show
     p.injured = True
-    pan2 = _bag_on(p, "bandage")
-    res = pan2.key("enter")
-    assert res[1][0] == "item_use" and res[1][2] == "Bandaging"
+    p.inj_length = 300.0
+    pan2 = FeedPanel(p)
+    pan2.cursor = row
+    outcome, item, _msg = pan2.key("enter")[1]
+    assert outcome == "bandaged" and item["key"] == "i:80"
     assert not p.injured

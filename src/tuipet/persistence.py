@@ -423,7 +423,11 @@ def _heal_bag(inv):
     their TUIPET heirs 1:1 (shop.LEGACY_KEYS; catalog turnover 2026-07-18
     -- nobody loses goods)."""
     from . import shop
-    for dead in ("i:80", "i:81", "i:82", "i:83"):
+    # "bandage" joins the raw dead keys 2026-07-23 (R3): its cure is a free
+    # care-menu action now, so the shelf entry is gone and a held one has no
+    # heir -- there is nothing left for it to BE.  It was buyable for one
+    # afternoon (v0.5.205-216), so this drops a handful of 300b purchases.
+    for dead in ("i:80", "i:81", "i:82", "i:83", "bandage"):
         inv.pop(dead, None)
     for old, new in shop.LEGACY_KEYS.items():
         n = inv.pop(old, 0)

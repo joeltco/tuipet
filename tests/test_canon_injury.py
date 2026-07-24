@@ -65,8 +65,7 @@ def test_the_bandage_cures_and_the_pill_does_not():
     p = _pet(injured=True, injuries=1)
     assert p.battle_condition() == "Too hurt to fight."        # the gate
     assert p.status_word() == "injured"                        # the word
-    p.add_item("bandage")
-    assert "patched" in p.use_item("bandage")
+    assert "patched" in p.heal_bandage()      # FREE care-menu action (R3)
     assert not p.injured and p.injuries == 1                   # cured; the count keeps
     # the pill stays sick-only: it cannot have been the cure
     p2 = _pet(injured=True)
@@ -78,9 +77,7 @@ def test_the_bandage_cures_and_the_pill_does_not():
 
 def test_the_bandage_refuses_a_healthy_pet():
     p = _pet()
-    p.add_item("bandage")
-    assert "Nothing" in str(p.use_item("bandage"))
-    assert p.inventory.get("bandage") == 1                     # refusal keeps the item
+    assert "Nothing" in str(p.heal_bandage())
 
 
 def test_an_injured_pet_still_eats():
@@ -88,10 +85,13 @@ def test_an_injured_pet_still_eats():
     assert "sick" not in str(p.feed_meat())                    # only SICK blocks meat
 
 
-def test_the_bandage_is_in_the_catalog():
+def test_the_bandage_is_a_free_care_action_not_a_shelf_item():
+    """R3 (2026-07-23, "make them symmetric"): the cure moved off the
+    300b shelf onto the F menu beside the Pill.  Ailments cost time."""
     from tuipet import shop
-    e = shop.entry("bandage")
-    assert e and e["name"] == "Bandage" and e["category"] == "Medicine"
+    from tuipet.feedscreen import ROWS_MENU
+    assert shop.entry("bandage") is None
+    assert "bandage" in [k for k, _label in ROWS_MENU]
 
 
 def test_the_vitamin_guard_burns_at_one_per_game_minute(monkeypatch):
@@ -134,6 +134,5 @@ def test_a_wound_heals_on_its_own_clock(monkeypatch):
 
 def test_the_bandage_buys_off_the_wait():
     p = _pet(injured=True, inj_length=999.0)
-    p.add_item("bandage")
-    p.use_item("bandage")
+    p.heal_bandage()
     assert not p.injured and p.inj_length == 0.0
