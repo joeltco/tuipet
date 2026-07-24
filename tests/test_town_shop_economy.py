@@ -208,3 +208,62 @@ def test_the_first_generation_starts_with_pocket_money():
     first Rookie stake or one treat; heirs inherit the estate instead."""
     p = Pet.new_egg(generation=1)
     assert p.bits == 250
+
+
+# ---- daily deal: dedup + the home shop deal (2026-07-24) --------------------
+
+def test_no_town_deal_repeats_two_days_running():
+    """Joel: "dedup the town deal".  The crc32 pick compared raw indices,
+    so a day that was itself bumped could be silently repeated by the next.
+    Now the picks walk forward off each other -- no shelf shows the same
+    deal two days in a row."""
+    for t in range(26):
+        if len(shop._town_rows(t)) <= 1:
+            continue
+        seq = [shop.town_deal_sid(t, D + datetime.timedelta(days=i))
+               for i in range(45)]
+        for a, b in zip(seq, seq[1:]):
+            assert a != b, (t, a)
+
+
+def test_the_home_shop_has_a_daily_deal():
+    """Joel: "add the home daily deal".  Home stays fixed-price except for
+    one rotating bargain, half off, marked like a town deal."""
+    rows = shop.home_stock(D)
+    deals = [e for e in rows if e.get("deal")]
+    assert len(deals) == 1, "exactly one home deal a day"
+    d = deals[0]
+    assert d["price"] == max(1, d["base_price"] // shop.HOME_DEAL_FACTOR)
+    assert d["price"] < d["base_price"]
+
+
+def test_the_home_deal_rotates_and_never_repeats():
+    seq = [shop.home_deal_key(D + datetime.timedelta(days=i)) for i in range(45)]
+    assert len(set(seq)) > 1, "the home deal must rotate"
+    for a, b in zip(seq, seq[1:]):
+        assert a != b, a
+
+
+def test_the_home_deal_is_stable_within_a_day():
+    assert shop.home_deal_key(D) == shop.home_deal_key(D)
+    a = next(e for e in shop.home_stock(D) if e.get("deal"))["key"]
+    b = next(e for e in shop.home_stock(D) if e.get("deal"))["key"]
+    assert a == b
+
+
+def test_the_home_deal_is_never_a_gift_or_gated_item():
+    """It is dealt from the always-stocked priced goods, so the bargain is
+    always something you can actually see and buy on the shelf."""
+    for i in range(45):
+        k = shop.home_deal_key(D + datetime.timedelta(days=i))
+        assert shop.CATALOG[k].price is not None            # not a gift
+        assert shop.CATALOG[k].category != "Adventure"       # not map-gated
+
+
+def test_buying_the_home_deal_charges_the_cut_price():
+    d = next(e for e in shop.home_stock(D) if e.get("deal"))
+    p = _pet()
+    p.bits = d["price"]
+    msg, sfx = shop.buy(p, d)
+    assert sfx == "confirm" and p.bits == 0
+    assert p.inventory.get(d["key"]) == 1

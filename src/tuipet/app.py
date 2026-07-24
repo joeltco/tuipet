@@ -133,11 +133,10 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THREE ITEMS GET THEIR ANIMATIONS: the Port. Potty now "
-                 "plays its real toilet sequence, and the DNA Crystal and "
-                 "X-Antibody show a study animation instead of a bare line "
-                 "of text. Every item in the game now has a proper show "
-                 "when you use it.")
+    WHATS_NEW = ("THE HOME SHOP HAS A DAILY DEAL: one good, half off, "
+                 "rotating every day — check the ▾ mark. And town deals no "
+                 "longer repeat two days running, so there is always a "
+                 "fresh bargain to hunt.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

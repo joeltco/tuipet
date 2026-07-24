@@ -216,7 +216,7 @@ class ShopPanel:
                     [e for e in shop.town_stock(self.town, pet=self.pet)
                      if e["category"] in cats], name, cats)
             return self._grouped(
-                [e for e in shop.catalog() if e["category"] in cats],
+                [e for e in shop.home_stock() if e["category"] in cats],
                 name, cats)
         out = []
         for k, n in self.pet.inventory.items():

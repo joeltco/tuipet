@@ -755,15 +755,83 @@ def _town_rows(town_id):
     return rows
 
 
-def town_deal_sid(town_id, today=None):
-    """The town's ONE rotating daily deal: crc32-seeded on (town, day) --
-    stable all day, different tomorrow, different next town."""
+def _deal_index(seed, count, today=None):
+    """A daily rotating index in [0, count), crc32-seeded on (seed, day):
+    stable all day, different tomorrow.  DEDUPED (2026-07-24, Joel: "dedup
+    the town deal") -- it never repeats YESTERDAY's pick, so no shelf shows
+    the same deal two days running.  (With a single item there is nothing
+    to rotate to; it stays put.)
+
+    The dedup compares against yesterday's FINAL (post-bump) pick, not its
+    raw index -- if it compared raws, a day that was itself bumped could be
+    silently repeated by today.  So the picks are walked FORWARD from a
+    fixed lookback: each day bumps off the previous day's final.  Any error
+    in the window's first day washes out long before today."""
+    if count <= 0:
+        return None
+    if count == 1:
+        return 0
     import zlib
+    def raw(day):
+        return zlib.crc32(f"{seed}:{day}".encode()) % count
+    day = _today_ordinal(today)
+    final = raw(day - _DEAL_LOOKBACK)
+    for d in range(day - _DEAL_LOOKBACK + 1, day + 1):
+        r = raw(d)
+        if r == final:                       # would repeat yesterday's pick
+            r = (r + 1) % count
+        final = r
+    return final
+
+
+_DEAL_LOOKBACK = 32          # days walked to stabilise the dedup chain
+
+
+def town_deal_sid(town_id, today=None):
+    """The town's ONE rotating daily deal: seeded on (town, day) -- stable
+    all day, different tomorrow, different next town, and never the same as
+    yesterday (dedup 2026-07-24)."""
     rows = _town_rows(town_id)
     if not rows:
         return None
-    i = zlib.crc32(f"{town_id}:{_today_ordinal(today)}".encode()) % len(rows)
-    return rows[i][0]
+    return rows[_deal_index(town_id, len(rows), today)][0]
+
+
+# the home shop's daily bargain -- half off, like a town deal, but home
+# stays otherwise fixed-price (the reliable shelf).  Dealt from the always-
+# stocked priced goods (no gated Adventure item, no egg), so the deal is
+# never something you can't see on the shelf.
+HOME_DEAL_FACTOR = 2
+
+
+@lru_cache(maxsize=1)
+def _home_deal_pool():
+    return sorted(k for k, v in CATALOG.items()
+                  if v.price is not None and v.category != "Adventure")
+
+
+def home_deal_key(today=None):
+    """The home shelf's ONE rotating daily deal key (2026-07-24, Joel: "add
+    the home daily deal") -- seeded on the day, deduped vs yesterday."""
+    pool = _home_deal_pool()
+    i = _deal_index("home", len(pool), today)
+    return pool[i] if i is not None else None
+
+
+def home_stock(today=None):
+    """The home shelf as ready entries, with the day's deal marked and
+    discounted.  Same entry shape as catalog(), plus `deal`/`base_price`
+    on the one bargain row -- so the shelf renders the ▾ + cut price with
+    no extra UI, exactly like a town counter."""
+    deal = home_deal_key(today)
+    out = []
+    for e in catalog():
+        if e["key"] == deal:
+            base = e["price"]
+            e = dict(e, deal=True, base_price=base,
+                     price=max(1, base // HOME_DEAL_FACTOR))
+        out.append(e)
+    return out
 
 
 def _stocked(town_id, key):
