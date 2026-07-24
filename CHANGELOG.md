@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.220 — SWEETS ON THE ROAD (2026-07-24)
+
+SWEETS ON THE ROAD: the Cupcake and Cookie — treats you could only ever be gifted before — now turn up as finds in the gentle early zones, right alongside Candy. Still can't be bought; now they can be dug up.
+
 ## 0.5.219 — RARITY, AND EVERY PLACE ITS OWN PRIZE (2026-07-24)
 
 RARITY, AND EVERY PLACE ITS OWN PRIZE: goods now sit in four bands from common to legendary, and rarity is felt twice — a town parts with fewer of the good stuff each day, and the road turns it up less often. Every one of the 26 zones now has a SIGNATURE find that no other zone drops, deepening as you go: cheap snacks near home, golden chips at the end of the road. The eight Factory Night zones used to dig identical loot — now all eight differ.
