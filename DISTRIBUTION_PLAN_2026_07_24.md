@@ -157,15 +157,17 @@ hard constraint this arc has to be designed around.
   so a later item pass that gives one of those icons a key fails the pin
   and forces the choice back into the open.
 
-### Still open (lowest stakes)
-
-- **D5** -- the 3 items still unfindable (cookie, cupcake, digimemory)
-  are grant-only BY DESIGN; leaving them so is the current default.
+- **D5 = MADE FINDABLE** (2026-07-24).  Cookie + cupcake now surface in
+  the gentle early biomes alongside candy (the sibling treat that was
+  always findable).  Still unbuyable, now discoverable.  digimemory stays
+  the ONE hold-out: a wild chip has no ancestor payload, so a found one
+  does nothing -- a dud the no-traps rule forbids -- and it is
+  inheritance-only BY DESIGN.
 
 ---
 
 ## 7. ARC CLOSED
 
-D1, D3, D4 shipped v0.5.219; D6 ratified + pinned; D7 ruled + pinned.
-Only D5 remains, and its default (grant-only stays grant-only) needs no
-action.  The distribution arc is complete.
+D1/D3/D4 shipped v0.5.219; D6 ratified; D7 ruled; D5 made findable.  All
+seven rulings resolved.  Only never-found item left is digimemory, by
+design.  The distribution arc is complete.

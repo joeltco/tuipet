@@ -163,8 +163,37 @@ def test_the_signature_pass_closed_the_never_found_gap():
     for z in adv.ZONES:
         found.update(z["find_keys"])
     never = {k for k in shop.CATALOG if k not in found}
-    # grant-only treats + the one legendary that has no zone left to sign
-    assert never == {"cookie", "cupcake", "digimemory"}, never
+    # D5 (2026-07-24): cookie + cupcake made findable alongside candy.
+    # digimemory is the ONE deliberate hold-out -- a wild chip has no
+    # payload, so a found one does nothing; inheritance-only BY DESIGN.
+    assert never == {"digimemory"}, never
+
+
+def test_the_grant_only_treats_are_findable_like_candy():
+    """D5: cookie and cupcake join the road the way candy always has --
+    grant-only (unbuyable) but discoverable in the gentle biomes."""
+    found = set()
+    for z in adv.ZONES:
+        found.update(z["find_keys"])
+    for k in ("candy", "cookie", "cupcake"):
+        assert shop.CATALOG[k].price is None, k    # still unbuyable
+        assert k in found, k                       # ...but findable
+
+
+def test_a_wild_digimemory_stays_unfindable_because_it_would_be_a_dud():
+    """The reason digimemory is the one hold-out: a FOUND chip carries no
+    ancestor payload, so using it does nothing.  A dud in the loot pool is
+    what the no-traps rule forbids -- so it stays inheritance-only."""
+    from tuipet.pet import Pet
+    from tuipet.petbase import _Refused
+    found = set()
+    for z in adv.ZONES:
+        found.update(z["find_keys"])
+    assert "digimemory" not in found
+    p = Pet(num=100, stage="Champion", attribute="Vaccine")
+    p.world_seconds = 600.0
+    p.add_item("digimemory")                       # a wild one: empty
+    assert isinstance(p.use_item("digimemory"), _Refused)
 
 
 # ---- D6: P6's town placement, RATIFIED 2026-07-24 ---------------------------

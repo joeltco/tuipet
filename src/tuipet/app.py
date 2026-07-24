@@ -133,15 +133,10 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("RARITY, AND EVERY PLACE ITS OWN PRIZE: goods now sit "
-                 "in four bands from common to legendary, and rarity is "
-                 "felt twice — a town parts with fewer of the good stuff "
-                 "each day, and the road turns it up less often. Every "
-                 "one of the 26 zones now has a SIGNATURE find that no "
-                 "other zone drops, deepening as you go: cheap snacks "
-                 "near home, golden chips at the end of the road. The "
-                 "eight Factory Night zones used to dig identical loot — "
-                 "now all eight differ.")
+    WHATS_NEW = ("SWEETS ON THE ROAD: the Cupcake and Cookie — treats "
+                 "you could only ever be gifted before — now turn up as "
+                 "finds in the gentle early zones, right alongside Candy. "
+                 "Still can't be bought; now they can be dug up.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

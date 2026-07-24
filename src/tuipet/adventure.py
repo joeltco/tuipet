@@ -167,14 +167,21 @@ def _town_legs(z):
 # they're the run tools.  The FINAL zone of each map digs the RARE TIER
 # instead: the endgame used to dig exactly one item (the chip).
 _ROAD_KEYS = ("town_transport", "disaster_transport", "life_recovery")
+# D5 (2026-07-24, Joel "make them findable"): cookie + cupcake join the
+# gentle biomes alongside candy, the third grant-only treat -- which has
+# ALWAYS been a road find here, so this only brings its two siblings in
+# line.  (digimemory, the third never-found item, deliberately stays
+# unfindable: a WILD chip carries no ancestor payload, so a found one does
+# nothing -- "The chip is silent" -- and a dud in the loot pool is exactly
+# what the no-traps rule forbids.  It is inheritance-only BY DESIGN.)
 BIOME_FINDS = {
-    "greenhills":   ("fish", "vegetable", "ball", "candy"),
-    "flowerfield":  ("vegetable", "candy", "music_player", "ball"),
+    "greenhills":   ("fish", "vegetable", "ball", "candy", "cupcake"),
+    "flowerfield":  ("vegetable", "candy", "music_player", "ball", "cookie"),
     "forestgate":   ("poison_mushroom", "vegetable", "candy", "music_player"),
     "mountains":    ("dumbbell", "steak", "cold_shower", "grow_capsule"),
     "frozenpeak":   ("caffeine_pill", "steak", "vitamin", "cold_shower"),
-    "islandsea":    ("tuna", "fish", "skateboard", "ball"),
-    "lakeside":     ("fish", "tuna", "bubble_bath", "vegetable"),
+    "islandsea":    ("tuna", "fish", "skateboard", "ball", "cupcake"),
+    "lakeside":     ("fish", "tuna", "bubble_bath", "vegetable", "cookie"),
     "underwater":   ("fish", "tuna", "slim_drink", "bubble_bath"),
     "city":         ("video_game", "television", "energy_drink",
                      "cheese_burger", "skateboard"),
