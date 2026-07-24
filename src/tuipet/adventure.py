@@ -278,6 +278,87 @@ def _difficulty(z):
 PROGRESSION = sorted(range(len(ZONES)),
                      key=lambda i: (_difficulty(ZONES[i]), i))
 _ORDER_POS = {zi: pos for pos, zi in enumerate(PROGRESSION)}
+
+
+# ---------------------------------------------------------------------------
+# ZONE SIGNATURES (distribution arc, 2026-07-24 -- Joel ruled D3 "both" and
+# D4 "give them distinct loot").
+#
+# One item that ONLY this zone drops, appended to its biome pool.  A single
+# mechanism answers both rulings: it makes every zone's loot unique, which
+# is exactly what the eight factorynight zones needed -- they shared one
+# scene and therefore dug identical loot, a third of the map reading the
+# same.  Signatures are per-ZONE, so the shared scene stops mattering.
+#
+# The item is matched to the zone's DEPTH: the run's opening stops sign
+# common goods, the last stops sign legendary ones, using the same tier
+# ladder the shelves read (shop.tier_for_price).  Within a band, items that
+# are currently found NOWHERE are handed out first -- so the signature pass
+# also closes the "never a find" gap instead of needing its own mechanism.
+#
+# Deterministic: crc32 over the key, so a zone's signature is PERMANENT (the
+# guest-good law -- a place's character must not reshuffle between runs).
+# 8 + 8 + 5 + 5 = the 26 zones.  The rare band is exactly 5 because the five
+# FINAL_ZONE_FINDS are held back from signing (see _assign_signatures): a
+# signature is STRIPPED from every other pool, and signing x_antibody would
+# have quietly robbed every map's final zone of the rare tier it exists to
+# hand out.  The endgame table outranks the signature pass.
+_SIG_BANDS = (("common", 8), ("uncommon", 8), ("rare", 5), ("legendary", 5))
+
+
+def _assign_signatures():
+    """Give every zone its own exclusive find.  Returns {zone_index: key}."""
+    import zlib
+    from . import shop
+    # Read the BASE tables, never the live ZONES: this pass APPENDS to
+    # find_keys, so reading the zones back would make the "unfound first"
+    # sort depend on whether the pass had already run -- and a second call
+    # would deal a different hand.  Signatures must be permanent.
+    already = set(_ROAD_KEYS) | set(FINAL_ZONE_FINDS)
+    for _pool in BIOME_FINDS.values():
+        already.update(_pool)
+    # never a signature: the road trio (they ride EVERY pool already), and
+    # every GRANT-ONLY good -- the birthday treats and the Digimemory are
+    # deliberately unbuyable gifts (item diversity audit 2026-07-23, "by
+    # design"), and making them road loot would quietly undo that.
+    # ...and never the endgame table: a signature is exclusive, so signing
+    # one of these would strip it from every map's final zone.
+    banned = set(_ROAD_KEYS) | set(FINAL_ZONE_FINDS)
+    by_tier = {}
+    for key, v in shop.CATALOG.items():
+        if key in banned or v.price is None:
+            continue
+        by_tier.setdefault(v.tier or "common", []).append(key)
+    for tier, keys in by_tier.items():
+        # unfound first, then a stable crc32 shuffle
+        keys.sort(key=lambda k: (k in already, zlib.crc32(f"sig:{k}".encode())))
+    out, pos = {}, 0
+    for tier, count in _SIG_BANDS:
+        pool = by_tier.get(tier) or []
+        for i in range(count):
+            if pos >= len(PROGRESSION):
+                break
+            if not pool:
+                pos += 1
+                continue
+            out[PROGRESSION[pos]] = pool[i % len(pool)]
+            pos += 1
+    return out
+
+
+ZONE_SIGNATURE = _assign_signatures()
+_SIGNED = set(ZONE_SIGNATURE.values())
+for _zi, _z in enumerate(ZONES):
+    _mine = ZONE_SIGNATURE.get(_zi)
+    # EXCLUSIVE means exclusive: a signature is stripped from every OTHER
+    # zone's pool.  Most signatures are drawn from items no biome carried,
+    # but the deeper bands run out of those, and a "signature" the zone
+    # next door also digs is just a label.
+    _z["find_keys"] = [_k for _k in _z["find_keys"]
+                       if _k not in _SIGNED or _k == _mine]
+    if _mine and _mine not in _z["find_keys"]:
+        _z["find_keys"].append(_mine)
+    _z["signature"] = _mine
 def zone_index(zone):
     """The index of a zone dict in the ordered ZONES, or None (a test zone)."""
     try:
@@ -520,7 +601,13 @@ class Adventure:
         chance = FIND_CHANCE * (HOLIDAY_FIND_MULT if self.holiday else 1)
         if random.random() >= chance:
             return None
-        return random.choice(pool)
+        # TIERED FIND RARITY (D1, 2026-07-24): the pool used to be a flat
+        # random.choice, so a zone's legendary signature turned up exactly as
+        # often as its cheapest snack.  Weighted by the same tier ladder the
+        # shelves read -- common 8 : uncommon 4 : rare 2 : legendary 1.
+        from . import shop
+        weights = [shop.tier_weight(k) for k in pool]
+        return random.choices(list(pool), weights=weights, k=1)[0]
 
     def _roll_hazard(self):
         """An ambush pounce this leg, or None: town ground is safe, and the

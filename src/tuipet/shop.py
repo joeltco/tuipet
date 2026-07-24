@@ -206,6 +206,50 @@ _TOUCHES = {
     "life_recovery": (),
 }
 
+# ---------------------------------------------------------------------------
+# TIERED RARITY (distribution arc, 2026-07-24 -- Joel ruled D1 "stock and
+# find").  The tier is DERIVED FROM THE CANON PRICE, never hand-assigned:
+# 20 of the 40 priced entries carry DVPet's own DefaultPrice, and P5/P6
+# deliberately took those numbers, so price already IS the game's opinion of
+# an item's worth.  Deriving means no economy gets invented here -- the bands
+# are just a reading of data that was already there.
+#
+# The ladder falls out cleanly: 14 common, 12 uncommon, 9 rare, 5 legendary.
+# Grant-only treats (price None) have no band and read as common wherever a
+# weight is needed -- a birthday cupcake is the commonest thing there is.
+TIER_BANDS = ((300, "common"), (1000, "uncommon"), (2500, "rare"))
+TIER_TOP = "legendary"
+TIER_ORDER = ("common", "uncommon", "rare", "legendary")
+
+
+def tier_for_price(price):
+    """The band a price falls in, or None for a grant-only item."""
+    if price is None:
+        return None
+    for ceiling, name in TIER_BANDS:
+        if price <= ceiling:
+            return name
+    return TIER_TOP
+
+
+# How much RARER a tier is, both on the shelf and on the road.  One curve
+# for both levers so "rare" means one thing in this game.
+TIER_WEIGHT = {"common": 8, "uncommon": 4, "rare": 2, "legendary": 1}
+# Daily town stock ceiling by tier (capped further by TOWN_DAILY_CAP).
+TIER_STOCK = {"common": 3, "uncommon": 2, "rare": 1, "legendary": 1}
+
+
+def tier_weight(key):
+    """Roll weight for `key` -- the find pools and any weighted shelf pick."""
+    v = CATALOG.get(key)
+    return TIER_WEIGHT.get((v.tier if v else None) or "common", 1)
+
+
+def tier_stock(key):
+    v = CATALOG.get(key)
+    return TIER_STOCK.get((v.tier if v else None) or "common", 1)
+
+
 _ROAD_ONLY = frozenset({"town_transport", "disaster_transport",
                         "life_recovery"})
 
@@ -214,7 +258,8 @@ _ROAD_ONLY = frozenset({"town_transport", "disaster_transport",
 CATALOG = {
     _k: Item(*_v,
              touches=_TOUCHES.get(_k, ()),
-             where="road" if _k in _ROAD_ONLY else "home")
+             where="road" if _k in _ROAD_ONLY else "home",
+             tier=tier_for_price(_v[2]))
     for _k, _v in _AUTHORED.items()
 }
 
@@ -752,7 +797,11 @@ def town_stock(town_id, today=None, pet=None):
             continue
         on = fest or sid == deal
         price = local // max(1, o["sale_factor"]) if on else local
-        cap = min(o["max_stock"], TOWN_DAILY_CAP)
+        # TIERED STOCK (D1, 2026-07-24): rarity now limits how many a town
+        # will part with in a day, on the same ladder the road rolls -- a
+        # legendary good is one-per-town-per-day, a common one three.  The
+        # authored maxStock and the global daily cap still bound it.
+        cap = min(o["max_stock"], TOWN_DAILY_CAP, tier_stock(k))
         left = max(0, cap - int(taken.get(f"{town_id}:{k}", 0)))
         out.append(dict(e, price=max(1, price), base_price=local,
                         deal=on, left=left, town_id=town_id))

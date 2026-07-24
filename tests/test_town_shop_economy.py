@@ -89,13 +89,15 @@ def test_the_daily_stock_cap_stops_the_money_printer():
     p = _pet()
     p.bits = 50_000
     e = next(x for x in shop.town_stock(B_TOWN, D, pet=p) if x["key"] == "steak")
-    assert e["left"] == 3                # min(authored maxStock 50, tuipet cap)
-    for i in range(3):
+    # TIERED STOCK (D1, 2026-07-24): the steak is RARE (2000b), so a town
+    # parts with one a day -- min(authored maxStock, daily cap, tier cap).
+    assert e["left"] == shop.tier_stock("steak") == 1
+    for i in range(e["left"]):
         msg, sfx = shop.town_buy(p, e, today=D)
         assert sfx == "confirm"
         e = next(x for x in shop.town_stock(B_TOWN, D, pet=p)
                  if x["key"] == "steak")
-    assert p.inventory.get("steak") == 3
+    assert p.inventory.get("steak") == shop.tier_stock("steak")
     assert e["left"] == 0                              # the shelf is bare
     msg, sfx = shop.town_buy(p, e, today=D)
     assert sfx == "error" and "Sold out" in msg
@@ -105,7 +107,7 @@ def test_the_daily_stock_cap_stops_the_money_printer():
     assert q.town_bought == p.town_bought
     e3 = next(x for x in shop.town_stock(B_TOWN, D + datetime.timedelta(days=1),
                                          pet=q) if x["key"] == "steak")
-    assert e3["left"] == 3
+    assert e3["left"] == shop.tier_stock("steak")
 
 
 def test_the_town_panel_serves_the_counter(monkeypatch):

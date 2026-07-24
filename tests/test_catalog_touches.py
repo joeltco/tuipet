@@ -92,10 +92,12 @@ def test_every_home_item_does_something():
             assert v.touches, f"{key} declares no effect at all"
 
 
-def test_tier_is_declared_but_unpopulated():
-    """P2 leaves the distribution hook EMPTY on purpose -- populating it
-    would be inventing an economy nobody has ruled on (plan §7)."""
-    assert all(v.tier is None for v in shop.CATALOG.values())
+def test_tier_is_populated_by_derivation_not_by_hand():
+    """P2 left this hook empty on purpose; the distribution arc filled it
+    2026-07-24 -- by DERIVING each band from the canon price, so no
+    economy was invented on the way in."""
+    for key, v in shop.CATALOG.items():
+        assert v.tier == shop.tier_for_price(v.price), key
 
 
 @pytest.mark.parametrize("key", sorted(shop.CATALOG))
