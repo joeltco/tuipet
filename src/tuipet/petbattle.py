@@ -123,6 +123,8 @@ class BattleMixin:
         if self.energy < TRAIN_ENERGY_COST:
             self._set_anim("refuse", 1.0)
             return "Too tired to train."
+        if self.manners_refusal("train"):     # D3: earned disobedience
+            return f"{self.name} refuses to train!"
         return None
 
     def can_raid(self):
@@ -217,6 +219,8 @@ class BattleMixin:
             self._set_anim("refuse", 1.0)
             return cond
         if self.check_refused():                             # canBattle -> checkRefused
+            return f"{self.name} refuses to fight!"
+        if self.manners_refusal("battle"):    # D3: earned disobedience
             return f"{self.name} refuses to fight!"
         return None
 

@@ -122,6 +122,17 @@ OBEDIENCE_DISPO_COEF = 1            # ObedienceChangeDispositionCoefficient (SUB
 # inverting D3's promise.  At x5: neutral is -2 per 10 real min
 # (-12/hour) against a tantrum's +25 per ~90 real min (+17/hour), so an
 # attentive tamer climbs and a neglectful one sinks.
+# EARNED DISOBEDIENCE (D3, 2026-07-23 -- Joel approved this SHAPE and
+# only this shape).  It AMENDS the soft-refusal recalibration, which was
+# made against the OLD chance-based spam that punished well-raised pets.
+# This punishes NEGLECT instead: a pet only ever refuses below a quarter
+# of the gauge (canon's own ROOKIE_OBED_DEFAULT sits right here), and a
+# well-raised pet NEVER refuses, which is what that rule was protecting.
+# The odds ramp from 0 at the threshold to DISOBEY_MAX_P at empty, so
+# the first refusals are a warning, not a wall.  The cure is RAISING --
+# answer tantrums, scold, praise -- never waiting.
+DISOBEY_BELOW = MAX_OBEDIENCE // 4      # 37 of 150
+DISOBEY_MAX_P = 0.5                     # at a fully neglected gauge
 _LAPSE_SCALE = 5
 OBEDIENCE_LAPSE_MIN = {0: 120.0 * _LAPSE_SCALE,        # ObedienceLapseMin
                        1: 180.0 * _LAPSE_SCALE,        # ...High disposition

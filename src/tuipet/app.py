@@ -132,12 +132,11 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("MANNERS DRIFT NOW: discipline fades slowly while "
-                 "your pet is awake (faster if there is mess on the "
-                 "floor), so keeping it well-raised is a habit rather "
-                 "than a one-time chore. The gauge also runs to 150 "
-                 "like the real device, and old saves get seeded to "
-                 "their proper starting manners.")
+    WHATS_NEW = ("A NEGLECTED PET TALKS BACK: let its manners fall "
+                 "far enough and it starts blowing off feeding, training "
+                 "and fights. Raise it well and it NEVER refuses — and "
+                 "it will always let you clean it, heal it, and feed it "
+                 "when it is starving, no matter how sour it gets.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and

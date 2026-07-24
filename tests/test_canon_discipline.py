@@ -248,3 +248,97 @@ def test_dead_meter_saves_get_one_manners_heal():
     # a save already carrying real manners is never overwritten
     rich, _ = P.pet_from_save(dict(base, obedience=90))
     assert rich.obedience == 90
+
+
+# ---- D3: earned disobedience (2026-07-23) ----------------------------------
+
+def _neglected(**kw):
+    from tuipet.petbase import DISOBEY_BELOW
+    p = _pet(obedience=0, **kw)
+    p._set_energy(p.max_energy)
+    assert p.obedience < DISOBEY_BELOW
+    return p
+
+
+def test_a_well_raised_pet_never_refuses(monkeypatch):
+    """The half of the soft-refusal rule that MUST survive: the old spam
+    punished good raising, this punishes neglect only."""
+    import tuipet.petcare as pc
+    monkeypatch.setattr(pc.random, "random", lambda: 0.0)   # worst-case roll
+    from tuipet.petbase import DISOBEY_BELOW
+    p = _pet(obedience=DISOBEY_BELOW)
+    for kind in ("feed", "train", "battle"):
+        assert p.manners_refusal(kind) is False, kind
+
+
+def test_a_neglected_pet_can_blow_you_off(monkeypatch):
+    import tuipet.petcare as pc
+    monkeypatch.setattr(pc.random, "random", lambda: 0.0)
+    p = _neglected(hunger=3)
+    assert p.manners_refusal("feed") and p.manners_refusal("train")
+    assert p.manners_refusal("battle")
+
+
+def test_the_odds_ramp_with_neglect():
+    """0 at the threshold, DISOBEY_MAX_P at empty -- the first refusals
+    are a warning, not a wall."""
+    import tuipet.petcare as pc
+    from tuipet.petbase import DISOBEY_BELOW, DISOBEY_MAX_P
+    seen = {}
+    for obed in (DISOBEY_BELOW, DISOBEY_BELOW // 2, 0):
+        p = _pet(obedience=obed)
+        hits = 0
+        for i in range(1000):
+            pc.random.seed(i)
+            hits += bool(p.manners_refusal("train"))
+        seen[obed] = hits / 1000
+    assert seen[DISOBEY_BELOW] == 0
+    assert 0 < seen[DISOBEY_BELOW // 2] < seen[0]
+    assert seen[0] <= DISOBEY_MAX_P + 0.05
+
+
+def test_medicine_and_cleaning_are_never_refused(monkeypatch):
+    """A pet you cannot clean or heal is a softlock, not a personality."""
+    import tuipet.petcare as pc
+    monkeypatch.setattr(pc.random, "random", lambda: 0.0)
+    p = _neglected(poop=2)
+    assert "Cleaned" in p.clean()
+    p.sick = True
+    p.poop = 0
+    assert "pill" in p.feed_pill().lower() or "Took" in p.feed_pill()
+    assert not p.sick
+    p.injured = True
+    p.add_item("bandage")
+    assert "patched" in str(p.use_item("bandage"))
+    for kind in ("clean", "pill", "bandage", "item"):
+        assert p.manners_refusal(kind) is False, kind
+
+
+def test_a_starving_pet_is_never_refused_food(monkeypatch):
+    """Starvation kills -- attitude must never close the door that saves it."""
+    import tuipet.petcare as pc
+    monkeypatch.setattr(pc.random, "random", lambda: 0.0)
+    p = _neglected(hunger=0)
+    assert p.manners_refusal("feed") is False
+    assert "Fed" in p.feed_meat()
+
+
+def test_evolution_doors_keep_their_energy_only_rule(monkeypatch):
+    """Plan-audit P2: check_refused's only callers are jogress and the
+    mode change.  Manners must NEVER reach them, or neglect would start
+    silently refusing evolutions."""
+    import tuipet.petcare as pc
+    monkeypatch.setattr(pc.random, "random", lambda: 0.0)
+    p = _neglected()
+    assert p.check_refused() is False                  # no energy change asked
+
+
+def test_a_new_pet_is_not_born_disobedient():
+    """The dataclass default was 0 -- harmless while the meter was a
+    no-op, but under D3 a bare Pet() would be born NEGLECTED and start
+    blowing off commands.  Born TRUSTING (canon FreshObedience)."""
+    from tuipet.pet import Pet
+    from tuipet.petbase import DISOBEY_BELOW, FRESH_OBEDIENCE
+    p = Pet(num=100, stage="Champion")
+    assert p.obedience == FRESH_OBEDIENCE >= DISOBEY_BELOW
+    assert p.manners_refusal("feed") is False

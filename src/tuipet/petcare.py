@@ -35,6 +35,35 @@ class CareMixin:
             return True                  # can't afford the energy -> auto-refuse
         return False
 
+    def manners_refusal(self, kind):
+        """EARNED DISOBEDIENCE (D3, 2026-07-23): a NEGLECTED pet blows off
+        a command.  True == it refused.
+
+        Deliberately a SEPARATE door from check_refused: that one is
+        AFFORDABILITY (the energy auto-refuse) and its only callers are
+        the jogress and mode-change paths -- both EVOLUTION doors, and
+        both outside the shape Joel approved.  Wiring manners into it
+        would have silently started refusing evolutions (plan audit P2).
+
+        Refusable: feed, train, battle.  NEVER clean, and never the pill
+        or the bandage -- a pet you cannot clean or heal is a softlock,
+        not a personality.  Feeding is also never refused while the belly
+        is EMPTY: starvation kills, and no amount of attitude should be
+        able to close the only door that saves it."""
+        if kind not in ("feed", "train", "battle"):
+            return False
+        if kind == "feed" and self.hunger <= 0:
+            return False                       # never starve a pet out of spite
+        gap = DISOBEY_BELOW - self.obedience              # noqa: F405
+        if gap <= 0:
+            return False                       # well-raised: NEVER refuses
+        p = min(1.0, gap / DISOBEY_BELOW) * DISOBEY_MAX_P  # noqa: F405
+        if random.random() >= p:
+            return False
+        self.refused = True
+        self._set_anim("refuse", 1.5)
+        return True
+
     def refuse_attack(self, my_hp, enemy_hp):
         """Always False: the Orders-style mid-fight refusal left with the
         discipline system."""
@@ -121,6 +150,11 @@ class CareMixin:
             self.care_mistakes += 1
             self._set_anim("refuse", 1.0)
             return f"{self.name} is too full! (✗ overfed)"
+        # (a HIRED assistant is never blown off -- you paid for that
+        # visit; today the empty-belly exemption already covers it,
+        # since auto-care only serves at hunger 0)
+        if not assisted and self.manners_refusal("feed"):
+            return f"{self.name} turns its nose up!"
         if self.asleep:
             self._disturbed()
         self._last_meal_starving = self.hunger == 0          # eat(): wolfed down

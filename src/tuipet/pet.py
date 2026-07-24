@@ -75,7 +75,12 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
     overeat: int = 0
     injuries: int = 0
     disturb: int = 0
-    obedience: int = 0
+    obedience: int = FRESH_OBEDIENCE   # noqa: F405  born TRUSTING (canon FreshObedience).
+    #                                 Was 0 -- harmless while the meter was a
+    #                                 no-op, but under D3 a bare Pet() would be
+    #                                 born NEGLECTED and start refusing commands.
+    #                                 (Loaded saves keep their own value; the
+    #                                 dead-meter heal reads the explicit 0.)
     # personality traits: fixed at hatch (DVPet randPersonalityTraits), each in {-1,0,+1}.
     # Distinct from the overeat/disturb care counters, which drive evolution.
     disposition: int = 0
