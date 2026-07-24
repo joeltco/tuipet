@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.225 — THE HOME SHOP HAS A DAILY DEAL (2026-07-24)
+
+THE HOME SHOP HAS A DAILY DEAL: one good, half off, rotating every day — check the ▾ mark. And town deals no longer repeat two days running, so there is always a fresh bargain to hunt.
+
 ## 0.5.224 — THREE ITEMS GET THEIR ANIMATIONS (2026-07-24)
 
 THREE ITEMS GET THEIR ANIMATIONS: the Port. Potty now plays its real toilet sequence, and the DNA Crystal and X-Antibody show a study animation instead of a bare line of text. Every item in the game now has a proper show when you use it.
