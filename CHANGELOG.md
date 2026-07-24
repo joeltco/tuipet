@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.226 — THE FESTIVALS SHOW ON SCREEN NOW (2026-07-24)
+
+THE FESTIVALS SHOW ON SCREEN NOW: on each holiday a little decoration appears in your pet's corner — candy at Halloween, a present at Christmas, a Crest on Odaiba Memorial Day, cake for New Year. The festival bonuses (double bits, shop sales, festival eggs) were already there; now the day looks the part too.
+
 ## 0.5.225 — THE HOME SHOP HAS A DAILY DEAL (2026-07-24)
 
 THE HOME SHOP HAS A DAILY DEAL: one good, half off, rotating every day — check the ▾ mark. And town deals no longer repeat two days running, so there is always a fresh bargain to hunt.
