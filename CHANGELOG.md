@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.217 — THE ITEM SHELF, REORGANISED (2026-07-23)
+
+THE ITEM SHELF, REORGANISED: goods now sit under real headings — Medicine, Care, Training, Play, Evolution, Legacy — instead of one long Items list. BANDAGES ARE FREE: press F and the Bandage sits beside the Pill, so neither sickness nor injury costs bits any more (a bought one clears out of your bag). The TEXTBOOK now teaches obedience like it always did on the real device, and the new MIRACLE DRINK forgives one care slip at a time.
+
 ## 0.5.216 — FIDGETS BACK IN RHYTHM (2026-07-23)
 
 FIDGETS BACK IN RHYTHM: your pet's poop-dance and bedtime yawn were briefly firing twice as often as intended — they were already wired long ago and got wired a second time by mistake. One trigger again, at the pace they were meant to have.
