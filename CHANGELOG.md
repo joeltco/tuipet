@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.221 — WILD DIGIMEMORY CHIPS (2026-07-24)
+
+WILD DIGIMEMORY CHIPS: dug-up memory chips used to be silent keepsakes — now each one carries a stranger's faint trace, a small boost to one of your Vaccine, Data or Virus powers. They turn up deep in the Factory Night zones. An inherited chip from your own line still comes first and hits far harder; the wild ones are a little something for the road.
+
 ## 0.5.220 — SWEETS ON THE ROAD (2026-07-24)
 
 SWEETS ON THE ROAD: the Cupcake and Cookie — treats you could only ever be gifted before — now turn up as finds in the gentle early zones, right alongside Candy. Still can't be bought; now they can be dug up.
