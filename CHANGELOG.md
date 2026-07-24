@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.213 — FOOD IS A DECISION NOW (2026-07-23)
+
+FOOD IS A DECISION NOW: stuffing a full pet piles on weight and counts as a care slip — it still shakes its head first, so you get the warning free. And injuries heal on their own over 5-60 minutes of play; the Bandage now buys off the wait instead of being the only cure.
+
 ## 0.5.212 — THE WIN GATE STOPS LYING (2026-07-23)
 
 THE WIN GATE STOPS LYING: the 12-of-15 evolution requirement rolls, so a win that replaces an older win moves the counter by nothing — you can win three times and watch it sit still. The checklist now tells you how many STRAIGHT wins you actually need from here.
