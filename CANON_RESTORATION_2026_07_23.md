@@ -1,5 +1,10 @@
 # CANON RESTORATION — 2026-07-23
 
+> **BOARD CLOSED.**  A shipped v0.5.205, B shipped v0.5.206.  The care
+> loop that grew out of it (fade / overfeed / disobedience + the scale
+> and injury-recovery rulings) shipped v0.5.213-215 — see
+> REAL_VPET_ARC_2026_07_23.md.
+
 Joel: "it was wrongfully stripped. what other canon features were
 taken?" → "whatever is canon bring back."
 

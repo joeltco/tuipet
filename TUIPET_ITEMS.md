@@ -8,6 +8,38 @@
 > all 84 items carry 4-frame rips — zero quiet cells needed). No effect below
 > invents a system: each acts on a meter or hook that is LIVE today.
 
+## ⚠ UPDATE 2026-07-23 — read this before trusting anything below
+
+The catalog is **37 entries** now (Food 11 · Care 9 · Toy 7 · Evolution 5
+· Adventure 3 · Medical 2).  Three things in the original text went
+stale the same day:
+
+1. **"obedience ... injuries" are no longer dead systems.**  The canon
+   restoration brought INJURY back (v0.5.205: battles wound, the
+   BANDAGE cures, a Vitamin guards) and DISCIPLINE back (v0.5.206: the
+   obedience gauge is live, 0..150).  Any DVPet effect column speaking
+   to those two is now addressable rather than a corpse.
+2. **THE BANDAGE joined the catalog** (`i:80`, Care, 300b) — the real
+   DVPet item, dormant since the 2026-07-16 strip.
+3. **The Vitamin gained its canon second job**: a live vitamin guards
+   against battle injury for a game-day.
+
+### Item SHOWS are no longer hand-mapped (v0.5.207-209)
+
+`shop.TOY_SCRIPTS` — a 7-entry hand-map — is **RETIRED**.  Two doors
+decide what an item plays, both derived from data:
+
+* `shop.item_is_eaten(key)` → the `f:` sheet.  foods.csv carries no
+  AnimationType **because eating IS the animation**, so every food-sheet
+  item (the 11 foods + both drinks, both pills, the vitamin, the
+  anti-evo chip) plays the eat fx with its own icon.
+* `shop.item_script(key)` → items.csv's own `AnimationType` column,
+  reached through the icon key (**`i:N` IS the row id**).  Excluded by
+  key: digimemory, both transports, life_recovery, revive_floppy (own
+  doors).  Writing a new `itemfx.SCRIPTS` entry **auto-wires** the item.
+
+**Never reintroduce a hand-map.**
+
 ## The sources, in one breath
 
 * **DSprite** ships 17 consumables + 11 Digimentals + dormant relics

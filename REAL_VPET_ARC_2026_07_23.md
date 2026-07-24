@@ -15,6 +15,26 @@ still untouched: TIME LAW, DSprite mortality, LINES_SPEC.
 
 ---
 
+## STATUS 2026-07-23 (end of session)
+
+- ✅ **D — the care loop**: D1 fade v0.5.214 · D2 overfeed v0.5.213 ·
+  D3 earned disobedience v0.5.215 · P3 scale + manners heal v0.5.214 ·
+  P4 injury recovery v0.5.213 · P0a/P0b v0.5.207
+- ✅ **E1** praise/scold shows v0.5.210 · **E2** bandage animation
+  v0.5.209 · **E2b** four free wins v0.5.207 + six consumables eat
+  v0.5.208 · **E3** poopdance/yawn — see the E4 finding below
+- 🔶 **E4** OPEN: finding #1 shipped (v0.5.216); the systematic sweep
+  is NOT done.  Un-checked moments: raid verdicts, jogress, hatch,
+  lights, lobby outcomes.
+- ⬜ **P5** (does "too hurt to fight" cover road ambushes?) — UNRULED
+- ⬜ **`toilet` fx** — still unwired and UNRULED.  A deletion needs a
+  NAMED order; my listing it is not authorization.
+- ⬜ **F — the action bar is full** (71/71 on line 1).  The Bandage
+  needed no key, so nothing was spent; a future action still has
+  nowhere to go.
+
+---
+
 ## ⚠ PLAN AUDIT (2026-07-23, Joel: "audit the plan")
 
 The plan was written without checking the clock, and the clock breaks
