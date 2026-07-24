@@ -104,42 +104,10 @@ HELP = [
     ("fell raids, link with tamers, play a", 0),
     ("festival - every egg is earned.", 0),
 ]
-
-
-def _item_rows():
-    """The full catalog as help rows, GENERATED from shop.CATALOG (Joel
-    2026-07-24 "update the help menu to hold these").  Never hand-copied:
-    a static mirror of 44 items is exactly the effect-text drift the items
-    refactor spent itself killing, so name / price / effect / tier all come
-    straight from the live table and can never disagree with the shop."""
-    from . import shop
-    rows = [("", 0),
-            ("ITEMS", 2),
-            ("Rarer goods (common>legendary) cost", 0),
-            ("more, stock thinner in towns, and", 0),
-            ("show up less on the road. Every zone", 0),
-            ("hides one exclusive find. See the", 0),
-            ("shop (o) for the live price + effect.", 0)]
-    for cat in shop.CATEGORY_ORDER:
-        if cat == shop.ARMOR_CATEGORY:          # eggs, not consumables
-            continue
-        members = sorted(
-            ((k, v) for k, v in shop.CATALOG.items() if v.category == cat),
-            key=lambda kv: (kv[1].price is None, kv[1].price or 0, kv[1].name))
-        if not members:
-            continue
-        rows.append(("", 0))
-        rows.append((cat.upper(), 2))
-        for _k, v in members:
-            price = "gift" if v.price is None else "%db" % v.price
-            tier = v.tier or "gift"
-            head = ("%-15s %6s ·%s" % (v.name[:15], price, tier))[:menu.W]
-            rows.append((head, 1))
-            rows.append((("  " + v.effect)[:menu.W], 0))
-    return rows
-
-
-HELP = HELP + _item_rows()
+# (the full item catalog was tried in the guide 2026-07-24 and REVERTED:
+# it doubled the guide's length and only mirrored what the shop dossier
+# already shows live -- name, price and effect -- at the point of purchase.
+# The shop is the item reference; the guide teaches the systems.)
 
 
 class HelpPanel:

@@ -133,10 +133,10 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE GUIDE HOLDS THE FULL ITEM LIST: press ? and scroll "
-                 "to ITEMS — every good in the game, grouped by category "
-                 "with its price, effect and rarity. It reads straight "
-                 "from the shop, so it can never fall out of date.")
+    WHATS_NEW = ("A LEANER GUIDE: the how-to-play help stays focused on "
+                 "the systems. For any item's price and effect, the shop "
+                 "and bag show it live the moment you land on it — that is "
+                 "the item reference, right where you decide.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
