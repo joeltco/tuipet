@@ -102,6 +102,19 @@ _AUTHORED = {
     "anti_evo_chip":   ("Anti-Evo Chip",   "f:32", 1000, "Evolution", "toggle evolution lock", "holds this form"),
     "x_antibody":      ("X-Antibody",      "i:79", 2000, "Evolution", "the X-Antibody takes hold", "the X factor"),
     "dna_crystal":     ("DNA Crystal",     "i:35", 1500, "Evolution", "+10 own-Field DNA banked", "a Field's worth of code"),
+    # ---- THE ATTRIBUTE CHIPS (items refactor P6, 2026-07-23) ---------------
+    # The one LIVE lever with no purchasable support: Va/D/Vi powers gate
+    # hundreds of evolution rows (>10 / >20 / >25 / >50) and the only ways to
+    # move them were winning battles (+1 each) and the inheritance-only
+    # Digimemory.  Canon rows, canon prices, canon +15/+30 -- a chip is worth
+    # about fifteen wins.  Uncapped, exactly like the win path they shortcut.
+    "vaccine_chip":    ("Vaccine Chip",    "f:10", 1500, "Evolution", "Vaccine power +15", "a shot of order"),
+    "data_chip":       ("Data Chip",       "f:11", 1500, "Evolution", "Data power +15", "a shot of logic"),
+    "virus_chip":      ("Virus Chip",      "f:12", 1500, "Evolution", "Virus power +15", "a shot of chaos"),
+    "vaccine_chip_g":  ("Vaccine Chip G",  "f:20", 3000, "Evolution", "Vaccine power +30", "the golden dose"),
+    "data_chip_g":     ("Data Chip G",     "f:21", 3000, "Evolution", "Data power +30", "the golden dose"),
+    "virus_chip_g":    ("Virus Chip G",    "f:22", 3000, "Evolution", "Virus power +30", "the golden dose"),
+    "omni_chip_g":     ("Omni Chip G",     "f:33", 8000, "Evolution", "all three powers +30", "every colour at once"),
     # ---- LEGACY (death and inheritance -- NOT medicine, which is why the
     # old "Medical" name had to go: it never held a med) ---------------------
     # i:64 (the notched-square disk glyph): i:32 is DVPet's own Digimemory
@@ -166,6 +179,13 @@ _TOUCHES = {
     "anti_evo_chip": ("evo_blocked",),
     "x_antibody": ("x_antibody",),
     "dna_crystal": ("dna_owned",),
+    "vaccine_chip": ("vaccine",),
+    "data_chip": ("data_power",),
+    "virus_chip": ("virus",),
+    "vaccine_chip_g": ("vaccine",),
+    "data_chip_g": ("data_power",),
+    "virus_chip_g": ("virus",),
+    "omni_chip_g": ("vaccine", "data_power", "virus"),
     "revive_floppy": ("dead",),
     "digimemory": ("vaccine", "data_power", "virus", "digimemory"),
     # ---- TOYS ----

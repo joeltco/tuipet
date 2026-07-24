@@ -422,6 +422,13 @@ class CareMixin:
             "anti_evo_chip": self._anti_evo,
             "x_antibody": self._x_item,
             "dna_crystal": self._dna_crystal,
+            "vaccine_chip": lambda: self._attr_chip("vaccine", 15),
+            "data_chip": lambda: self._attr_chip("data_power", 15),
+            "virus_chip": lambda: self._attr_chip("virus", 15),
+            "vaccine_chip_g": lambda: self._attr_chip("vaccine", 30),
+            "data_chip_g": lambda: self._attr_chip("data_power", 30),
+            "virus_chip_g": lambda: self._attr_chip("virus", 30),
+            "omni_chip_g": lambda: self._attr_chip(None, 30),
             # ---- LEGACY -----------------------------------------------------
             "revive_floppy": self._revive_item,
             "digimemory": self._inherit_memory,
@@ -607,6 +614,33 @@ class CareMixin:
         if self.asleep:
             self._disturbed()
         return self._bandage()
+
+    _ATTR_FIELDS = ("vaccine", "data_power", "virus")
+    _ATTR_WORD = {"vaccine": "Vaccine", "data_power": "Data", "virus": "Virus"}
+
+    def _attr_chip(self, field, amount):
+        """THE ATTRIBUTE CHIPS (P6, 2026-07-23) -- foods.csv rows 10/11/12
+        (+15) and 20/21/22 (+30), plus 33 (Omni, all three).
+
+        Va/D/Vi are LIVE and load-bearing: hundreds of evolution rows gate
+        on them, and battle power reads them.  Until now the only ways to
+        raise one were winning a battle in that attribute (+1) and the
+        inheritance-only Digimemory -- so a whole live lever had nothing
+        buyable behind it.  A chip is worth about fifteen wins.
+
+        Uncapped ON PURPOSE: the win path it shortcuts is uncapped too
+        (record_battle just does `self.vaccine += inc`), and inventing a
+        ceiling here would be inventing a rule.  `field=None` is the Omni
+        chip -- every power at once.
+
+        Canon legs NOT applied: -Mood (a verified no-op meter) and
+        +Stress (a stripped system)."""
+        fields = self._ATTR_FIELDS if field is None else (field,)
+        for f in fields:
+            setattr(self, f, getattr(self, f) + amount)
+        if field is None:
+            return f"Every power surges! (+{amount} each)"
+        return f"{self._ATTR_WORD[field]} power +{amount}!"
 
     def _dna_crystal(self):
         """+10 banked DNA in the pet's own Field (the live DNA bank; skips

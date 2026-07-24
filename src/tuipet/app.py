@@ -133,15 +133,13 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE ITEM SHELF, REORGANISED: goods now sit under real "
-                 "headings — Medicine, Care, Training, Play, Evolution, "
-                 "Legacy — instead of one long Items list. BANDAGES ARE "
-                 "FREE: press F and the Bandage sits beside the Pill, so "
-                 "neither sickness nor injury costs bits any more (a "
-                 "bought one clears out of your bag). The TEXTBOOK now "
-                 "teaches obedience like it always did on the real "
-                 "device, and the new MIRACLE DRINK forgives one care "
-                 "slip at a time.")
+    WHATS_NEW = ("ATTRIBUTE CHIPS ON THE SHELF: seven new goods under "
+                 "Evolution raise your Vaccine, Data or Virus power — the "
+                 "stat hundreds of evolutions gate on, and until now only "
+                 "battle wins could move it (+1 each). A chip is worth "
+                 "about fifteen wins; the golden ones double that, and "
+                 "the Omni Chip lifts all three. Real DVPet goods that "
+                 "have been sitting unused in the art all along.")
 
     BINDINGS = [
         # battle + jogress are LOBBY-ONLY (Joel 2026-07-07: "battles and
