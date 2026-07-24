@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.218 — ATTRIBUTE CHIPS ON THE SHELF (2026-07-24)
+
+ATTRIBUTE CHIPS ON THE SHELF: seven new goods under Evolution raise your Vaccine, Data or Virus power — the stat hundreds of evolutions gate on, and until now only battle wins could move it (+1 each). A chip is worth about fifteen wins; the golden ones double that, and the Omni Chip lifts all three. Real DVPet goods that have been sitting unused in the art all along.
+
 ## 0.5.217 — THE ITEM SHELF, REORGANISED (2026-07-23)
 
 THE ITEM SHELF, REORGANISED: goods now sit under real headings — Medicine, Care, Training, Play, Evolution, Legacy — instead of one long Items list. BANDAGES ARE FREE: press F and the Bandage sits beside the Pill, so neither sickness nor injury costs bits any more (a bought one clears out of your bag). The TEXTBOOK now teaches obedience like it always did on the real device, and the new MIRACLE DRINK forgives one care slip at a time.
