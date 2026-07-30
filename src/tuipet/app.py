@@ -150,13 +150,14 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("ONE PILE OF POOP IS NO LONGER A PLAGUE: the filth sickness "
-                 "roll was running SIXTY TIMES too hot, so a single fresh pile "
-                 "could make your pet sick within a couple of minutes — before "
-                 "you'd even had a chance to clean it. The mess now works the "
-                 "way it always claimed to: a lone pile is a slow risk over "
-                 "days, while a sty left standing is the real danger. Clean up "
-                 "promptly and your pet stays well.")
+    WHATS_NEW = ("A HEAVY PET IS NO LONGER A DOOMED ONE: after yesterday's "
+                 "filth fix, the other half of the sickness system got the "
+                 "same audit — a pet carrying extra weight was rolling for "
+                 "illness FORTY-FIVE times faster than one living beside a "
+                 "pile of poop, sick in minutes with no time to diet it off. "
+                 "Extra weight now costs what the mess costs: a real risk "
+                 "measured in days, not minutes. Being fat AND filthy is "
+                 "still asking for trouble.")
 
     BINDINGS = [
         # jogress is LOBBY-ONLY (fusion needs a real partner from the

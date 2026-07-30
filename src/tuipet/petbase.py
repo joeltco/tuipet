@@ -495,10 +495,28 @@ FILTH_WORSE_CHANCE = 20                 # FilthWorseSickChance (x piles, already
 # contagion, no counters.  Constants verbatim from the clone (v0.4.12).
 SICK_POOP_P = 0.015            # RETIRED (live-play audit 2026-07-25): the flat
 #                                stand-in the lost FILTH_SICK_CHANCE/BOUND
-#                                wiring shipped with; kept only to name the
-#                                rate the scaled roll matches at 3 piles.
-#                                The live roll is in _filth_effects.
-SICK_OVERWEIGHT_P = 0.00375    # per overweight step: floor(excess/(base*0.5))
+#                                wiring shipped with.  ⚠It was the CLONE's
+#                                per-REAL-minute number (v0.4.12's
+#                                _sim_minute() fired once per 60 real
+#                                seconds), so firing it per GAME-minute ran
+#                                60x hot -- and the 2026-07-25 rewire
+#                                calibrated itself to it.  Named here only
+#                                as history; the live roll is in
+#                                _filth_effects at canon's own bound.
+# ⭐ THE OVERWEIGHT LEG, REPRICED 0.5.317b (Joel: "fix the overweight one
+# too", 2026-07-30 -- after the filth fix I flagged this as the same 60x
+# clone-clock heat and he named it).  It shipped as 0.00375 per game-min per
+# step, which is a MEDIAN 4.4 REAL MINUTES at one step over, and 45x hotter
+# than a whole pile of filth.  There is NO canon rate to port: canon punishes
+# bad weight with MOOD (badWeightMoodLapseDec) and a calorie-limit shift, and
+# has no weight sickness at all -- every canon sickness outside filth is an
+# EVENT roll out of 100 (DirtyEating 8, IntolerantFood 50).  So the anchor is
+# canon's only CONTINUOUS source, the filth pile: ONE overweight step (= 50%
+# over base weight) now carries exactly the weight of ONE pile of filth,
+# 1/12000 per game-min, and the step count scales it just as the pile count
+# does.  One step over = a median 8.3 game-days; two steps = 4.2; and because
+# the two rolls are independent, a fat pet in a dirty room is in real trouble.
+SICK_OVERWEIGHT_P = FILTH_SICK_CHANCE / FILTH_SICK_BOUND   # one step == one pile
 DEATH_SICK_P = 7.5e-5          # the clone's per-minute death whisper while sick
 # ---- the DSprite mortality (rebuilt 2026-07-22, Joel: "we gotta do it how
 # dsprite does. life bar must be a dvpet forgotten relic"): NO lifespan

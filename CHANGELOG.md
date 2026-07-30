@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.318 — A HEAVY PET IS NO LONGER A DOOMED ONE (2026-07-30)
+
+A HEAVY PET IS NO LONGER A DOOMED ONE: after yesterday's filth fix, the other half of the sickness system got the same audit — a pet carrying extra weight was rolling for illness FORTY-FIVE times faster than one living beside a pile of poop, sick in minutes with no time to diet it off. Extra weight now costs what the mess costs: a real risk measured in days, not minutes. Being fat AND filthy is still asking for trouble.
+
 ## 0.5.317 — ONE PILE OF POOP IS NO LONGER A PLAGUE (2026-07-30)
 
 ONE PILE OF POOP IS NO LONGER A PLAGUE: the filth sickness roll was running SIXTY TIMES too hot, so a single fresh pile could make your pet sick within a couple of minutes — before you'd even had a chance to clean it. The mess now works the way it always claimed to: a lone pile is a slow risk over days, while a sty left standing is the real danger. Clean up promptly and your pet stays well.

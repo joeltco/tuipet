@@ -16,6 +16,11 @@ and a four-pile sty left uncleaned for a game-day lands ~38%.
 These pins are about MAGNITUDE.  The wiring pins (pile scaling, species
 multiplier, the away shield) live in test_liveplay_audit.py; a rate bug slips
 past all of them, which is how this shipped.
+
+The OVERWEIGHT leg (bottom half) was the same story one step behind: Joel
+answered the flag with "fix the overweight one too".  It had no canon rate to
+port -- canon punishes bad weight with mood, not illness -- so a step is now
+priced at exactly one pile of filth, canon's only continuous sickness source.
 """
 import math
 
@@ -99,3 +104,66 @@ def test_the_rate_is_the_same_story_the_simulation_tells():
                 break
     rate = hits / trials
     assert 0.03 < rate < 0.22, rate                # canon expectation ~11%
+
+
+# ---- the overweight leg, repriced (Joel: "fix the overweight one too") -----
+
+def _heavy(steps):
+    """`steps` = floor(excess / (base * 0.5)), so one step is 50% over base."""
+    p = Pet(num=100, stage="Champion", attribute="Vaccine")
+    p.poop, p.poop_sizes = 0, []
+    p.hunger = p.strength = 4
+    p.weight = p._base_weight() * (1.0 + 0.5 * steps)
+    return p
+
+
+def _overweight_p(steps):
+    p = _heavy(steps)
+    bw = p._base_weight()
+    live = int((p.weight - bw) // (bw * 0.5)) if bw > 0 and p.weight > bw else 0
+    assert live == steps, f"fixture drift: wanted {steps} steps, built {live}"
+    return live * petbase.SICK_OVERWEIGHT_P
+
+
+def test_one_overweight_step_costs_exactly_one_pile_of_filth():
+    """The repricing rule, stated once: no canon weight-sickness exists, so a
+    step is anchored to canon's only continuous source."""
+    assert math.isclose(petbase.SICK_OVERWEIGHT_P,
+                        petbase.FILTH_SICK_CHANCE / petbase.FILTH_SICK_BOUND)
+    assert math.isclose(_overweight_p(1), _p_per_game_min(1))
+
+
+def test_a_heavy_pet_is_not_sick_within_the_hour():
+    """It shipped at 0.00375/game-min -- a median 4.4 REAL minutes at one
+    step, 45x a pile of filth.  A player cannot diet a pet that fast."""
+    within_5_real_min = 1.0 - math.exp(-_overweight_p(1) * 5 * GAME_MIN_PER_REAL_MIN)
+    assert within_5_real_min < 0.05, within_5_real_min
+    mean_game_min = 1.0 / _overweight_p(1)
+    assert mean_game_min / GAME_MIN_PER_GAME_DAY > 8.0
+
+
+def test_obesity_still_costs_something_over_days():
+    """Repriced, not removed: two steps over (double base weight) is a real
+    threat across a few game-days."""
+    two_days = 1.0 - math.exp(-_overweight_p(2) * 2 * GAME_MIN_PER_GAME_DAY)
+    assert two_days > 0.25, two_days
+
+
+def test_the_steps_scale_and_stack_with_filth():
+    """Independent rolls: a fat pet in a dirty room carries both risks."""
+    assert math.isclose(_overweight_p(2), 2 * _overweight_p(1))
+    import random as _r
+    _r.seed(2718)
+    caught = 0
+    for _ in range(300):
+        q = _heavy(2)
+        q.poop, q.poop_sizes = 3, [2, 2, 2]
+        for _ in range(int(GAME_MIN_PER_GAME_DAY)):
+            q._filth_effects(1.0)
+            q._tick_mortality(1.0)
+            if q.sick:
+                caught += 1
+                break
+    rate = caught / 300
+    # 5 pile-equivalents for a game-day: ~1 - exp(-5*1440/12000) ~= 45%
+    assert 0.25 < rate < 0.65, rate
