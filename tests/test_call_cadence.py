@@ -1,8 +1,9 @@
-"""HOW OFTEN the pet asks for something — the two call clocks fixed 2026-07-30.
+"""HOW OFTEN the pet asks for something — the call clocks fixed 2026-07-30.
 
-Joel, after the sickness audit flagged them: "fix those two also".  Both carried
-the same slip as the filth-sickness bound: a real-SECONDS shape sitting on a
-clock that counts game-MINUTES.
+Joel, working through the sickness audit's flags: "fix those two also", then
+"fix the hunger and strength ones too".  Every one of them carried the same slip
+as the filth-sickness bound: a real-SECONDS shape sitting on a clock that counts
+game-MINUTES.
 
   * the MISCHIEF call rolled `dt / (60.0 * 90.0)` -- "90 minutes" written in
     seconds -- so a tantrum arrived once every 3.75 GAME-DAYS (90 real min),
@@ -149,3 +150,87 @@ def test_a_clean_room_resets_the_clock():
     p.poop, p.poop_sizes = 0, []
     p._tick_body(1.0)
     assert p._filth_t == 0
+
+
+# ---- the neglect cooldown (Joel: "fix the hunger and strength ones too") ----
+#
+# Every call light postpones itself after billing a mistake, and canon's
+# AfterMistakeMinutesPostponed is -60.  The LIGHTS call always used it; filth,
+# HUNGER and STRENGTH carried -3600 under the same canon citation -- 60x too
+# long.  The 600-game-min (10 REAL minute) answer window is the deliberate
+# adaptation and is NOT touched; only the repeat rate is.
+
+def _tended(**kw):
+    """A pet with exactly one thing wrong, awake, so one call path is isolated
+    (the lights call bills mistakes that look like yours otherwise)."""
+    p = _pet()
+    p.energy = p.max_energy
+    p.asleep = False
+    p.lights = True
+    for k, v in kw.items():
+        setattr(p, k, v)
+    return p
+
+
+def test_every_call_postpones_by_the_canon_minute():
+    assert petbase.CALL_POSTPONE_MIN == -60.0
+    assert petbase.LIGHTS_MISTAKE_POSTPONE == petbase.CALL_POSTPONE_MIN
+
+
+def test_the_hunger_call_keeps_its_ten_real_minute_window():
+    p = _tended(hunger=0)
+    for _ in range(599):
+        p.asleep = False
+        p._tick_hunger(1.0)
+    assert p.care_mistakes == 0, "the answer window shrank"
+    p._tick_hunger(1.0)
+    assert p.care_mistakes == 1
+    assert p._hunger_call_t == petbase.CALL_POSTPONE_MIN
+
+
+def test_the_strength_call_keeps_its_window_and_takes_the_canon_cooldown():
+    p = _tended(strength=0)
+    for _ in range(599):
+        p.asleep = False
+        p.strength = 0
+        p._tick_body(1.0)
+    assert p.care_mistakes == 0, "the answer window shrank"
+    p.strength = 0
+    p._tick_body(1.0)
+    assert p.care_mistakes == 1
+    assert p._str_call_t == petbase.CALL_POSTPONE_MIN
+
+
+def test_an_empty_gauge_bills_again_on_the_canon_cycle():
+    """600 window + 60 postpone = a mistake per 660 AWAKE game-min (11 real
+    min).  At -3600 it was 4200 (70 real min), which is what made a pet you
+    never drill effectively unpunishable."""
+    p = _tended(strength=0)
+    marks = []
+    for i in range(2000):
+        p.asleep = False
+        p.strength = 0
+        before = p.care_mistakes
+        p._tick_body(1.0)
+        if p.care_mistakes > before:
+            marks.append(i)
+    assert len(marks) >= 3, marks
+    gaps = [b - a for a, b in zip(marks, marks[1:])]
+    assert all(650 <= g <= 670 for g in gaps), gaps
+
+
+def test_starvation_still_outruns_the_hunger_cooldown():
+    """Why the hunger leg barely moves, and why that is correct: nothing about
+    the cooldown matters once STARVE_DEATH_MIN ends an empty belly.  One
+    mistake, then the pet starves."""
+    assert petbase.STARVE_DEATH_MIN == 720
+    p = _tended(hunger=0)
+    for _ in range(1500):
+        if p.dead:
+            break
+        p.asleep = False
+        p.hunger = 0
+        p._tick_hunger(1.0)
+        p._tick_mortality(1.0)
+    assert p.dead and p.death_cause == "starvation"
+    assert p.care_mistakes == 1, p.care_mistakes

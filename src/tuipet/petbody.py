@@ -343,8 +343,13 @@ class BodyMixin:
             # you leave in the background.  So the CONTINUOUS pressures (mood
             # drain, filth, sickness rolls) run at the canon game-min cadence,
             # while the DISCRETE PUNISHMENTS keep a fair human response window.
+            # The WINDOW above is the deliberate adaptation; the COOLDOWN below
+            # is not -- it carried -3600 under a canon citation whose value is
+            # -60 (0.5.320).  Starvation ends the argument anyway: an empty
+            # belly dies at STARVE_DEATH_MIN, so this call bills one mistake
+            # either way.
             if self._hunger_call_t >= 600.0:                 # 10 real min to answer
-                self._hunger_call_t = -3600.0                # AfterMistakeMinutesPostponed
+                self._hunger_call_t = CALL_POSTPONE_MIN      # noqa: F405  canon -60
                 self._inc_mistake()
                 self.mistake_day += 1  # + HungerDecAtZero MissedDayChange
                 # (the MistakeHungerLifeDec burn left with the lifespan clock
@@ -423,7 +428,10 @@ class BodyMixin:
             self._str_call_t = getattr(self, "_str_call_t", 0.0) + dt
             if self._str_call_t >= 600.0:                    # 10 real min to answer
                 #   (the same deliberate response-window rule as the hunger call)
-                self._str_call_t = -3600.0                   # AfterMistakeMinutesPostponed
+                #   -- and, since 0.5.320, the same canon -60 cooldown.  This is
+                #   the leg it actually moves: nothing KILLS an empty gauge, so
+                #   the repeat rate is the whole punishment.  One drill resets it.
+                self._str_call_t = CALL_POSTPONE_MIN         # noqa: F405  canon -60
                 self._inc_mistake()
                 self._set_obedience(self.obedience - 5)      # MistakeStrengthObedienceDec
                 # no scold window on neglect (canon; discipline audit 2026-07-06)

@@ -498,11 +498,21 @@ FILTH_SICK_CHANCE = 1                   # FilthSickChance (x piles, per game-min
 # acting up costs NO care mistake -- it opens a scold window, nothing more.
 FILTH_ACT_UP_MIN = 30                   # game-min amid 3+ piles before it acts up
 # AfterMistakeMinutesPostponed (config.csv row 508) is -60, and the LIGHTS call
-# has always used it correctly (LIGHTS_MISTAKE_POSTPONE).  The filth path carried
-# -3600 instead, 60x too long, under the same canon citation.
-# ⚠The hunger and strength calls still postpone -3600.  Left alone deliberately:
-# those calls cost REAL care mistakes (20 = death), so shortening their cooldown
-# is a difficulty change and needs a named order, not a tidy-up.
+# has always used it correctly (LIGHTS_MISTAKE_POSTPONE).  The filth, HUNGER and
+# STRENGTH paths all carried -3600 instead -- 60x too long, under this exact
+# canon citation.  Filth was fixed with the tantrum clock (0.5.319); hunger and
+# strength followed on Joel's order ("fix the hunger and strength ones too",
+# 2026-07-30) after being flagged twice as a difficulty change, not a tidy-up.
+# ⭐WHAT IT COSTS, MEASURED (with the other call paths tended, since the LIGHTS
+# call otherwise bills the mistakes you think you are measuring): the 600
+# game-min answer window is untouched, so the FIRST mistake still needs 10 real
+# minutes of awake neglect.  Only the repeat rate changes -- one mistake per
+# 4200 awake game-min (70 real min) becomes one per 660 (11 real min).
+# ⚠HUNGER is nearly unaffected in practice and that is the point: STARVE_DEATH_MIN
+# ends an empty belly at 720 awake game-min, so an ignored hunger call bills ONE
+# mistake and then the pet starves regardless of any cooldown.  STRENGTH is the
+# leg this really moves: nothing kills an empty effort gauge, so 20 mistakes now
+# take ~3.6 real HOURS of watching a pet you never drill (one drill resets it).
 CALL_POSTPONE_MIN = -60.0               # AfterMistakeMinutesPostponed (canon)
 FILTH_WORSE_CHANCE = 20                 # FilthWorseSickChance (x piles, already sick)
 # ---- the DSprite sickness (rebuilt 2026-07-17, Joel: "dsprite didnt have

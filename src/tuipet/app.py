@@ -150,15 +150,14 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("YOUR PET HAS OPINIONS AGAIN: two of its clocks were stuck "
-                 "sixty times too slow. It only threw a tantrum once every "
-                 "four days — so discipline barely existed — and it would "
-                 "stand in a room full of mess for a day and a quarter before "
-                 "complaining. Now it acts up on the real schedule, and how "
-                 "OFTEN depends on its manners: a well-behaved pet asks "
-                 "rarely, a rude one keeps testing you. You still get a "
-                 "generous window to answer, and a dirty room is noticed in "
-                 "minutes.")
+    WHATS_NEW = ("NEGLECT ADDS UP AGAIN: the last two call lights kept a "
+                 "sixty-times-too-long cooldown, so an empty food or effort "
+                 "gauge could only ever cost you ONE care mistake an hour no "
+                 "matter how long you left it. Now an ignored call keeps "
+                 "counting — every eleven minutes it stands. You still get the "
+                 "same generous ten minutes to answer the first one, and a "
+                 "single meal or drill clears it. Mind the effort gauge: "
+                 "nothing else forces you to train.")
 
     BINDINGS = [
         # jogress is LOBBY-ONLY (fusion needs a real partner from the
