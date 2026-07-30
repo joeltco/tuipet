@@ -59,7 +59,7 @@ def _amp(v):
 
 def _load_volume():
     try:
-        return max(10, min(100, int(open(_vol_conf()).read().strip())))
+        return max(10, min(100, int(open(_vol_conf(), encoding="utf-8").read().strip())))
     except (OSError, ValueError):
         return DEFAULT_VOLUME
 
@@ -74,7 +74,7 @@ def set_volume(v):
     _volume = max(10, min(100, int(v)))
     try:
         os.makedirs(_state_dir(), exist_ok=True)
-        with open(_vol_conf(), "w") as fh:
+        with open(_vol_conf(), "w", encoding="utf-8") as fh:
             fh.write(str(_volume))
     except OSError:
         pass                       # the level still holds for this session

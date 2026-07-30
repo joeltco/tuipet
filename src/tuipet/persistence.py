@@ -51,7 +51,7 @@ def load_settings(path=None):
     path = path or SETTINGS_PATH
     for candidate in (path, path + ".bak"):
         try:
-            d = json.load(open(candidate))
+            d = json.load(open(candidate, encoding="utf-8"))
         except (OSError, ValueError):
             continue
         if _migrate_v401_settings(d):        # .400/.401 egg indices -> .402 bank
@@ -703,7 +703,7 @@ def rescue_copy(path=None):
     import glob as _glob
     src = path or SAVE_PATH
     try:
-        with open(src) as fh:
+        with open(src, encoding="utf-8") as fh:
             data = json.load(fh)
     except (ValueError, OSError):
         return ""                        # no readable save: nothing to rescue
@@ -782,7 +782,7 @@ def local_saved_at(path=None):
     """The _saved_at of the on-disk save, or 0.0 if there's no readable save."""
     path = path or SAVE_PATH
     try:
-        return float(json.load(open(path)).get("_saved_at") or 0.0)
+        return float(json.load(open(path, encoding="utf-8")).get("_saved_at") or 0.0)
     except (ValueError, OSError, TypeError):
         return 0.0
 
@@ -959,7 +959,7 @@ def load(path=None):
         if not os.path.exists(candidate):
             continue
         try:
-            data = json.load(open(candidate))
+            data = json.load(open(candidate, encoding="utf-8"))
         except (ValueError, OSError):
             broken = broken or candidate
             continue

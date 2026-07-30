@@ -34,7 +34,7 @@ def load_digicore_config():
     path = os.path.join(_DATA, "digicoreMenuConfig.csv")
     if not os.path.exists(path):
         return out
-    for r in csv.reader(open(path)):
+    for r in csv.reader(open(path, encoding="utf-8")):
         if len(r) < 2 or not r[0].strip().isdigit():
             continue
         icon = (r[1] or "").strip()
@@ -71,7 +71,7 @@ def load_egg_unlock():
 
     rules = {}
     path = os.path.join(_DATA, "eggUnlock.csv")
-    rows = list(csv.reader(open(path)))
+    rows = list(csv.reader(open(path, encoding="utf-8")))
     for r in rows[1:]:
         if len(r) < 23:
             continue

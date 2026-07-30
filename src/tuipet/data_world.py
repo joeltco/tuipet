@@ -22,7 +22,7 @@ def load_battle_fx():
     clone 2026-07-17: attacks / hit / ready / start / wall / dead -- the
     DSprite rips the HP-race show draws from)."""
     try:
-        with gzip.open(os.path.join(_DATA, "battle_fx.json.gz"), "rt") as fh:
+        with gzip.open(os.path.join(_DATA, "battle_fx.json.gz"), "rt", encoding="utf-8") as fh:
             return json.load(fh)
     except (OSError, EOFError, ValueError):
         return {}
@@ -284,7 +284,7 @@ def load_backgrounds():
     if not os.path.exists(path):
         return {}
     try:
-        with gzip.open(path, "rt") as fh:
+        with gzip.open(path, "rt", encoding="utf-8") as fh:
             return json.load(fh)
     except (OSError, ValueError):
         return {}
@@ -296,7 +296,7 @@ def load_effects():
     if not os.path.exists(path):
         return {}
     try:
-        with gzip.open(path, "rt") as fh:
+        with gzip.open(path, "rt", encoding="utf-8") as fh:
             return json.load(fh)
     except (OSError, ValueError):
         return {}
@@ -308,7 +308,7 @@ def load_icons():
     if not os.path.exists(path):
         return {}
     try:
-        with gzip.open(path, "rt") as fh:
+        with gzip.open(path, "rt", encoding="utf-8") as fh:
             return json.load(fh)
     except (OSError, ValueError):
         return {}

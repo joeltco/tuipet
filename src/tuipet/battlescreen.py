@@ -21,7 +21,7 @@ from . import strikefx
 
 COLS, ROWS = 40, 12
 PXH = ROWS * 2                                   # 24 px tall
-with open(os.path.join(os.path.dirname(__file__), "data", "battle_overlays.json")) as _f:
+with open(os.path.join(os.path.dirname(__file__), "data", "battle_overlays.json"), encoding="utf-8") as _f:
     _OV = json.load(_f)
 BANNER = _OV["battle_banner"]
 

@@ -26,7 +26,7 @@ def _sound_path():
 
 def _load_sound():
     try:
-        return open(_sound_path()).read().strip() != "off"
+        return open(_sound_path(), encoding="utf-8").read().strip() != "off"
     except OSError:
         return True
 
@@ -34,7 +34,7 @@ def _load_sound():
 def _save_sound(on):
     try:
         os.makedirs(persistence.SAVE_DIR, exist_ok=True)
-        with open(_sound_path(), "w") as fh:
+        with open(_sound_path(), "w", encoding="utf-8") as fh:
             fh.write("on" if on else "off")
     except OSError:
         pass

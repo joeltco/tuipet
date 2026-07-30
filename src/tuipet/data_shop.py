@@ -27,7 +27,7 @@ def load_vitems():
 def load_foods():
     path = os.path.join(_RAW, "foods.csv")
     foods = []
-    with open(path) as fh:
+    with open(path, encoding="utf-8") as fh:
         for row in csv.DictReader(fh):
             try:
                 fid = int(row["FoodIdentificationNum"])
@@ -366,7 +366,7 @@ def load_shop_overrides():
     path = os.path.join(_DATA, "shopConsumable.csv")
     if not os.path.exists(path):
         return out
-    for r in csv.DictReader(open(path)):
+    for r in csv.DictReader(open(path, encoding="utf-8")):
         try:
             sid = int(r["ShopConsumableID"])
         except (KeyError, ValueError):
@@ -396,7 +396,7 @@ def load_towns():
     sizes, sell permissions, and the town tournament (slots 0-23 are hourly
     cups; slots past 23 -- where ForceTrophies pin -- are ALWAYS open)."""
     out = {}
-    for r in csv.DictReader(open(os.path.join(_DATA, "towns.csv"))):
+    for r in csv.DictReader(open(os.path.join(_DATA, "towns.csv"), encoding="utf-8")):
         try:
             tid = int(r["TownID"])
         except (KeyError, ValueError):

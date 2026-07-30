@@ -215,7 +215,7 @@ def save_choice(name):
     try:
         p = _conf_path()
         os.makedirs(os.path.dirname(p), exist_ok=True)
-        with open(p, "w") as fh:
+        with open(p, "w", encoding="utf-8") as fh:
             fh.write(name)
     except OSError:
         pass
@@ -223,7 +223,7 @@ def save_choice(name):
 
 def load_choice():
     try:
-        n = open(_conf_path()).read().strip()
+        n = open(_conf_path(), encoding="utf-8").read().strip()
         return n if n in THEMES else _DEFAULT
     except OSError:
         return _DEFAULT

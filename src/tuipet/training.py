@@ -41,7 +41,7 @@ VERDICT_T = 14
 
 # the 0.5 target wall (Wall_1 standing / Wall_2 crumbled), ported verbatim
 # from the clone's battle_fx rips (v0.4.12; row-string form)
-with open(os.path.join(os.path.dirname(__file__), "data", "train_wall.json")) as _f:
+with open(os.path.join(os.path.dirname(__file__), "data", "train_wall.json"), encoding="utf-8") as _f:
     _WALL = json.load(_f)
 
 # (the local _FONT_3X5 and ENERGY_NEED left 2026-07-19, drill audit: the

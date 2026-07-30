@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.316 — tuipet NOW BOOTS IN EVERY LANGUAGE (2026-07-30)
+
+tuipet NOW BOOTS IN EVERY LANGUAGE: on a Windows install whose system language isn't English, the game read its own town and creature tables through the machine's codepage instead of its own — and one stray dash in the town data was enough to crash tuipet on startup before the egg even appeared. Every file the game reads or writes now names its encoding, so your locale can't break your pet.
+
 ## 0.5.315 — THE GAME TELLS YOU WHERE YOUR PET IS (2026-07-29)
 
 THE GAME TELLS YOU WHERE YOUR PET IS: open tuipet on a device that isn't holding your pet and the cloud refuses its saves — correctly — but until now it refused them SILENTLY, so the pet you expected never arrived and nothing on screen said why. That device now says it plainly, names the device your pet is on, and stops pushing. The launch check that offers to move the pet is also far more patient: a slow first connection used to skip the question entirely.

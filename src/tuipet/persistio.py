@@ -60,7 +60,7 @@ def _atomic_write_json(path, data, keep_bak=False):
     try:
         os.makedirs(os.path.dirname(path), exist_ok=True)
         tmp = path + ".tmp"
-        with open(tmp, "w") as fh:
+        with open(tmp, "w", encoding="utf-8") as fh:
             json.dump(data, fh)
         if keep_bak and os.path.exists(path):
             os.replace(path, path + ".bak")   # keep one generation back
@@ -104,7 +104,7 @@ def acquire_instance_lock():
     than the old free-for-all."""
     p = os.path.join(_live_save_dir(), _LOCK_NAME)
     try:
-        other = int(open(p).read().strip())
+        other = int(open(p, encoding="utf-8").read().strip())
     except (OSError, ValueError):
         other = None
     if other and other != os.getpid():
@@ -117,7 +117,7 @@ def acquire_instance_lock():
             pass                     # stale lock from a dead run
     try:
         os.makedirs(_live_save_dir(), exist_ok=True)
-        with open(p, "w") as f:
+        with open(p, "w", encoding="utf-8") as f:
             f.write(str(os.getpid()))
     except OSError:
         pass                         # unwritable dir: nothing to fight over either
@@ -127,7 +127,7 @@ def release_instance_lock():
     """Drop the pid file, but only if it is ours (best-effort)."""
     p = os.path.join(_live_save_dir(), _LOCK_NAME)
     try:
-        if int(open(p).read().strip()) == os.getpid():
+        if int(open(p, encoding="utf-8").read().strip()) == os.getpid():
             os.remove(p)
     except (OSError, ValueError):
         pass

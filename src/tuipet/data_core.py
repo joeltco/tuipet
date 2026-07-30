@@ -32,7 +32,7 @@ def _damaged(name):
 def _load_bundled(name):
     """gunzip+parse a required atlas, or raise AssetsError in plain words."""
     try:
-        with gzip.open(os.path.join(_DATA, name), "rt") as fh:
+        with gzip.open(os.path.join(_DATA, name), "rt", encoding="utf-8") as fh:
             return json.load(fh)
     except (OSError, EOFError, ValueError) as e:
         raise _damaged(name) from e
@@ -42,9 +42,17 @@ def _open_data(path):
     """open() a required csv/json data file, or raise AssetsError in the
     same plain words as _load_bundled -- the gz side always spoke kindly
     about a broken install while the csv side crashed with a raw
-    FileNotFoundError traceback (data audit 2026-07-18)."""
+    FileNotFoundError traceback (data audit 2026-07-18).
+
+    encoding IS NOT OPTIONAL: our data is utf-8, but a bare open() decodes
+    with the machine's LOCALE codepage, so a Windows box in a non-Western
+    locale can't read our own files.  towns.csv carries one en dash and
+    that alone crashed the game on boot for a cp950 player (Traditional
+    Chinese Windows, 2026-07-30) -- UnicodeDecodeError before the pet even
+    appeared.  Every text open() in this package names utf-8, and
+    tests/test_encoding.py fails the build if one forgets."""
     try:
-        return open(path)
+        return open(path, encoding="utf-8")
     except OSError as e:
         raise _damaged(os.path.basename(path)) from e
 

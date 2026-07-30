@@ -90,7 +90,7 @@ def load_lines():
     "children": {parent_dex: [row, ...] in CSV (first-match) order}}}.
     A row is {"num", "stage", "parents", "rule" (parsed), "rule_text", "bedtime"}."""
     out = {}
-    with open(os.path.join(_DATA, "lines.csv"), newline="") as fh:
+    with open(os.path.join(_DATA, "lines.csv"), newline="", encoding="utf-8") as fh:
         for raw in csv.DictReader(fh):
             lid = raw["LineID"].strip()
             line = out.setdefault(lid, {"root": None, "members": {}, "children": {}})

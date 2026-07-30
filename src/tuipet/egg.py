@@ -21,7 +21,7 @@ def _real_eggs():
     if not os.path.exists(path):
         return None
     try:
-        with gzip.open(path, "rt") as fh:
+        with gzip.open(path, "rt", encoding="utf-8") as fh:
             return [e for e in json.load(fh) if e]
     except (OSError, ValueError):
         return None
