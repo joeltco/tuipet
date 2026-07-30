@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.321 — ONLINE DUELS ARE REAL BATTLES NOW (2026-07-30)
+
+ONLINE DUELS ARE REAL BATTLES NOW: face another tamer and you get the actual fight — both mons walk into the arena, YOU work the timing bar against a rival who is working theirs, and the whole bout plays out in the arena to a proper result screen. No more watching a scoreboard tick. Your lock is the one you just earned, not whatever your last drill left behind, and duels run the full twenty rounds like every other battle, so somebody actually goes down. Both sides must be on this version to duel.
+
 ## 0.5.320 — NEGLECT ADDS UP AGAIN (2026-07-30)
 
 NEGLECT ADDS UP AGAIN: the last two call lights kept a sixty-times-too-long cooldown, so an empty food or effort gauge could only ever cost you ONE care mistake an hour no matter how long you left it. Now an ignored call keeps counting — every eleven minutes it stands. You still get the same generous ten minutes to answer the first one, and a single meal or drill clears it. Mind the effort gauge: nothing else forces you to train.

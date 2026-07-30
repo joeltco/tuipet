@@ -71,6 +71,12 @@ FLINCH_T = 12                                    # 1.2s held hurt pose
 DODGE_T = 14                                     # 1.4s weave
 
 BAR_MAX = 24                                     # the timing bar sweeps 0..24
+# A DUEL's bar locks itself after this long (0.1s ticks -> 30 real seconds).
+# Online, the bar is a shared handshake: the peer cannot build the fight until
+# my grade is committed, so a player who wandered off mid-lock would hang the
+# other one indefinitely.  Local fights keep waiting forever -- nobody else is
+# on the clock there.
+DUEL_AUTOLOCK_T = 300
 
 
 def mega_window(pet):
@@ -199,9 +205,21 @@ def _full(frame):
 
 class BattlePanel:
     def __init__(self, pet, enemy=None, wild=False, scene=None, rounds=None,
-                 raid=False, skip_intro=False):
+                 raid=False, skip_intro=False, duel=False):
         from .battle import ROUNDS_LOCAL
         self.pet = pet
+        # DUEL (lobby PvP, 2026-07-30, Joel: "its nothing like battles
+        # whatsoever" -> "do all three").  The panel runs the whole online
+        # bout -- banner, foe reveal, the timing bar, every volley, the
+        # result -- but it may NOT build a local Battle: a duel's rounds come
+        # from the SEEDED engine both clients run on the exchanged cards.  So
+        # in duel mode the lock REPORTS its grade and the owner (lobbybout)
+        # stages the volleys and injects the verdict.  This is the mode the
+        # old dead `source="pvp"` selector pretended to be -- that one was
+        # unreachable and was cut in v0.5.248; this one is driven.
+        self.duel = duel
+        self.duel_result = None       # {"won","drawn","note"} from the owner
+        self.duel_lock_sent = False   # the owner has picked the grade up
         self.raid = raid              # a RaidBout replay: boss bar holds, dealt counts
         self.wild = wild              # adventure wilds: ESC before the bell = flee
         # tournament + PvP battles play in the ARENA; home battles keep the
@@ -264,6 +282,12 @@ class BattlePanel:
         self.pet.saved_hit_type = hit_type
         self.locked = hit_type
         self._lock_frame = self.frame_i
+        if self.duel:
+            # a duel's fight is not ours to build: the grade goes on the wire
+            # (committed, then revealed) and the peer's cards decide the seed.
+            self.phase = "duelwait"
+            self.hud_note = "lock in — waiting for your rival…"
+            return
         if self.raid:
             from .battle import RaidBout
             self.battle = RaidBout(self.pet, self._pick)
@@ -298,8 +322,26 @@ class BattlePanel:
 
     def _enter_result(self):
         self.done_anim = True
-        self.won = bool(self.battle.won) if self.battle else False
+        if self.duel and self.duel_result is not None:
+            self.won = bool(self.duel_result.get("won"))
+        else:
+            self.won = bool(self.battle.won) if self.battle else False
         self.phase = "result"
+
+    def duel_verdict(self, won, drawn, note=""):
+        """The owner's verdict for an online bout: the seeded engine decided
+        it, so the panel is told rather than asked."""
+        self.duel_result = {"won": bool(won), "drawn": bool(drawn),
+                            "note": note}
+        self._enter_result()
+
+    def duel_volley(self, my_hp0, foe_hp0, dealt, taken):
+        """Stage one seeded round on THIS panel (the duel keeps one panel for
+        the whole bout, so the arena never blinks between volleys)."""
+        self.timeline = round_timeline(my_hp0, foe_hp0, dealt, taken, True)
+        self.i = 0
+        self._last_m = None
+        self.phase = "anim"
 
     # ---- driving ----
     def _emit_sfx(self):
@@ -330,8 +372,13 @@ class BattlePanel:
             if self.bar >= BAR_MAX or self.bar <= 0:
                 self.bar_dir = -self.bar_dir
                 self.bar = max(0, min(BAR_MAX, self.bar))
+            # a duel cannot wait forever on a player who walked away from the
+            # bar: the peer is sitting in the same handshake.  Lock wherever
+            # the marker stands -- fair, and it always makes progress.
+            if self.duel and self.frame_i - self._ready_frame >= DUEL_AUTOLOCK_T:
+                self._lock_bar()
             return
-        if self.phase == "result":
+        if self.phase in ("result", "duelwait"):
             return
         if self.i < len(self.timeline) - 1:
             self.i += 1
@@ -339,6 +386,11 @@ class BattlePanel:
         elif self.phase == "intro":
             self.phase = "ready"
             self._ready_frame = self.frame_i
+        elif self.duel:
+            # the volley played out; the OWNER stages the next one (or the
+            # verdict).  Never self-resolve: `battle` is None all duel long,
+            # and the local branch below would call the fight a loss.
+            return
         else:
             if self.battle is None or self.battle.over:
                 self._enter_result()
@@ -347,9 +399,12 @@ class BattlePanel:
 
     def strip(self):
         """The message-box hint line."""
+        if self.phase == "duelwait":
+            return "[dim]waiting for your rival…[/]"
         if self.phase == "ready":
             return menu.hints(("SPACE", "lock the bar"),
-                              ("ESC", "flee" if self.wild else "back out"))
+                              ("ESC", "forfeit" if self.duel
+                               else "flee" if self.wild else "back out"))
         if self.phase == "intro":
             return menu.hints(("SPACE", "skip"))
         if self.phase == "result":
@@ -567,6 +622,9 @@ class BattlePanel:
         keeps the plain record — its boss never falls and the dealt tally
         rides the exit line."""
         rec = f"record {self.pet.wins}W/{self.pet.battles}"
+        if self.duel and self.duel_result is not None:
+            note = self.duel_result.get("note") or ""
+            return f"{note} · {rec}" if note else rec
         b = self.battle
         if b is None or self.raid:
             return rec
@@ -613,5 +671,9 @@ class BattlePanel:
             return self._render_ready()
         if self.phase == "result":
             return self._render_scene_frame({"m": "result", "view": "pet"})
+        if self.phase == "duelwait":
+            # both fighters on the mat, nobody swinging yet: the handshake's
+            # own beat.  (The bar is gone -- the grade is already committed.)
+            return self._render_scene_frame({"m": "reveal", "view": "foe"})
         fr = self.timeline[min(self.i, len(self.timeline) - 1)]
         return self._render_scene_frame(fr)

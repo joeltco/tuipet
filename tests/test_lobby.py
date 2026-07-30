@@ -129,21 +129,22 @@ def test_live_reconnect_id_churn_is_not_a_join_wave():
 
 def test_both_bars_are_the_flat_race_hp():
     """0.5 BATTLE (2026-07-17): every bout is an HP race from 5 -- trained
-    HP left with the classic engine.  A proto-3 card + commit begins clean."""
-    import hashlib
+    HP left with the classic engine.  A proto-4 card opens the bar (the commit
+    now follows the LOCK, so the card no longer carries one)."""
     s = LobbyState()
     pan = _panel(s)
     pan.partner = (9, "kai")
     pan.phase, pan.bphase = "battle", "card"
     pan.bt_nonce = 7
-    card = {"num": 4, "name": "X", "stage": "Champion", "proto": 3}
-    pan._battle_begin(card, commit=hashlib.sha256(b"9").hexdigest())
+    card = {"num": 4, "name": "X", "stage": "Champion", "proto": 4}
+    pan._battle_begin(card)
     assert pan.my_max == pan.my_hp == 5
     assert pan.opp_max == pan.opp_hp == 5
+    assert pan.bphase == "lock"
 
 
 def test_the_seeded_race_plays_identically_and_logs_damage():
-    """0.5 BATTLE: both nonces in -> the precomputed race builds and each
+    """0.5 BATTLE: both LOCKS revealed -> the precomputed race builds and each
     round logs plain damage (move names left with the pick-a-move engine)."""
     import hashlib
     from tuipet import lobbyscreen as lmod
@@ -152,10 +153,12 @@ def test_the_seeded_race_plays_identically_and_logs_damage():
     pan.partner = (9, "kai")
     pan.phase, pan.bphase, pan.is_host = "battle", "card", True
     pan.bt_nonce = 7
-    pan.bt_my_card = lmod._clamp_card({"num": 100, "stage": "Champion", "proto": 3})
-    pan._battle_begin({"num": 4, "name": "X", "stage": "Champion", "proto": 3},
-                      commit=hashlib.sha256(b"9").hexdigest())
-    pan.bt_peer_nonce = 9
+    pan.bt_my_card = lmod._clamp_card({"num": 100, "stage": "Champion", "proto": 4})
+    pan._battle_begin({"num": 4, "name": "X", "stage": "Champion", "proto": 4})
+    pan._commit_lock("normal")                      # my bar
+    pan.bt_peer_commit = hashlib.sha256(b"9:mega").hexdigest()
+    pan._maybe_reveal()                             # both bound -> reveal
+    pan.bt_peer_nonce, pan.bt_peer_lock = 9, "mega"
     pan._maybe_build()
     assert pan.battle is not None and pan.bphase == "fight"
     assert "dmg" in pan.bt_log
@@ -408,7 +411,7 @@ def test_the_engine_reads_species_truth_not_wire_claims():
                               "attribute": "FORGED"})
     assert b.foe.attribute == rec["attribute"]     # species truth
     card = battle_mod.battle_card(q)
-    assert card["attribute"] == "Virus" and card["proto"] == 3
+    assert card["attribute"] == "Virus" and card["proto"] == 4
 def test_queued_pms_seed_the_fresh_lobby_pane():
     """PMs queued while in another sub-screen used to be clear()ed on lobby
     entry -- assumed shown by the lobby chat, but the fresh client never saw
@@ -490,7 +493,7 @@ def test_battle_relays_are_phase_gated():
     pan._on_relay({"from_id": 9, "payload": {"kind": "battle", "t": "card",
                                              "card": {"num": 4, "name": "X", "stage": "Champion", "hp": 15}}})
     # a proto-less card is a version mismatch in the 0.5 world: bout voided
-    assert pan.bphase == "over" and "version" in pan.bt_outcome
+    assert pan.bphase == "over" and "older tuipet" in pan.bt_outcome
     pan.my_hp = 3                                       # mid-fight, hurt
     pan._on_relay({"from_id": 9, "payload": {"kind": "battle", "t": "card",
                                              "card": {"num": 4, "name": "X", "stage": "Champion", "hp": 15}}})

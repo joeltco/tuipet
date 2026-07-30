@@ -24,8 +24,7 @@ the WebSocket worker's lifecycle. Colours come from the live theme.
 """
 from __future__ import annotations
 
-import hashlib
-import random
+import random          # (hashlib left with the commit -- lobbybout owns it now)
 
 from rich.text import Text
 
@@ -114,11 +113,23 @@ class LobbyPanel(BoutMixin, ChatMixin):
         self.bt_outcome = ""
         self.bt_reward = None
         self.bt_payload = None        # ("done", X) payload when the bout ends
-        # seeded symmetric PvP (proto 3: the precomputed 0.5 race)
-        self.bt_nonce = None          # my seed nonce (committed in my card msg)
+        # seeded symmetric PvP (proto 4: the precomputed race, with a LIVE lock)
+        self.bt_nonce = None          # my seed nonce (committed, then revealed)
         self.bt_peer_commit = None    # sha256 hex the peer committed to
-        self.bt_peer_nonce = None     # revealed with the peer's first pick
+        self.bt_peer_nonce = None     # revealed after both commits are in
         self.bt_my_card = None        # the exact clamped card I shipped (engine input)
+        # PROTO 4 (2026-07-30): the timing bar came online.  The lock cannot
+        # ride the card any more -- the card crosses before either tamer has
+        # seen the other, and you lock while looking at your rival.  So the
+        # grade joins the SEED in the commit: commit = sha256(nonce:grade),
+        # sent once I have locked, revealed only after the peer's commit is in
+        # hand.  Neither side can pick a lock in answer to the other's, and
+        # neither can grind the seed -- the same guarantee proto 3 had, now
+        # covering the one input that matters.
+        self.bt_my_lock = None        # my graded lock (mega/normal/miss)
+        self.bt_peer_lock = None      # the peer's revealed grade
+        self.bt_my_commit_sent = False
+        self.bt_reveal_sent = False
         if name and pw:
             self._connect(name, pw)
         else:
@@ -210,16 +221,32 @@ class LobbyPanel(BoutMixin, ChatMixin):
         self._mq = getattr(self, "_mq", 0) + 1   # drives long-field marquees
         if getattr(self, "phase", None) == "login" and getattr(self, "entry", None):
             self.entry.anim()                    # the login note's marquee clock
-        # session replays advance first (they render whatever the wire does)
+        # THE DUEL drives itself now (0.5.321): one panel plays the banner, the
+        # foe reveal, the timing bar, every volley and the verdict, exactly as a
+        # local battle does -- so the tick just advances it and stages the next
+        # volley when one runs out.  It used to be dropped at the end of each
+        # volley, which is what made an online bout flicker between an arena and
+        # a text card.  A duel panel is NEVER dropped here; only the bout's own
+        # exits clear it.
         if self.bshow is not None:
             b = self.bshow
-            if b.i < len(b.timeline) - 1:
-                b.anim()                        # advances + emits the volley sfx
-                if getattr(b, "sfx", None):
-                    self.sfx = b.sfx
-                    b.sfx = None
-            else:
-                self.bshow = None               # volley done -> choose/over shows
+            # was the volley already on its last frame BEFORE this tick?  The
+            # local panel stages its next round one tick after the timeline
+            # ends, so the killing blow gets a frame of its own; staging on the
+            # same tick would swallow it.
+            spent = b.i >= len(b.timeline) - 1
+            b.anim()                            # advances + emits the volley sfx
+            if getattr(b, "sfx", None):
+                self.sfx = b.sfx
+                b.sfx = None
+            if getattr(b, "duel", False):
+                # the bar locked itself (a tamer who walked away): bind it
+                if b.locked and not self.bt_my_commit_sent:
+                    self._commit_lock(b.locked)
+                if spent and self.bphase == "fight" and b.phase == "anim":
+                    self._play_next_round()
+            elif spent:
+                self.bshow = None               # jogress/other shims: unchanged
         if self.jshow is not None and self.jphase == "result":
             self.jshow.anim()                   # converge -> flash -> fused bounce
         if self.pshow is not None:
@@ -430,15 +457,13 @@ class LobbyPanel(BoutMixin, ChatMixin):
             # the engine input must be the card AS THE PEER WILL SEE IT, so
             # clamp my own card exactly like _battle_begin clamps theirs
             self.bt_my_card = _clamp_card(card)
-            # commit-reveal seed handshake: the nonce is COMMITTED before either
-            # side has seen the other's (cards cross in flight), and revealed
-            # with the first pick -- so neither client can grind the shared
-            # seed for a favourable initiative coin flip.  Spiritually canon:
-            # BattleProtocol exchanged a SHA-256 checksum at setup too.
             self.bt_nonce = random.getrandbits(64)
-            commit = hashlib.sha256(str(self.bt_nonce).encode()).hexdigest()
+            # the CARD crosses first and carries no lock (proto 4): both tamers
+            # need to see who they are facing before they touch the bar.  My
+            # commit follows the moment I lock.  Spiritually canon either way:
+            # BattleProtocol exchanged a SHA-256 checksum at setup too.
             self.client.relay(pid, {"kind": "battle", "t": "card",
-                                    "card": card, "commit": commit})
+                                    "card": card})
             self.status = f"Battle vs {pname}…"
     def _return_to_lobby(self, status=""):
         """End the current session and drop back into the chat lobby (not out of it).
@@ -455,6 +480,10 @@ class LobbyPanel(BoutMixin, ChatMixin):
         self.bt_reward = self.bt_payload = None
         self.bt_nonce = self.bt_peer_commit = self.bt_peer_nonce = None
         self.bt_my_card = None
+        # the proto-4 lock handshake: a stale commit/reveal flag would make the
+        # NEXT duel skip its bar or refuse to reveal
+        self.bt_my_lock = self.bt_peer_lock = None
+        self.bt_my_commit_sent = self.bt_reveal_sent = False
         self.is_host = False
         self.phase = "lobby"
         self.status = status or "Back in the lobby."
@@ -524,12 +553,17 @@ class LobbyPanel(BoutMixin, ChatMixin):
             # re-ran _battle_begin and RESET both HP bars; a stray 'result'
             # outside the guest's wait re-applied a stale round
             if bt == "card" and self.bphase == "card":
-                self._battle_begin(payload.get("card") or {}, payload.get("commit"))
-            elif bt == "pick" and self.bphase in ("card", "wait", "fight"):
-                # proto 3 (0.5 BATTLE 2026-07-17): no picks in this world --
-                # the "pick" message carries only the revealed seed nonce
+                self._battle_begin(payload.get("card") or {})
+            elif bt == "commit" and self.bphase in ("card", "lock", "commit"):
+                # the peer has locked and is bound to it; if I am bound too,
+                # our reveals can cross safely
+                if self.bt_peer_commit is None:
+                    self.bt_peer_commit = payload.get("commit")
+                    self._maybe_reveal()
+            elif bt == "reveal" and self.bphase in ("lock", "commit", "fight"):
                 if self.bt_peer_nonce is None:
                     self.bt_peer_nonce = payload.get("nonce")
+                    self.bt_peer_lock = payload.get("hit_type")
                     self._maybe_build()
 
     # ---- battle ----------------------------------------------------------
@@ -809,7 +843,10 @@ class LobbyPanel(BoutMixin, ChatMixin):
         overhaul 2026-07-10): session scenes keep their prompts, every other
         phase pops the hints for exactly what the keys do right now."""
         if self.bshow is not None:
-            return "[dim]SPACE skip[/]"
+            # the duel's panel speaks for itself (lock / hurry / done); the
+            # jogress shim keeps the old one-word hint
+            return (self.bshow.strip() if getattr(self.bshow, "duel", False)
+                    else "[dim]SPACE skip[/]")
         if self.jshow is not None and self.jphase == "result":
             name = (self.jresult or {}).get("name", "?")
             if self.jshow.phase == "fused":

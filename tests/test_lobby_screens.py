@@ -118,6 +118,9 @@ def test_chat_empty_state_and_caret_blink():
 
 
 def test_pvp_round_replays_the_real_volley():
+    """0.5.321: the volley stages on the duel's ONE panel (it used to build a
+    throwaway per round), and every frame still fits the LCD."""
+    from tuipet import battlescreen as bs
     pan = _lobby()
     pan.partner = (2, "Ryo")
     pan.phase, pan.bphase, pan.is_host = "battle", "fight", True
@@ -125,15 +128,18 @@ def test_pvp_round_replays_the_real_volley():
                                             "num": 400})
     pan.my_hp = pan.my_max = 5
     pan.opp_hp = pan.opp_max = 5
+    pan.bshow = bs.BattlePanel(pan.pet, enemy=dict(pan.opp_card), duel=True)
     pan._stage_volley(5, 5, 2, 1)
     assert pan.bshow is not None                  # the volley stages
     markers = {e["m"] for e in pan.bshow.timeline}
     assert {"faceoff", "windup", "fire_out", "fire_in", "hit"} <= markers
+    panel = pan.bshow
     for _ in range(len(pan.bshow.timeline) + 5):  # plays through, all in budget
         if pan.bshow is None:
             break
         _fits(pan, "volley frame")
         pan.anim()
+    assert pan.bshow is panel, "the duel must keep its panel between volleys"
     _fits(pan, "post-volley")
 
 
@@ -289,13 +295,14 @@ def test_malformed_relay_payloads_never_crash_the_battle():
     import hashlib as _h
     pan.bt_my_card = lobbyscreen._clamp_card({"num": 4})
     pan.bt_nonce = 7
-    commit = _h.sha256(str(11).encode()).hexdigest()
-    pan._battle_begin({"num": 5, "hp": "lol", "proto": 3}, commit=commit)
-    assert pan.bphase == "wait", "a sanitized card still arms the bout"
+    pan._battle_begin({"num": 5, "hp": "lol", "proto": 4})
+    assert pan.bphase == "lock", "a sanitized card still arms the bout"
     assert pan.opp_card["strength"] == 4 and pan.opp_card["hp"] == 5
-    pan._on_relay = pan._on_relay                 # (unchanged surface)
     pan.partner = (2, "Ryo")
-    pan.bt_peer_nonce = 11
+    pan._commit_lock("normal")
+    pan.bt_peer_commit = _h.sha256(b"11:normal").hexdigest()
+    pan._maybe_reveal()
+    pan.bt_peer_nonce, pan.bt_peer_lock = 11, "normal"
     pan._maybe_build()                            # engine builds without KeyError
     assert pan.battle is not None
 

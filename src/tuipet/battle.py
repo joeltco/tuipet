@@ -18,7 +18,16 @@ from . import data
 
 HP = 5
 ROUNDS_LOCAL = 20
-ROUNDS_ONLINE = 5
+# ⭐ ONLINE == LOCAL (2026-07-30, Joel: "why is it built like this??? its
+# nothing like battles whatsoever").  The 5 was a wire cost from v0.4.0, when
+# every round was a real per-round "pick" exchanged over the relay; proto 3
+# precomputed the whole fight from a shared seed in 0.5.x and the cap simply
+# outlived its reason.  What it cost: MEASURED over 4000 even-Mega duels, a
+# 5-round cap ended 23% of bouts on a higher-HP DECISION and 9% in a DRAW,
+# while a local bout at 20 rounds knocked somebody out 100% of the time.  And
+# it buys nothing back -- the average duel plays 5.0 volleys either way (the
+# cap is a safety net, not a length; the longest fight seen was 14).
+ROUNDS_ONLINE = ROUNDS_LOCAL
 ROUNDS_RAID = 10
 RAID_PLAYER_HP = 10
 
@@ -423,7 +432,8 @@ def battle_card(pet):
             "trainings_cur": s.trainings_cur,
             "trainings_total": s.trainings_total,
             "battles": s.battles, "wins": s.wins, "hit_type": s.hit_type,
-            "proto": 3, "hp": HP}
+            # proto 4: the LIVE lock rides the commit, not this card
+            "proto": 4, "hp": HP}
 
 
 # plausible_card is gone (audit 2026-07-15): it was never called, and the

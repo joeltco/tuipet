@@ -1,4 +1,4 @@
-"""The lobby's SESSION engine — the proto-3 PvP bout and the jogress
+"""The lobby's SESSION engine — the proto-4 PvP duel and the jogress
 commit, as a mixin over LobbyPanel's state (modularize 2026-07-17).
 lobbyscreen owns the room (connection, roster, keys); THIS module owns
 what happens once two tamers face each other: the commit-reveal card
@@ -90,51 +90,102 @@ def _clamp_card(card):
 
 
 class BoutMixin:
-    def _battle_begin(self, opp_card, commit=None):
-        """Cards crossed: clamp the untrusted card, verify the proto, and
-        reveal my nonce.  The fight itself is SEEDED SYMMETRIC: both clients
-        run the identical precomputed engine on identically-clamped cards, so
-        no result ever crosses the wire."""
+    def _void_bout(self, why):
+        """Kill a bout that cannot be trusted, and tell the peer."""
+        self.bt_outcome = f"Battle void — {why}."
+        self.bt_payload = ("battle_msg", f"Battle void — {why}.")
+        self.bphase = "over"
+        self.bshow = None
+        if self.partner:
+            self.client.relay(self.partner[0], {"kind": "battle", "abort": True})
+
+    def _battle_begin(self, opp_card):
+        """Cards crossed: clamp the untrusted card, verify the proto, and walk
+        BOTH fighters into the arena so the tamer can see who they are facing
+        while they work the timing bar.  The fight itself is SEEDED SYMMETRIC:
+        both clients run the identical precomputed engine on identically
+        clamped cards, so no result ever crosses the wire."""
         opp_card = _clamp_card(opp_card)
         self.opp_card = opp_card
         try:
-            proto_ok = int(opp_card.get("proto") or 0) >= 3 and bool(commit)
+            proto_ok = int(opp_card.get("proto") or 0) >= 4
         except (TypeError, ValueError):
             proto_ok = False
         if not proto_ok:
-            self.bt_outcome = "Battle void — version mismatch."
-            self.bt_payload = ("battle_msg", "Battle void — the other side "
-                              "runs an older tuipet.")
-            self.bphase = "over"
-            if self.partner:
-                self.client.relay(self.partner[0], {"kind": "battle", "abort": True})
+            # proto 4 moved the lock into the commit; a proto-3 peer would
+            # fight a different fight from ours, and a seeded duel is only
+            # honest when both engines are the same engine.
+            self._void_bout("the other side runs an older tuipet")
             return
-        self.bt_peer_commit = commit
         self.my_max = self.my_hp = 5
         self.opp_max = self.opp_hp = 5
-        self.bphase = "wait"
-        # the nonce reveal is its own message now (no picks in this world)
-        self.client.relay(self.partner[0],
-                          {"kind": "battle", "t": "pick", "nonce": self.bt_nonce})
-        self._maybe_build()
-    def _maybe_build(self):
-        """Both nonces in -> verify the commit, seed the shared engine, and
-        precompute the whole 5-round fight (both sides independently)."""
-        if self.battle is not None or self.bt_peer_nonce is None \
-                or self.opp_card is None:
+        self.bphase = "lock"
+        # ONE panel for the whole duel (2026-07-30): banner, foe reveal, the
+        # timing bar, every volley and the verdict all play on it, so the arena
+        # never blinks back to a text card mid-fight.  The peer's real card
+        # rides in as `side` -- _render_ready's readiness line must read the
+        # creature actually about to swing, not a fresh species copy.
+        try:
+            enemy = dict(opp_card)
+            enemy["side"] = battle.Side.of_card(dict(opp_card))
+            self.bshow = battlescreen.BattlePanel(self.pet, enemy=enemy,
+                                                  duel=True)
+        except Exception:
+            self.bshow = None                # presentation must never void a bout
+            self._commit_lock(getattr(self.pet, "saved_hit_type", "normal"))
+
+    def _commit_lock(self, grade):
+        """My bar is locked: bind the grade to the seed and ship the commit."""
+        if self.bt_my_commit_sent:
             return
-        pn = self.bt_peer_nonce
-        if hashlib.sha256(str(pn).encode()).hexdigest() != (self.bt_peer_commit or ""):
-            self.bt_outcome = "Battle void — bad checksum."
-            self.bt_payload = ("battle_msg", "Battle void — bad checksum.")
-            self.bphase = "over"
-            if self.partner:
-                self.client.relay(self.partner[0], {"kind": "battle", "abort": True})
+        self.bt_my_lock = grade if grade in ("mega", "normal", "miss") else "normal"
+        self.bt_my_commit_sent = True
+        if self.bphase == "lock":
+            self.bphase = "commit"
+        commit = hashlib.sha256(
+            f"{self.bt_nonce}:{self.bt_my_lock}".encode()).hexdigest()
+        if self.partner:
+            self.client.relay(self.partner[0], {"kind": "battle",
+                                                "t": "commit",
+                                                "commit": commit})
+        self._maybe_reveal()
+
+    def _maybe_reveal(self):
+        """Both sides bound -> reveal.  Order matters: revealing before the
+        peer's commit is in hand would let a tampered client read my grade and
+        choose its own to beat it."""
+        if self.bt_reveal_sent or not self.bt_my_commit_sent \
+                or self.bt_peer_commit is None:
+            return
+        self.bt_reveal_sent = True
+        if self.partner:
+            self.client.relay(self.partner[0],
+                              {"kind": "battle", "t": "reveal",
+                               "nonce": self.bt_nonce,
+                               "hit_type": self.bt_my_lock})
+        self._maybe_build()
+
+    def _maybe_build(self):
+        """Both reveals in -> verify the commit, seed the shared engine, and
+        precompute the whole fight (both sides independently)."""
+        if self.battle is not None or self.bt_peer_nonce is None \
+                or self.opp_card is None or not self.bt_reveal_sent:
+            return
+        pn, pl = self.bt_peer_nonce, self.bt_peer_lock
+        if hashlib.sha256(f"{pn}:{pl}".encode()).hexdigest() != (self.bt_peer_commit or ""):
+            self._void_bout("bad checksum")
+            return
+        if pl not in ("mega", "normal", "miss"):
+            self._void_bout("bad lock")
             return
         hn, gn = (self.bt_nonce, pn) if self.is_host else (pn, self.bt_nonce)
         seed = int.from_bytes(hashlib.sha256(f"{hn}:{gn}".encode()).digest()[:8], "big")
-        host_card, guest_card = ((self.bt_my_card, self.opp_card) if self.is_host
-                                 else (self.opp_card, self.bt_my_card))
+        # the LIVE locks, not the forms saved on the cards: each side fights
+        # with the grade it just earned at the bar
+        mine = dict(self.bt_my_card, hit_type=self.bt_my_lock)
+        theirs = dict(self.opp_card, hit_type=pl)
+        host_card, guest_card = ((mine, theirs) if self.is_host
+                                 else (theirs, mine))
         rng = random.Random(seed).random
         host = battle.Side.of_card(dict(host_card))
         guest = battle.Side.of_card(dict(guest_card))
@@ -204,26 +255,52 @@ class BoutMixin:
         from .pet import weekend_bonus
         self.bt_reward = f"+{purse}b" + ("  (weekend bonus!)" if weekend_bonus() > 1 else "") + _evo_note(self.pet)
         self.bt_payload = ("battle_msg", self.bt_outcome)
-    def _stage_volley(self, my0, opp0, dealt, taken):
-        """A presentation-only BattlePanel replays the round: my pet RIGHT,
-        the opponent's LEFT, orbs/hit/dodge from the engine's numbers."""
+        # the duel's own result screen (0.5.321): the panel that fought the
+        # bout announces it, like every local battle does -- the outcome used
+        # to be two lines of lobby text with no arena behind them.
+        note = ("a draw — counts as a loss" if draw
+                else f"won {'by a whisker' if my_hp <= 1 else f'{my_hp} HP to spare'}"
+                if won else battle.coach_line(
+                    battle.Side.of_card(dict(self.bt_my_card or {})),
+                    battle.Side.of_card(dict(self.opp_card or {}))))
+        self._show_verdict(won and not draw, draw, note or "")
+
+    def _show_verdict(self, won, draw, note):
+        """Close the duel ON ITS PANEL.  EVERY ending must come through here:
+        while the panel lives it IS the screen (_text_battle delegates to it),
+        so an ending that only wrote lobby text would leave the player watching
+        a volley loop forever -- which is exactly what an opponent's flight did
+        the first time this panel was made to persist."""
+        if self.bshow is None:
+            return
         try:
-            card = dict(self.opp_card or {})
-            if not card.get("num"):
+            self.bshow.duel_verdict(won, draw, note)
+        except Exception:
+            self.bshow = None            # fall back to the lobby's text card
+    def _stage_volley(self, my0, opp0, dealt, taken):
+        """Stage the round on the duel's ONE panel: my pet RIGHT, the
+        opponent's LEFT, orbs/hit/dodge from the engine's numbers.  (Until
+        0.5.321 this built a THROWAWAY panel per volley and dropped it after,
+        which is why an online bout flickered between an arena and a text
+        card instead of playing like a battle.)"""
+        try:
+            if self.bshow is None:
                 return
-            show = battlescreen.BattlePanel(self.pet, enemy=card)
-            show.foe_attr = card.get("attribute", "Free")
-            show.timeline = battlescreen.round_timeline(my0, opp0, dealt, taken, True)
-            show.i = 0
-            show.phase = "anim"
-            show._last_m = None
-            self.bshow = show
+            self.bshow.duel_volley(my0, opp0, dealt, taken)
         except Exception:
             self.bshow = None               # presentation must never break the bout
     def _key_battle(self, k):
-        if self.bshow is not None:              # the round is replaying
-            if k in ("space", "enter", "escape"):
-                self.bshow = None               # skip to the between-rounds card
+        """The duel's keys read like a battle's now: SPACE locks the bar, then
+        HURRIES each volley, then closes the result.  ESC is always the way
+        out (a free back-out before the fight is seeded, a forfeit after)."""
+        show = self.bshow
+        if show is not None and self.bphase == "lock":
+            if k in ("space", "enter"):
+                show.key(k)                      # the panel grades its own bar
+                if show.locked and not self.bt_my_commit_sent:
+                    self._commit_lock(show.locked)
+            elif k == "escape":
+                self._forfeit()                  # pre-seed: a free back-out
             return None
         if self.bphase == "over":
             if k in ("enter", "space", "escape"):
@@ -231,11 +308,14 @@ class BoutMixin:
             return None
         if self.bphase == "fight":
             if k in ("space", "enter"):
-                self._play_next_round()
+                if show is not None and show.i < len(show.timeline) - 1:
+                    show.i = len(show.timeline) - 1   # hurry THIS volley
+                else:
+                    self._play_next_round()
             elif k == "escape":
                 self._forfeit()
             return None
-        if self.bphase in ("card", "wait") and k == "escape":
+        if self.bphase in ("card", "commit") and k == "escape":
             self._forfeit()
         return None
     def _forfeit(self):
@@ -276,6 +356,7 @@ class BoutMixin:
                                          if weekend_bonus() > 1 else "") + _evo_note(self.pet)
         self.bt_payload = ("battle_msg", self.bt_outcome)
         self.bphase = "over"
+        self._show_verdict(True, False, "your rival walked out")
 
     # ---- input -----------------------------------------------------------
     def _commit_fusion(self):
@@ -359,7 +440,7 @@ class BoutMixin:
             t.append("  [Esc] cancel", style=DIM)
         return t
     def _text_battle(self):
-        if self.bshow is not None:              # the round's volley replay
+        if self.bshow is not None:              # the duel plays on its panel
             return self.bshow.text()
         t = Text()
         pname = self.partner[1] if self.partner else "?"

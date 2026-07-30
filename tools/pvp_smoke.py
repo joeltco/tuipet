@@ -13,8 +13,10 @@ this path end-to-end: the v0.5.0→v0.5.34 era shipped a payout crash
 What it does, all through the real code paths (nothing mocked):
   * two throwaway accounts join the lobby (real LobbyPanel + LobbyClient)
   * A opens B's action menu and presses B(attle); B accepts with 'y'
-  * both SPACE through the proto-3 bout (commit-reveal cards, seeded
-    volleys) until it resolves
+  * both SPACE through the proto-4 duel: the cards cross, each bot's
+    timing bar LOCKS on a space press, the two commits and reveals bind
+    the grades to the seed, and the seeded volleys play on one panel
+    until it resolves
   * asserts: both land back in the lobby, both record the bout, exactly
     one winner, and the purse actually pays
 

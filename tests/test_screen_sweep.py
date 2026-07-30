@@ -489,6 +489,10 @@ def test_online_payout_survives_the_bout():
     pan.battle = {"host_hp": 3, "guest_hp": 0}
     pan.opp_card = {"name": "peer", "num": 104}
     pan.client = type("C", (), {"ladder_report": None})()
+    # a __new__ rig supplies every field by hand: the duel's verdict now closes
+    # on its panel (0.5.321), and the coach line reads my own card
+    pan.bshow = None
+    pan.bt_my_card = {"num": 104, "stage": "Champion"}
     bits0 = p.bits
     pan._battle_over()                          # must not raise
     assert pan.bphase == "over" and "WIN" in pan.bt_outcome
