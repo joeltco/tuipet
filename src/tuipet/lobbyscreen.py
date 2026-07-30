@@ -68,6 +68,26 @@ from .lobbychat import (ChatMixin, HINTS_FOLDED, HINTS_OPEN,  # noqa: F401
 
 
 class LobbyPanel(BoutMixin, ChatMixin):
+    @property
+    def sub(self):
+        """THE DEEPEST PANEL OWNS THE CARD AND THE STRIP.
+
+        statusbox.painter_for and app._paint_strip both walk `.sub` down to the
+        innermost panel, which is how the road's wilds, the town cup and the
+        raid volley all wear the same battle card.  That dispatcher exists
+        because of Joel, 2026-07-22: "why are adventure battles and cup battles
+        different?? the status box in cup shows so much more".
+
+        The duel shipped in 0.5.321 holding its BattlePanel in `bshow` instead
+        -- so the walk stopped at the lobby and an online fight wore the LOBBY's
+        card: no HP bars, no foe name, and worst of all no LOCKED GRADE, the one
+        line that tells you the bar even happened.  Same bug, second time
+        (0.5.323).  A duel is a battle; it hands its card over like every other
+        battle does.
+        """
+        show = getattr(self, "bshow", None)
+        return show if getattr(show, "duel", False) else None
+
     def __init__(self, pet, on_connect, name=None, pw=""):
         self.pet = pet
         self.on_connect = on_connect

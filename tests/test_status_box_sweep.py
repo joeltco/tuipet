@@ -93,7 +93,8 @@ def test_lobby_card_connecting():
     from tuipet.lobbyscreen import LobbyPanel
     app = _app()
     pan = LobbyPanel.__new__(LobbyPanel)
-    pan.pet, pan.state, pan._last_name, pan.sub = app.pet, None, "joel", None
+    pan.pet, pan.state, pan._last_name = app.pet, None, "joel"
+    pan.bshow = None      # `sub` is DERIVED from bshow (see LobbyPanel.sub)
     txt = _card(app, pan)
     assert "Lobby" in txt and "connecting" in txt
 

@@ -391,3 +391,68 @@ def test_the_rounds_still_advance_with_no_arena_at_all():
             break
     assert host.bphase == "over", "a panel-less duel never finishes"
     assert host.bt_outcome
+
+
+# ---- the card (0.5.323, Joel: "wheres the status card informatio like the
+#      other battles??? ... ITS SOMETHING I ALREADY HAD YOU FUCKING FIX") -----
+
+def test_a_duel_wears_the_battle_card_like_every_other_fight():
+    """statusbox.painter_for walks `.sub` to the deepest panel so one battle
+    painter serves every fight wherever it runs (the cup/adventure ruling,
+    2026-07-22).  The duel held its panel in `bshow`, so the walk stopped at
+    the lobby and an online bout wore the LOBBY's card."""
+    from tuipet import statusbox
+    host, guest = _duo()
+    assert host.sub is host.bshow, "the duel does not hand its card down"
+    painter = statusbox.painter_for(host)
+    assert painter is not None
+    # a resolved SUB painter is the dispatcher's wrapper lambda; the lobby's
+    # own painter is statusbox.lobby itself.  Identity, not names.
+    assert painter is not statusbox.lobby, "a duel is still wearing the lobby card"
+
+
+def test_the_card_follows_the_duel_and_gives_it_back():
+    """Only a DUEL panel takes the card: the jogress shim and the plain lobby
+    keep their own, and the card comes home when the bout ends."""
+    from tuipet import statusbox
+    host, guest = _duo()
+    assert statusbox.painter_for(host) is not statusbox.lobby
+    _lock(host, "mega")
+    _lock(guest, "normal")
+    for _ in range(TICK_BUDGET):
+        host.anim()
+        if host.bphase == "over":
+            break
+    assert statusbox.painter_for(host) is not statusbox.lobby  # through the result
+    host._key_battle("enter")                                   # back to the lobby
+    assert host.sub is None
+    assert statusbox.painter_for(host) is statusbox.lobby
+
+
+def test_the_card_paints_a_duel_without_a_local_battle_object():
+    """The painter reads m.battle, which is None for the whole duel (the fight
+    lives in the seeded engine, not a local Battle).  It must still draw HP,
+    the foe, and the locked grade."""
+    from tuipet import statusbox
+    host, guest = _duo()
+    _lock(host, "mega")
+    assert host.bshow.battle is None
+    assert host.bshow.locked == "mega"
+
+    painted = {}
+
+    class _Stats:
+        border_subtitle = ""
+
+        def update(self, text):
+            painted["body"] = text
+
+    class _App:
+        pet = host.pet
+        mode = host.bshow
+        stats_w = _Stats()
+
+    statusbox.battle(_App())
+    body = painted.get("body", "")
+    assert "You" in body and "Foe" in body, body
+    assert "mega" in body.lower(), f"the locked grade is missing:\n{body}"

@@ -238,7 +238,10 @@ def _lobby():
     from tuipet.lobbyscreen import LobbyPanel
     p = _worst_pet()
     pan = LobbyPanel.__new__(LobbyPanel)
-    pan.pet, pan.state, pan._last_name, pan.sub = p, None, "joel", None
+    pan.pet, pan.state, pan._last_name = p, None, "joel"
+    pan.bshow = None      # `sub` is DERIVED from bshow (the duel hands the
+    #                       card down) -- a rig supplies the source, not the
+    #                       property
     return pan, p
 
 

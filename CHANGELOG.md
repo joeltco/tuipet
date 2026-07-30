@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.323 — ONLINE DUELS WEAR THE BATTLE CARD AGAIN (2026-07-30)
+
+ONLINE DUELS WEAR THE BATTLE CARD AGAIN: an online fight was showing the lobby's card instead of the battle's — no HP bars, no rival name, and no sight of the grade you just locked. It hands its card over like every other fight now. The pause after the meter also stops replaying your rival's entrance: it holds on the face-off, the same frame the first volley opens on.
+
 ## 0.5.322 — NO MORE WAITING ON A GHOST (2026-07-30)
 
 NO MORE WAITING ON A GHOST: a rival who worked the timing bar and then walked away used to leave you sitting in the arena forever with nothing but ESC. A duel now waits a patient forty-five seconds for their answer — long enough that a slow rival is never cut off — and then calls the bout off with no loss for anyone. The volleys also keep playing if the arena itself ever fails to draw.

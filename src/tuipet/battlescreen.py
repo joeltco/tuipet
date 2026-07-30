@@ -672,8 +672,17 @@ class BattlePanel:
         if self.phase == "result":
             return self._render_scene_frame({"m": "result", "view": "pet"})
         if self.phase == "duelwait":
-            # both fighters on the mat, nobody swinging yet: the handshake's
-            # own beat.  (The bar is gone -- the grade is already committed.)
-            return self._render_scene_frame({"m": "reveal", "view": "foe"})
+            # THE HOLD between a locked bar and the first volley.  It must be a
+            # frame the battle vocabulary ALREADY has, and it must be the frame
+            # the first volley opens on, or the fight starts with a jump.
+            # `faceoff` is both: two mons squared up, HP shown, nobody swinging.
+            # ⛔It was `reveal` in 0.5.321-322 -- re-playing the foe ENTRANCE
+            # after the meter, a beat that happens nowhere else in the game
+            # (Joel, 0.5.323: "THE ENEMY MON ISNT SUPPOSED TO FLASH RIGHT AFTER
+            # THE METER, WHERE ELSE DO YOU SEE THAT").  Invented beats do not
+            # ship; the arena has one language.
+            return self._render_scene_frame(
+                {"m": "faceoff", "view": "pet",
+                 "ph": self.hud_php, "fh": self.hud_fhp})
         fr = self.timeline[min(self.i, len(self.timeline) - 1)]
         return self._render_scene_frame(fr)

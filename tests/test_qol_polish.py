@@ -444,7 +444,8 @@ def test_first_connect_failure_is_not_a_lost_connection():
 def test_a_stalled_ladder_fetch_says_so_and_tab_retries():
     from tuipet import lobbyscreen
     pan = lobbyscreen.LobbyPanel.__new__(lobbyscreen.LobbyPanel)
-    pan.pet, pan.phase, pan.sub = _pet(), "ladder", None
+    pan.pet, pan.phase = _pet(), "ladder"
+    pan.bshow = None      # `sub` is DERIVED from bshow (see LobbyPanel.sub)
     asked = {"n": 0}
     pan.client = type("C", (), {"ladder": None,
                                 "ladder_get": lambda self: asked.__setitem__(
