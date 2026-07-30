@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.324 — THE FUSION TAKES ITS TIME NOW (2026-07-30)
+
+THE FUSION TAKES ITS TIME NOW: the jogress cinematic was running a second short — both partners now hold their marks and flip through the full pre-fusion beat exactly as the original device does, before they merge. And the wait between your yes and your partner's is no longer dead air: the CONNECT card flashes on screen while the two of you shake hands, straight off the real hardware.
+
 ## 0.5.323 — ONLINE DUELS WEAR THE BATTLE CARD AGAIN (2026-07-30)
 
 ONLINE DUELS WEAR THE BATTLE CARD AGAIN: an online fight was showing the lobby's card instead of the battle's — no HP bars, no rival name, and no sight of the grade you just locked. It hands its card over like every other fight now. The pause after the meter also stops replaying your rival's entrance: it holds on the face-off, the same frame the first volley opens on.

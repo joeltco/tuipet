@@ -160,7 +160,10 @@ def test_lobby_fusion_plays_the_real_scene():
     finally:
         jmod.can_jogress, jmod.resolve = real_can, real_resolve
     assert pan.jphase == "result" and pan.jshow is not None
-    for _ in range(30):                           # converge -> flash -> fused bounce
+    # canon's own length (jogressscreen.FUSE_STEPS == interval*32 == 3.2s) --
+    # never a magic number, or retiming the cinematic silently breaks this
+    from tuipet import jogressscreen as _js
+    for _ in range(_js.FUSE_STEPS + 4):           # converge -> flash -> fused bounce
         _fits(pan, "fusion frame")
         pan.anim()
     assert pan.jshow.phase == "fused"

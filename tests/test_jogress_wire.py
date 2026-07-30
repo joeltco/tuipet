@@ -191,3 +191,73 @@ def test_the_fusion_spends_the_meter_and_the_energy():
     assert a.pet.energy < e0
     import math
     assert a.pet.energy == max(0, e0 + math.ceil(-0.66 * max_e))
+
+
+# ---- the cinematic, timed against canon (0.5.324) --------------------------
+#
+# Joel: "i thought the actual fusion part of the animation was supposed to be
+# longer or something. if this is how dsprite and dvpet does it, whatever" --
+# it was NOT how DVPet does it.  SpriteAnim.startJogressAnim runs to
+# `_interval * 32` and `_interval = targetFPS / 10`, so one interval is one
+# 0.1s tick: canon is a 3.2-second beat with pose flips on the eights.
+# We shipped 22 ticks and a single 0.6s flip.
+
+def test_the_converge_runs_for_canons_full_beat():
+    from tuipet import jogressscreen as js
+    assert js.FUSE_STEPS == 32, "canon's startJogressAnim ends at interval*32"
+    assert js.FUSE_STEPS / 10 == 3.2
+
+
+def test_the_parents_flip_pose_on_the_eights():
+    """canon sets pose 1 at frame 0, 5 at 8, 1 at 16, 5 at 24."""
+    from tuipet import jogressscreen as js
+    assert js.POSE_BEAT == 8
+    poses = [1 if (i // js.POSE_BEAT) % 2 == 0 else 5 for i in range(js.POSE_T)]
+    runs = []
+    for p in poses:
+        if not runs or runs[-1][0] != p:
+            runs.append([p, 0])
+        runs[-1][1] += 1
+    assert [r[0] for r in runs] == [1, 5, 1], runs
+    assert all(r[1] == 8 for r in runs), runs
+
+
+def test_the_connect_card_is_a_real_rip_that_marches():
+    """canon jogressFlash alternates jogressConnectStart <-> ...Flash every
+    `_interval * 2`.  The art is EXTRACTED (tools/extract_jogress_overlay.py),
+    never drawn -- if the atlas is missing the fusion must still run."""
+    from tuipet import jogressscreen as js
+    assert js.FLASH_BEAT == 2
+    assert len(js.CONNECT_FRAMES) == 2, "the connect card needs both frames"
+    a, b = js.CONNECT_FRAMES
+    assert len(a) == len(b) and len(a[0]) == len(b[0]), "frames must share a box"
+    assert a != b, "the stripes do not march"
+    assert set("".join(a)) <= {"0", "1"}
+
+
+def test_the_wait_after_your_yes_plays_the_connect_card():
+    a, b = _panels(297, "ver1", 398, "ver2")
+    _yes(a)                                     # my yes is in, theirs is not
+    assert a.j_confirmed and not a.j_partner_confirmed
+    assert a.jshow is not None and a.jshow.phase == "waiting"
+    first = a.jshow.text()
+    for _ in range(3):                          # the card animates while waiting
+        a.jshow.anim()
+    assert a.jshow.text() is not None
+    assert first is not None
+    _yes(b)                                     # they answer -> the fusion lands
+    assert a.pet.num == 399 and b.pet.num == 399
+
+
+def test_a_missing_connect_atlas_never_blocks_a_fusion():
+    from tuipet import jogressscreen as js
+    saved = js.CONNECT_FRAMES
+    try:
+        js.CONNECT_FRAMES = []
+        a, b = _panels(297, "ver1", 398, "ver2")
+        _yes(a)
+        assert a.jshow.text() is not None       # a bare scene, not a crash
+        _yes(b)
+        assert a.pet.num == 399
+    finally:
+        js.CONNECT_FRAMES = saved

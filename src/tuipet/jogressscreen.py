@@ -8,9 +8,23 @@ the lobby); the dead pick/no-partner phases were stripped in the follow-up
 polish arc.  The lobby constructs this panel directly at the result phase and
 drives anim()/text(); any key skips the converge to the reveal."""
 from __future__ import annotations
+import json
+import os
 from . import data
 from .render import render_scene
 from . import grid
+
+# canon jogressFlash's CONNECT card (real rip; tools/extract_jogress_overlay.py).
+# Two frames whose barber-pole stripes march, alternating every FLASH_BEAT ticks
+# while two devices handshake -- the beat that used to be dead air between your
+# yes and your partner's.  Optional: a damaged/partial install loses the card,
+# never the fusion.
+try:
+    with open(os.path.join(os.path.dirname(__file__), "data",
+                           "jogress_overlays.json"), encoding="utf-8") as _f:
+        CONNECT_FRAMES = json.load(_f)["jogress_connect"]
+except (OSError, ValueError, KeyError):
+    CONNECT_FRAMES = []
 
 from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SEL, SIL_SCENE  # noqa: F401  (palette names bound for theme.apply propagation)
 from . import menu
@@ -19,8 +33,21 @@ from . import menu
 # on a flat pale LCD while the rest of the game stages its creatures)
 COLS = 40
 FUSE_ROWS = 12     # (the shadowed ROWS twin left -- round 33)
-POSE_T = 6                     # canon pre-fusion beat: both parents flip 1<->5 together
-FUSE_STEPS = 16 + POSE_T
+# ⭐ CANON TIMING (0.5.324, Joel: "i thought the actual fusion part of the
+# animation was supposed to be longer" -> "do both, match canon").  Verified
+# against SpriteAnim.startJogressAnim, whose `_interval` is targetFPS/10 -- one
+# interval IS one 0.1s tick, the same clock tuipet runs on.  Canon holds both
+# parents on their marks flipping pose 1<->5 on the EIGHTS (frames 0, 8, 16,
+# 24) and lands the fusion at 32: a 3.2-second beat.  We shipped 22 ticks with
+# a single 0.6s flip -- a second short, and it read as rushed.
+# The last 8 ticks are ours: canon simply hides the partner, while this
+# renderer slides the parents together and flashes as they merge.  Canon's
+# LENGTH and CADENCE, tuipet's merge.
+POSE_T = 24                    # three canon beats (1 -> 5 -> 1) on the eights
+POSE_BEAT = 8                  # ticks per pose flip (canon's `_interval * 8`)
+MERGE_T = 8                    # the slide + DNA flash
+FUSE_STEPS = POSE_T + MERGE_T  # 32 ticks == canon's 3.2s
+FLASH_BEAT = 2                 # jogressFlash alternates every `_interval * 2`
 
 
 class JogressPanel:
@@ -60,6 +87,8 @@ class JogressPanel:
         return (fr[idx] if idx < len(fr) else None) or fr[0]
 
     def text(self):
+        if self.phase == "waiting":
+            return self._render_connect()
         if self.phase == "fusing":
             return self._render_fusing()
         on, bgimg = self._palette()
@@ -67,19 +96,36 @@ class JogressPanel:
                                          ph=FUSE_ROWS * 2)],
                             COLS, FUSE_ROWS, on, LCD_BG, bgimg=bgimg)
 
+    def _render_connect(self):
+        """canon jogressFlash: the CONNECT card, alone on the screen (canon
+        hides both creatures for it), its stripes marching every FLASH_BEAT
+        ticks until the partner answers."""
+        on, bgimg = self._palette()
+        if not CONNECT_FRAMES:
+            return render_scene([], COLS, FUSE_ROWS, on, LCD_BG, bgimg=bgimg)
+        rows = CONNECT_FRAMES[(self.frame_i // FLASH_BEAT) % len(CONNECT_FRAMES)]
+        h, w = len(rows), len(rows[0])
+        x0 = max(0, (COLS - w) // 2)                  # centred on the LCD
+        y0 = max(0, (FUSE_ROWS * 2 - h) // 2)
+        pts = [(x0 + x, y0 + y)
+               for y, row in enumerate(rows)
+               for x, v in enumerate(row) if v == "1"]
+        return render_scene([], COLS, FUSE_ROWS, on, LCD_BG, bgimg=bgimg,
+                            overlay=pts)
+
     def _render_fusing(self):
         ph = FUSE_ROWS * 2
         if self.fuse_step < POSE_T:
             # canon pre-fusion beat (the Jogress intro anim): BOTH parents stand
             # at their marks flipping ready(1) <-> cheer(5) together, then merge
-            idx = 1 if (self.fuse_step // 3) % 2 == 0 else 5
+            idx = 1 if (self.fuse_step // POSE_BEAT) % 2 == 0 else 5
             pf = grid.prep(self._sprite(self.old_num, idx=idx), ph)
             rf = grid.prep(self._sprite(self.partner_num, idx=idx), ph) if self.partner_num else []
             on, bgimg = self._palette()
             return render_scene([(pf, grid.X0, True), (rf, grid.X1 - grid.width(rf), False)],
                                 COLS, FUSE_ROWS, on, LCD_BG, bgimg=bgimg)
         step = self.fuse_step - POSE_T
-        total = FUSE_STEPS - POSE_T
+        total = MERGE_T
         pf = grid.prep(self._sprite(self.old_num), ph)
         rf = grid.prep(self._sprite(self.partner_num), ph) if self.partner_num else []
         pw = grid.width(pf)

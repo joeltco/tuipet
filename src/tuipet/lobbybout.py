@@ -393,6 +393,12 @@ class BoutMixin:
                     self._commit_fusion()
                 else:
                     self.status = "Waiting for the partner…"
+                    # canon jogressFlash: the CONNECT card runs WHILE the two
+                    # devices handshake.  This is that moment -- my yes is in,
+                    # theirs is not -- and it used to be a still frame with a
+                    # line of text under it.
+                    if self.jshow is not None:
+                        self.jshow.phase = "waiting"
             elif k == "escape":
                 # a real DECLINE: nobody fuses, both sides told
                 self.client.relay(self.partner[0], {"kind": "jogress", "t": "decline"})
