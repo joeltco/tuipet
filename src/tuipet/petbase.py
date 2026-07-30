@@ -473,7 +473,19 @@ FILTH_MOOD_DEC_MIN = 5.0                # FilthMoodDecMin 5 game-min (was 300.0 
 # days of unbroken starvation and so could never fire.  Same rescale the
 # filth-sickness bound took, one line below.
 STARVE_DEATH_MIN = 12 * 60              # 720 game-minutes = 12 game-hours
-FILTH_SICK_BOUND = 200                  # FilthSickChanceBound 12000 real-min -> /60 game scale
+# ⭐ FilthSickChanceBound, CANON VERBATIM (config.csv row 813 = 12000, with
+# FilthSickMin=1 -> canon rolls piles/12000 ONCE A MINUTE).  It shipped as 200
+# from 2026-07-25 to 0.5.316 -- "12000 real-min -> /60 game scale" -- and that
+# divide was the bug Joel caught ("mon is getting sick imedietly after poop?
+# 1 poop?", 2026-07-30): a probability DENOMINATOR is not a duration in
+# seconds, so dividing it made filth sickness SIXTY TIMES more likely instead
+# of holding canon's rate.  Measured at 200: one lone pile sickened in a
+# median 3.3 REAL minutes (27% inside the first minute).  On canon's number
+# the same pile takes a median 8.3 GAME-days, and the four-pile sty Joel
+# expected to be dangerous runs ~38% per game-day left uncleaned.  THE UNIT
+# LAW, positive form: a canon per-minute rate keeps its number and rides
+# tuipet's game-minute -- exactly like STARVE_DEATH_MIN's 12 game-hours.
+FILTH_SICK_BOUND = 12000                # FilthSickChanceBound (canon; NEVER /60)
 FILTH_SICK_CHANCE = 1                   # FilthSickChance (x piles, per game-min)
 FILTH_WORSE_CHANCE = 20                 # FilthWorseSickChance (x piles, already sick)
 # ---- the DSprite sickness (rebuilt 2026-07-17, Joel: "dsprite didnt have

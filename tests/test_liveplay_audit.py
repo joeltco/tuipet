@@ -129,8 +129,11 @@ def test_the_gate_rejects_no_healthy_save():
 # was parsed and never read, and _tick_mortality rolled a flat SICK_POOP_P
 # (0.015/min) whatever the mess -- so one unanswerable 3am pile meant a
 # ~97% sick morning after flawless care.  The roll now lives where its
-# docstring lives: per game-min, piles/(200 x mult); at the 3-pile mess it
-# matches the old flat rate exactly.
+# docstring lives: per game-min, piles/(12000 x mult), canon's own bound.
+# ⚠These pins were rewritten for 0.5.317: they used to be tuned to a bound
+# of 200, the 60x-hot /60 "rescale" that made ONE pile sicken a pet in a
+# median 3.3 real minutes.  The scaling and multiplier legs they check are
+# unchanged -- only the rate they check them at.
 
 def _filth_pet(num=29, lid="ver1", piles=1):
     p = Pet(num=num, stage="Champion", attribute="Vaccine")
@@ -142,26 +145,25 @@ def _filth_pet(num=29, lid="ver1", piles=1):
 
 
 def test_the_filth_roll_scales_with_the_pile_count(monkeypatch):
-    """One pile rolls at a third of the flat rate; three piles match it.
-    (On the old code one pile already rolled the full 0.015 -- this pin
-    fails there.)"""
-    monkeypatch.setattr("tuipet.petbody.random.random", lambda: 0.010)
+    """The pile count is the risk: a roll that a 3-pile sty catches must
+    slip past a lone pile.  Threshold sits between 1/12000 and 3/12000."""
+    monkeypatch.setattr("tuipet.petbody.random.random", lambda: 2 / 12000.0)
     lone = _filth_pet(piles=1)
     lone._filth_effects(1.0)
-    assert not lone.sick, "one pile rolled the flat 0.015 rate"
+    assert not lone.sick, "one pile rolled at the 3-pile rate"
     messy = _filth_pet(piles=3)
     messy._filth_effects(1.0)
-    assert messy.sick, "three piles must match the old flat rate"
+    assert messy.sick, "three piles must roll hotter than one"
 
 
 def test_the_filth_roll_reads_the_species_multiplier(monkeypatch):
     """The 232 species' PoopSickChanceBoundMultiplier is finally read: a
     resistant (mult 2.0) species shrugs at half the rate."""
-    monkeypatch.setattr("tuipet.petbody.random.random", lambda: 0.0075)
-    normal = _filth_pet(num=29, piles=2)          # mult 1.0 -> p 0.010
+    monkeypatch.setattr("tuipet.petbody.random.random", lambda: 1.5 / 12000.0)
+    normal = _filth_pet(num=29, piles=2)          # mult 1.0 -> p 2/12000
     normal._filth_effects(1.0)
     assert normal.sick
-    tough = _filth_pet(num=116, piles=2)          # mult 2.0 -> p 0.005
+    tough = _filth_pet(num=116, piles=2)          # mult 2.0 -> p 1/12000
     tough._filth_effects(1.0)
     assert not tough.sick
 

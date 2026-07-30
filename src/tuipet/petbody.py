@@ -291,9 +291,10 @@ class BodyMixin:
         """checkFilthMoodDec + the filth sickness rolls (canon re-audit 2026-07):
         every FilthMoodDecMin the mess costs species filth_mood x piles; every
         game-min each pile is a sickness risk (chance x piles vs the bound x the
-        species multiplier -- the 12000 real-min bound rides the /60 game scale,
-        which lands within a hair of the old hand-rolled rate while gaining the
-        per-pile scaling the flat roll lacked).
+        species multiplier -- canon's checkFilthSick verbatim, bound 12000, one
+        roll a minute on tuipet's game-minute).  The bound is NOT scaled: see
+        FILTH_SICK_BOUND, where a /60 turned "8 game-days of neglect" into
+        "three real minutes" until 0.5.317.
         Away, canon's countFilth() reads 0 (poopable gates on _isHome): the
         home mess can't sicken a pet out on the road (sweep 2026-07-06)."""
         if getattr(self, "away", False):
@@ -309,10 +310,13 @@ class BodyMixin:
         # 2026-07-25: the wiring was lost -- FILTH_SICK_CHANCE/BOUND and 232
         # species' PoopSickChanceBoundMultiplier sat unread while
         # _tick_mortality rolled a flat SICK_POOP_P whatever the mess).
-        # chance x piles vs bound x species multiplier, per game-min: one
-        # pile is 3x gentler than the flat roll, a 4-pile sty is worse, and
-        # the resistant species (mult 2.0) shrug at half the rate.  At the
-        # 3-pile mess the old flat rate matched, they agree exactly.
+        # chance x piles vs bound x species multiplier, per game-min: the
+        # pile count scales the risk and the resistant species (mult 2.0)
+        # shrug at half the rate.  ⚠The 2026-07-25 rewire calibrated itself
+        # to the flat SICK_POOP_P it replaced -- but that stand-in was
+        # ITSELF a 60x-hot per-real-minute constant fired per game-min, so
+        # matching it inherited the error (canon-first law: the comment
+        # encoded the bug).  Canon's own 12000 governs now.
         if not self.sick:
             mult = self._phys().get("poop_sick_mult", 1.0) or 1.0
             p = (FILTH_SICK_CHANCE * self.poop) / (FILTH_SICK_BOUND * mult)  # noqa: F405
@@ -601,9 +605,12 @@ class BodyMixin:
             # -- so the starvation death could never fire, on a field round
             # 41 deliberately PERSISTED so quit-cycling couldn't dodge it.
             # 12 game-hours is the comment's own number on the body's own
-            # clock, the same rescale FILTH_SICK_BOUND took ("12000
-            # real-min -> /60 game scale"): hunger decays on this clock, so
-            # what starving costs is counted on it too.
+            # clock: hunger decays on this clock, so what starving costs is
+            # counted on it too.  (This was a SECONDS->game-minutes fix, and
+            # it once cited FILTH_SICK_BOUND's "/60" as its precedent -- that
+            # citation was wrong and the /60 itself was a bug, 0.5.317: a
+            # probability denominator is not a duration.  A canon MINUTE
+            # count keeps its number here; only a SECONDS count divides.)
             if self._starve_t >= STARVE_DEATH_MIN:            # noqa: F405
                 self._die("starvation"); return True
         elif self.hunger > 0:
@@ -615,8 +622,11 @@ class BodyMixin:
         # is exactly the P0a bug: this guard decayed dt/60.0, so a 1440
         # game-min (1 game-day) vitamin took ~24 REAL HOURS of play to
         # expire and one 500b capsule disarmed the whole injury system.
-        # Canon DURATION constants are device real-minutes and must be
-        # SCALED (the /60 precedent at FILTH_SICK_BOUND), never copied.
+        # Canon DURATION constants are device real-MINUTES and ride this
+        # clock as GAME-minutes, number intact; only a constant already
+        # written in SECONDS divides by 60 to reach them.  (FILTH_SICK_BOUND
+        # used to be cited here as a "/60 precedent" -- it was a 60x bug
+        # instead, fixed 0.5.317.)
         if getattr(self, "vitamin_lapse", 0.0) > 0:
             self.vitamin_lapse = max(0.0, self.vitamin_lapse - dt)
         # canon injLapse: a wound heals on its own clock (P4 ruling

@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.317 — ONE PILE OF POOP IS NO LONGER A PLAGUE (2026-07-30)
+
+ONE PILE OF POOP IS NO LONGER A PLAGUE: the filth sickness roll was running SIXTY TIMES too hot, so a single fresh pile could make your pet sick within a couple of minutes — before you'd even had a chance to clean it. The mess now works the way it always claimed to: a lone pile is a slow risk over days, while a sty left standing is the real danger. Clean up promptly and your pet stays well.
+
 ## 0.5.316 — tuipet NOW BOOTS IN EVERY LANGUAGE (2026-07-30)
 
 tuipet NOW BOOTS IN EVERY LANGUAGE: on a Windows install whose system language isn't English, the game read its own town and creature tables through the machine's codepage instead of its own — and one stray dash in the town data was enough to crash tuipet on startup before the egg even appeared. Every file the game reads or writes now names its encoding, so your locale can't break your pet.

@@ -7,7 +7,7 @@ counters, the 6h malady death) stayed removed; these pin the CLONE's rules.
 import random
 
 
-from tuipet.pet import (Pet, SICK_POOP_P, SICK_OVERWEIGHT_P, DEATH_SICK_P)
+from tuipet.pet import (Pet, SICK_OVERWEIGHT_P, DEATH_SICK_P)
 
 
 def _pet(**kw):
@@ -19,14 +19,15 @@ def _pet(**kw):
 
 
 def test_filth_sickens_at_the_canon_scaled_rate(monkeypatch):
-    """SUPERSEDED FLAT RATE (live-play audit 2026-07-25): the clone's flat
-    SICK_POOP_P was always a stand-in for the documented chance x piles /
-    bound x species-multiplier roll (_filth_effects' own docstring), whose
-    wiring was lost.  The DSprite MODEL survives untouched -- one flag, no
-    worsening, pill-cured -- only the catch rate now scales; at the 3-pile
-    mess it equals the old flat rate exactly."""
-    monkeypatch.setattr(random, "random", lambda: SICK_POOP_P * 0.99)
-    p = _pet(poop=3)                              # the mess where old == new
+    """SUPERSEDED FLAT RATE (live-play audit 2026-07-25, RE-SCALED 0.5.317):
+    the clone's flat SICK_POOP_P was a stand-in for the documented
+    chance x piles / bound x species-multiplier roll, and the 2026-07-25
+    rewire then calibrated itself to that stand-in -- inheriting its 60x
+    heat, which is what made a single pile sicken a pet in real MINUTES
+    (Joel, 2026-07-30).  The DSprite MODEL is untouched -- one flag, no
+    worsening, pill-cured -- and the rate is now canon's own 12000 bound."""
+    monkeypatch.setattr(random, "random", lambda: (3 / 12000.0) * 0.99)
+    p = _pet(poop=3)
     p._filth_effects(1.0)                         # one game-minute
     assert p.sick
     q = _pet(poop=0)
