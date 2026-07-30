@@ -44,6 +44,11 @@ ROSTW = 12
 BODY = 8
 CHAT_MAX = 400          # server MAX_CHAT: the local input buffer stops here too
 PODIUM_T = 120          # the season-podium ceremony hold (~12s), raid-reveal length
+# How long a duel waits for a rival's REVEAL before calling the bout off (0.1s
+# ticks -> 45 real seconds).  It must comfortably outlast the peer's own
+# DUEL_AUTOLOCK_T (300 ticks / 30s): a rival still staring at their bar is
+# about to lock, not stalling, and voiding at 30s would race their auto-lock.
+REVEAL_TIMEOUT_T = 450
 COLS = 40               # the LCD box width (the podium scene; pages use menu's own)
 # (ATTACK_KEYS left with the pick-a-move battle -- 0.5 BATTLE 2026-07-17)
 
@@ -247,6 +252,30 @@ class LobbyPanel(BoutMixin, ChatMixin):
                     self._play_next_round()
             elif spent:
                 self.bshow = None               # jogress/other shims: unchanged
+        elif getattr(self, "bphase", None) == "fight" and self.battle is not None:
+            # (getattr, like the `phase` read above: anim() runs on the 0.1s
+            # interval clock for every panel, including half-built test rigs,
+            # and a crash here would take the whole clock down)
+            # NO PANEL, still a bout to play.  The arena is optional -- it is
+            # built inside a try/except so presentation can never void a fight
+            # -- but the ROUND PUMP must not be, or a duel whose panel failed
+            # to build would sit in "fight" forever with nobody advancing it.
+            # Paced so the text card's damage log stays readable.
+            self._bt_pump = getattr(self, "_bt_pump", 0) + 1
+            if self._bt_pump >= 10:             # ~1 real second a volley
+                self._bt_pump = 0
+                self._play_next_round()
+        # A PEER THAT LOCKS AND NEVER REVEALS used to leave this side waiting
+        # in "commit" with no way out but ESC.  Wait generously -- the rival's
+        # own bar auto-locks at DUEL_AUTOLOCK_T (30s), so anything shorter
+        # would void bouts that were about to be fine -- then void it as a
+        # free back-out: nothing was seeded, so nobody's record moves.
+        if getattr(self, "bphase", None) == "commit" and self.battle is None:
+            self._bt_wait = getattr(self, "_bt_wait", 0) + 1
+            if self._bt_wait >= REVEAL_TIMEOUT_T:
+                self._void_bout("your rival never answered")
+        else:
+            self._bt_wait = 0
         if self.jshow is not None and self.jphase == "result":
             self.jshow.anim()                   # converge -> flash -> fused bounce
         if self.pshow is not None:

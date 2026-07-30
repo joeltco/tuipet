@@ -340,3 +340,54 @@ def test_space_hurries_a_volley_and_escape_still_forfeits():
     host._key_battle("escape")
     assert host.phase == "lobby"
     assert host.client.reports and host.client.reports[-1][0] is False
+
+
+# ---- the stalls (2026-07-30, Joel: "fix the never-reveal stall too") -------
+
+def test_a_rival_who_never_reveals_no_longer_hangs_the_bout():
+    """A peer can lock (so its commit lands) and then simply stop.  This side
+    used to sit in "commit" forever with ESC as the only exit."""
+    host, guest = _duo()
+    _lock(host, "mega")
+    host.bt_peer_commit = hashlib.sha256(b"77:mega").hexdigest()   # they bound...
+    host.client.peer = None                                        # ...then went quiet
+    assert host.bphase == "commit"
+    for _ in range(lobbyscreen.REVEAL_TIMEOUT_T + 5):
+        host.anim()
+        if host.bphase == "over":
+            break
+    assert host.bphase == "over", "the duel still hangs on a silent rival"
+    assert "never answered" in host.bt_outcome
+    assert host.battle is None
+
+
+def test_the_reveal_wait_outlasts_the_rivals_own_auto_lock():
+    """A rival still working the bar is not stalling: their bar locks itself at
+    DUEL_AUTOLOCK_T, so a shorter wait here would void healthy bouts."""
+    assert lobbyscreen.REVEAL_TIMEOUT_T > battlescreen.DUEL_AUTOLOCK_T
+
+
+def test_a_slow_rival_inside_the_window_still_gets_its_duel():
+    host, guest = _duo()
+    _lock(host, "mega")
+    for _ in range(lobbyscreen.REVEAL_TIMEOUT_T - 50):     # nearly out of patience
+        host.anim()
+    assert host.bphase == "commit", "voided a rival who was still coming"
+    _lock(guest, "normal")                                  # they lock at last
+    assert host.battle is not None and host.bphase == "fight"
+
+
+def test_the_rounds_still_advance_with_no_arena_at_all():
+    """The panel is optional (built in a try/except so presentation can never
+    void a fight); the ROUND PUMP is not.  Without this, a duel whose panel
+    failed to build sat in "fight" forever."""
+    host, guest = _duo()
+    _lock(host, "mega")
+    _lock(guest, "normal")
+    host.bshow = None                       # as if the arena had failed to build
+    for _ in range(TICK_BUDGET):
+        host.anim()
+        if host.bphase == "over":
+            break
+    assert host.bphase == "over", "a panel-less duel never finishes"
+    assert host.bt_outcome

@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.322 — NO MORE WAITING ON A GHOST (2026-07-30)
+
+NO MORE WAITING ON A GHOST: a rival who worked the timing bar and then walked away used to leave you sitting in the arena forever with nothing but ESC. A duel now waits a patient forty-five seconds for their answer — long enough that a slow rival is never cut off — and then calls the bout off with no loss for anyone. The volleys also keep playing if the arena itself ever fails to draw.
+
 ## 0.5.321 — ONLINE DUELS ARE REAL BATTLES NOW (2026-07-30)
 
 ONLINE DUELS ARE REAL BATTLES NOW: face another tamer and you get the actual fight — both mons walk into the arena, YOU work the timing bar against a rival who is working theirs, and the whole bout plays out in the arena to a proper result screen. No more watching a scoreboard tick. Your lock is the one you just earned, not whatever your last drill left behind, and duels run the full twenty rounds like every other battle, so somebody actually goes down. Both sides must be on this version to duel.

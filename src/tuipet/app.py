@@ -150,15 +150,13 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("ONLINE DUELS ARE REAL BATTLES NOW: face another tamer and "
-                 "you get the actual fight — both mons walk into the arena, "
-                 "YOU work the timing bar against a rival who is working "
-                 "theirs, and the whole bout plays out in the arena to a "
-                 "proper result screen. No more watching a scoreboard tick. "
-                 "Your lock is the one you just earned, not whatever your last "
-                 "drill left behind, and duels run the full twenty rounds like "
-                 "every other battle, so somebody actually goes down. Both "
-                 "sides must be on this version to duel.")
+    WHATS_NEW = ("NO MORE WAITING ON A GHOST: a rival who worked the timing "
+                 "bar and then walked away used to leave you sitting in the "
+                 "arena forever with nothing but ESC. A duel now waits a "
+                 "patient forty-five seconds for their answer — long enough "
+                 "that a slow rival is never cut off — and then calls the "
+                 "bout off with no loss for anyone. The volleys also keep "
+                 "playing if the arena itself ever fails to draw.")
 
     BINDINGS = [
         # jogress is LOBBY-ONLY (fusion needs a real partner from the
