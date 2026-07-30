@@ -571,19 +571,24 @@ BATTLE_MIN_ENERGY = 10              # the source's battle gate (canon gates 2026
 # INJURY RECOVERY (P4 ruling 2026-07-23): canon heals a wound on a clock
 # -- `randint(1, 12) * InjLapseMin` game-min -- and v0.5.205 shipped the
 # ailment WITHOUT it, leaving a 300b shop-only Bandage as the only cure
-# while its sibling ailment has a free infinite one.  Restored, with the
-# lapse SCALED: canon's 29 is device real-minutes, which under THE UNIT
-# LAW would be 29 real SECONDS here (an injury gone before you noticed),
-# while the flat /60 precedent would run up to 5.8 real HOURS (longer
-# than any session).  300 game-min = 5 real minutes a lapse, so a wound
-# lasts 5-60 real minutes of play.  The Bandage stays the INSTANT cure:
-# it now buys time rather than being the only door.
-MIN_INJ_LENGTH, MAX_INJ_LENGTH = 1, 12  # Min/MaxInjLength, canon
-INJ_LAPSE_MIN = 300                     # game-min per lapse (canon 29 = device real-min)
+# while its sibling ailment has a free infinite one.  Restored; the
+# duration constants live in the canon durations block below (search
+# INJ_LAPSE_MIN), and the Bandage remains the INSTANT cure that buys off
+# whatever wait is left.
+# ⚠ WHAT SHIPPED IS NOT WHAT THAT RULING WROTE (sickness-system audit
+# 2026-07-30, Joel: "audit the rest of the sickness system for the same
+# thing").  The ruling set `INJ_LAPSE_MIN = 300` RIGHT HERE -- above the
+# module's existing `INJ_LAPSE_MIN = 29`, which Python then re-bound a few
+# hundred lines later.  So the deliberate 5-60-real-minute wound was DEAD
+# ON ARRIVAL and every wound since has run on canon's 29: 29-348 game-min,
+# a wound lasting 0.5-5.8 REAL minutes.  The dead line is gone rather than
+# the live one, because 29 is what THE UNIT LAW asks for (a canon
+# per-MINUTE number rides the game-minute) and it is what a week of play
+# has actually felt like.  ⛔The open question is the BANDAGE's worth at
+# 300b when the wait it buys off is minutes -- that's a balance call, not
+# a bug, and it waits for a named order.
 BATTLE_INJ_BOUND = 1000
 BATTLE_INJ_TABLE = {"good_v": 0, "good_nv": 3, "bad_v": 25, "bad_nv": 100}
-BATTLE_INJ_LOSS = 50                # BattleInjuryWonFactor, added on a LOSS
-BATTLE_INJ_BAD_AGE = 10             # BattleInjuryBadAgeFactor (elder OR baby)
 DEATH_INJ_P = 7.5e-5                # the death whisper while hurt (sick's scale)
 PILL_ENERGY_GAIN = 7                    # the DSprite pill (feed menu, BASIC VPET 2026-07-16)
 # THE ERASER, rehoused 2026-07-23 (Joel: "one at a time, own item").  Both

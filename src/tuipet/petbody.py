@@ -616,8 +616,11 @@ class BodyMixin:
         elif self.hunger > 0:
             self._starve_t = 0.0
         # ⭐ THE UNIT LAW (audit 2026-07-23): dt is world-SECONDS and one
-        # world-second IS one game-minute (SICK_POOP_P is "per minute" and
-        # coded p*dt; awake 480 + sleep 960 == DAY_LENGTH 1440).  NEVER
+        # world-second IS one game-minute (awake 480 + sleep 960 ==
+        # DAY_LENGTH 1440).  It used to cite SICK_POOP_P as the "per minute"
+        # exemplar -- a bad witness: that constant came from the v0.4.12
+        # clone, whose _sim_minute() fired once per 60 REAL seconds, so it
+        # was per REAL minute and ran 60x hot here (0.5.317).  NEVER
         # divide dt by 60 to "get minutes" -- that is a 60x error, and it
         # is exactly the P0a bug: this guard decayed dt/60.0, so a 1440
         # game-min (1 game-day) vitamin took ~24 REAL HOURS of play to
