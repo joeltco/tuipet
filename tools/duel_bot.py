@@ -148,6 +148,12 @@ async def run(uri, pet_key, jog_mode, account, quiet):
                     bot.key("space")            # a real, earned lock
                 elif getattr(p.bshow, "phase", "") == "intro":
                     bot.key("space")            # skip the banner to the bar
+            elif p.bphase == "fight":
+                # HURRY its own volleys.  Each side replays the seeded fight on
+                # its own clock, so a bot that watched all ~11s a volley stayed
+                # "in a session" for a minute after its rival had finished --
+                # and the next invite came back "smkduelbot is busy."
+                bot.key("space")
             elif p.bphase == "over":
                 if p.bt_outcome and time.time() - last_seen > 1:
                     print(f"[{time.strftime('%H:%M:%S')}] bout over: "
