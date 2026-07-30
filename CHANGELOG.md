@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.319 — YOUR PET HAS OPINIONS AGAIN (2026-07-30)
+
+YOUR PET HAS OPINIONS AGAIN: two of its clocks were stuck sixty times too slow. It only threw a tantrum once every four days — so discipline barely existed — and it would stand in a room full of mess for a day and a quarter before complaining. Now it acts up on the real schedule, and how OFTEN depends on its manners: a well-behaved pet asks rarely, a rude one keeps testing you. You still get a generous window to answer, and a dirty room is noticed in minutes.
+
 ## 0.5.318 — A HEAVY PET IS NO LONGER A DOOMED ONE (2026-07-30)
 
 A HEAVY PET IS NO LONGER A DOOMED ONE: after yesterday's filth fix, the other half of the sickness system got the same audit — a pet carrying extra weight was rolling for illness FORTY-FIVE times faster than one living beside a pile of poop, sick in minutes with no time to diet it off. Extra weight now costs what the mess costs: a real risk measured in days, not minutes. Being fat AND filthy is still asking for trouble.

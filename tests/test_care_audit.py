@@ -162,6 +162,10 @@ def test_an_attentive_player_keeps_a_spotless_pet():
             p.feed_pill()
         if p.injured:
             p.heal_bandage()
+        if p.discipline_call:
+            p.scold()          # an ignored tantrum is a slip too (discipline B)
+            #                    -- and since 0.5.319 the mischief call runs at
+            #                    canon's cadence, so "attentive" has to mean it
         if p.asleep and p.lights:
             p.toggle_lights()
         elif not p.asleep and not p.lights:

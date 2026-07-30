@@ -150,14 +150,15 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("A HEAVY PET IS NO LONGER A DOOMED ONE: after yesterday's "
-                 "filth fix, the other half of the sickness system got the "
-                 "same audit — a pet carrying extra weight was rolling for "
-                 "illness FORTY-FIVE times faster than one living beside a "
-                 "pile of poop, sick in minutes with no time to diet it off. "
-                 "Extra weight now costs what the mess costs: a real risk "
-                 "measured in days, not minutes. Being fat AND filthy is "
-                 "still asking for trouble.")
+    WHATS_NEW = ("YOUR PET HAS OPINIONS AGAIN: two of its clocks were stuck "
+                 "sixty times too slow. It only threw a tantrum once every "
+                 "four days — so discipline barely existed — and it would "
+                 "stand in a room full of mess for a day and a quarter before "
+                 "complaining. Now it acts up on the real schedule, and how "
+                 "OFTEN depends on its manners: a well-behaved pet asks "
+                 "rarely, a rude one keeps testing you. You still get a "
+                 "generous window to answer, and a dirty room is noticed in "
+                 "minutes.")
 
     BINDINGS = [
         # jogress is LOBBY-ONLY (fusion needs a real partner from the

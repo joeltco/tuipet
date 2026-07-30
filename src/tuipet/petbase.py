@@ -487,6 +487,23 @@ STARVE_DEATH_MIN = 12 * 60              # 720 game-minutes = 12 game-hours
 # tuipet's game-minute -- exactly like STARVE_DEATH_MIN's 12 game-hours.
 FILTH_SICK_BOUND = 12000                # FilthSickChanceBound (canon; NEVER /60)
 FILTH_SICK_CHANCE = 1                   # FilthSickChance (x piles, per game-min)
+# THE FILTH TANTRUM's clock (named 2026-07-30, Joel: "fix those two also").
+# There is NO canon number here on purpose: canon's poopCall mistake is retired
+# by LINES_SPEC §5 / Pen20 (mistakes are unanswered call lights only, and canon's
+# own poopCall is provably dead -- the filth array holds 6, MistakeFilthLimit is
+# 7).  So this is tuipet's own timer, and it was the magic literal 1800: a
+# real-seconds shape for "30 minutes" that on this clock meant 1.25 GAME-DAYS
+# standing in a full room before the pet so much as complained.  30 game-min is
+# the number that literal was reaching for, and it is safe to be brisk because
+# acting up costs NO care mistake -- it opens a scold window, nothing more.
+FILTH_ACT_UP_MIN = 30                   # game-min amid 3+ piles before it acts up
+# AfterMistakeMinutesPostponed (config.csv row 508) is -60, and the LIGHTS call
+# has always used it correctly (LIGHTS_MISTAKE_POSTPONE).  The filth path carried
+# -3600 instead, 60x too long, under the same canon citation.
+# ⚠The hunger and strength calls still postpone -3600.  Left alone deliberately:
+# those calls cost REAL care mistakes (20 = death), so shortening their cooldown
+# is a difficulty change and needs a named order, not a tidy-up.
+CALL_POSTPONE_MIN = -60.0               # AfterMistakeMinutesPostponed (canon)
 FILTH_WORSE_CHANCE = 20                 # FilthWorseSickChance (x piles, already sick)
 # ---- the DSprite sickness (rebuilt 2026-07-17, Joel: "dsprite didnt have
 # sickness?" -- it DID, a thin one, so the classic machine's removal keeps
@@ -781,6 +798,14 @@ SCOLD_FAIL_OBED_PENALTY = 10             # ScoldFailObediencePenalty
 # cadence-scaling choice), numbers verbatim.
 DISCIPLINE_TARGET_CHANCE = 16            # DisciplineCallTargetChance
 DISCIPLINE_CALL_CHANCE = 150             # DisciplineCallChance (randomChance bound base)
+# ⭐ DisciplineCallMin (config.csv row 474) -- canon CHECKS for a tantrum once
+# an hour and then rolls the target/bound above.  Wired 2026-07-30 (Joel: "fix
+# those two also"): this whole family sat here UNREAD while the live code rolled
+# a hand-made `dt / (60.0 * 90.0)` -- a real-seconds shape for "90 minutes"
+# that made a mischief call arrive once every 3.75 GAME-DAYS (90 real min) when
+# canon means roughly one per 0.4 days.  Same find as the filth-sickness wiring
+# (0.5.317): canon's own constants present, parsed, and ignored.
+DISCIPLINE_CALL_MIN = 59                 # DisciplineCallMin (game-min between checks)
 DISCIPLINE_TARGET_GLUTTON = 3            # DisciplineCallTargetGluttonChange
 DISCIPLINE_TARGET_RESTLESS_HI = 3        # restless & under-exercised acts up more
 DISCIPLINE_TARGET_RESTLESS_LO = -1

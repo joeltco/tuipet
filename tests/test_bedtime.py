@@ -233,6 +233,12 @@ def test_full_cared_night_refills_energy_and_dp_without_mistakes():
         p.tick(1.0)
         p.hunger = 4
         p.sick = False
+        if p.discipline_call:
+            p.scold()          # full care now includes answering a tantrum:
+            #                    the mischief call runs at canon's cadence as
+            #                    of 0.5.319 (~one per 0.2-0.5 game-days), so a
+            #                    1.2-day walk that ignores every one of them
+            #                    is no longer "the ritual done right"
         mod = int(p.world_seconds % DAY_MINUTES)
         if p.asleep and p.lights and mod > 10 and (mod > 24 * 30 or mod < 7 * 60):
             p.toggle_lights()                 # dim within the grace

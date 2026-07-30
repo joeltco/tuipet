@@ -442,8 +442,10 @@ class BodyMixin:
         if self.poop >= FILTH_LIMIT:
             if not self.asleep:              # only ticks while awake; sleep pauses, not resets
                 self._filth_t = getattr(self, "_filth_t", 0) + dt
-                if self._filth_t >= 1800:    # uncleaned grace before it acts up
-                    self._filth_t = -3600    # AfterMistakeMinutesPostponed grace after one
+                if self._filth_t >= FILTH_ACT_UP_MIN:   # noqa: F405  (was a magic
+                    #                       1800 = "30 minutes" in SECONDS, so the
+                    #                       complaint took 1.25 game-days to arrive)
+                    self._filth_t = CALL_POSTPONE_MIN   # noqa: F405  canon -60, not -3600
                     self._open_scold()       # left in filth: the pet acts up
         else:
             self._filth_t = 0                # cleaned / under the limit resets the call timer
@@ -673,10 +675,26 @@ class BodyMixin:
                     # other mistake pays (incMistake; audit 2026-07-25)
                     self._inc_mistake()
                     self._set_obedience(self.obedience - 5)
-            elif random.random() < dt / (60.0 * 90.0):
-                self.discipline_call = True
-                self._open_scold()
-                self._set_anim("angry", 2.0)      # the emote-free grumble
+            else:
+                # canon checkDisciplineCall: a check every DisciplineCallMin
+                # (59) game-min, rolling TargetChance out of
+                # DisciplineCallChance - (ObedienceRefusalCap - obedience) --
+                # so a well-mannered pet acts up LESS and a rude one more.
+                # Written as the equivalent continuous rate (same expected
+                # frequency, no extra timer to persist).  Replaces
+                # `dt / (60.0 * 90.0)`, which was a real-seconds shape for "90
+                # minutes" and delivered one tantrum per 3.75 GAME-DAYS; canon
+                # means about one per 0.4 days.  The 10-REAL-minute scold
+                # window (_open_scold) is what keeps that fair -- canon's own
+                # ScoldWindowMax is 2 minutes.
+                obed = min(max(int(self.obedience), 0), MAX_OBEDIENCE)  # noqa: F405
+                bound = max(1, DISCIPLINE_CALL_CHANCE                # noqa: F405
+                            - (OBEDIENCE_REFUSAL_CAP - obed))        # noqa: F405
+                p = DISCIPLINE_TARGET_CHANCE / bound / DISCIPLINE_CALL_MIN  # noqa: F405
+                if random.random() < p * dt:
+                    self.discipline_call = True
+                    self._open_scold()
+                    self._set_anim("angry", 2.0)  # the emote-free grumble
         # the DSprite sickness, overweight half (clone rules, 2026-07-17).
         # The FILTH half moved home to _filth_effects (live-play audit
         # 2026-07-25): its flat SICK_POOP_P stood in for the documented
