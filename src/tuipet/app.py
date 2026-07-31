@@ -150,7 +150,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE ROAD HAS ITS OWN STATUS CARD: walking a zone used to show the same card as standing in the yard, so every number the road actually makes — legs walked, lives left, bits, fights won, loot dug, your win chain — only existed on the results card at the very end, or one at a time on the little message line. Now the run reads live on the right: the march bar, your lives and energy, the running ledger, and the whole key set at once instead of one rotating hint. At the gate the bar gives way to the boss's name.")
+    WHATS_NEW = ("THE ROAD MESSAGE LINE HOLDS STILL NOW: it is the keys and nothing else — SPACE hurry, T warp when you're carrying one, ESC home — all three at once, never rotating. The ribbon, the energy pip, the hearts and the win chain that used to crowd that one line are all on the road's new status card, which is what forced the keys into a ~2s cycle in the first place. Nothing on the strip changes under you while you walk.")
 
     BINDINGS = [
         # jogress is LOBBY-ONLY (fusion needs a real partner from the

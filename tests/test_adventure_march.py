@@ -184,31 +184,76 @@ def test_the_hurry_shows_itself_and_restarts_the_march_clock(no_encounters):
     assert pan.adv.loc == 1
 
 
-def test_the_road_strip_fits_the_box_in_cells_every_beat(no_encounters):
-    """Bug report #32 (Joel, v0.5.264): "the key hints on the road showed
-    space T at one point.  what is space t?"  '⚡' is TWO terminal cells, so
-    the packed anchor beat (3-digit energy + a ×N chain + T held) measured
-    41 cells against the 40-cell box -- Textual wrapped 'ESC' onto the box's
-    invisible second row and the anchor read 'SPACE T'.  The ribbon now
-    absorbs the squeeze: EVERY hint-cycle beat must fit, worst case."""
+def test_every_road_strip_state_fits_the_box_in_cells(no_encounters):
+    """THE CELL BUDGET LAW, bug report #32 (Joel, v0.5.264): "the key hints on
+    the road showed space T at one point.  what is space t?"  '\u26a1' is TWO
+    terminal cells, so a line that passed a CHAR budget rendered 41 cells and
+    Textual wrapped 'ESC' onto the box's invisible second row.
+
+    The travelling line no longer carries any of that -- it is the bare key
+    set since v0.5.328 -- but the OTHER strip states still pack live text
+    (boss names, road-item verdicts, the town prompt), so the law is swept
+    across every state the road can be in, worst case."""
     from rich.cells import cell_len
     from rich.text import Text
-    from tuipet.adventurescreen import HINT_BEAT, STRIP_W
+    from tuipet.adventurescreen import STRIP_W
     p = _champ()
-    p.energy = 125                                # 3-digit ⚡
+    p.energy = 125                                # 3-digit \u26a1
+    p.name = "Wwwwwwwwwwwwwwww"
     pan = AdventurePanel(p)
     pan._trans = None
     pan._landed = True
     pan.travelling = True
-    pan.adv.streak = 12                           # a fat chain: ' ×12'
-    pan.adv.held_transports = lambda: ["autopilot"]   # T joins the anchor
-    labels = set()
-    for f in range(0, HINT_BEAT * 12):
-        pan.frame_i = f
+    pan.adv.streak = 12                           # a fat chain
+    pan.adv.lives = 1
+    pan.adv.held_transports = lambda: ["autopilot"]   # T joins the set
+    pan.adv.zone = dict(pan.adv.zone,                 # a long gate name
+                        bosses=[{"num": 100, "name": "MasterTyrannomon"}])
+
+    def _check(tag):
         plain = Text.from_markup(pan.strip()).plain
-        assert cell_len(plain) <= STRIP_W, f"frame {f}: {plain!r}"
-        labels.add(plain.rsplit("·", 1)[-1].strip())
-    # (the bare "SPACE T ESC" anchor beat retired 2026-07-28 -- "still
-    # seeing space esc": an unlabelled keyset IS the space-t mystery.
-    # Every beat names one key; the full set still cycles through.)
-    assert labels == {"SPACE hurry", "T warp", "ESC home"}, labels
+        assert cell_len(plain) <= STRIP_W, f"{tag}: {cell_len(plain)} cells {plain!r}"
+        return plain
+
+    # the walking line: the WHOLE key set, no rotation (Joel 2026-07-30)
+    assert _check("travelling") == "SPACE hurry \u00b7 T warp \u00b7 ESC home"
+    states = [
+        ("town prompt", lambda: setattr(pan, "_town_prompt", True)),
+        ("rested",      lambda: (setattr(pan, "_town_prompt", False),
+                                 setattr(pan, "_rest_t", 5))),
+        ("road note",   lambda: (setattr(pan, "_rest_t", 0),
+                                 setattr(pan, "_note_t", 5),
+                                 setattr(pan, "_note", "\u26a1 A second wind — lives restored!"))),
+        ("refused",     lambda: (setattr(pan, "_note_t", 0),
+                                 setattr(pan, "_refused", True))),
+        ("transport",   lambda: (setattr(pan, "_refused", False),
+                                 setattr(pan, "_transport", ["town_transport"]))),
+        ("find",        lambda: (setattr(pan, "_transport", None),
+                                 setattr(pan, "_find", "energy_drink"))),
+        ("hazard tele", lambda: (setattr(pan, "_find", None),
+                                 setattr(pan, "_hazard",
+                                         {"t": 0, "enemy": {}, "dodged": False, "hit": False}))),
+        ("hazard lunge", lambda: pan._hazard.update({"t": 99})),
+        ("summary",     lambda: (setattr(pan, "_hazard", None),
+                                 setattr(pan, "_summary", True))),
+        ("gate",        lambda: (setattr(pan, "_summary", False),
+                                 setattr(pan, "_at_gate", True))),
+    ]
+    for tag, arm in states:
+        arm()
+        _check(tag)
+    # the gate REFUSAL arm, driven by the real body gate rather than an
+    # invented string (CELL LAW: the repro must match the sighting).  The
+    # road passes check_energy=False, so "Too drained to fight." is NOT
+    # reachable here; the longest that is, plus a held warp, lands on 40
+    # cells EXACTLY -- a longer refusal line would wrap 'ESC' off the box.
+    for state in ("hunger", "sick", "injured", "poop"):
+        fresh = _champ()
+        fresh.hunger = 0 if state == "hunger" else 4
+        fresh.sick = state == "sick"
+        fresh.injured = state == "injured"
+        fresh.poop = 1 if state == "poop" else 0
+        cond = fresh.battle_condition(check_energy=False)
+        assert cond is not None, state
+        pan._gate_refusal = cond
+        assert cell_len(_check(f"gate refusal ({state})")) <= STRIP_W

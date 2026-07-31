@@ -182,8 +182,10 @@ def test_lobby_strip_is_fully_contextual():
 def test_the_march_hint_is_never_a_bare_keyset():
     """Bug reports v0.5.264 ("what is space t?") and 2026-07-28 ("still
     seeing space esc"): an UNLABELLED key pair on the road strip is a
-    mystery, whichever keys it names.  The old anchor-and-rotate showed
-    the bare set half of all beats; every beat names its key now."""
+    mystery, whichever keys it names.  The anchor-and-rotate that caused it
+    is GONE since v0.5.328 -- the strip is the whole LABELLED set, holding
+    still -- so this walks a real run and pins that no marching frame ever
+    shows a key without its word."""
     import os, re, tempfile
     os.environ.setdefault("TUIPET_SAVE_DIR", tempfile.mkdtemp())
     from tuipet import adventurescreen as advs
@@ -197,13 +199,22 @@ def test_the_march_hint_is_never_a_bare_keyset():
     marched = 0
     for _ in range(1200):
         pan.anim()
-        if not pan.travelling and pan._scene is None and pan._hazard is None:
+        # clear whatever is WAITING on input so the walk actually proceeds --
+        # a glint holds `travelling` True and stalled the old loop on the
+        # road for a thousand frames.  Never the hazard: its duck is timed.
+        waiting = (pan._find is not None or pan._town_prompt or pan._refused
+                   or (not pan.travelling and pan._scene is None))
+        if waiting and pan._hazard is None:
             pan.key("space")
         s = plain(pan.strip())
-        if "⚑" not in s:
-            continue                       # only the marching ribbon line
+        # only the ROAD's own line: a wild fight owns the strip while it runs,
+        # and BattlePanel's volley hint also opens "SPACE hurry" (the same
+        # word for the same idea -- the road borrowed the battle's verb)
+        if pan.sub is not None or not s.startswith("SPACE hurry"):
+            continue
         marched += 1
-        hint = s.rsplit("·", 1)[-1].strip()
-        assert re.fullmatch(r"(SPACE hurry|T warp|ESC home)", hint), \
-            f"unlabelled march hint: {hint!r}"
+        # every key on it wears its word, and the line never rotates
+        assert re.fullmatch(
+            r"SPACE hurry( \u00b7 T warp)? \u00b7 ESC home", s), \
+            f"unlabelled march hint: {s!r}"
     assert marched > 10, "the walk never reached the marching strip"

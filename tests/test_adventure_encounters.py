@@ -118,9 +118,16 @@ def test_a_real_fight_runs_through_the_sub_and_resolves(monkeypatch):
     assert pan.travelling or (pan.adv.failed and pan._trans is not None)
 
 
-def test_life_pips_ride_the_march_strip(monkeypatch):
+def test_life_pips_read_live_on_the_road_card(monkeypatch):
+    """The run's lives rode the strip until v0.5.328 thinned that line to its
+    keys; they are the card's Lives row now (arena pips, like every card)."""
+    from conftest import road_card
     monkeypatch.setattr(adventure, "ENCOUNTER_CHANCE", 0.0)
     monkeypatch.setattr(adventure, "HAZARD_CHANCE", 0.0)
     pan = AdventurePanel(_champ())
     _to_travelling(pan)
-    assert "♥" in pan.strip()                  # full hearts while marching
+    card = road_card(pan)
+    assert "Lives" in card and "●" * pan.adv.lives in card   # full while marching
+    pan.adv.lives -= 1
+    assert "○" in road_card(pan)                            # ...and a lost pip shows
+    assert "♥" not in pan.strip()                           # OFF the strip

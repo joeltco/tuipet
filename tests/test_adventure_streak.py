@@ -86,9 +86,12 @@ def test_the_panel_chains_fights_and_wears_the_marker(monkeypatch):
         pan._fighting_enemy = dict(fixed)
         pan._battle_done(_Win())
     assert pan.adv.streak == 2 and p.bits == 8 + 10    # the 2nd win paid x1.25
-    assert "×2" in pan.strip()                         # the marker rides the strip
+    # the marker rode the strip until v0.5.328 thinned that line to its keys
+    from conftest import road_card
+    assert "Chain  \u00d72" in road_card(pan)            # ...it wears the CARD now
+    assert "\u00d7" not in pan.strip()
     pan._fighting_enemy = dict(fixed)
     pan._battle_done(_Loss())
-    assert pan.adv.streak == 0 and "×" not in pan.strip()
+    assert pan.adv.streak == 0 and "Chain" not in road_card(pan)
     card = pan._summary_frame().plain
     assert "Streak" in card and "×2 best" in card      # the brag line

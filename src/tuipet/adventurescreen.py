@@ -17,17 +17,25 @@ SubHost child), a loss costs an adventure life, and 0 lives fails the run home;
 the real 26-ZONE GEOGRAPHY (adventure.ZONES from data.load_maps -- each zone its
 own biome + wild table); the zone BOSS FIGHT -- the end opens the gate boss,
 felling it is the win, a survivable loss stands the pet at the gate to try again
-(SPACE) or turn back (ESC); TRAVEL DRAIN -- marching tires the pet (⚡ energy on
-the strip), burns weight and tops effort; TOWNS -- a mid-zone rest that refills
+(SPACE) or turn back (ESC); TRAVEL DRAIN -- marching tires the pet, burns weight
+and tops effort; TOWNS -- a mid-zone rest that refills
 lives + energy; and PROGRESSION -- the ZonePickPanel picks an unlocked zone,
 felling a boss unlocks the next (pet.adv_progress); and FINDS -- spot loot on
 the road, ENTER digs it into the bag; the home STATUS CARD; and TRANSPORT -- press T
 mid-march to spend a town/danger warp item (skip ahead, rest or get ambushed).
 Nothing here is faked.
+
+⭐WHERE THE RUN'S NUMBERS LIVE (v0.5.327-328, Joel's orders): the ROAD CARD
+(statusbox.road) -- legs, lives, energy, bits, fights, loot, the chain.  The
+travelling STRIP is the key set and nothing else ("thin the strip to just the
+keys"), and it holds still; the LCD is the scene.  Do not put a number back on
+the strip: the raid uncramp settled that a screen shows a fact ONCE, and the
+40-cell line is what pushed the keys into a rotation in the first place.
+(`Adventure.ribbon()` is dormant as of the thinning -- the card's Road bar
+carries progress in the fight family's grammar instead.)
 """
 from __future__ import annotations
 from rich.cells import cell_len
-from rich.text import Text
 from . import data, grid, menu
 from . import adventure
 from . import shop
@@ -47,10 +55,12 @@ PULSE_T = 54
 PULSE_ON = ((5, 10), (15, 20), (25, 30), (35, 54))
 STRIP_W = 40                  # the message box's CELL budget (== app.HUD_W;
 #                               importing app here would be circular)
-HINT_BEAT = 20                # the road strip's key hint holds ~2s per step
-#                               (10Hz clock): the bare SET, then one labelled
-#                               key, so the packed 40-col line never has to fit
-#                               "SPACE walk · T warp · ESC home" at once.
+# (HINT_BEAT retired 2026-07-30 on Joel's order -- "thin the strip to just the
+#  keys.  you should be able to fit the whole thing without the message change
+#  mechanism".  It paced a ~2s rotation that existed ONLY because a ribbon, ⚡,
+#  hearts and the chain were sharing this 40-cell line with the keys; the road
+#  card carries every one of those now, so all three labelled keys fit at once
+#  and the line holds still.)
 PARADE_T = 40                 # ticks for one boss to march across (edge to
 #                               edge since audit A10: ~48px at ~1.2px/tick)
 
@@ -895,39 +905,26 @@ class AdventurePanel(menu.SubHost):
                 # the road-item / balk verdict (A3/A12; the ⚡ moved into the
                 # transport notes -- a balk's verdict is not an energy event)
                 return f"[b]{self._note}[/] {hearts}" if self._note else ""
-            # the key hint CYCLES (Joel 2026-07-24 "anchor + rotate labels,
-            # ~2s"): the bare key SET is the anchor, and between each one
-            # labelled key rotates in -- so the full labels reach the player
-            # without ever needing "SPACE walk · T warp · ESC home" on the
-            # one packed 40-col line.  T (warp) only joins when a transport
-            # is held.
-            # EVERY beat is LABELLED (bug report 2026-07-28, "still seeing
-            # space esc": the old anchor-and-rotate showed the bare keyset
-            # "SPACE ESC" half the time -- an unlabelled key pair IS the
-            # "space t" mystery this strip was rebuilt to end.  One key,
-            # named, per beat; the set still cycles so every out reaches
-            # the player, and the shorter line gives the ribbon more road).
-            held = self.adv.held_transports()
+            # JUST THE KEYS, ALL OF THEM, HOLDING STILL (Joel's named order
+            # 2026-07-30: "thin the strip to just the keys.  you should be
+            # able to fit the whole thing without the message change
+            # mechanism").  The strip used to pack a ribbon, ⚡, hearts and
+            # the chain onto one 40-cell line, which left no room for three
+            # labelled keys -- hence the ~2s rotation that showed one key at
+            # a time.  Every one of those numbers now lives on the ROAD CARD
+            # (v0.5.327), so the scene sheds what the card holds (the raid
+            # uncramp's rule) and the whole key set fits at 31 cells, still.
+            # T (warp) only joins when a road item is actually held.
+            #
             # "walk" was a LIE (Joel 2026-07-30: "why does the message bar say
             # SPACE to walk? space does nothing while walking... is the mon
             # supposed to stop?").  The pet walks the road by ITSELF -- SPACE
             # has only ever hurried the next leg, and never stopped anything.
             # Name what the key does (KEYS SPELL THEMSELVES).
-            steps = ([("SPACE", "hurry")]
-                     + ([("T", "warp")] if held else [])
-                     + [("ESC", "home")])
-            k, lbl = steps[(self.frame_i // HINT_BEAT) % len(steps)]
-            hint = f"[dim]· [/][b]{k}[/][dim] {lbl}[/]"
-            chain = f" [b]×{self.adv.streak}[/]" if self.adv.streak >= 2 else ""
-            # the packed line must fit the box in CELLS or the anchor beat is
-            # mutilated (bug report #32, v0.5.264 "what is space t?": '⚡' is
-            # two cells wide, so the char budget passed while the render ran
-            # 41 cells and 'ESC' wrapped onto the box's invisible second row).
-            # The ribbon absorbs the squeeze -- energy/hearts/chain are LIVE
-            # data and the hint is the whole point; a dot of road is not.
-            tail = f" ⚡{self.pet.energy} {hearts}{chain}  {hint}"
-            w = max(6, min(14, STRIP_W - cell_len(Text.from_markup(tail).plain)))
-            return f"[dim]{self.adv.ribbon(w)}[/]" + tail
+            keys = ([("SPACE", "hurry")]
+                    + ([("T", "warp")] if self.adv.held_transports() else [])
+                    + [("ESC", "home")])
+            return menu.hints(*keys)
         return menu.hints(("ESC", "home"))
 
     # -- render ---------------------------------------------------------------

@@ -78,31 +78,33 @@ def test_the_assistant_pauses_on_the_road(monkeypatch):
     assert p.bits < bits0 or p.hunger > 0              # it billed or it served
 
 
-def test_the_road_key_hint_cycles_anchor_then_labels(monkeypatch):
-    """Hint cycle, revised 2026-07-28 ("still seeing space esc"): the bare
-    anchor beat is GONE -- an unlabelled keyset is a mystery whichever keys
-    it names.  Every ~2s (HINT_BEAT) beat names exactly one key; the set
-    cycles so every out reaches the player.  T (warp) only joins when a
-    transport is held.  Every step stays within the strip box."""
+def test_the_road_strip_is_the_whole_key_set_holding_still(monkeypatch):
+    """Joel's named order 2026-07-30: "thin the strip to just the keys.  you
+    should be able to fit the whole thing without the message change
+    mechanism."  The ~2s rotation (HINT_BEAT, retired) existed only because a
+    ribbon, energy, hearts and the chain shared this 40-cell line with the
+    keys -- the ROAD CARD carries every one of those now, so all three
+    labelled keys fit at once and the line never changes under the player."""
     import re
-    from tuipet.adventurescreen import HINT_BEAT
+    from rich.cells import cell_len
     pan = _land(monkeypatch)
     p = pan.pet
     p.inventory = {"town_transport": 1}                # holding a warp -> T shows
-    p.energy = 5                                        # modest, so no edge overflow
-    seen = set()
-    for step in range(6):                              # one full anchor+labels loop
-        pan.frame_i = step * HINT_BEAT
-        line = pan.strip()
-        assert line.count("[") == line.count("]")      # markup balanced
-        assert len(re.sub(r"\[/?[^\[\]]*\]", "", line)) <= 40
-        seen.add(re.sub(r"\[/?[^\[\]]*\]", "", line).split("· ", 1)[-1].strip())
-    assert "SPACE T ESC" not in seen                    # the bare anchor is dead
-    assert "SPACE hurry" in seen and "T warp" in seen and "ESC home" in seen
-    # no transport held -> T drops from BOTH the anchor and the rotation
+    p.energy = 125                                      # 3 digits: no longer on the line
+    pan.adv.streak = 12                                 # a fat chain: likewise gone
+    plain = re.sub(r"\[/?[^\[\]]*\]", "", pan.strip())
+    assert plain == "SPACE hurry \u00b7 T warp \u00b7 ESC home"
+    assert cell_len(plain) <= 40
+    # ...and it HOLDS: every frame of what used to be a full rotation is
+    # byte-identical, so nothing on the road strip changes under the player
+    for f in (0, 7, 20, 33, 60, 119):
+        pan.frame_i = f
+        assert pan.strip() == pan.strip()
+        assert re.sub(r"\[/?[^\[\]]*\]", "", pan.strip()) == plain
+    assert pan.strip().count("[") == pan.strip().count("]")   # markup balanced
+    # nothing but keys: the numbers moved to the card (statusbox.road)
+    for gone in ("\u26a1", "\u2665", "\u00d7", "\u25c6", "\u2691"):
+        assert gone not in plain, f"{gone!r} still on the strip"
+    # no transport held -> T drops WITH its label, the rest holds still
     p.inventory = {}
-    hints = set()
-    for step in range(4):
-        pan.frame_i = step * HINT_BEAT
-        hints.add(re.sub(r"\[/?[^\[\]]*\]", "", pan.strip()).split("· ", 1)[-1].strip())
-    assert hints == {"SPACE hurry", "ESC home"}   # T gone WITH its label
+    assert re.sub(r"\[/?[^\[\]]*\]", "", pan.strip()) == "SPACE hurry \u00b7 ESC home"

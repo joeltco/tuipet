@@ -118,3 +118,30 @@ def never_run_pip(monkeypatch):
             "(or mock run_upgrade/upgrade_argv) instead")
 
     monkeypatch.setattr(update, "_RUN", _refuse)
+
+
+def road_card(pan):
+    """The ROAD CARD's plain text for a live AdventurePanel (v0.5.327).
+
+    The run's numbers — legs, lives, energy, bits, fights, loot, the chain —
+    moved OFF the 40-cell strip and onto the status card when Joel ordered the
+    strip thinned to just its keys (v0.5.328).  Tests that used to read them
+    out of `pan.strip()` read them here."""
+    import re
+    from tuipet import statusbox
+
+    class _Stats:
+        def __init__(self):
+            self.txt, self.border_subtitle = "", ""
+
+        def update(self, t):
+            self.txt = str(t)
+
+    class _App:
+        def __init__(self):
+            self.pet, self.mode, self.stats_w = pan.pet, pan, _Stats()
+            self.sound = False
+
+    app = _App()
+    statusbox.painter_for(pan)(app)
+    return re.sub(r"\[/?[^\[\]]*\]", "", app.stats_w.txt)

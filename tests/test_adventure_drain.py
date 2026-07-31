@@ -72,7 +72,10 @@ def test_encounter_legs_do_not_drain(monkeypatch):
     assert p.energy == e0 and p.strength == s0 and a.loc == 0   # nothing marched, nothing drained
 
 
-def test_the_energy_pip_rides_the_march_strip(monkeypatch):
+def test_the_energy_reads_live_on_the_road_card(monkeypatch):
+    """The tank rode the strip as a bare '⚡N' until v0.5.328 thinned that
+    line to its keys; it is a labelled row on the ROAD CARD now."""
+    from conftest import road_card
     monkeypatch.setattr(adventure, "ENCOUNTER_CHANCE", 0.0)
     monkeypatch.setattr(adventure, "HAZARD_CHANCE", 0.0)
     pan = AdventurePanel(_pet())
@@ -80,7 +83,8 @@ def test_the_energy_pip_rides_the_march_strip(monkeypatch):
         pan.anim()
         if pan.travelling:
             break
-    assert "⚡" in pan.strip()                            # energy shown while marching
+    assert f"Energy {pan.pet.energy}" in road_card(pan)   # live while marching
+    assert "⚡" not in pan.strip()                        # ...and OFF the strip
 
 
 def test_the_energy_floor_law_spend_vs_knock():
