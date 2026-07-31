@@ -150,7 +150,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE ROAD STOPS HIDING WHAT ENERGY DOES: an empty tank never stopped you walking, but under 10 energy your pet gets hurt in a fight roughly THIRTY TIMES more often — and nothing on screen ever said so. Now the road says it the moment you cross that line, and the card marks it. The card also shows the gate's own verdict the instant it's true, so 'Too hurt to fight' turns up when it happens instead of after forty legs. And the town door that lets you eat, mend and drink mid-run is finally called what it is — it was labelled 'Sell'.")
+    WHATS_NEW = ("A CARE MISTAKE NOW TELLS YOU WHAT YOU MISSED: the counter used to just tick up on the card with no explanation, which is a rough way to learn about the one thing that can kill a Mega. Every slip names itself as it happens — 'left hungry too long', 'the lights left on', 'acting up, not scolded', 'empty effort gauge'. And to settle it: POOP HAS NEVER COST YOU A CARE MISTAKE, not at one pile and not at four. A dirty room makes your pet sick and makes it act up; it is not a missed call, and the counter does not move for it.")
 
     BINDINGS = [
         # jogress is LOBBY-ONLY (fusion needs a real partner from the
@@ -1180,6 +1180,7 @@ class TuiPetApp(ActionsMixin, App):
             return
         prev = (self.pet.num, self.pet.stage)
         poop0 = self.pet.poop
+        cm0 = self.pet.care_mistakes        # the slip edge, read BEFORE the tick
         # an evolution must not swap the sprite UNDER a playing animation (the
         # clean-fx incident 2026-07-04: the pet transformed mid-sweep and the
         # evolve strobe played on the already-evolved form) -- hold the check
@@ -1279,6 +1280,22 @@ class TuiPetApp(ActionsMixin, App):
         self._gift_seen = bool(p.gift)
         if p.gift and p.anim == "idle" and self.screen_w.fx is None:
             p._set_anim("happy", 1.2)
+        # ⭐A CARE MISTAKE NAMES ITSELF (bug report 2026-07-31, Joel: "mon is
+        # getting a care mistake after 4 poops, not 1... correct?").  It is
+        # not the poop -- filth books NO mistake by ruling, and measured, 4.2
+        # game-days pegged at poop 4 with the other calls answered books zero.
+        # The real defect was that he had no way to know: the counter moved on
+        # the card, the mood took its sting, and nothing ever said WHICH of the
+        # four calls he missed -- on a Mega, where the fifth turns lethal.  The
+        # slip is stamped at the source (`_inc_mistake(reason)`); this is its
+        # ear.  Onset only, one flash per slip.
+        # ⚠ the edge is read from cm0, captured BEFORE p.tick() above.  A
+        # lazily-defaulted "seen" latch swallowed the FIRST slip of a session,
+        # because the very tick that books it also seeds the latch -- caught
+        # in the smoke launch, not by any test.
+        if p.care_mistakes > cm0:
+            why = getattr(p, "mistake_reason", "") or "a missed call"
+            self.flash(f"[{theme.NEG}]✗ Care mistake — {why}[/]")
         # frailty gets its ONSET alarm (gameplay polish #9, 2026-07-22): the
         # one genuinely lethal care state was the only silent one.  Onset
         # only, no 90s re-nag -- unlike hunger there is no key that clears

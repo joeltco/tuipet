@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.330 — A CARE MISTAKE NOW TELLS YOU WHAT YOU MISSED (2026-07-31)
+
+A CARE MISTAKE NOW TELLS YOU WHAT YOU MISSED: the counter used to just tick up on the card with no explanation, which is a rough way to learn about the one thing that can kill a Mega. Every slip names itself as it happens — 'left hungry too long', 'the lights left on', 'acting up, not scolded', 'empty effort gauge'. And to settle it: POOP HAS NEVER COST YOU A CARE MISTAKE, not at one pile and not at four. A dirty room makes your pet sick and makes it act up; it is not a missed call, and the counter does not move for it.
+
 ## 0.5.329 — THE ROAD STOPS HIDING WHAT ENERGY DOES (2026-07-31)
 
 THE ROAD STOPS HIDING WHAT ENERGY DOES: an empty tank never stopped you walking, but under 10 energy your pet gets hurt in a fight roughly THIRTY TIMES more often — and nothing on screen ever said so. Now the road says it the moment you cross that line, and the card marks it. The card also shows the gate's own verdict the instant it's true, so 'Too hurt to fight' turns up when it happens instead of after forty legs. And the town door that lets you eat, mend and drink mid-run is finally called what it is — it was labelled 'Sell'.

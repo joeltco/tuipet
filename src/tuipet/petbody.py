@@ -122,12 +122,23 @@ class BodyMixin:
             self._exercise_day = day
             self.exercise_today = 0
 
-    def _inc_mistake(self):
+    def _inc_mistake(self, reason=""):
         """PhysicalState.incMistake: EVERY care mistake stings the mood first --
         a Happy pet is knocked DOWN TO 100 (MistakeHappyMoodChange, absolute),
         anyone else loses 50 -- then the counters tick (care-mistake audit
-        2026-07-05: the counters ticked silently)."""
+        2026-07-05: the counters ticked silently).
+
+        ⭐`reason` NAMES THE SLIP (bug report 2026-07-31, Joel: "mon is getting
+        a care mistake after 4 poops, not 1... correct?").  It is not the poop
+        -- filth books NO mistake, by the LINES_SPEC §5 / Pen20 ruling above
+        `_open_scold`, and measured: 4.2 game-days pegged at poop 4 with the
+        other calls answered books ZERO.  But he could not know that, because a
+        care mistake was SILENT: the counter moved on the card and nothing ever
+        said which of the four calls went unanswered -- for a Mega, where five
+        of them turn lethal.  The app reads this on the tick edge and flashes
+        it (an unheard verdict is a silent failure)."""
         self.care_mistakes += 1
+        self.mistake_reason = reason
         self.mistake_day += 1                        # MistakeIncMissedDayChange
 
     def _tick_asleep(self, dt):
@@ -144,7 +155,7 @@ class BodyMixin:
                 if not getattr(self, "_lit_obed_hit", False):
                     self._lit_obed_hit = True
                     self._set_obedience(self.obedience + LIGHTS_MISTAKE_OBED)
-                self._inc_mistake()
+                self._inc_mistake("the lights left on")
         # Pen20 DP: sleep restores jogress power -- 3 game-hours = a full meter
         if self.dp < DP_MAX:
             self._dp_t = getattr(self, "_dp_t", 0.0) + dt
@@ -350,7 +361,7 @@ class BodyMixin:
             # either way.
             if self._hunger_call_t >= 600.0:                 # 10 real min to answer
                 self._hunger_call_t = CALL_POSTPONE_MIN      # noqa: F405  canon -60
-                self._inc_mistake()
+                self._inc_mistake("left hungry too long")
                 self.mistake_day += 1  # + HungerDecAtZero MissedDayChange
                 # (the MistakeHungerLifeDec burn left with the lifespan clock
                 # -- DSprite mortality 2026-07-22: mistakes now raise the
@@ -432,7 +443,7 @@ class BodyMixin:
                 #   the leg it actually moves: nothing KILLS an empty gauge, so
                 #   the repeat rate is the whole punishment.  One drill resets it.
                 self._str_call_t = CALL_POSTPONE_MIN         # noqa: F405  canon -60
-                self._inc_mistake()
+                self._inc_mistake("empty effort gauge")
                 self._set_obedience(self.obedience - 5)      # MistakeStrengthObedienceDec
                 # no scold window on neglect (canon; discipline audit 2026-07-06)
                 # -- strength drains to 0 on its own species timer, so this one
@@ -681,7 +692,7 @@ class BodyMixin:
                     # through the front door: the bare += here skipped the
                     # mood sting + the birthday mistake_day tally every
                     # other mistake pays (incMistake; audit 2026-07-25)
-                    self._inc_mistake()
+                    self._inc_mistake("acting up, not scolded")
                     self._set_obedience(self.obedience - 5)
             else:
                 # canon checkDisciplineCall: a check every DisciplineCallMin

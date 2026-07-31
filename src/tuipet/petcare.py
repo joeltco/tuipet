@@ -803,7 +803,7 @@ class CareMixin:
         # the real mistake pipeline: the bare counter bumped care_mistakes
         # without the mood sting or mistake_day, so the burger slip was
         # invisible to the birthday judgment
-        self._inc_mistake()
+        self._inc_mistake("that cheeseburger")
         return "Delicious. Regrettable."
 
     def _premium_meat(self):
