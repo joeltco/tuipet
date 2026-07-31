@@ -649,6 +649,61 @@ class _SubView:
         return getattr(self._app, k)
 
 
+def road(app):
+    """THE ROAD: the live run — how far, how hurt, what it earned.
+
+    Joel's named order 2026-07-30 ("yeah give the road its own card").  The
+    walk had NO painter at all: `painter_for` fell through to the HOME vitals,
+    so a run that lasts forty legs showed the same card as standing in the
+    yard, and every number the road actually generates — legs walked, lives
+    left, bits, fights, loot, the chain — existed only in the run-results card
+    at the END, or on the 40-cell strip that has room for exactly one of them
+    at a time.
+
+    Grammar is the FIGHT family's, not `card()`'s: `{pet} · road` + DIV, the
+    gauge row shaped like the battle card's `You {bar} 3/5`, then the run
+    ledger in the run-summary's own labels (Bits / Fights / Loot / Chain).  A
+    wild encounter swaps this card for the battle card and back, so the two
+    must read as one screen (layout-consistency law)."""
+    from . import adventure
+    p, m, T = app.pet, app.mode, theme
+    a = m.adv
+    app.stats_w.border_subtitle = gen_subtitle(p)
+    lives = int(getattr(a, "lives", 0))
+    hp = hearts(lives, adventure.MAX_LIVES)
+    if getattr(m, "_at_gate", False):
+        # squared up at the gate: the road is walked, the BOSS is the number
+        gauge = f"Gate [{T.NEG}]{_zone_display(a.boss_name, 21)}[/]"
+    else:
+        gauge = f"Road {bar(a.pct, 11, T.POS)} {a.loc}/{a.total}"
+    # the two flex rows: a live chain outranks the festival banner, and the
+    # T hint only exists while a road item is actually held
+    flex = ""
+    if a.streak >= 2:
+        flex = f"Chain  [{T.POS}]×{a.streak}[/]"
+    elif a.holiday:
+        # word-safe, not a raw slice (card audit 2026-07-24): 'Odaiba
+        # Memorial Day' is the longest real name and fits whole
+        flex = f"[{T.COIN}]★ {wrap(a.holiday, 1, CARD_W - 2)[0]}[/]"
+    elif a.replay:
+        flex = "[dim]veteran road[/]"
+    warp = "[dim]T warp — a road item[/]" if a.held_transports() else ""
+    lines = [
+        f"[b]{p.name[:14]}[/] [dim]· road[/]", DIV,
+        f"[b]{_zone_display(a.name, 26)}[/]",
+        gauge,
+        f"Lives  {hp}",
+        f"Energy [b]{p.energy}[/]", DIV,
+        f"Bits   [{T.COIN}]+{a.bits_earned}b[/]",
+        f"Fights {a.wins}W/{a.fights}",
+        f"Loot   {a.finds}",
+        flex, DIV,
+        "[dim]SPACE hurry · ESC home[/]",
+        warp,
+    ]
+    app.stats_w.update("\n".join(lines))
+
+
 def tournament(app):
     # (the cup's own sub->battle hand-off moved into painter_for -- the
     # dispatcher lends every host's card to its embedded fight now)
@@ -860,7 +915,8 @@ def dna(app):
 def _registry():
     """Panel class -> painter.  Built lazily: importing every screen at
     module import would be a cycle magnet."""
-    from . import (assistscreen, backgroundscreen, battlescreen, bugscreen,
+    from . import (adventurescreen, assistscreen, backgroundscreen,
+                   battlescreen, bugscreen,
                    deathscreen, digicorescreen, disciplinescreen, dnascreen,
                    eggguidescreen, eggselectscreen, feedscreen, helpscreen,
                    lobbyscreen, optionsscreen, raidscreen, shopscreen,
@@ -879,6 +935,7 @@ def _registry():
         (eggguidescreen.EggGuidePanel, eggguide),
         (digicorescreen.DigiCorePanel, digicore),
         (raidscreen.RaidPanel, raid),
+        (adventurescreen.AdventurePanel, road),
         (lobbyscreen.LobbyPanel, lobby),
         (helpscreen.HelpPanel, help_),
         (optionsscreen.OptionsPanel, options),

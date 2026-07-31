@@ -237,3 +237,58 @@ def test_the_shop_eggs_tab_buys_through_the_single_source():
     pan.key("enter")                             # again: refuses, no double bill
     assert app.pet.bits == 5000 - shop.egg_price(idx)
     assert pan.text()                            # and the tab renders
+
+
+def test_the_road_wears_its_own_card():
+    """Joel's named order 2026-07-30 ("yeah give the road its own card"): the
+    walk had NO painter at all, so a forty-leg run showed the HOME vitals --
+    the same card as standing in the yard -- while every number the road
+    generates (legs, lives, bits, fights, loot, the chain) lived only in the
+    end-of-run results card or one-at-a-time on the 40-cell strip."""
+    import re
+    from rich.cells import cell_len
+    from tuipet import adventure
+    from tuipet.adventurescreen import AdventurePanel
+    app = _app()
+    road = AdventurePanel(app.pet, zone=adventure.ZONES[0])
+    road._trans = None
+    road.travelling = True
+    road.adv.loc, road.adv.lives = 17, 2
+    road.adv.bits_earned, road.adv.fights, road.adv.wins = 240, 4, 3
+    road.adv.finds, road.adv.streak = 2, 3
+    txt = _card(app, road)
+    assert "road" in txt and "Rex" in txt
+    assert "17/40" in txt                       # the live march position
+    assert "+240b" in txt and "3W/4" in txt and "Loot   2" in txt
+    assert "×3" in txt                          # the live chain
+    assert "SPACE hurry" in txt                 # ...and the FULL key set at once,
+    #                                             which the rotating strip cannot show
+    # the gate arm names the boss where the road gauge was
+    road._at_gate = True
+    gate_txt = _card(app, road)
+    assert "Gate" in gate_txt and road.adv.boss_name[:8] in gate_txt
+    road._at_gate = False
+    # a TOWN visit is still ON the run: the unregistered TownPanel must not
+    # drop the card back to bare vitals (painter_for walks .sub, then falls
+    # back to the host) -- but its SHOP tab still wins, two layers deep
+    from tuipet.townscreen import TownPanel
+    road.sub = TownPanel(app.pet, town_id=0)
+    assert "road" in _card(app, road)
+
+    # the box budget, worst case (26x16): longest name, 3-digit energy, a
+    # 5-digit purse, 99s across the ledger and a held transport
+    app.pet.name = "Wwwwwwwwwwwwwwww"
+    app.pet.energy = 125
+    app.pet.inventory["town_transport"] = 1
+    wide = AdventurePanel(app.pet, zone=adventure.ZONES[-1])
+    wide._trans, wide.travelling = None, True
+    wide.adv.loc, wide.adv.bits_earned = 39, 99999
+    wide.adv.fights = wide.adv.wins = wide.adv.finds = wide.adv.streak = 99
+    for gate in (False, True):
+        wide._at_gate = gate
+        rows = _card(app, wide).split("\n")
+        assert len(rows) <= 16, f"gate={gate}: {len(rows)} rows"
+        for r in rows:
+            plain = re.sub(r"\[/?[^\[\]]*\]", "", r)
+            assert cell_len(plain) <= 26, f"gate={gate}: {plain!r}"
+    assert "T warp" in _card(app, wide)          # the out only shows when held

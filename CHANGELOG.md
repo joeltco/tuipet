@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.327 — THE ROAD HAS ITS OWN STATUS CARD (2026-07-30)
+
+THE ROAD HAS ITS OWN STATUS CARD: walking a zone used to show the same card as standing in the yard, so every number the road actually makes — legs walked, lives left, bits, fights won, loot dug, your win chain — only existed on the results card at the very end, or one at a time on the little message line. Now the run reads live on the right: the march bar, your lives and energy, the running ledger, and the whole key set at once instead of one rotating hint. At the gate the bar gives way to the boss's name.
+
 ## 0.5.326 — SPACE ON THE ROAD SAYS WHAT IT DOES (2026-07-30)
 
 SPACE ON THE ROAD SAYS WHAT IT DOES: the strip called it 'walk', but your mon walks the road by itself — SPACE has only ever HURRIED the next leg, and it never looked like it worked, because a quiet leg makes no sound and the little progress ribbon only ticks a cell every third press or so. It reads 'SPACE hurry' now, the mon visibly lurches ahead when you press it, and the march clock restarts from your press instead of double-stepping into the tick that was already coming.
