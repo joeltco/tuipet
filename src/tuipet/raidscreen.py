@@ -22,6 +22,8 @@ from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, NEG, POS, COIN  # noqa: F401
 from . import menu
 
 COLS, ROWS = 40, 12
+BOARD_POLL_T = 50   # frames between gate polls on the BOARD (~5s)
+POOL_POLL_T = 20    # ...and DURING a volley (~2s): the bar has ~20s to move
 
 
 def _fmt(n):
@@ -48,6 +50,7 @@ class RaidPanel(menu.SubHost):
         self._won = None              # (hold-until frame, defeated?): the claim reveal
         self._dealt = 0
         self._credited = 0            # the gate's acked board damage this session
+        self._pump_i = 0              # the volley's own poll clock (frame_i is paused)
         name, pw = persistence.get_account()
         self._no_account = name is None   # the gate refuses a nameless login;
         #  the old path sent name=None, which the server minted as "None"
@@ -71,14 +74,47 @@ class RaidPanel(menu.SubHost):
         return bool(b) and b.get("start", 0) <= v.get("now", 0) \
             and b.get("hp", 0) > 0
 
+    def _pump_pool(self):
+        """The gate keeps talking THROUGH the volley (Joel 2026-07-30:
+        "shouldnt i be seeing the raid pool percentage go down live during
+        raid battle").  The panel's whole clock stopped at sub_anim(), so the
+        battle card wore the pool SNAPSHOT taken the instant SPACE was
+        pressed — a bar that could not move for the length of a fight while
+        the rest of the community chipped the same boss down (status-box
+        liveness law).  Only the poll and the copy run here; msg/sfx belong to
+        the fight on screen.
+
+        YOUR OWN damage is deliberately absent: the gate owns the multiplier
+        (raw x5000 x a server-side stage table), so the pet cannot honestly
+        price its own hits mid-swing.  They land on the bar the moment the
+        volley ends and the gate acks — never as a client-side guess."""
+        enemy = getattr(self.sub, "enemy", None)
+        if not isinstance(enemy, dict) or "pool" not in enemy:
+            return                              # not a raid volley
+        self._pump_i += 1
+        if self._pump_i % POOL_POLL_T == 0:
+            self.client.raid_get()
+        b = self._boss()
+        if not b:
+            return                              # view in flight: hold the last truth
+        if b.get("start") != enemy.get("pool_start"):
+            # the boss ROTATED mid-volley — felled by someone else, or its
+            # window ran out.  The live pool belongs to a DIFFERENT boss now,
+            # and printing it under this one's name would be a lie; say so
+            # instead (the report is about to be refused anyway).
+            enemy["pool_gone"] = True
+            return
+        enemy["pool"] = (int(b.get("hp", 0)), max(1, int(b.get("max_hp", 1))))
+
     def anim(self):
         if self.sub_anim():
+            self._pump_pool()
             return
         self.frame_i += 1
         if not self._asked and getattr(self.client.state, "me_id", None) is not None:
             self.client.raid_get()
             self._asked = True
-        elif self._asked and self.frame_i % 50 == 0:
+        elif self._asked and self.frame_i % BOARD_POLL_T == 0:
             # keep the countdown/pool/board LIVE while the panel is open --
             # the one-shot fetch froze every timer until the player acted
             # (raid review 2026-07-18); one refetch per ~5s is polite
@@ -220,7 +256,10 @@ class RaidPanel(menu.SubHost):
                 # the COMMUNITY POOL rides the enemy dict so the battle
                 # card can show the boss's REAL health (raid audit
                 # 2026-07-23: the card showed RaidBout's 5/5 display stub)
-                "pool": (int(b.get("hp", 0)), max(1, int(b.get("max_hp", 1))))}
+                "pool": (int(b.get("hp", 0)), max(1, int(b.get("max_hp", 1)))),
+                # ...and the boss's identity stamp, so _pump_pool can tell a
+                # LIVE update from a different boss that rotated in mid-volley
+                "pool_start": b.get("start")}
 
     def _report(self, b):
         if b is None:

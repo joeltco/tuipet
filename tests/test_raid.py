@@ -840,3 +840,98 @@ def test_the_board_pre_warns_what_the_volley_would_refuse():
     pan3.client.raid = _view(_mega())
     pan3.anim()
     assert "SPACE to raid" in pan3.msg
+
+
+# ---- the pool stays LIVE through the volley (Joel 2026-07-30) --------------------
+
+def _card(pan, pet):
+    """Render whatever card the dispatcher lends this panel, markup stripped."""
+    import re
+    from tuipet import statusbox
+
+    class _Stats:
+        def __init__(self):
+            self.txt, self.border_subtitle = "", ""
+
+        def update(self, t):
+            self.txt = str(t)
+
+    class _App:
+        def __init__(self):
+            self.pet, self.mode, self.stats_w = pet, pan, _Stats()
+            self.sound = False
+
+    app = _App()
+    statusbox.painter_for(pan)(app)
+    return [re.sub(r"\[/?[^\[\]]*\]", "", ln) for ln in app.stats_w.txt.split("\n")]
+
+
+def _pool_line(pan, pet):
+    return next(ln for ln in _card(pan, pet) if ln.startswith("Pool"))
+
+
+def _volleying():
+    """A panel with a raid volley on screen, boss at full pool."""
+    pan = _panel()
+    pan._no_account = False
+    pan.client.raid = _view(_mega(), hp=1000)
+    pan.anim()
+    pan.key("space")
+    assert pan.sub is not None
+    return pan
+
+
+def test_the_pool_bar_tracks_the_gate_while_the_volley_plays():
+    """The panel's whole clock used to stop at sub_anim(), so the battle card
+    wore the pool SNAPSHOT taken when SPACE was pressed: a bar that could not
+    move for the length of a fight while the community chipped the same boss
+    down.  Status-box liveness law -- cards show LIVE data."""
+    pan = _volleying()
+    assert "100%" in _pool_line(pan, pan.pet)
+    n = len(pan.client.calls)
+    # the community lands 40% of the pool WHILE we swing
+    pan.client.raid = _view(_mega(), hp=600)
+    for _ in range(120):                                    # 12s of fight
+        pan.anim()
+    assert len(pan.client.calls) > n                        # the gate is asked
+    assert "60%" in _pool_line(pan, pan.pet)                # ...and answered on the card
+
+
+def test_a_boss_that_rotates_mid_volley_stops_the_copy():
+    """Felled by someone else (or its window ran out): the live pool belongs
+    to a DIFFERENT boss now, so printing it under this one's name would lie."""
+    pan = _volleying()
+    pan.client.raid = _view(_mega(), hp=1000, start=5000.0, now=5100.0)
+    for _ in range(30):
+        pan.anim()
+    line = _pool_line(pan, pan.pet)
+    assert "gone" in line and "%" not in line
+    assert max(len(ln) for ln in _card(pan, pan.pet)) <= 26     # the card budget
+    # and it STAYS gone -- a later view for the new boss never re-arms the bar
+    pan.client.raid = _view(_mega(), hp=400, start=5000.0, now=5200.0)
+    for _ in range(30):
+        pan.anim()
+    assert "gone" in _pool_line(pan, pan.pet)
+
+
+def test_a_dark_view_holds_the_last_pool_instead_of_blanking():
+    """raid_hit drops the stale view (net.py) and a refetch takes a beat: the
+    bar holds its last truth rather than flashing empty or crashing."""
+    pan = _volleying()
+    pan.client.raid = _view(_mega(), hp=300)
+    for _ in range(30):
+        pan.anim()
+    assert "30%" in _pool_line(pan, pan.pet)
+    pan.client.raid = None
+    for _ in range(30):
+        pan.anim()
+    assert "30%" in _pool_line(pan, pan.pet)
+
+
+def test_the_pump_leaves_a_non_raid_sub_alone():
+    """_pump_pool keys on the enemy dict carrying a pool: the panel's other
+    children (and a raid sub mid-teardown) must not be written into."""
+    pan = _panel()
+    pan.sub = type("X", (), {"anim": lambda self: None, "sfx": None})()
+    pan._pump_pool()                                        # no enemy dict: a no-op
+    assert pan._pump_i == 0 and pan.client.calls == []

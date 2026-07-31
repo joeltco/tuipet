@@ -766,7 +766,11 @@ def battle(app):
         # 2026-07-23: the card leaked RaidBout's 5/5 display stub -- a
         # 5.5M shared boss shown as a five-heart foe)
         pool = enemy.get("pool")
-        if pool:
+        if enemy.get("pool_gone"):
+            # the boss rotated while this volley played (RaidPanel._pump_pool):
+            # the gate's pool is a DIFFERENT boss's now, so show neither
+            foe_line = "Pool [dim]this boss is gone[/]"
+        elif pool:
             phv, pmx = int(pool[0]), max(1, int(pool[1]))
             pct = max(0, min(100, phv * 100 // pmx))
             foe_line = f"Pool {bar(pct, 11, T.NEG)} {pct}%"

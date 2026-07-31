@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.325 — THE RAID POOL IS LIVE WHILE YOU SWING (2026-07-30)
+
+THE RAID POOL IS LIVE WHILE YOU SWING: the boss's bar on the status card was a snapshot frozen the instant you pressed SPACE — for the whole length of a volley it could not move, no matter how hard the rest of the community was hitting the same boss. The gate is polled all the way through the fight now, so the pool drains on screen as everyone lands. If the boss falls or its window runs out mid-volley, the card says so instead of showing you the next boss's health.
+
 ## 0.5.324 — THE FUSION TAKES ITS TIME NOW (2026-07-30)
 
 THE FUSION TAKES ITS TIME NOW: the jogress cinematic was running a second short — both partners now hold their marks and flip through the full pre-fusion beat exactly as the original device does, before they merge. And the wait between your yes and your partner's is no longer dead air: the CONNECT card flashes on screen while the two of you shake hands, straight off the real hardware.
