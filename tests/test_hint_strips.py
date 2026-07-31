@@ -204,6 +204,6 @@ def test_the_march_hint_is_never_a_bare_keyset():
             continue                       # only the marching ribbon line
         marched += 1
         hint = s.rsplit("·", 1)[-1].strip()
-        assert re.fullmatch(r"(SPACE walk|T warp|ESC home)", hint), \
+        assert re.fullmatch(r"(SPACE hurry|T warp|ESC home)", hint), \
             f"unlabelled march hint: {hint!r}"
     assert marched > 10, "the walk never reached the marching strip"

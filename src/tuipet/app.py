@@ -150,7 +150,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE RAID POOL IS LIVE WHILE YOU SWING: the boss's bar on the status card was a snapshot frozen the instant you pressed SPACE — for the whole length of a volley it could not move, no matter how hard the rest of the community was hitting the same boss. The gate is polled all the way through the fight now, so the pool drains on screen as everyone lands. If the boss falls or its window runs out mid-volley, the card says so instead of showing you the next boss's health.")
+    WHATS_NEW = ("SPACE ON THE ROAD SAYS WHAT IT DOES: the strip called it 'walk', but your mon walks the road by itself — SPACE has only ever HURRIED the next leg, and it never looked like it worked, because a quiet leg makes no sound and the little progress ribbon only ticks a cell every third press or so. It reads 'SPACE hurry' now, the mon visibly lurches ahead when you press it, and the march clock restarts from your press instead of double-stepping into the tick that was already coming.")
 
     BINDINGS = [
         # jogress is LOBBY-ONLY (fusion needs a real partner from the

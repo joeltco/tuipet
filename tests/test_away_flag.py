@@ -98,11 +98,11 @@ def test_the_road_key_hint_cycles_anchor_then_labels(monkeypatch):
         assert len(re.sub(r"\[/?[^\[\]]*\]", "", line)) <= 40
         seen.add(re.sub(r"\[/?[^\[\]]*\]", "", line).split("· ", 1)[-1].strip())
     assert "SPACE T ESC" not in seen                    # the bare anchor is dead
-    assert "SPACE walk" in seen and "T warp" in seen and "ESC home" in seen
+    assert "SPACE hurry" in seen and "T warp" in seen and "ESC home" in seen
     # no transport held -> T drops from BOTH the anchor and the rotation
     p.inventory = {}
     hints = set()
     for step in range(4):
         pan.frame_i = step * HINT_BEAT
         hints.add(re.sub(r"\[/?[^\[\]]*\]", "", pan.strip()).split("· ", 1)[-1].strip())
-    assert hints == {"SPACE walk", "ESC home"}   # T gone WITH its label
+    assert hints == {"SPACE hurry", "ESC home"}   # T gone WITH its label

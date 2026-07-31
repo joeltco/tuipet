@@ -310,17 +310,40 @@ class AdventurePanel(menu.SubHost):
             # the right edge, back in from the left, the lawful exits --
             # instead of stepping in place at an anchor.  A SICK pet
             # trudges at HALF pace (pass 3).
-            self._wx += MARCH_PX * (0.5 if self.pet.sick else 1.0)
-            if self._wx >= grid.X1:              # fully out the right side
-                # slide back in from JUST off-left of the real sprite (audit
-                # C2: the flat 16px offset over-hid narrow sprites for ticks)
-                self._wx = float(grid.X0 - grid.width(self._rows(0)))
+            self._stride()
             # auto-march: the pet walks the road on its own pace; arrival ends
             # the run and rides the same teleport back home (SPACE hurries a leg)
             self._travel_t += 1
             if self._travel_t >= TRAVEL_TICKS:
                 self._travel_t = 0
                 self._advance()
+
+    def _stride(self, ticks=1):
+        """Walk the march forward `ticks` worth of stride, wrapping at the
+        lawful exit.  ONE source: the auto-march tick and the SPACE hurry
+        both walk through here."""
+        self._wx += MARCH_PX * ticks * (0.5 if self.pet.sick else 1.0)
+        while self._wx >= grid.X1:              # fully out the right side
+            # slide back in from JUST off-left of the real sprite (audit
+            # C2: the flat 16px offset over-hid narrow sprites for ticks)
+            self._wx = float(grid.X0 - grid.width(self._rows(0)))
+
+    def _hurry(self):
+        """SPACE on the road: take the next leg NOW instead of waiting out
+        the march clock.
+
+        Joel 2026-07-30: "space does nothing while walking".  It always DID
+        fire a leg -- but the road auto-advances every 0.8s anyway, a quiet
+        leg ('step') speaks nothing, and the 14-cell ribbon over a 40-leg
+        zone only moves its marker on about one press in three.  So the one
+        thing the key never did was LOOK like it worked.  Now the stride the
+        press SKIPS is walked immediately -- the mon lurches ahead, which is
+        what hurrying looks like -- and the march clock restarts from the
+        press, so a hurry re-paces the road instead of double-stepping into
+        an auto tick that was already about to fire."""
+        self._stride(max(1, TRAVEL_TICKS - self._travel_t))
+        self._travel_t = 0
+        self._advance()
 
     # -- input ----------------------------------------------------------------
     def _advance(self):
@@ -776,7 +799,7 @@ class AdventurePanel(menu.SubHost):
             if held:
                 self._transport, self._transport_cursor = held, 0
         elif k in ("space",) and self.travelling:
-            self._advance()                   # hurry the next leg
+            self._hurry()                     # the next leg NOW, and a stride to show it
         elif k in ("escape",):
             # turn back: the SAME teleport the other way; anim() auto-closes
             # the mode once it lands (canon teleportArrive/endAnim)
@@ -885,7 +908,12 @@ class AdventurePanel(menu.SubHost):
             # named, per beat; the set still cycles so every out reaches
             # the player, and the shorter line gives the ribbon more road).
             held = self.adv.held_transports()
-            steps = ([("SPACE", "walk")]
+            # "walk" was a LIE (Joel 2026-07-30: "why does the message bar say
+            # SPACE to walk? space does nothing while walking... is the mon
+            # supposed to stop?").  The pet walks the road by ITSELF -- SPACE
+            # has only ever hurried the next leg, and never stopped anything.
+            # Name what the key does (KEYS SPELL THEMSELVES).
+            steps = ([("SPACE", "hurry")]
                      + ([("T", "warp")] if held else [])
                      + [("ESC", "home")])
             k, lbl = steps[(self.frame_i // HINT_BEAT) % len(steps)]

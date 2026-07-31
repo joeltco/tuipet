@@ -157,6 +157,33 @@ def test_space_hurries_a_leg_while_travelling(no_encounters):
     assert pan.adv.loc == 1                             # SPACE advanced a leg immediately
 
 
+def test_the_hurry_shows_itself_and_restarts_the_march_clock(no_encounters):
+    """Joel 2026-07-30: "why does the message bar say SPACE to walk? space
+    does nothing while walking".  The key always DID fire a leg -- but the
+    road auto-advances every TRAVEL_TICKS anyway, a quiet leg speaks nothing,
+    and the 14-cell ribbon over a 40-leg zone moves its marker on about one
+    press in three.  A hurry must (1) walk the stride it skipped, so the mon
+    visibly lurches, and (2) restart the clock, so it re-paces the road
+    instead of double-stepping into an auto tick that was already due."""
+    from tuipet.adventurescreen import TRAVEL_TICKS
+    p = _champ()
+    pan = AdventurePanel(p)
+    for _ in range(TELE_LEAVE_T + TELE_ARRIVE_T + 2):
+        pan.anim()
+        if pan.travelling:
+            break
+    for _ in range(TRAVEL_TICKS - 1):        # run the clock up to just shy of a leg
+        pan.anim()
+    assert pan._travel_t == TRAVEL_TICKS - 1 and pan.adv.loc == 0
+    wx = pan._wx
+    pan.key("space")
+    assert pan.adv.loc == 1                  # the leg fired
+    assert pan._wx > wx                      # ...and the mon MOVED for it
+    assert pan._travel_t == 0                # the clock restarted from the press
+    pan.anim()                               # the very next tick must NOT auto-fire
+    assert pan.adv.loc == 1
+
+
 def test_the_road_strip_fits_the_box_in_cells_every_beat(no_encounters):
     """Bug report #32 (Joel, v0.5.264): "the key hints on the road showed
     space T at one point.  what is space t?"  '⚡' is TWO terminal cells, so
@@ -184,4 +211,4 @@ def test_the_road_strip_fits_the_box_in_cells_every_beat(no_encounters):
     # (the bare "SPACE T ESC" anchor beat retired 2026-07-28 -- "still
     # seeing space esc": an unlabelled keyset IS the space-t mystery.
     # Every beat names one key; the full set still cycles through.)
-    assert labels == {"SPACE walk", "T warp", "ESC home"}, labels
+    assert labels == {"SPACE hurry", "T warp", "ESC home"}, labels
