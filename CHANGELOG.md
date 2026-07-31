@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.329 — THE ROAD STOPS HIDING WHAT ENERGY DOES (2026-07-31)
+
+THE ROAD STOPS HIDING WHAT ENERGY DOES: an empty tank never stopped you walking, but under 10 energy your pet gets hurt in a fight roughly THIRTY TIMES more often — and nothing on screen ever said so. Now the road says it the moment you cross that line, and the card marks it. The card also shows the gate's own verdict the instant it's true, so 'Too hurt to fight' turns up when it happens instead of after forty legs. And the town door that lets you eat, mend and drink mid-run is finally called what it is — it was labelled 'Sell'.
+
 ## 0.5.328 — THE ROAD MESSAGE LINE HOLDS STILL NOW (2026-07-30)
 
 THE ROAD MESSAGE LINE HOLDS STILL NOW: it is the keys and nothing else — SPACE hurry, T warp when you're carrying one, ESC home — all three at once, never rotating. The ribbon, the energy pip, the hearts and the win chain that used to crowd that one line are all on the road's new status card, which is what forced the keys into a ~2s cycle in the first place. Nothing on the strip changes under you while you walk.

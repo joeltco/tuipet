@@ -13,7 +13,14 @@ from __future__ import annotations
 from . import menu, tournament
 from .theme import INK, INK_B, DIM, POS  # noqa: F401  (theme.apply propagation)
 
-_MENU = (("shop", "Shop"), ("eggs", "Eggs"), ("sell", "Sell"),
+# ⭐ "Sell" WAS A LIE ABOUT THE MOST IMPORTANT DOOR IN A TOWN (road item audit
+# 2026-07-31, Joel: "do 1").  This row opens the REAL BAG -- ENTER uses, R
+# sells -- and it is the ONLY place in a whole 40-leg run where a pet can eat,
+# take a pill, mend a wound or drink its tank back up (the open road reaches
+# exactly five transport tickets; every global key is stopped while a panel
+# owns the keyboard).  A tamer walking a starving pet past a town read "Sell"
+# and kept walking.  Name what the door does.
+_MENU = (("shop", "Shop"), ("eggs", "Eggs"), ("bag", "Bag — eat, mend, sell"),
          ("cup", "Town Cup"), ("leave", "Leave"))
 
 
@@ -37,7 +44,7 @@ class TownPanel(menu.SubHost):
         self.sfx = None
         # <= 38 cols: the hub body clips hard, no marquee (sheet audit
         # 2026-07-21 caught the old line dying mid-word at "resupply, o")
-        self.msg = "A town on the road — rest up, shop."
+        self.msg = "A town — rest, eat, mend, shop."
 
     def anim(self):
         if self.sub_anim():            # the shop / cup match owns the clock
@@ -75,7 +82,7 @@ class TownPanel(menu.SubHost):
                 # every other shelf -- one shop family now, one layout)
                 self.sub = ShopPanel(self.pet, town_id=self.town_id,
                                      start_tab="Eggs")
-            elif key == "sell":
+            elif key == "bag":
                 from .shopscreen import ShopPanel
                 # the real bag (use / sell back), same layout as home --
                 # paying THIS town's rates: demand goods fetch 70%, its own

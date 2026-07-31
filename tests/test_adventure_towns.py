@@ -118,7 +118,7 @@ def test_the_town_sell_slot_opens_the_bag():
     p = _pet()
     p.add_item("ball")
     t = TownPanel(p, 0)
-    t.cursor = next(i for i, m in enumerate(_MENU) if m[0] == "sell")
+    t.cursor = next(i for i, m in enumerate(_MENU) if m[0] == "bag")
     t.key("enter")
     assert type(t.sub).__name__ == "ShopPanel"
     assert t.sub.mode == "bag" and t.sub.bag_only     # use/sell only, no buying
@@ -148,3 +148,24 @@ def test_an_already_rested_pet_still_tops_up():
     a._resting = False
     a._rest_up()
     assert p.energy == p.max_energy            # clamped at the tank
+
+
+def test_the_town_names_its_bag_door():
+    """ROAD ITEM AUDIT 2026-07-31 (Joel: "do 1").  This row opens the REAL
+    bag -- ENTER uses, R sells -- and it is the ONLY place in a 40-leg run
+    where a pet can eat, take a pill, mend a wound or drink its tank back.
+    It was labelled "Sell", so a tamer walking a starving pet past a town
+    read a shopkeeping word and kept walking."""
+    from rich.cells import cell_len
+    from tuipet.townscreen import _MENU, TownPanel
+    label = dict(_MENU)["bag"]
+    assert "Bag" in label and "eat" in label and "mend" in label
+    assert "Sell" not in dict(_MENU).values()          # the old lie is gone
+    p = _pet()
+    t = TownPanel(p, town_id=0)
+    t.cursor = next(i for i, m in enumerate(_MENU) if m[0] == "bag")
+    t.key("enter")
+    assert t.sub is not None and t.sub.mode == "bag"   # ...and it IS the bag
+    # the hub body clips hard at 38 cols, no marquee
+    for ln in t.text().plain.split("\n"):
+        assert cell_len(ln) <= 38, ln

@@ -292,3 +292,55 @@ def test_the_road_wears_its_own_card():
             plain = re.sub(r"\[/?[^\[\]]*\]", "", r)
             assert cell_len(plain) <= 26, f"gate={gate}: {plain!r}"
     assert "T warp" in _card(app, wide)          # the out only shows when held
+
+
+def test_the_road_card_names_the_wound_line_and_the_gate_verdict():
+    """ROAD ITEM AUDIT 2026-07-31 (Joel: "do 1 and 3").
+
+    Two things the road never said out loud, both now on the card:
+     * the WOUND LINE -- `record_battle` calls a body "bad" under
+       BATTLE_MIN_ENERGY and rolls injury at 10% a bout instead of 0.3%.
+       Measured: 391/400 runs cross it by the median leg 19.
+     * the GATE VERDICT -- `battle_condition(check_energy=False)` is what
+       refuses the boss AND makes every wayside wild slip away, and it was
+       only ever spoken after forty legs of walking.  Same call the road
+       itself makes, so the card cannot drift from the gate."""
+    import re
+    from rich.cells import cell_len
+    from tuipet import adventure
+    from tuipet.adventurescreen import AdventurePanel
+    from tuipet.petbase import BATTLE_MIN_ENERGY
+    app = _app()
+    road = AdventurePanel(app.pet, zone=adventure.ZONES[0])
+    road._trans, road.travelling = None, True
+
+    plain = lambda t: re.sub(r"\[/?[^\[\]]*\]", "", t)
+    app.pet._set_energy(BATTLE_MIN_ENERGY + 5)
+    txt = plain(_card(app, road))
+    assert f"Energy {BATTLE_MIN_ENERGY + 5}" in txt and "wounds easy" not in txt
+    app.pet._set_energy(BATTLE_MIN_ENERGY - 1)
+    assert "wounds easy" in plain(_card(app, road))    # the line, named
+
+    # the gate's OWN words, the moment they are true
+    for state, attr, val in (("hurt", "injured", True), ("sick", "sick", True),
+                             ("hungry", "hunger", 0), ("Clean", "poop", 2)):
+        fresh = _app()
+        fresh.pet._set_energy(4)
+        setattr(fresh.pet, attr, val)
+        pan = AdventurePanel(fresh.pet, zone=adventure.ZONES[0])
+        pan._trans, pan.travelling = None, True
+        want = fresh.pet.battle_condition(check_energy=False)
+        assert want is not None, state
+        txt = plain(_card(fresh, pan))
+        assert want in txt, f"{state}: card does not carry {want!r}"
+        rows = _card(fresh, pan).split("\n")
+        assert len(rows) <= 16
+        for r in rows:
+            assert cell_len(re.sub(r"\[/?[^\[\]]*\]", "", r)) <= 26, r
+    # a well pet gets NO verdict row (the card must not invent a worry)
+    clean = _app()
+    clean.pet._set_energy(20)
+    pan = AdventurePanel(clean.pet, zone=adventure.ZONES[0])
+    pan._trans, pan.travelling = None, True
+    assert clean.pet.battle_condition(check_energy=False) is None
+    assert "fight." not in plain(_card(clean, pan))

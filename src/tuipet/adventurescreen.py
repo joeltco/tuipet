@@ -37,6 +37,7 @@ carries progress in the fight family's grammar instead.)
 from __future__ import annotations
 from rich.cells import cell_len
 from . import data, grid, menu
+from .petbase import BATTLE_MIN_ENERGY
 from . import adventure
 from . import shop
 from . import strikefx
@@ -198,6 +199,8 @@ class AdventurePanel(menu.SubHost):
         self._hazard = None           # a running ambush: {"t","enemy","dodged","hit"}
         self._refuse_t = 0            # ticks left on the refusal head-shake
         self._refused = False         # planted: SPACE re-issues the walk
+        self._spent_seen = self.pet.energy < BATTLE_MIN_ENERGY   # the wound line,
+        #                               armed at the state it LEFT home in
         self._transport = None        # open transport menu: the held transport keys
         self._transport_cursor = 0
         self._summary = False         # showing the run-results card before homecoming
@@ -282,6 +285,7 @@ class AdventurePanel(menu.SubHost):
             self._heal_t -= 1             # the second wind plays at the gate too
             return
         if self.travelling:
+            self._check_spent()           # the tank crossing the wound line SPEAKS
             if self.pet.asleep:           # the roadside nap: the journey waits
                 return                    #   -- no strides, no rolls, no march
             if self._refuse_t > 0:        # the head-shake plays out
@@ -327,6 +331,38 @@ class AdventurePanel(menu.SubHost):
             if self._travel_t >= TRAVEL_TICKS:
                 self._travel_t = 0
                 self._advance()
+
+    def _check_spent(self):
+        """THE WOUND LINE SPEAKS, ONCE, WHEN YOU CROSS IT (road item audit
+        2026-07-31, Joel: "fix 2 somehow, your call").
+
+        Energy READ as a decorative road resource: the floor law keeps every
+        drain at 0, and `stop_travel_prob` only plants a pet at -1 or below,
+        which nothing but an unducked hazard pounce can reach -- measured,
+        perfect dodging finishes 400/400 runs starting on FOUR energy.  But
+        the tank was never decorative: `record_battle` calls a body "bad"
+        under BATTLE_MIN_ENERGY and rolls the injury table at bad_nv instead
+        of good_nv -- 10% a bout instead of 0.3%.  Measured over 600 runs,
+        HALF of all road fights happen under the line and 40% of runs come
+        home wounded.  The player was never told, at any point, by anything.
+
+        So: no number moved.  The road says it at the moment it becomes
+        true, on the same transient-verdict channel the transports and the
+        second wind already use, and the ROAD CARD keeps it visible after
+        (statusbox.road).  A hidden cliff becomes a resource you can play."""
+        spent = self.pet.energy < BATTLE_MIN_ENERGY
+        if spent == self._spent_seen:
+            return                        # no crossing: say nothing
+        self._spent_seen = spent
+        if not spent:                     # a rest lifted it back over the line
+            return
+        if self._note_t > 0 or self._rest_t > 0 or self._heal_t > 0:
+            return                        # a verdict is already speaking: don't talk over it
+        # 28 plain: the note branch appends 3 hearts, and the 36-char first
+        # draft measured 40/40 -- zero margin against the CELL LAW
+        self._note = "On empty — wounds come easy."
+        self._note_t = NOTE_HOLD
+        self.sfx = "cancel"
 
     def _stride(self, ticks=1):
         """Walk the march forward `ticks` worth of stride, wrapping at the

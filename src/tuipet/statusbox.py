@@ -688,12 +688,31 @@ def road(app):
     elif a.replay:
         flex = "[dim]veteran road[/]"
     warp = "[dim]T warp — a road item[/]" if a.held_transports() else ""
+    # ⭐THE WOUND LINE, ON SCREEN (road item audit 2026-07-31, Joel: "do 1 and
+    # 3").  `record_battle` calls a body "bad" under BATTLE_MIN_ENERGY and
+    # rolls the injury table at bad_nv instead of good_nv -- 10% a bout
+    # instead of 0.3%.  Measured over 600 runs: 391/400 cross the line by the
+    # median leg 19, HALF of all road fights happen under it, and 40% of runs
+    # come home wounded.  Nothing named it.  (The road's own refusal is the
+    # decoy -- see AdventurePanel._check_spent: energy alone never plants a
+    # pet, only a hazard knock past empty does.)
+    from .petbase import BATTLE_MIN_ENERGY
+    energy_line = (f"Energy [{T.NEG}]{p.energy}[/] [dim]· wounds easy[/]"
+                   if p.energy < BATTLE_MIN_ENERGY else f"Energy [b]{p.energy}[/]")
+    # ...and WHAT THE GATE WILL SAY, the moment it is true, instead of after
+    # forty legs.  Same source the gate itself reads (check_energy=False --
+    # the road's own energy law, D3 ruling), so the card cannot drift from it.
+    cond = p.battle_condition(check_energy=False)
     lines = [
         f"[b]{p.name[:14]}[/] [dim]· road[/]", DIV,
         f"[b]{_zone_display(a.name, 26)}[/]",
         gauge,
         f"Lives  {hp}",
-        f"Energy [b]{p.energy}[/]", DIV,
+        energy_line]
+    if cond:
+        lines.append(f"[{T.NEG}]{cond[:26]}[/]")
+    lines += [
+        DIV,
         f"Bits   [{T.COIN}]+{a.bits_earned}b[/]",
         f"Fights {a.wins}W/{a.fights}",
         f"Loot   {a.finds}",
