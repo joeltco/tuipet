@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.332 — THAT LITTLE SPRITE IN THE CORNER IS A FESTIVAL, NOT A STUCK  (2026-08-01)
+
+THAT LITTLE SPRITE IN THE CORNER IS A FESTIVAL, NOT A STUCK PIXEL: on four days a year a decoration appears in your arena — the Crest of Courage on Odaiba Memorial Day, a present at Christmas, candy at Halloween, cake at New Year — and until now nothing on the home screen said so. The card names the day above your vitals whenever one is on, on the egg screen too. It was only ever labelled on the adventure card before.
+
 ## 0.5.331 — CARE MISTAKES ARE THE THREE CALLS NOW, AND NOTHING ELSE (2026-08-01)
 
 CARE MISTAKES ARE THE THREE CALLS NOW, AND NOTHING ELSE: on the real device a care mistake is a missed CALL, and there are exactly three — hunger empty, effort empty, and left awake in a lit room at bedtime. Two things that used to cost you one no longer do: ignoring your mon when it acts up (the device has no scolding at all, so it was never a mistake there) and the cheese burger (overfeeding is named as NOT a mistake). Both keep their own price — a tantrum still costs manners, the burger still costs weight. Your counter gates evolution and kills at 20, so it now only counts what it should.

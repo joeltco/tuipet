@@ -198,6 +198,21 @@ def adventure_line(pet):
     return f"Quest   {count}[dim]▸ {_frontier_name(pet, 16 - len(count))}[/]"
 
 
+def festival_line():
+    """TODAY's festival, named -- or None on an ordinary day.
+
+    ⭐Bug report 2026-08-01 (Joel): "whyyyy is there a sun pixel sprite stuck
+    on the lcd screen?"  It was the Crest of Courage, the Odaiba Memorial Day
+    decoration (arenafx.HOLIDAY_DECOR) -- a prop that quietly appears in the
+    arena's corner on four dates a year.  The festival was named NOWHERE on
+    the home screen, so the only thing a player could conclude was that a
+    pixel had got stuck.  A prop with no label is a glitch; a prop with a
+    label is a holiday.  (The road card has always named it -- statusbox.road
+    -- and that is the only place it was ever said.)"""
+    from . import tournament
+    return tournament.holiday()
+
+
 def home_lines(pet):
     from . import lines as _lines           # DMX level: exp vs canon thresholds
     T = theme
@@ -206,9 +221,11 @@ def home_lines(pet):
     age = age_compact(pet.age_seconds)
     xm = f" [b {T.ACCENT}]X[/]" if pet.x_antibody != "None" else ""
     lvl = _lines._pet_level(pet)
+    fest = festival_line()
     return [
         f"[b]{pet.name[:22]}[/]{xm}",
         f"[dim]{pet.stage}{(' · ' + pet.attribute) if pet.attribute else ''}[/]",
+    ] + ([f"[{T.COIN}]★ {fest[:24]}[/]"] if fest else []) + [
         DIV,
         f"Hunger  {hearts(pet.hunger)}",
         f"Effort  {hearts(pet.strength)}",
@@ -252,9 +269,14 @@ def home_lines(pet):
 
 def egg_lines(pet):
     mins, secs = divmod(int(pet.age_seconds), 60)
+    # the festival prop draws over an EGG's arena too (arenafx._effect_overlay
+    # blits it before the `pet.num == -1` return), so the egg card names the
+    # day for the same reason the home card does -- 12 rows, room to spare
+    fest = festival_line()
     return [
         "[b]Digitama[/] [dim]· egg[/]",
         DIV,
+    ] + ([f"[{theme.COIN}]★ {fest[:24]}[/]", ""] if fest else []) + [
         "[dim]a new life is warming[/]",
         "",
         "Destined to hatch",

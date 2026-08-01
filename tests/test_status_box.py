@@ -192,3 +192,41 @@ def test_battle_card_wraps_the_result_note():
     statusbox.battle(app)
     _fits(app.stats_w, "battle")
     _no_words_lost(app.stats_w, "battle", _M.hud_note)
+
+
+def test_the_home_and_egg_cards_name_the_festival():
+    """⭐Bug report 2026-08-01 (Joel): "whyyyy is there a sun pixel sprite
+    stuck on the lcd screen?"  It was the Crest of Courage — the Odaiba
+    Memorial Day decoration (arenafx.HOLIDAY_DECOR), a prop that appears in
+    the arena corner on four dates a year and was named NOWHERE on the home
+    screen.  A prop with no label reads as a stuck pixel.
+
+    ⛔THIS ALSO FENCES THE ROW BUDGET.  The festival banner is the 16th row of
+    a 16-row card, so a future 17th row would break the home card on four days
+    a year and pass every other day.  Forcing a festival here turns that
+    landmine into an always-on gate."""
+    import datetime
+    from tuipet import statusbox, tournament
+    from tuipet.arenafx import HOLIDAY_DECOR
+    fake = _FakeStats()
+    p = _pet()
+    e = Pet(num=-1, name="", stage="Egg")
+    e.world_seconds = 600.0
+    for name, (m, d) in {"Odaiba Memorial Day": (8, 1),
+                         "Christmas Festival": (12, 25),
+                         "Halloween Festival": (10, 31),
+                         "New Year Festival": (1, 1)}.items():
+        tournament._today = (lambda mm, dd: (lambda: datetime.date(2026, mm, dd)))(m, d)
+        assert name in HOLIDAY_DECOR, f"{name} draws a prop with no decor entry"
+        for lines, tag in ((statusbox.home_lines(p), "home"),
+                           (statusbox.egg_lines(e), "egg")):
+            fake.txt = "\n".join(lines)
+            _fits(fake, f"{tag} on {name}")
+            assert name in fake.txt, f"{tag} card never names {name}"
+    # ...and an ordinary day carries no banner at all
+    tournament._today = lambda: datetime.date(2026, 6, 17)
+    fake.txt = "\n".join(statusbox.home_lines(p))
+    _fits(fake, "home, ordinary day")
+    # (not a bare "★" check -- the Battle row wears ★{trophies} every day)
+    for name in ("Odaiba", "Christmas", "Halloween", "New Year"):
+        assert name not in fake.txt
