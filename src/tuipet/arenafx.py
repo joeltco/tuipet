@@ -78,6 +78,26 @@ def _holiday_right(today=None):
     return grid.X0 + max(len(r) for r in deco)
 
 
+def _zone_clamp(pet, xshift):
+    """THE EXCLUSIVE FLOOR ZONES, IN ONE PLACE (Bandai-grammar sweep
+    2026-07-11; unified 2026-08-01).  The filth block and today's festival
+    prop are hard LEFT walls, the sick skull a hard RIGHT one; sleep / sick /
+    startle / the special idles all bypass the roamer's own bounds, so this
+    clamp is what actually guarantees no sprite draws on another.
+
+    ⚠IT WAS COPIED, AND THE COPY ROTTED.  `Screen.paint` and the yawn /
+    poopdance branch of `_paint_fx` each carried their own transcription of
+    these three lines.  v0.5.333 taught the prop to the first one and shipped;
+    Joel: "woooooow dude.... still clipping into it" -- the special idles were
+    still walking the mon straight through the crest, 9 px deep.  One
+    function now, so a fourth caller cannot inherit a stale wall."""
+    lo = max(_filth_right(pet.poop) if pet.poop else grid.X0,
+             _holiday_right()) - PET_BASE_X
+    cap = ((grid.X1 - SICK_ZONE if _sick_mark_up(pet) else grid.X1)
+           - SPRITE_W) - PET_BASE_X
+    return min(max(xshift, lo), max(cap, lo))
+
+
 def _filth_right(count):
     """Right edge x of the filth block: fixed POOP_W columns like DVPet's 30px slots."""
     n = min(count or 0, POOP_MAX_PILES)
@@ -578,10 +598,7 @@ class FxMixin:
             # The pose sways around the roamer's spot, so it gets the same
             # zone clamp as paint() (sickness striking MID-yawn would
             # otherwise stand the skull on the pet for the pose's last beats).
-            lo = (_filth_right(pet.poop) if pet.poop else grid.X0) - PET_BASE_X
-            cap = ((grid.X1 - SICK_ZONE if _sick_mark_up(pet) else grid.X1)
-                   - SPRITE_W) - PET_BASE_X
-            c.xshift = min(max(c.xshift, lo), max(cap, lo))
+            c.xshift = _zone_clamp(pet, c.xshift)
             c.overlay += _effect_overlay(pet, self.frame_i // 4, SCREEN_COLS, c.px_h,
                                          tick=self.frame_i)
         if dark:                     # the opaque cover: black over everything

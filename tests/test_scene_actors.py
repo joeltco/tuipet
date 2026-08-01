@@ -399,3 +399,45 @@ def test_no_sprite_draws_on_the_festival_prop(monkeypatch):
                 pet_px = _sprite_px(cap["rows"], cap["xshift"], cap["mirror"])
                 hit = pet_px & set(cap["overlay"])
                 assert not hit, ((m, d), n, i, sorted(hit)[:6])
+
+
+def test_the_special_idles_share_the_one_zone_clamp(monkeypatch):
+    """⭐Joel 2026-08-01: "woooooow dude.... still clipping into it."
+
+    v0.5.333 taught the festival prop to `Screen.paint`'s wall and shipped --
+    but the yawn / poopdance branch of `_paint_fx` carried its OWN
+    transcription of the same three lines, and that copy still knew only the
+    filth wall.  The special idles walked the mon 9 px into the crest.  There
+    is ONE `arenafx._zone_clamp` now; this sweeps the fx paths that the
+    scene-actor sweep above never drove."""
+    import datetime
+    from tuipet import arenafx, tournament
+    cap = _paint_capture(monkeypatch)
+    for m, d in ((8, 1), (12, 25), (10, 31), (1, 1)):
+        monkeypatch.setattr(tournament, "_today",
+                            lambda mm=m, dd=d: datetime.date(2026, mm, dd))
+        for kind in ("yawn", "poopdance"):
+            for poop in (0, 2):
+                random.seed(3)
+                p = _pet(weather="Clear", poop=poop, poop_sizes=[2] * poop)
+                s = _screen()
+                s.start_fx(kind)
+                # walk the mon ACROSS the band while the pose plays: the bug
+                # only shows where the roamer stood, and the default anchor
+                # sits clear of the corner
+                for x0 in range(grid.X0 - 4, grid.X1 + 1):
+                    s.roamer.x = float(x0)
+                    if not s.fx:
+                        s.start_fx(kind)
+                    s.advance(p)
+                    s.paint(p)
+                    pet_px = _sprite_px(cap["rows"], cap["xshift"],
+                                        cap["mirror"])
+                    hit = pet_px & set(cap["overlay"])
+                    assert not hit, (kind, (m, d), poop, x0, sorted(hit)[:6])
+    # and the clamp is genuinely ONE function, not three transcriptions
+    import inspect
+    from tuipet import arena
+    for src in (inspect.getsource(arena.Screen.paint),
+                inspect.getsource(arenafx.FxMixin._paint_fx)):
+        assert "_filth_right(" not in src, "a hand-rolled wall crept back in"

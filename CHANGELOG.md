@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.334 — THE FESTIVAL DECORATION REALLY STOPS CLIPPING NOW (2026-08-01)
+
+THE FESTIVAL DECORATION REALLY STOPS CLIPPING NOW: the last fix taught the main painter to keep your mon out of the prop, but the yawn and poop-dance idles ran a second copy of that rule that never learned it — so the mon still walked 9 pixels into the decoration whenever one of those poses played. There is one rule now, in one place, shared by every path that puts your mon on screen.
+
 ## 0.5.333 — THE FESTIVAL DECORATION STOPS DRAWING THROUGH YOUR MON (2026-08-01)
 
 THE FESTIVAL DECORATION STOPS DRAWING THROUGH YOUR MON: the prop in the arena corner never joined the rule that keeps the poop pile and the sick skull out of your pet's way, so on festival days the roamer walked straight into it and the decoration punched through the sprite. It is a wall now, like the others — your mon turns at it instead of wearing it. The card also names the day above your vitals so the little sprite in the corner reads as a holiday and not a stuck pixel.

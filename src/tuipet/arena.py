@@ -32,7 +32,7 @@ from .arenafx import (  # noqa: F401,E402
     PLAY_HOP, PLAY_HOP_H, PLAY_LEAD, POOP_PAD, POOP_W, SCREEN_COLS,
     SCREEN_ROWS, SICK_ZONE, SPRITE_W, _FxCtx, _WINDOW, _clip_win,
     _HIDDEN_STATUS_ICONS, _blit, _effect_overlay, _evol_strobe, _filth_pts,
-    _filth_right, _holiday_right, _sick_mark_up)
+    _filth_right, _holiday_right, _sick_mark_up, _zone_clamp)
 
 
 def hearts(n, total=4, color=None):
@@ -189,15 +189,9 @@ class Screen(FxMixin, Static):
         # 2026-07-11): the filth block is a hard left wall and the sick skull
         # a hard right one -- sleep/sick/startle bypass the roamer's bounds,
         # so the clamp here is what actually guarantees no overlap.
-        base = PET_BASE_X
-        # the LEFT wall is whichever occupant reaches furthest in: the filth
-        # block, or today's festival prop (which joined this clamp 2026-08-01
-        # -- see _holiday_right; it had been drawing straight through the mon)
-        lo = max(_filth_right(pet.poop) if pet.poop else grid.X0,
-                 _holiday_right()) - base
-        cap = ((grid.X1 - SICK_ZONE if _sick_mark_up(pet) else grid.X1)
-               - SPRITE_W) - base
-        xshift = min(max(xshift, lo), max(cap, lo))       # poop wins over the skull (it yields when crowded)
+        xshift = _zone_clamp(pet, xshift)   # ONE source (arenafx._zone_clamp):
+        #   filth + festival prop are left walls, the skull a right one, and
+        #   poop wins over the skull (it yields when crowded)
         pts = _effect_overlay(pet, wf, SCREEN_COLS, SCREEN_ROWS * 2, tick=self.frame_i)
         # (THE AMBIENT SULK IS POSE-ONLY -- Joel 2026-07-28, final: "the
         # smoke is the reaction sprites... we already went over this."  The
