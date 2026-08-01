@@ -679,8 +679,17 @@ LIGHTS_MISTAKE_POSTPONE = -60.0         # AfterMistakeMinutesPostponed: the NEXT
 LIGHTS_MISTAKE_OBED = -1                # LightsOnMistakeObedienceChange (once per night)
 HUNGER_MISTAKE_OBED = 1                 # HungerMistakeObedienceChange (canon: +1!)
 HUNGER_MISTAKE_OBED_GLUTTON = -1        # ...ChangeGlutton
-LIGHTS_MISTAKE_SEC = 60.0               # MinutesToMistakeLights(60) as ~12% of the sleep,
-#                                         scaled to tuipet's ~6-min night -- one mistake/night
+LIGHTS_MISTAKE_SEC = 60.0               # MinutesToMistakeLights(60): the FIRST lit mistake
+#                                         lands 60 game-min into the sleep, then every 120
+#                                         (LIGHTS_MISTAKE_POSTPONE).  ⚠ THE OLD TAIL HERE
+#                                         CLAIMED "~6-min night -- one mistake/night" AND IT
+#                                         WAS WRONG BOTH WAYS: measured on a live Mega the
+#                                         night runs ~600 game-min, so a fully lit one books
+#                                         FIVE (canon's own ~8h night gives 4 -- _tick_asleep
+#                                         has always said so).  The number is canon and stays;
+#                                         only this comment lied.  Diagnosed 2026-07-31 when
+#                                         Joel asked what was eating his care mistakes: it was
+#                                         this, 5 of his 6 a day.
 MORNING_MOOD_CHANCE = 5                 # MorningMoodChance: 1/5 bad, 1/5 terrible-if-happy, 1/5 good
 BAD_MORNING_MOOD = {"Happy": -150, "Neutral": -100, "Unhappy": -10, "Depressed": -10}
 GOOD_MORNING_MOOD = {"Happy": 50, "Neutral": 100, "Unhappy": 150, "Depressed": 150}

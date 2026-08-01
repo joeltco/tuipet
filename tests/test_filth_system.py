@@ -194,3 +194,44 @@ def test_the_first_slip_of_a_session_still_flashes():
     assert src.index("cm0 = self.pet.care_mistakes") < src.index("self.pet.tick(1.0)")
     assert src.index("self.pet.tick(1.0)") < src.index("if p.care_mistakes > cm0")
     assert not re.search(r"_cm_seen\s*=", src)      # no lazy latch, ever again
+
+
+def test_a_lit_night_is_the_dominant_mistake_source():
+    """Diagnosed 2026-07-31 (Joel: "ok so what's actually causing my care
+    mistakes then").  His cloud save carried lights=True; measured on his own
+    numbers, one game-day costs FIVE lights mistakes and one ignored tantrum,
+    against ONE with the lights off.  Canon: the first lit mistake lands 60
+    game-min in, then every 120 (LIGHTS_MISTAKE_POSTPONE = -60).  The number
+    is canon and stays -- this pins the SHAPE so the constants block's old
+    "one mistake/night" claim can never quietly come back."""
+    import os
+    import random
+    import tempfile
+    os.environ.setdefault("TUIPET_SAVE_DIR", tempfile.mkdtemp())
+    from tuipet.pet import Pet
+
+    def day(lights):
+        random.seed(12)
+        p = Pet(num=399, name="Omni", stage="Mega", attribute="Vaccine",
+                obedience=111)
+        p.hunger, p.strength = 4, 4
+        p.sleep_limit, p.world_seconds = 840.0, 12607.0
+        p.max_energy = 38
+        p._set_energy(26)
+        p.lights = lights
+        seen = []
+        real = type(p)._inc_mistake
+        type(p)._inc_mistake = lambda s, reason="": (seen.append(reason),
+                                                     real(s, reason))[1]
+        try:
+            for _ in range(1440):
+                p.tick(1.0)
+        finally:
+            type(p)._inc_mistake = real
+        return seen
+
+    lit = day(True)
+    dark = day(False)
+    assert lit.count("the lights left on") >= 4, lit
+    assert "the lights left on" not in dark, dark
+    assert len(lit) > len(dark), (lit, dark)
