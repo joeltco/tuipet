@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.335 — THE FESTIVAL DECORATION IS GONE FROM THE SCREEN (2026-08-01)
+
+THE FESTIVAL DECORATION IS GONE FROM THE SCREEN: it was a corner ornament four days a year, and on a 32-pixel play field holding a 16-pixel creature it was taking HALF your mon's walking room to sit there — plus it was the source of every sprite-collision bug the arena has had. Your pet gets its whole band back on festival days. The holiday is still named on the status card above your vitals, and nothing else about a festival changed: double bits, richer road finds, the shop sale and the festival egg are all untouched.
+
 ## 0.5.334 — THE FESTIVAL DECORATION REALLY STOPS CLIPPING NOW (2026-08-01)
 
 THE FESTIVAL DECORATION REALLY STOPS CLIPPING NOW: the last fix taught the main painter to keep your mon out of the prop, but the yawn and poop-dance idles ran a second copy of that rule that never learned it — so the mon still walked 9 pixels into the decoration whenever one of those poses played. There is one rule now, in one place, shared by every path that puts your mon on screen.

@@ -197,9 +197,11 @@ def test_battle_card_wraps_the_result_note():
 def test_the_home_and_egg_cards_name_the_festival():
     """⭐Bug report 2026-08-01 (Joel): "whyyyy is there a sun pixel sprite
     stuck on the lcd screen?"  It was the Crest of Courage — the Odaiba
-    Memorial Day decoration (arenafx.HOLIDAY_DECOR), a prop that appears in
-    the arena corner on four dates a year and was named NOWHERE on the home
-    screen.  A prop with no label reads as a stuck pixel.
+    Memorial Day decoration, a prop that appeared in the arena corner on four
+    dates a year and was named NOWHERE on the home screen -- a prop with no
+    label reads as a stuck pixel.  The PROP itself was cut on 2026-08-01
+    ("cut it"); this banner is what replaced it, and it is now the only
+    on-screen sign that a festival is running.
 
     ⛔THIS ALSO FENCES THE ROW BUDGET.  The festival banner is the 16th row of
     a 16-row card, so a future 17th row would break the home card on four days
@@ -207,7 +209,6 @@ def test_the_home_and_egg_cards_name_the_festival():
     landmine into an always-on gate."""
     import datetime
     from tuipet import statusbox, tournament
-    from tuipet.arenafx import HOLIDAY_DECOR
     fake = _FakeStats()
     p = _pet()
     e = Pet(num=-1, name="", stage="Egg")
@@ -217,7 +218,6 @@ def test_the_home_and_egg_cards_name_the_festival():
                          "Halloween Festival": (10, 31),
                          "New Year Festival": (1, 1)}.items():
         tournament._today = (lambda mm, dd: (lambda: datetime.date(2026, mm, dd)))(m, d)
-        assert name in HOLIDAY_DECOR, f"{name} draws a prop with no decor entry"
         for lines, tag in ((statusbox.home_lines(p), "home"),
                            (statusbox.egg_lines(e), "egg")):
             fake.txt = "\n".join(lines)

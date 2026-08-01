@@ -32,7 +32,7 @@ from .arenafx import (  # noqa: F401,E402
     PLAY_HOP, PLAY_HOP_H, PLAY_LEAD, POOP_PAD, POOP_W, SCREEN_COLS,
     SCREEN_ROWS, SICK_ZONE, SPRITE_W, _FxCtx, _WINDOW, _clip_win,
     _HIDDEN_STATUS_ICONS, _blit, _effect_overlay, _evol_strobe, _filth_pts,
-    _filth_right, _holiday_right, _sick_mark_up, _zone_clamp)
+    _filth_right, _sick_mark_up, _zone_clamp)
 
 
 def hearts(n, total=4, color=None):

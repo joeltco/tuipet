@@ -203,12 +203,12 @@ def festival_line():
 
     ⭐Bug report 2026-08-01 (Joel): "whyyyy is there a sun pixel sprite stuck
     on the lcd screen?"  It was the Crest of Courage, the Odaiba Memorial Day
-    decoration (arenafx.HOLIDAY_DECOR) -- a prop that quietly appears in the
-    arena's corner on four dates a year.  The festival was named NOWHERE on
-    the home screen, so the only thing a player could conclude was that a
-    pixel had got stuck.  A prop with no label is a glitch; a prop with a
-    label is a holiday.  (The road card has always named it -- statusbox.road
-    -- and that is the only place it was ever said.)"""
+    decoration -- a prop that quietly appeared in the arena's corner on four
+    dates a year, named NOWHERE on the home screen, so the only thing a player
+    could conclude was that a pixel had got stuck.  ⛔THE PROP WAS THEN CUT
+    (2026-08-01, "cut it"): it cost the mon half its roam and bred collision
+    bugs.  THIS BANNER IS NOW THE ONLY ON-SCREEN SIGN A FESTIVAL IS RUNNING --
+    do not let it rot.  (The road card names it too, in statusbox.road.)"""
     from . import tournament
     return tournament.holiday()
 

@@ -60,28 +60,10 @@ def _evol_strobe(c):
                   if ev[y % mh][x % mw] == "1"]
 
 
-def _holiday_right(today=None):
-    """Right edge x of TODAY's festival prop, or grid.X0 on an ordinary day.
-
-    ⭐The decor is a LEFT-WALL occupant exactly like the filth block (Joel
-    2026-08-01: "my mon is clipping right into it. looks like shit").  The
-    exclusive-floor-zone law -- filth a hard left wall, the sick skull a hard
-    right one -- predates the prop by three months, and when the prop landed
-    (2026-07-24) it simply never joined the clamp.  Its own comment claimed it
-    "sits where a resting pet does not reach", which is true of a CENTRED
-    sleeper and false of the roamer, which walks the whole band; and the
-    overlay is stamped AFTER the sprite, so the prop punched straight through
-    the mon.  Four days a year, the arena looked broken."""
-    deco = _holiday_decor(today)
-    if not deco:
-        return grid.X0
-    return grid.X0 + max(len(r) for r in deco)
-
-
 def _zone_clamp(pet, xshift):
     """THE EXCLUSIVE FLOOR ZONES, IN ONE PLACE (Bandai-grammar sweep
     2026-07-11; unified 2026-08-01).  The filth block and today's festival
-    prop are hard LEFT walls, the sick skull a hard RIGHT one; sleep / sick /
+    is a hard LEFT wall, the sick skull a hard RIGHT one; sleep / sick /
     startle / the special idles all bypass the roamer's own bounds, so this
     clamp is what actually guarantees no sprite draws on another.
 
@@ -91,8 +73,7 @@ def _zone_clamp(pet, xshift):
     Joel: "woooooow dude.... still clipping into it" -- the special idles were
     still walking the mon straight through the crest, 9 px deep.  One
     function now, so a fourth caller cannot inherit a stale wall."""
-    lo = max(_filth_right(pet.poop) if pet.poop else grid.X0,
-             _holiday_right()) - PET_BASE_X
+    lo = (_filth_right(pet.poop) if pet.poop else grid.X0) - PET_BASE_X
     cap = ((grid.X1 - SICK_ZONE if _sick_mark_up(pet) else grid.X1)
            - SPRITE_W) - PET_BASE_X
     return min(max(xshift, lo), max(cap, lo))
@@ -231,37 +212,6 @@ _PRESENT = ["01000010",
 
 # holiday name (tournament.HOLIDAYS) -> its decoration.  "present" is the
 # drawn prop; every other value is a load_icons() key (frame 0 is used).
-HOLIDAY_DECOR = {
-    "Halloween Festival": "f:7",     # candy
-    "Christmas Festival": "present",
-    "Odaiba Memorial Day": "i:15",   # the Crest of Courage -- the '01 flagship
-    "New Year Festival": "f:6",      # cake
-}
-
-
-def _holiday_decor(today=None):
-    """TODAY's festival decoration sprite (cropped rows), or None.
-
-    Food icons are stored at 3x (24px cells over an 8px native sprite -- a
-    clean integer upscale), so a food-keyed decoration is downsampled back
-    to its true 8x8 to fit the corner.  That is REVERSING a known upscale,
-    lossless, not a lossy shrink.  Item icons (the crest) are already
-    native-size, and the present is the drawn 8x8 prop."""
-    from . import tournament
-    key = HOLIDAY_DECOR.get(tournament.holiday(today))
-    if key is None:
-        return None
-    if key == "present":
-        return _PRESENT
-    frames = data.load_icons().get(key)
-    if not frames:
-        return None
-    sprite = frames[0]
-    if key.startswith("f:"):                 # 3x food cell -> native 8x8
-        sprite = [r[::3] for r in sprite[::3]]
-    return grid._crop(sprite)
-
-
 def _effect_overlay(pet, frame_i, cols, px_h, tick=0):
     """The scene's overlay actors: filth piles, the sleep Zzz, the sick skull.
     Nothing else -- badges belong to the HUD, not the play field."""
@@ -269,12 +219,17 @@ def _effect_overlay(pet, frame_i, cols, px_h, tick=0):
     pts = []
     if pet.dead:
         return pts
-    # a festival prop in the TOP-LEFT corner (2026-07-24): ambient, shown for
-    # a live pet OR an egg.  It sits where a resting pet (centred, x~12..28)
-    # does not reach; a roamer may briefly pass in front, exactly like poop.
-    deco = _holiday_decor()
-    if deco:
-        pts += _blit(deco, grid.X0, grid.TOP)
+    # (⛔THE FESTIVAL PROP WAS CUT HERE 2026-08-01 on Joel's order, "cut it".
+    #  A decoration in the top-left corner, four days a year.  It cost the mon
+    #  HALF ITS ROAM -- the 32px band holds a 16px creature, so 16px of walking
+    #  room, and the prop's exclusive-zone wall took 7-8 of them -- and it was
+    #  the single richest source of sprite-collision bugs in the arena (it
+    #  never joined the zone clamp, then joined only ONE of the clamp's two
+    #  copies).  The festival is NAMED ON THE CARD instead since v0.5.332,
+    #  which carries the same fact better and costs the LCD nothing.  The
+    #  festival's real machinery -- 2x bits, richer road finds, the shop sale,
+    #  the festival egg -- is untouched; only the ornament is gone.
+    #  ⚠`_PRESENT` STAYS: it is the road-present wrapper and the gift fx prop.)
     # sized piles in the slot grid -- BUT NOT IN THE DARK (Joel 2026-07-25:
     # "is the poop supposed to be visible during lights off?").  It was:
     # the lights-off branch blanks the PET rows and let the overlay through,

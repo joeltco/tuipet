@@ -60,7 +60,7 @@ def ordinary_day(monkeypatch):
     it "one date source for the cadence layer (tests monkeypatch here)"), not
     at `holiday()`, so both existing escape hatches keep working: a test that
     re-patches `_today` (the cup cadence's `on_date`) overrides this, and a
-    test that passes an explicit date to `holiday()`/`_holiday_decor()` was
+    test that passes an explicit date to `holiday()` was
     never going through here at all.
 
     2026-06-17 is a plain Wednesday in SUMMER -- the same season the suite ran

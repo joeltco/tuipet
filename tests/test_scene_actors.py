@@ -365,42 +365,6 @@ def test_the_ambient_sulk_is_pose_only():
     assert afx.count('"unhappy"') >= 2, "the REACTION smoke must survive"
 
 
-def test_no_sprite_draws_on_the_festival_prop(monkeypatch):
-    """⭐Bug report 2026-08-01 (Joel): "my mon is clipping right into it.
-    looks like shit."
-
-    The exclusive-floor-zone law (2026-07-11) gives the filth block a hard
-    LEFT wall and the sick skull a hard RIGHT one, and `test_no_sprite_ever_
-    draws_on_another` above sweeps it.  The festival prop landed three months
-    later (2026-07-24) in the top-LEFT corner and never joined the clamp: its
-    own comment claimed it "sits where a resting pet does not reach", true of
-    a centred sleeper and false of the roamer, which walks the whole band --
-    and the overlay is stamped AFTER the sprite, so it punched through the
-    mon.  Measured before the fix: 11 pixels of crest inside the creature.
-
-    ⚠The sweep above could never catch it, because it runs on whatever day
-    the suite runs and 361 of them have no prop -- and conftest's
-    `ordinary_day` now pins even that away.  This one FORCES each festival."""
-    import datetime
-    from tuipet import arenafx, tournament
-    cap = _paint_capture(monkeypatch)
-    for m, d in ((8, 1), (12, 25), (10, 31), (1, 1)):
-        monkeypatch.setattr(tournament, "_today",
-                            lambda mm=m, dd=d: datetime.date(2026, mm, dd))
-        assert arenafx._holiday_decor() is not None, (m, d)
-        assert arenafx._holiday_right() > grid.X0            # a real wall
-        for n, sizes in LOADS:
-            random.seed(7)
-            p = _pet(weather="Clear", poop=n, poop_sizes=list(sizes))
-            s = _screen()
-            for i in range(30):
-                s.advance(p)
-                s.paint(p)
-                pet_px = _sprite_px(cap["rows"], cap["xshift"], cap["mirror"])
-                hit = pet_px & set(cap["overlay"])
-                assert not hit, ((m, d), n, i, sorted(hit)[:6])
-
-
 def test_the_special_idles_share_the_one_zone_clamp(monkeypatch):
     """⭐Joel 2026-08-01: "woooooow dude.... still clipping into it."
 
@@ -441,3 +405,38 @@ def test_the_special_idles_share_the_one_zone_clamp(monkeypatch):
     for src in (inspect.getsource(arena.Screen.paint),
                 inspect.getsource(arenafx.FxMixin._paint_fx)):
         assert "_filth_right(" not in src, "a hand-rolled wall crept back in"
+
+
+def test_no_festival_prop_survives_on_the_lcd():
+    """⛔CUT 2026-08-01 on Joel's order ("cut it").  The festival decoration
+    lived in the arena's top-left corner four days a year.  It cost the mon
+    HALF ITS ROAM -- a 32px band holding a 16px creature leaves 16px of
+    walking room, and the prop's exclusive-zone wall took 7-8 of them -- and
+    it was the richest source of sprite-collision bugs the arena has had.
+    The festival is named on the STATUS CARD instead (statusbox.festival_line).
+
+    This fences the LCD: on every festival date the play field carries nothing
+    but the pet, and the mon keeps its whole band."""
+    import datetime
+    from tuipet import arenafx, tournament
+    from tuipet.pet import Pet
+    orig = tournament._today
+    try:
+        for m, d in ((8, 1), (12, 25), (10, 31), (1, 1)):
+            tournament._today = (lambda mm, dd: (lambda: datetime.date(2026, mm, dd)))(m, d)
+            assert tournament.holiday() is not None, (m, d)   # it IS a festival
+            # a well pet on a clean floor puts NOTHING on the play field
+            p = _pet(weather="Clear")
+            assert arena._effect_overlay(p, 0, 40, 24, tick=0) == [], (m, d)
+            # ...and the walls are the filth block and the skull, nothing else
+            assert arenafx._zone_clamp(p, 0) == 0, (m, d)
+            far = (grid.X1 - arenafx.SPRITE_W) - arenafx.PET_BASE_X
+            assert arenafx._zone_clamp(p, far) == far, (m, d)   # full roam, both ends
+            near = grid.X0 - arenafx.PET_BASE_X
+            assert arenafx._zone_clamp(p, near) == near, (m, d)
+            # an EGG's screen is clean too
+            e = Pet(num=-1, name="", stage="Egg")
+            e.world_seconds = 600.0
+            assert arena._effect_overlay(e, 0, 40, 24, tick=0) == [], (m, d)
+    finally:
+        tournament._today = orig
