@@ -150,7 +150,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("A CARE MISTAKE NOW TELLS YOU WHAT YOU MISSED: the counter used to just tick up on the card with no explanation, which is a rough way to learn about the one thing that can kill a Mega. Every slip names itself as it happens — 'left hungry too long', 'the lights left on', 'acting up, not scolded', 'empty effort gauge'. And to settle it: POOP HAS NEVER COST YOU A CARE MISTAKE, not at one pile and not at four. A dirty room makes your pet sick and makes it act up; it is not a missed call, and the counter does not move for it.")
+    WHATS_NEW = ("CARE MISTAKES ARE THE THREE CALLS NOW, AND NOTHING ELSE: on the real device a care mistake is a missed CALL, and there are exactly three — hunger empty, effort empty, and left awake in a lit room at bedtime. Two things that used to cost you one no longer do: ignoring your mon when it acts up (the device has no scolding at all, so it was never a mistake there) and the cheese burger (overfeeding is named as NOT a mistake). Both keep their own price — a tantrum still costs manners, the burger still costs weight. Your counter gates evolution and kills at 20, so it now only counts what it should.")
 
     BINDINGS = [
         # jogress is LOBBY-ONLY (fusion needs a real partner from the

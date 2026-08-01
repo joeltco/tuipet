@@ -37,8 +37,13 @@ def test_food_dials_match_their_blurbs():
 
 def test_the_big_meals_and_the_mushroom():
     p = _pet()
+    w0 = p.weight
     _use(p, "cheese_burger")
-    assert p.hunger == FULL_HUNGER and p.care_mistakes == 1   # "a care mistake"
+    # "fills the belly · weight +4" -- and NOT a care mistake since the
+    # canonization (2026-08-01): the Bandai record names overfeeding as
+    # explicitly not one, so the blurb no longer promises it either
+    assert p.hunger == FULL_HUNGER and p.weight - w0 == 4
+    assert p.care_mistakes == 0
     p = _pet()
     w0, e0 = p.weight, p.energy
     _use(p, "giga_meal")

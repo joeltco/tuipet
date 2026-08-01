@@ -147,11 +147,16 @@ def test_filth_never_books_a_care_mistake():
         f"filth booked {p.care_mistakes} care mistakes -- it must book none")
 
 
-def test_every_care_mistake_names_itself():
-    """The real defect behind that report: a care mistake was SILENT.  The
-    counter moved on the card, the mood took its sting, and nothing said WHICH
-    call was missed -- on a Mega, where the fifth slip turns lethal.  Every
-    source stamps a reason, and each fits the 40-cell HUD line."""
+def test_a_care_mistake_is_a_missed_call_and_nothing_else():
+    """⭐THE THREE CALLS (2026-08-01, Joel: "canonize all care mistakes").
+    The BANDAI device record defines a care mistake as a MISSED CALL, and the
+    device makes exactly three: hunger empty, strength empty, tired/wants
+    sleep.  It also names what is NOT one -- overfeeding, injury, waking a
+    sleeper.  Two impostors were cut on that ruling: the ignored TANTRUM (the
+    device has no scold mechanic at all) and the CHEESEBURGER (overfeeding).
+    ⛔THIS PIN IS A FENCE: a fourth `_inc_mistake` caller fails it.
+
+    Each source also NAMES itself, and each fits the 40-cell HUD line."""
     import inspect
     import os
     import re
@@ -164,7 +169,10 @@ def test_every_care_mistake_names_itself():
     from tuipet.pet import Pet
     src = inspect.getsource(petbody) + inspect.getsource(petcare)
     calls = re.findall(r"_inc_mistake\((.*?)\)", src)
-    assert len(calls) >= 5, calls
+    reasons = [a.strip('"') for a in calls if not a.startswith("self")]
+    assert sorted(reasons) == sorted([
+        "left hungry too long", "empty effort gauge", "the lights left on",
+    ]), f"the three calls, and only the three -- got {reasons}"
     for arg in calls:
         if arg.startswith("self"):            # the definition's own signature
             continue
@@ -235,3 +243,37 @@ def test_a_lit_night_is_the_dominant_mistake_source():
     assert lit.count("the lights left on") >= 4, lit
     assert "the lights left on" not in dark, dark
     assert len(lit) > len(dark), (lit, dark)
+
+
+def test_the_two_cut_impostors_keep_their_own_penalties():
+    """Canonizing the counter must not quietly delete the SYSTEMS.  An ignored
+    tantrum still costs obedience (tuipet's own currency), and the burger
+    still packs on weight -- they just no longer touch the Bandai-defined
+    counter that gates evolution and kills at 20."""
+    import os
+    import tempfile
+    os.environ.setdefault("TUIPET_SAVE_DIR", tempfile.mkdtemp())
+    from tuipet.pet import Pet
+
+    # the ignored tantrum: obedience yes, care mistake no
+    p = Pet(num=399, name="Omni", stage="Mega", attribute="Vaccine",
+            obedience=111)
+    p.hunger, p.strength = 4, 4
+    p.world_seconds = 12607.0
+    p.discipline_call = True
+    p.scold_window = p.world_seconds - 1.0          # already expired
+    obed0, cm0 = p.obedience, p.care_mistakes
+    p._tick_mortality(1.0)
+    assert p.discipline_call is False                # the window closed
+    assert p.obedience == obed0 - 5                  # it still stings manners
+    assert p.care_mistakes == cm0                    # ...and NOT the counter
+
+    # the cheeseburger: weight yes, care mistake no
+    q = Pet(num=399, name="Omni", stage="Mega", attribute="Vaccine")
+    q.world_seconds = 600.0
+    q.hunger = 1
+    q.add_item("cheese_burger")
+    w0, cm0 = q.weight, q.care_mistakes
+    q.use_item("cheese_burger")
+    assert q.weight > w0 and q.hunger == 4           # fat and fed
+    assert q.care_mistakes == cm0                    # overfeeding is not a slip

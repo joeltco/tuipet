@@ -798,12 +798,15 @@ class CareMixin:
         return "...it was DELICIOUS. And fatal."
 
     def _junk(self):
+        # ⭐NOT A CARE MISTAKE (2026-08-01, Joel: "canonize all care mistakes").
+        # THE BANDAI DEVICE RECORD IS THE AUTHORITY and it is explicit on this
+        # one: a care mistake is a MISSED CALL, and OVERFEEDING is called out
+        # by name as something that is NOT one.  The burger is junk food -- it
+        # fills the belly and it makes the pet fat, which is the whole penalty.
+        # It has no business touching the counter that gates evolution and
+        # kills at 20.
         self.hunger = FULL_HUNGER
         self._set_weight(self.weight + 4)
-        # the real mistake pipeline: the bare counter bumped care_mistakes
-        # without the mood sting or mistake_day, so the burger slip was
-        # invisible to the birthday judgment
-        self._inc_mistake("that cheeseburger")
         return "Delicious. Regrettable."
 
     def _premium_meat(self):

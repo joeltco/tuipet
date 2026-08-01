@@ -75,7 +75,7 @@ _AUTHORED = {
     "vegetable":       ("Vegetable",       "f:3",  150,  "Feed", "hunger +1 · weight -1", "crunchy diet fare"),
     "tuna":            ("Tuna",            "f:14", 400,  "Feed", "hunger +2 · energy +1", "a hearty catch"),
     "cake":            ("Cake",            "f:6",  300,  "Feed", "hunger +1 · energy +2 · weight +2", "a celebration slice"),
-    "cheese_burger":   ("Cheese burger",   "f:57", 50,   "Feed", "fills belly · weight +4 · a care mistake", "greasy, regrettable"),
+    "cheese_burger":   ("Cheese burger",   "f:57", 50,   "Feed", "fills the belly · weight +4", "greasy, regrettable"),
     "giga_meal":       ("Giga Meal",       "f:28", 800,  "Feed", "fills belly · energy +4 · weight +6", "a feast fit for a Mega"),
     "steak":           ("Steak",           "f:8",  2000, "Feed", "fills belly · 12h satiety", "the premium table"),
     "poison_mushroom": ("Poison Mushroom", "f:13", 200,  "Feed", "DO NOT FEED", "it does look delicious"),
@@ -249,7 +249,9 @@ _TOUCHES = {
     "cupcake": ("hunger", "energy"),
     "cookie": ("hunger", "energy"),
     "candy": ("hunger", "energy"),
-    "cheese_burger": ("hunger", "weight", "care_mistakes"),
+    # (care_mistakes dropped 2026-08-01, "canonize all care mistakes": the
+    #  Bandai record names OVERFEEDING as explicitly NOT a care mistake)
+    "cheese_burger": ("hunger", "weight"),
     "giga_meal": ("hunger", "energy", "weight"),
     "steak": ("hunger", "full_until"),
     "poison_mushroom": ("dead",),          # _die(): the one lethal entry

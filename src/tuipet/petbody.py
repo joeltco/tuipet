@@ -128,15 +128,30 @@ class BodyMixin:
         anyone else loses 50 -- then the counters tick (care-mistake audit
         2026-07-05: the counters ticked silently).
 
+        ⭐⭐THE THREE CALLS, AND ONLY THE THREE (2026-08-01, Joel: "canonize
+        all care mistakes").  ⛔DO NOT ADD A FOURTH CALLER TO THIS METHOD.
+        THE BANDAI DEVICE RECORD IS THE AUTHORITY on what a care mistake IS:
+        a MISSED CALL, and the device makes exactly three calls --
+            1. hunger empty        (petbody, the hunger call)
+            2. strength empty      (petbody, the effort call)
+            3. tired / wants sleep (petbody, the lights call)
+        The manual also names things that are explicitly NOT care mistakes:
+        overfeeding, injury, and waking a sleeper.  Two impostors were cut on
+        that ruling -- the ignored TANTRUM (`_tick_mortality`; the device has
+        no scold mechanic at all, so ignoring one cannot cost a mistake) and
+        the CHEESEBURGER (`petcare._junk`; that is overfeeding, named in the
+        manual as not-a-mistake).  Both keep their own penalties in tuipet's
+        own currencies -- obedience and weight.
+        FILTH books nothing either, and never did: `_open_scold` raises only
+        `scold_window`, never `discipline_call`, so the timeout cannot reach
+        it.  Measured 2026-07-31: 4.2 game-days pegged at poop 4 with the
+        calls answered books ZERO.
+
         ⭐`reason` NAMES THE SLIP (bug report 2026-07-31, Joel: "mon is getting
-        a care mistake after 4 poops, not 1... correct?").  It is not the poop
-        -- filth books NO mistake, by the LINES_SPEC §5 / Pen20 ruling above
-        `_open_scold`, and measured: 4.2 game-days pegged at poop 4 with the
-        other calls answered books ZERO.  But he could not know that, because a
-        care mistake was SILENT: the counter moved on the card and nothing ever
-        said which of the four calls went unanswered -- for a Mega, where five
-        of them turn lethal.  The app reads this on the tick edge and flashes
-        it (an unheard verdict is a silent failure)."""
+        a care mistake after 4 poops, not 1... correct?").  A care mistake was
+        SILENT: the counter moved on the card and nothing ever said which call
+        went unanswered -- on a Mega, where five turn lethal.  The app reads
+        this on the tick edge and flashes it."""
         self.care_mistakes += 1
         self.mistake_reason = reason
         self.mistake_day += 1                        # MistakeIncMissedDayChange
@@ -676,23 +691,28 @@ class BodyMixin:
             self._obed_t -= _lapse
             self._set_obedience(self.obedience + OBEDIENCE_LAPSE_DEC * -1   # noqa: F405
                                 + OBEDIENCE_FILTH_SCALE * self.poop)        # noqa: F405
-        # THE TANTRUM (canon restoration B, 2026-07-23 -- adapted
-        # checkDisciplineCall): an awake pet AT HOME acts up about once
-        # per 5400 game-min (~90 REAL minutes of play -- the label used to
-        # read "90 game-min", the P0b mislabel); SCOLD inside the window
-        # pays obedience +25, IGNORING it past the window costs a care
-        # mistake and -5 (canon: ignored calls cost).  Never on the road,
-        # never asleep.
+        # THE TANTRUM: an awake pet AT HOME acts up about once per 5400
+        # game-min (~90 REAL minutes of play); SCOLD inside the window pays
+        # obedience +25, IGNORING it past the window costs obedience -5.
+        # Never on the road, never asleep.
+        #
+        # ⭐IT IS NOT A CARE MISTAKE (2026-08-01, Joel: "not scolding an acting
+        # out mon is canonically a care mistake?" -> "canon is bandai").  THE
+        # BANDAI DEVICE RECORD IS THE AUTHORITY, and it is unambiguous: a care
+        # mistake is a MISSED CALL, and the device has exactly three calls --
+        # hunger empty, strength empty, and tired/wants-sleep (the lights).
+        # The manual carries no praise, no scold, no acting-up mechanic at all,
+        # so ignoring one cannot cost a mistake there.  The line that stood
+        # here booked one anyway under a citation it never had.
+        # The TANTRUM ITSELF stays: it is tuipet's own system, so it pays in
+        # tuipet's own currency (obedience), and it no longer touches the
+        # Bandai-defined counter that gates evolution and kills at 20.
         if (not self.asleep and not getattr(self, "away", False)
                 and self.stage not in ("Egg", "Fresh")):
             if self.discipline_call:
                 if self.world_seconds > getattr(self, "scold_window", 0.0):
                     self.discipline_call = False
                     self.scold_window = 0.0
-                    # through the front door: the bare += here skipped the
-                    # mood sting + the birthday mistake_day tally every
-                    # other mistake pays (incMistake; audit 2026-07-25)
-                    self._inc_mistake("acting up, not scolded")
                     self._set_obedience(self.obedience - 5)
             else:
                 # canon checkDisciplineCall: a check every DisciplineCallMin

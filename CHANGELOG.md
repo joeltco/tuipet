@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.331 — CARE MISTAKES ARE THE THREE CALLS NOW, AND NOTHING ELSE (2026-08-01)
+
+CARE MISTAKES ARE THE THREE CALLS NOW, AND NOTHING ELSE: on the real device a care mistake is a missed CALL, and there are exactly three — hunger empty, effort empty, and left awake in a lit room at bedtime. Two things that used to cost you one no longer do: ignoring your mon when it acts up (the device has no scolding at all, so it was never a mistake there) and the cheese burger (overfeeding is named as NOT a mistake). Both keep their own price — a tantrum still costs manners, the burger still costs weight. Your counter gates evolution and kills at 20, so it now only counts what it should.
+
 ## 0.5.330 — A CARE MISTAKE NOW TELLS YOU WHAT YOU MISSED (2026-07-31)
 
 A CARE MISTAKE NOW TELLS YOU WHAT YOU MISSED: the counter used to just tick up on the card with no explanation, which is a rough way to learn about the one thing that can kill a Mega. Every slip names itself as it happens — 'left hungry too long', 'the lights left on', 'acting up, not scolded', 'empty effort gauge'. And to settle it: POOP HAS NEVER COST YOU A CARE MISTAKE, not at one pile and not at four. A dirty room makes your pet sick and makes it act up; it is not a missed call, and the counter does not move for it.

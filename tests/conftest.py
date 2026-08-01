@@ -42,6 +42,35 @@ def weekday_bits(monkeypatch):
     yield
 
 
+@pytest.fixture(autouse=True)
+def ordinary_day(monkeypatch):
+    """⭐PIN THE CALENDAR TO AN ORDINARY DAY, like weekday_bits pins the week.
+
+    tuipet has four festival dates (tournament.HOLIDAYS: Jan 1, Aug 1, Oct 31,
+    Dec 25) and a festival changes real behaviour all over the game -- 2x bits,
+    richer road finds, and an ambient decor prop blitted into the ARENA
+    OVERLAY.  Any test that asserts over the whole overlay, or pins a bit
+    amount, therefore passed 361 days a year and failed on the other four.
+
+    Caught the hard way on 2026-08-01 (Odaiba Memorial Day): 21 tests red on a
+    clean tree, none of them touching the code under change.  A suite that is
+    only green on most days is not a gate.
+
+    Pinned at the DATE SOURCE (`tournament._today`, whose own docstring names
+    it "one date source for the cadence layer (tests monkeypatch here)"), not
+    at `holiday()`, so both existing escape hatches keep working: a test that
+    re-patches `_today` (the cup cadence's `on_date`) overrides this, and a
+    test that passes an explicit date to `holiday()`/`_holiday_decor()` was
+    never going through here at all.
+
+    2026-06-17 is a plain Wednesday in SUMMER -- the same season the suite ran
+    in when this was written, so no cup pool moves under it."""
+    import datetime
+    from tuipet import tournament
+    monkeypatch.setattr(tournament, "_today", lambda: datetime.date(2026, 6, 17))
+    yield
+
+
 def _by_num():
     from tuipet import data
     _, by_num = data.load_sprites()

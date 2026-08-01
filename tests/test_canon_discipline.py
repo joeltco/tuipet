@@ -48,15 +48,20 @@ def test_the_tantrum_never_fires_on_the_road_or_asleep(monkeypatch):
     assert not road.discipline_call
 
 
-def test_an_ignored_tantrum_costs(monkeypatch):
+def test_an_ignored_tantrum_costs_manners_not_a_care_mistake(monkeypatch):
+    """⭐2026-08-01, Joel: "canonize all care mistakes".  The BANDAI device
+    record defines a care mistake as a MISSED CALL and the device makes three
+    -- hunger, strength, tired/sleep.  It has no scold mechanic at all, so
+    ignoring a tantrum cannot be one.  The tantrum is TUIPET'S OWN system, so
+    it keeps paying in tuipet's own currency: obedience."""
     p = _pet(discipline_call=True)
     p.scold_window = p.world_seconds - 1.0            # the window has passed
     monkeypatch.setattr(petbody.random, "random", lambda: 0.99)
     m0, o0 = p.care_mistakes, p.obedience
     p.tick(1.0)
-    assert not p.discipline_call
-    assert p.care_mistakes == m0 + 1                  # canon: ignored calls cost
-    assert p.obedience == o0 - 5
+    assert not p.discipline_call                      # the window closed
+    assert p.obedience == o0 - 5                      # manners, yes
+    assert p.care_mistakes == m0                      # the counter, NO
 
 
 def test_scold_answers_the_call_and_wrong_scold_lands_nothing():
@@ -359,15 +364,14 @@ def test_a_new_pet_is_not_born_disobedient():
     assert p.manners_refusal("feed") is False
 
 
-def test_an_ignored_tantrum_pays_the_full_mistake(monkeypatch):
-    """The ignored-call path bumped the bare counter, skipping incMistake --
-    whose one LIVE side effect is the birthday mistake_day tally (the mood
-    sting is an inert citation; _set_mood is a no-op).  Every other mistake
-    pays the tally; this one didn't (claims audit 2026-07-25)."""
+def test_an_ignored_tantrum_touches_neither_counter(monkeypatch):
+    """It used to route through incMistake, which pays BOTH the care-mistake
+    counter and the birthday mistake_day tally.  Canonized 2026-08-01: the
+    device has no scold mechanic, so an ignored tantrum feeds neither."""
     p = _pet(discipline_call=True)
     p.scold_window = p.world_seconds - 1.0
     monkeypatch.setattr(petbody.random, "random", lambda: 0.99)
     d0, m0 = p.mistake_day, p.care_mistakes
     p.tick(1.0)
-    assert p.care_mistakes == m0 + 1
-    assert p.mistake_day == d0 + 1                    # the birthday tally
+    assert p.care_mistakes == m0
+    assert p.mistake_day == d0                        # nor the birthday tally
