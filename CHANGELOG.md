@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.333 — THE FESTIVAL DECORATION STOPS DRAWING THROUGH YOUR MON (2026-08-01)
+
+THE FESTIVAL DECORATION STOPS DRAWING THROUGH YOUR MON: the prop in the arena corner never joined the rule that keeps the poop pile and the sick skull out of your pet's way, so on festival days the roamer walked straight into it and the decoration punched through the sprite. It is a wall now, like the others — your mon turns at it instead of wearing it. The card also names the day above your vitals so the little sprite in the corner reads as a holiday and not a stuck pixel.
+
 ## 0.5.332 — THAT LITTLE SPRITE IN THE CORNER IS A FESTIVAL, NOT A STUCK  (2026-08-01)
 
 THAT LITTLE SPRITE IN THE CORNER IS A FESTIVAL, NOT A STUCK PIXEL: on four days a year a decoration appears in your arena — the Crest of Courage on Odaiba Memorial Day, a present at Christmas, candy at Halloween, cake at New Year — and until now nothing on the home screen said so. The card names the day above your vitals whenever one is on, on the egg screen too. It was only ever labelled on the adventure card before.

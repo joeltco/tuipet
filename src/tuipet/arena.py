@@ -32,7 +32,7 @@ from .arenafx import (  # noqa: F401,E402
     PLAY_HOP, PLAY_HOP_H, PLAY_LEAD, POOP_PAD, POOP_W, SCREEN_COLS,
     SCREEN_ROWS, SICK_ZONE, SPRITE_W, _FxCtx, _WINDOW, _clip_win,
     _HIDDEN_STATUS_ICONS, _blit, _effect_overlay, _evol_strobe, _filth_pts,
-    _filth_right, _sick_mark_up)
+    _filth_right, _holiday_right, _sick_mark_up)
 
 
 def hearts(n, total=4, color=None):
@@ -190,7 +190,11 @@ class Screen(FxMixin, Static):
         # a hard right one -- sleep/sick/startle bypass the roamer's bounds,
         # so the clamp here is what actually guarantees no overlap.
         base = PET_BASE_X
-        lo = (_filth_right(pet.poop) if pet.poop else grid.X0) - base
+        # the LEFT wall is whichever occupant reaches furthest in: the filth
+        # block, or today's festival prop (which joined this clamp 2026-08-01
+        # -- see _holiday_right; it had been drawing straight through the mon)
+        lo = max(_filth_right(pet.poop) if pet.poop else grid.X0,
+                 _holiday_right()) - base
         cap = ((grid.X1 - SICK_ZONE if _sick_mark_up(pet) else grid.X1)
                - SPRITE_W) - base
         xshift = min(max(xshift, lo), max(cap, lo))       # poop wins over the skull (it yields when crowded)

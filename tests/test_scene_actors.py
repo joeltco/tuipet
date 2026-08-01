@@ -363,3 +363,39 @@ def test_the_ambient_sulk_is_pose_only():
     assert '_FX.get("unhappy")' not in src, "the idle painter still draws smoke"
     afx = open("src/tuipet/arenafx.py").read()
     assert afx.count('"unhappy"') >= 2, "the REACTION smoke must survive"
+
+
+def test_no_sprite_draws_on_the_festival_prop(monkeypatch):
+    """⭐Bug report 2026-08-01 (Joel): "my mon is clipping right into it.
+    looks like shit."
+
+    The exclusive-floor-zone law (2026-07-11) gives the filth block a hard
+    LEFT wall and the sick skull a hard RIGHT one, and `test_no_sprite_ever_
+    draws_on_another` above sweeps it.  The festival prop landed three months
+    later (2026-07-24) in the top-LEFT corner and never joined the clamp: its
+    own comment claimed it "sits where a resting pet does not reach", true of
+    a centred sleeper and false of the roamer, which walks the whole band --
+    and the overlay is stamped AFTER the sprite, so it punched through the
+    mon.  Measured before the fix: 11 pixels of crest inside the creature.
+
+    ⚠The sweep above could never catch it, because it runs on whatever day
+    the suite runs and 361 of them have no prop -- and conftest's
+    `ordinary_day` now pins even that away.  This one FORCES each festival."""
+    import datetime
+    from tuipet import arenafx, tournament
+    cap = _paint_capture(monkeypatch)
+    for m, d in ((8, 1), (12, 25), (10, 31), (1, 1)):
+        monkeypatch.setattr(tournament, "_today",
+                            lambda mm=m, dd=d: datetime.date(2026, mm, dd))
+        assert arenafx._holiday_decor() is not None, (m, d)
+        assert arenafx._holiday_right() > grid.X0            # a real wall
+        for n, sizes in LOADS:
+            random.seed(7)
+            p = _pet(weather="Clear", poop=n, poop_sizes=list(sizes))
+            s = _screen()
+            for i in range(30):
+                s.advance(p)
+                s.paint(p)
+                pet_px = _sprite_px(cap["rows"], cap["xshift"], cap["mirror"])
+                hit = pet_px & set(cap["overlay"])
+                assert not hit, ((m, d), n, i, sorted(hit)[:6])

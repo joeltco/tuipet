@@ -60,6 +60,24 @@ def _evol_strobe(c):
                   if ev[y % mh][x % mw] == "1"]
 
 
+def _holiday_right(today=None):
+    """Right edge x of TODAY's festival prop, or grid.X0 on an ordinary day.
+
+    ⭐The decor is a LEFT-WALL occupant exactly like the filth block (Joel
+    2026-08-01: "my mon is clipping right into it. looks like shit").  The
+    exclusive-floor-zone law -- filth a hard left wall, the sick skull a hard
+    right one -- predates the prop by three months, and when the prop landed
+    (2026-07-24) it simply never joined the clamp.  Its own comment claimed it
+    "sits where a resting pet does not reach", which is true of a CENTRED
+    sleeper and false of the roamer, which walks the whole band; and the
+    overlay is stamped AFTER the sprite, so the prop punched straight through
+    the mon.  Four days a year, the arena looked broken."""
+    deco = _holiday_decor(today)
+    if not deco:
+        return grid.X0
+    return grid.X0 + max(len(r) for r in deco)
+
+
 def _filth_right(count):
     """Right edge x of the filth block: fixed POOP_W columns like DVPet's 30px slots."""
     n = min(count or 0, POOP_MAX_PILES)

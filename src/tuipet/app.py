@@ -150,7 +150,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THAT LITTLE SPRITE IN THE CORNER IS A FESTIVAL, NOT A STUCK PIXEL: on four days a year a decoration appears in your arena — the Crest of Courage on Odaiba Memorial Day, a present at Christmas, candy at Halloween, cake at New Year — and until now nothing on the home screen said so. The card names the day above your vitals whenever one is on, on the egg screen too. It was only ever labelled on the adventure card before.")
+    WHATS_NEW = ("THE FESTIVAL DECORATION STOPS DRAWING THROUGH YOUR MON: the prop in the arena corner never joined the rule that keeps the poop pile and the sick skull out of your pet's way, so on festival days the roamer walked straight into it and the decoration punched through the sprite. It is a wall now, like the others — your mon turns at it instead of wearing it. The card also names the day above your vitals so the little sprite in the corner reads as a holiday and not a stuck pixel.")
 
     BINDINGS = [
         # jogress is LOBBY-ONLY (fusion needs a real partner from the
