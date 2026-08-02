@@ -8,7 +8,10 @@ Constraints he set, on the same thread:
 - ⛔ **No deleting.** ("or delete my guy")
 - ✅ **Change what items DO.** ("chamge what it does maybe")
 
-Nothing below is implemented. This is the list; each row waits on his word.
+**SHIPPED v0.5.336** — he read the list and answered "why cant elixer fix ALL
+care mistakes or something???" then "YOU, OPUS 5, SHOULD HAVE ABSOLUTELY NO
+FUCKING PROBLEM MAKING ALL ITEMS BALANCED". All six rows below are live; the
+Elixir's job is his, not mine. What each one actually does now is at the bottom.
 
 ---
 
@@ -153,3 +156,45 @@ Textbook's one big cram. Same guard shape as the Vitamin.
 
 Every row: behaviour only. No price moves, no deletions, blurbs updated in
 lockstep (the dossier-blurbs-are-TRUE law), pins per item.
+
+
+---
+
+# WHAT SHIPPED (v0.5.336)
+
+⭐**Four of the six answers reuse ONE shape** the game already proved with the
+Vitamin: a game-min lapse counter on `Pet`, ticked down in `_tick_body` beside
+`vitamin_lapse`, read as `> 0` at a SINGLE point of effect. New fields:
+`tonic_lapse` · `ward_lapse` · `pardon_lapse` · `manners_lapse`. (Persistence
+needed no change — it is `asdict`/`fields(Pet)` driven, "no list to forget".)
+
+| item | now does | read at |
+|---|---|---|
+| **Elixir** 2000b | wipes the **whole** care-mistake slate — BOTH counters, `care_mistakes` and `mistake_day` | — |
+| **Miracle Drink** 7777b | `pardon_lapse` — **no care mistake can be booked** for a game-day | `_inc_mistake` early-returns |
+| **Gold Pill** 10000b | full tank + `tonic_lapse` — **battles, drills and the march cost no energy** for a day | `record_battle`, `train`, `_march_drain` |
+| **Vitamin G** 2000b | effort FULL + `ward_lapse` — **the injury roll cannot fire** for a day | `record_battle`'s injury roll |
+| **Book** 1000b | obedience +5 + `manners_lapse` — **obedience does not drift** for a day | `_tick_mortality`'s lapse loop |
+| **Xylophone / Video Game / Television** | **DP +1 / +1 / +2** — the jogress meter, which only a night's sleep otherwise fills | `_toy(dp=…)` |
+
+**Measured after:** 400 worst-case bouts warded → **0** injuries (same 400
+unwarded → 61). A gilded battle costs **0** energy (5 unwarded). Three slips
+attempted under the ward → counter unmoved. Manners over 1200 game-min: **0**
+drift warded, negative unwarded.
+
+**Lockstep, per the dossier law:** all eight blurbs rewritten, `_TOUCHES`
+updated for all eight, and `tests/test_items_sweep.py`'s `_METERS` taught the
+`DP` claim so no unmeasured number can reach a shelf.
+
+**11 tests pinned the old behaviour and were re-aimed**, not deleted — the
+premium-combo law, the free-button law, four eraser pins, the toy dials, the
+care-shelf dossier and three blurb-number sweeps. New `tests/test_item_refactor.py`
+fences all six jobs plus the shared guard shape.
+
+## The corollary I got wrong, twice, and wrote down
+
+When a job is redundant, the fix is a **DIFFERENT JOB** — not the same job with
+a modifier bolted on. My first Elixir proposal was "cures sickness, but without
+waking the pet", for an item whose sickness cure was the exact thing Joel had
+called redundant. **If the answer still contains the redundant verb, it is not
+a fix.**

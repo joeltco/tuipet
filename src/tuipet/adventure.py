@@ -930,7 +930,8 @@ class Adventure:
             return
         self._drain_acc = 0
         p = self.pet
-        p._set_energy(max(0, p.energy - TRAVEL_ENERGY_DEC))
+        if getattr(p, "tonic_lapse", 0.0) <= 0:         # Gold Pill: spends are free
+            p._set_energy(max(0, p.energy - TRAVEL_ENERGY_DEC))
         p.calories -= TRAVEL_CALORIE_DEC
         if p.calories <= -CALORIE_LIMIT:            # buffer bottomed: shed a weight unit
             p.calories = CALORIE_LIMIT

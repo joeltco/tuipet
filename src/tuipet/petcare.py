@@ -482,10 +482,17 @@ class CareMixin:
             "ball": lambda: self._toy(weight=-1, msg="A grand kickabout!"),
             "skateboard": lambda: self._toy(weight=-2, energy=-1,
                                             msg="It shreds!"),
-            "xylophone": lambda: self._toy(energy=2, msg="A lovely recital."),
-            "video_game": lambda: self._toy(energy=2, weight=1,
+            # ⭐THE PLAY SHELF PAYS DP (item refactor 2026-08-02).  These three
+            # were 600-1000b for energy +2/+2/+3, against a 200b Energy Drink
+            # that fills the tank -- rounding errors at utility prices.  DP is
+            # the jogress meter and NOTHING but a night's sleep touches it
+            # (3 game-hours a pip), so playing with your pet to build fusion
+            # power is a real, empty niche -- and it is the one thing on this
+            # shelf a cheaper item cannot copy.
+            "xylophone": lambda: self._toy(dp=1, msg="A lovely recital."),
+            "video_game": lambda: self._toy(dp=1, weight=1,
                                             msg="One more level…"),
-            "television": lambda: self._toy(energy=3, weight=1,
+            "television": lambda: self._toy(dp=2, weight=1,
                                             msg="Glued to the screen."),
             # ---- ADVENTURE (spent ON THE ROAD, not from the home bag) -------
             "town_transport": lambda: _Refused("Save it for the road (press T)."),
@@ -672,16 +679,20 @@ class CareMixin:
         -- but 241 of 417 Megas are TERMINAL, and for those it never
         resets again.  This drink is the only way back.
 
-        Canon: Energy +12, Mistake -1.  Its -Mood and -Life legs are
-        dropped: mood is a verified no-op meter and the lifespan clock
-        left with DSprite mortality (2026-07-22)."""
-        if self.care_mistakes <= 0:
-            return _Refused("Nothing on the slate to erase.")   # noqa: F405
-        self.care_mistakes -= 1
+        ⭐REPOINTED 2026-08-02 (item refactor).  It used to erase ONE slip
+        and pay +12 energy for 7777b -- which the 2000b Cold Compress (-1 slip)
+        plus a 200b Energy Drink beat outright, and which the Elixir now
+        obsoletes entirely by wiping the whole slate.  So the legendary stops
+        CURING and starts PREVENTING: for a game-day, no care mistake can be
+        booked at all -- the lights can burn, the calls can go unanswered, and
+        the slate does not move.  The Compress stays the cheap single scrub,
+        the Elixir is the full wipe, this is the day off.  (Energy +12 kept:
+        it was never the problem, and the drink still reads as a drink.)"""
+        if getattr(self, "pardon_lapse", 0.0) > 0:
+            return _Refused("The slate is already warded.")     # noqa: F405
+        self.pardon_lapse = 1440.0
         self._set_energy(self.energy + MIRACLE_ENERGY_GAIN)   # noqa: F405
-        left = self.care_mistakes
-        return ("One slip, forgiven." if not left
-                else f"One slip forgiven — {left} still on the slate.")
+        return "Forgiven — nothing counts against it today."
 
     def _cold_compress(self):
         """THE CHEAP ERASER (2026-07-27, Joel: "fill the cure hole").
@@ -774,11 +785,19 @@ class CareMixin:
         self.dna_owned[field] = min(MAX_DNA_INVENTORY, have + 10)
         return f"+{self.dna_owned[field] - have} {field} DNA banked!"
 
-    def _toy(self, weight=0, energy=0, msg="Fun!", obedience=0, strength=0):
-        """The toy dial: exercise sheds weight, couch time buys energy at a
-        weight price.  The SHOW (itemfx script) is fired by the bag panel.
-        The expansion legs: a spoiling toy dents obedience (authored), the
-        trampoline's bounce is light training (effort, 0-4 gauge)."""
+    def _toy(self, weight=0, energy=0, msg="Fun!", obedience=0, strength=0,
+             dp=0):
+        """The toy dial: exercise sheds weight, couch time buys DP at a weight
+        price.  The SHOW (itemfx script) is fired by the bag panel.  The
+        expansion legs: a spoiling toy dents obedience (authored), the
+        trampoline's bounce is light training (effort, 0-4 gauge).
+        ⭐`dp` is the play shelf's payout since the item refactor 2026-08-02 --
+        the jogress meter, which only a night's sleep otherwise fills."""
+        if dp:
+            from .petbase import DP_MAX
+            if self.dp >= DP_MAX:
+                return _Refused("The DP meter is already full.")  # noqa: F405
+            self.dp = _clamp(self.dp + dp, 0, DP_MAX)          # noqa: F405
         if weight:
             self._set_weight(max(1, self.weight + weight))
         if energy:
@@ -1058,35 +1077,64 @@ class CareMixin:
         return "The sickness passes."
 
     def _elixir(self):
-        """The premium combo (2000b): cures sickness AND fills the tank.
-        The free pill stays the cure -- this sells convenience."""
-        if not self.sick and self.energy >= self.max_energy:
-            return _Refused(f"{self.name} doesn't need it.")  # noqa: F405
-        self.sick = False
-        self._set_energy(self.max_energy)
-        self._set_anim("eat", 1.4)
-        return "Illness swept away — brimming with life!"
+        """⭐THE FULL PARDON — Joel's own call, 2026-08-02: "why cant elixer
+        fix ALL care mistakes or something???"
+
+        It used to cure sickness AND fill the tank, and he called it on both:
+        "elixer heals sickness AND fills energy? kinda redundant, seeing we
+        have a free heal button."  Right twice -- the sickness cure is the FREE
+        F pill, the full tank is the 200b Energy Drink, so 2000b sold 200b and
+        a keypress.  (I then proposed "the same cure, but it doesn't wake a
+        sleeper" and got called on THAT too: when a job is redundant the fix is
+        a DIFFERENT JOB, not the redundant job with a modifier bolted on.)
+
+        It wipes the CARE MISTAKE SLATE -- both counters: the running total
+        that makes a Mega frail at 5 and kills at 20, and today's tally that
+        decides the birthday result and feeds evol_bonus.  Nothing else clears
+        more than one slip, and for a terminal Mega the total never resets on
+        its own again."""
+        total = int(self.care_mistakes)
+        if total <= 0 and int(getattr(self, "mistake_day", 0)) <= 0:
+            return _Refused("Nothing on the slate to erase.")  # noqa: F405
+        self.care_mistakes = 0
+        self.mistake_day = 0
+        self._set_anim("happy", 1.8)
+        return (f"The whole slate — {total} slip{'' if total == 1 else 's'} — "
+                "wiped clean!") if total else "The slate is clean again."
 
     def _vitamin_g(self):
-        """The golden mend (2000b): heals the injury AND the vitamin's
-        whole job (effort full + a game-day's injury guard).  H stays the
-        free cure -- this is the vitamin's big sibling."""
-        if not self.injured and self.strength >= 4 \
-                and getattr(self, "vitamin_lapse", 0.0) > 0:
-            return _Refused("Nothing to mend and the guard is running.")  # noqa: F405
-        self.injured = False
-        self.inj_length = 0.0
+        """⭐THE WARD (item refactor 2026-08-02).  It used to HEAL the injury
+        plus the Vitamin's whole job -- but `H` heals injury for FREE, so
+        2000b bought a 500b Vitamin and a keypress.
+
+        It PREVENTS instead: for a game-day the injury roll cannot fire at all.
+        The road audit measured 40% of adventure runs coming home wounded (half
+        of all road fights happen under the energy line, where the roll is 10%
+        a bout instead of 0.3%), so "cannot be wounded" is worth a premium in a
+        way "heals a wound" never can be next to a free button."""
+        if self.strength >= 4 and getattr(self, "ward_lapse", 0.0) > 0:
+            return _Refused("Already warded and brimming.")  # noqa: F405
         self.strength = 4
-        self.vitamin_lapse = 1440.0
+        self.ward_lapse = 1440.0
         self._set_anim("happy", 1.4)
-        return "Golden! Mended, guarded, brimming."
+        return "Golden! Nothing can wound it today."
 
     def _gold_pill(self):
-        """Canon Energy +12 (the miracle drink's dose, no eraser)."""
-        if self.energy >= self.max_energy:
-            return _Refused("Energy is already full.")  # noqa: F405
-        self._set_energy(self.energy + 12)
-        return "Vitality, gilded!"
+        """⭐THE TIRELESS DAY (item refactor 2026-08-02).  It used to be
+        "energy +12" for 10000b at LEGENDARY tier, against a 200b common
+        Energy Drink that fills the tank outright -- fifty times the price for
+        a third of the effect, the worst row on the shelf.
+
+        There is no passive energy DRAIN in tuipet to guard, so the guard sits
+        on the SPENDS: for a game-day, battles, drills and the road march cost
+        nothing.  The tank still fills (that part it always did); what 10000b
+        buys is a day where the tank does not matter -- which no amount of
+        Energy Drinks can imitate, and which also holds the pet above the
+        injury line the whole time."""
+        self._set_energy(self.max_energy)
+        self.tonic_lapse = 1440.0
+        self._set_anim("happy", 1.6)
+        return "Gilded! Nothing will tire it today."
 
     def _supplement(self):
         """Effort to FULL + the obedience leg (authored +5) + its weight."""
@@ -1159,13 +1207,20 @@ class CareMixin:
         return "It convulses... and TRANSCENDS. The X takes hold!"
 
     def _textbook_lite(self):
-        """The Book (items.csv 2): the textbook's little brother -- the
-        authored +5, same full-gauge refusal."""
-        if self.obedience >= MAX_OBEDIENCE:                   # noqa: F405
-            return _Refused(f"{self.name} is already a model pupil.")  # noqa: F405
-        before = self.obedience
+        """⭐THE STEADY HAND (item refactor 2026-08-02).  The Book was 1000b
+        for obedience +5 while the 1500b Textbook pays +20 -- two-thirds the
+        price for a quarter of the effect, a dead rung nobody would ever buy.
+
+        It stops competing on the number and holds the gauge instead: for a
+        game-day manners do not DRIFT (the lapse in _tick_mortality, which
+        bites harder the filthier the room).  The Textbook is the cram, this is
+        the habit -- and holding 150 obedience also holds the tantrum roll at
+        its floor, which is the thing that actually costs a player."""
+        if getattr(self, "manners_lapse", 0.0) > 0:
+            return _Refused("The lesson is still fresh.")      # noqa: F405
+        self.manners_lapse = 1440.0
         self._set_obedience(self.obedience + 5)
-        return f"A quiet chapter. (+{self.obedience - before} obedience)"
+        return "A quiet chapter — manners will hold today."
 
     def _hedonism(self):
         """Hedonism 101 (items.csv 1): obedience -80, exactly as authored.

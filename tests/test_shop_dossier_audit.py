@@ -71,9 +71,25 @@ def test_care_shelf_matches_its_blurbs():
     p.obedience = 40
     _use(p, "textbook")
     assert p.obedience == 60                                  # "obedience +20"
+    # ⭐the care shelf was repointed 2026-08-02 (item refactor): the drink
+    # WARDS instead of scrubbing, and the Elixir does the wiping
     p = _pet(care_mistakes=7)
-    _use(p, "miracle_drink")
-    assert p.care_mistakes == 6                        # "ONE care slip erased"
+    _use(p, "miracle_drink")                    # "NO care slips for a day"
+    assert p.care_mistakes == 7 and p.pardon_lapse > 0
+    p._inc_mistake("the lights left on")
+    assert p.care_mistakes == 7                        # warded: nothing lands
+    p = _pet(care_mistakes=7)
+    _use(p, "elixir")                    # "wipes the WHOLE care-mistake slate"
+    assert p.care_mistakes == 0 and p.mistake_day == 0
+    p = _pet()
+    _use(p, "gold_pill")                 # "energy FULL · nothing tires it"
+    assert p.energy == p.max_energy and p.tonic_lapse > 0
+    p = _pet()
+    _use(p, "vitamin_g")                 # "effort FULL · CANNOT be wounded"
+    assert p.strength == 4 and p.ward_lapse > 0
+    p = _pet()
+    _use(p, "book")                      # "obedience +5 · manners HOLD"
+    assert p.manners_lapse > 0
     # (the bubble bath retired 2026-07-27: strictly less than the free C
     # key, which also pays obedience -- its dossier leg retired with it)
     for key in ("town_transport", "disaster_transport", "life_recovery"):

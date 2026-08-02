@@ -289,16 +289,19 @@ def test_every_authored_town_override_is_live():
     assert dropped == [], f"authored town rows went dark: {dropped}"
 
 
-def test_the_cure_combos_honour_the_free_button_law():
-    """SUPERSEDED (item expansion 2026-07-26): Elixir and Vitamin G are
-    catalog keys now -- as premium combos.  The load-bearing half stays:
-    the free buttons exist, and the only ailment-touching entries are the
-    four the ruling names (see test_catalog_touches for the full pin)."""
+def test_the_free_buttons_own_the_cures_outright():
+    """⭐SUPERSEDED AGAIN by the ITEM REFACTOR (2026-08-02, "MAKING ALL ITEMS
+    BALANCED").  The premium "combos" bundled a free button with a cheap item
+    and charged for the pair -- the Elixir cured sickness (the free F pill) and
+    filled the tank (the 200b drink); Vitamin G healed injury (the free H).
+    Both were repointed to capabilities the free buttons cannot copy, so the
+    shelf's only remaining CURE is the 100b Med, and the free buttons own the
+    ailments outright."""
     assert shop.key_for_icon("f:15") == "elixir"
     assert shop.key_for_icon("f:16") == "vitamin_g"
     curers = {k for k, v in shop.CATALOG.items()
               if "sick" in v.touches or "injured" in v.touches}
-    assert curers == {"med", "elixir", "vitamin_g"}
+    assert curers == {"med"}, f"a cure crept back onto the shelf: {curers}"
 
 
 def test_the_home_counter_rotates_but_never_starves():

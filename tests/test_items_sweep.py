@@ -320,6 +320,9 @@ _METERS = {
     "vaccine power": "vaccine",
     "data power": "data_power",
     "virus power": "virus",
+    # the play shelf's payout since the item refactor 2026-08-02: DP is the
+    # jogress meter, and nothing but a night's sleep otherwise fills it
+    "DP": "dp",
 }
 _HOURS = {"satiety": "full_until", "auto-clean": "auto_clean_until"}
 

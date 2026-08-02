@@ -220,7 +220,8 @@ class BattleMixin:
         # strength to the pill, but the gauge visibly ticking up per drill is
         # the shipped feel and the DM20 rule)
         self.strength = _clamp(self.strength + 1, 0, 4)
-        self._set_energy(max(0, self.energy - TRAIN_ENERGY_COST))
+        if getattr(self, "tonic_lapse", 0.0) <= 0:      # Gold Pill: spends are free
+            self._set_energy(max(0, self.energy - TRAIN_ENERGY_COST))
         # the source sheds weight-2 on EVERY drill, win or lose (canon gates
         # 2026-07-18, decompile L11701) -- floored at the species BASE, not
         # at 1: the bare clone floor fattened a light classic pet (caught
@@ -329,7 +330,8 @@ class BattleMixin:
         # D3 ruling 2026-07-23 -- adventure.py's constants block): only a
         # hazard KNOCK pushes past empty.  Fighting on empty still bills the
         # body through the hit formula (Side._condition's energy term).
-        self._set_energy(max(0, self.energy - BATTLE_ENERGY_COST))
+        if getattr(self, "tonic_lapse", 0.0) <= 0:      # Gold Pill: spends are free
+            self._set_energy(max(0, self.energy - BATTLE_ENERGY_COST))
         # floored at the species BASE, not at 1 (weight floor law -- the
         # SAME ruling training got 2026-07-17 and the march drain always
         # had; battles were the one sink still grinding to a skeleton.
@@ -366,7 +368,8 @@ class BattleMixin:
         # took.  Adapted BattleInjury table (petbase); LOCAL bouts only
         # (online stays L17 body-billing).  A healthy winner risks 0.3%,
         # an unhealthy loser ~16%; a live vitamin is the canon guard.
-        if not self.injured:
+        if not self.injured and getattr(self, "ward_lapse", 0.0) <= 0:
+            #                    ^ Vitamin G: warded -- the roll cannot fire
             vit = getattr(self, "vitamin_lapse", 0.0) > 0
             key = ("bad_" if _inj_bad else "good_") + ("v" if vit else "nv")
             chance = BATTLE_INJ_TABLE[key]  # noqa: F405

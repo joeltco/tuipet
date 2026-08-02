@@ -100,6 +100,17 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
     #                                 _set_obedience was a NO-OP (see persistence)
     vitamin_lapse: float = 0.0      # DVPet _vitaminLapse (game-min of injury-worsening protection)
     bandage_lapse: float = 0.0      # DVPet _bandageLapse: bandage indicator after mending an injury (getBandage)
+    # ⭐THE GUARD FAMILY (item refactor 2026-08-02, Joel: "MAKING ALL ITEMS
+    # BALANCED").  All four are game-min counters that tick down in
+    # _tick_body beside vitamin_lapse and read as `> 0` at ONE point of
+    # effect each.  They exist because the premium shelf could not be
+    # repriced or deleted (his constraint), so each expensive item needed a
+    # CAPABILITY the cheap ones cannot copy -- and "cannot happen for a
+    # while" is the one shape the game already proved with the Vitamin.
+    tonic_lapse: float = 0.0        # Gold Pill: energy SPENDS are free (battle/drill/march)
+    ward_lapse: float = 0.0         # Vitamin G: cannot be injured
+    pardon_lapse: float = 0.0       # Miracle Drink: cannot book a care mistake
+    manners_lapse: float = 0.0      # Book: obedience does not drift
     nutr_protein: int = 0           # DVPet _protein (0..MaxProtein), from a meaty diet
     nutr_mineral: int = 0           # DVPet _mineral, from vegetables
     nutr_vitamin: int = 0           # DVPet _vitamin, from fruit

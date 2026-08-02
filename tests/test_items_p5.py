@@ -48,47 +48,58 @@ def test_the_eraser_is_canon_data_not_an_invention():
     assert len(both) == 1
 
 
-def test_the_eraser_takes_exactly_one_slip():
+def test_the_eraser_became_a_WARD():
+    """⭐REPOINTED by the ITEM REFACTOR (2026-08-02).  The 7777b legendary
+    erased ONE slip, which the 2000b Cold Compress already did -- and the
+    Elixir now wipes the whole slate on Joel's own call, so a single scrub at
+    four times the Compress's price was dead twice over.
+
+    It stops CURING and starts PREVENTING: while it runs, no care mistake can
+    be booked at all.  Canon's Mistake=-1 row still names the item (the test
+    above); what changed is the direction, not the pedigree."""
     p = _pet()
     p.care_mistakes = 3
     p.add_item("miracle_drink")
     p.use_item("miracle_drink")
-    assert p.care_mistakes == 2, "the eraser must be ONE at a time"
+    assert p.care_mistakes == 3, "it no longer scrubs -- the Elixir does that"
+    assert p.pardon_lapse > 0
+    p._inc_mistake("the lights left on")
+    assert p.care_mistakes == 3, "warded: nothing may land"
 
 
 def test_the_eraser_pays_its_canon_energy():
     p = _pet()
-    p.care_mistakes = 2
     p._set_energy(0)
     p.add_item("miracle_drink")
     p.use_item("miracle_drink")
     assert p.energy == MIRACLE_ENERGY_GAIN
 
 
-def test_the_eraser_is_refused_on_a_clean_slate_and_kept():
+def test_the_ward_is_refused_while_one_is_already_running_and_kept():
     p = _pet()
-    p.care_mistakes = 0
+    p.pardon_lapse = 500.0
     p.add_item("miracle_drink")
     out = p.use_item("miracle_drink")
     assert isinstance(out, _Refused)
     assert p.inventory.get("miracle_drink") == 1, "a refusal must keep the item"
 
 
-def test_the_eraser_can_walk_a_terminal_mega_back_from_death():
-    """The reason it was kept at all: a Mega at 5 slips past the window is
+def test_a_terminal_mega_can_still_be_walked_back_from_death():
+    """The reason an eraser exists at all: a Mega at 5 slips past the window is
     dead on the next check, and (for the 58% of Megas with no outgoing
-    evolution) nothing else can ever lower the counter."""
+    evolution) nothing else can ever lower the counter.  That job moved to the
+    ELIXIR in the 2026-08-02 refactor -- and it now takes ONE bottle, not five,
+    because the Elixir wipes the slate."""
     p = _pet(stage="Mega")
     p.care_mistakes = 5
-    for _ in range(5):
-        p.add_item("miracle_drink")
-        p.use_item("miracle_drink")
+    p.add_item("elixir")
+    p.use_item("elixir")
     assert p.care_mistakes == 0
 
 
 def test_the_eraser_lives_in_medicine():
     assert shop.CATALOG["miracle_drink"].category == "Cure"   # Medicine -> Cure, 2026-07-27
-    assert shop.CATALOG["miracle_drink"].touches == ("care_mistakes", "energy")
+    assert shop.CATALOG["miracle_drink"].touches == ("pardon_lapse", "energy")
 
 
 # ---- R4: the Textbook goes back to canon -----------------------------------

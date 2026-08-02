@@ -152,6 +152,8 @@ class BodyMixin:
         SILENT: the counter moved on the card and nothing ever said which call
         went unanswered -- on a Mega, where five turn lethal.  The app reads
         this on the tick edge and flashes it."""
+        if getattr(self, "pardon_lapse", 0.0) > 0:
+            return                       # Miracle Drink: the slate is warded
         self.care_mistakes += 1
         self.mistake_reason = reason
         self.mistake_day += 1                        # MistakeIncMissedDayChange
@@ -668,6 +670,10 @@ class BodyMixin:
         # instead, fixed 0.5.317.)
         if getattr(self, "vitamin_lapse", 0.0) > 0:
             self.vitamin_lapse = max(0.0, self.vitamin_lapse - dt)
+        # the guard family burns on the same clock (item refactor 2026-08-02)
+        for _g in ("tonic_lapse", "ward_lapse", "pardon_lapse", "manners_lapse"):
+            if getattr(self, _g, 0.0) > 0:
+                setattr(self, _g, max(0.0, getattr(self, _g) - dt))
         # canon injLapse: a wound heals on its own clock (P4 ruling
         # 2026-07-23).  Same unit law -- inj_length is game-minutes, so
         # it burns by dt.  The Bandage skips the wait; time closes it.
@@ -687,6 +693,8 @@ class BodyMixin:
         self._obed_t = (getattr(self, "_obed_t", 0.0) + dt) if not self.asleep else 0.0
         _lapse = OBEDIENCE_LAPSE_MIN.get(self._disposition(),      # noqa: F405
                                          OBEDIENCE_LAPSE_MIN[0])   # noqa: F405
+        if getattr(self, "manners_lapse", 0.0) > 0:
+            self._obed_t = 0.0           # Book: manners hold, no drift
         while self._obed_t >= _lapse:
             self._obed_t -= _lapse
             self._set_obedience(self.obedience + OBEDIENCE_LAPSE_DEC * -1   # noqa: F405

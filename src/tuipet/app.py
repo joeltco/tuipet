@@ -150,7 +150,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE FESTIVAL DECORATION IS GONE FROM THE SCREEN: it was a corner ornament four days a year, and on a 32-pixel play field holding a 16-pixel creature it was taking HALF your mon's walking room to sit there — plus it was the source of every sprite-collision bug the arena has had. Your pet gets its whole band back on festival days. The holiday is still named on the status card above your vitals, and nothing else about a festival changed: double bits, richer road finds, the shop sale and the festival egg are all untouched.")
+    WHATS_NEW = ("THE ITEM SHELF IS REBALANCED — six items stopped selling you things you already own for free. The ELIXIR now wipes your WHOLE care-mistake slate instead of curing sickness the F pill cures for nothing. The MIRACLE DRINK stops slips landing at all for a day. The GOLD PILL makes a day's battles, drills and marching cost no energy. VITAMIN G means nothing can wound your mon for a day, instead of healing what H heals free. The BOOK holds your manners steady instead of nudging them. And the xylophone, video game and TV now build DP — jogress power you could only get from sleeping. No prices moved and nothing was removed.")
 
     BINDINGS = [
         # jogress is LOBBY-ONLY (fusion needs a real partner from the

@@ -278,8 +278,13 @@ def test_every_item_wears_its_own_dvpet_art():
 
 def test_the_toys_turn_live_dials():
     """The toy law (Joel 2026-07-18 "so the toys are worthless?"): exercise
-    sheds weight, couch time buys energy at a weight price -- all on live
-    meters, and the show is the panel's business."""
+    sheds weight, couch time buys its payout at a weight price -- all on live
+    meters, and the show is the panel's business.
+
+    ⭐THE PAYOUT CHANGED 2026-08-02 (item refactor): couch time bought ENERGY
+    +2/+3 at 600-1000b, against a 200b Energy Drink that fills the tank -- a
+    rounding error at a utility price.  It buys DP now, the jogress meter that
+    only a night's sleep otherwise fills.  The exercise toys are untouched."""
     p = _pet(weight=30, energy=0)
     for k in ("ball", "skateboard", "television"):
         p.add_item(k)
@@ -287,8 +292,9 @@ def test_the_toys_turn_live_dials():
     assert p.weight == 29
     p.use_item("skateboard")
     assert p.weight == 27 and p.energy == -1
+    p.dp = 0
     p.use_item("television")
-    assert p.weight == 28 and p.energy == 2
+    assert p.weight == 28 and p.dp == 2 and p.energy == -1
     # (the bubble bath leg retired with the item, refactor 2026-07-27: it
     # did strictly less than the free C key, which also pays obedience.
     # An owned copy converts to Ball through the RETIRED ledger.)
