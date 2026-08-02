@@ -21,9 +21,20 @@ from tuipet import adventure as adv, shop
 
 # ---- the tier ladder --------------------------------------------------------
 
-def test_tier_is_derived_from_price_not_authored():
+def test_tier_is_derived_from_authored_supply_not_from_price():
+    """⭐SUPERSEDED 2026-08-02 (Joel: "yeah decouple rarity from price").
+    Rarity used to BE price, which made "legendary" mean "expensive" -- and
+    the economy audit measured expensive at ~23 real minutes of adventuring,
+    so rarity was decorative.  It reads the authored SUPPLY columns now:
+    DefaultStockChance x DefaultMaxStock = expected copies on a shelf."""
     for key, v in shop.CATALOG.items():
-        assert v.tier == shop.tier_for_price(v.price), key
+        assert v.tier == shop.tier_for_supply(v.icon, v.price), key
+    # ...and it is genuinely decoupled: a dearer good is now freely allowed to
+    # be commoner than a cheap one, which is the whole point
+    by_tier = {t: [v.price for v in shop.CATALOG.values()
+                   if v.tier == t and v.price] for t in shop.TIER_ORDER}
+    assert min(by_tier["legendary"]) < max(by_tier["common"]), \
+        "price still predicts the band -- nothing was decoupled"
 
 
 def test_the_bands_are_ordered_and_total_the_catalog():
@@ -31,11 +42,15 @@ def test_the_bands_are_ordered_and_total_the_catalog():
     assert sum(counts.values()) == len(shop.CATALOG)
     for name in shop.TIER_ORDER:
         assert counts[name] > 0, name
-    # a dearer item is never a commoner tier than a cheaper one
-    priced = sorted((v.price, v.tier) for v in shop.CATALOG.values() if v.price)
+    # (the old "a dearer item is never a commoner tier" leg RETIRED 2026-08-02:
+    #  it was the price coupling itself, stated as a law.  What replaces it is
+    #  the supply monotonicity -- a scarcer good is never a commoner band.)
     rank = {t: i for i, t in enumerate(shop.TIER_ORDER)}
-    for (_p1, t1), (_p2, t2) in zip(priced, priced[1:]):
-        assert rank[t1] <= rank[t2]
+    supplied = sorted((shop.supply_score(v.icon), v.tier)
+                      for v in shop.CATALOG.values()
+                      if v.price and shop.supply_score(v.icon) is not None)
+    for (_s1, t1), (_s2, t2) in zip(supplied, supplied[1:]):
+        assert rank[t1] >= rank[t2], "a scarcer good landed in a commoner band"
 
 
 def test_grant_only_goods_have_no_band():
@@ -346,3 +361,53 @@ def test_every_retired_key_has_a_living_heir():
     persistence._heal_bag(inv)
     assert not (set(inv) & set(shop.RETIRED)), "a retired key survived the heal"
     assert sum(inv.values()) == 2 * len(shop.RETIRED), "the heal lost goods"
+
+
+def test_rarity_is_decoupled_from_price():
+    """⭐THE RULING (Joel, 2026-08-02: "yeah decouple rarity from price").
+
+    Rarity used to be DEFINED as price -- `tier_for_price` -- so "legendary"
+    meant "expensive", and the economy audit that day measured expensive at
+    about 23 real minutes of adventuring.  Scarcity was decorative.
+
+    It reads the authored SUPPLY columns now, which nothing had ever read:
+    DefaultStockChance x DefaultMaxStock = the expected number of copies on a
+    shelf.  Still derived, still no invented economy -- the other column was
+    always there.  This pins that the two axes actually came apart."""
+    import statistics
+    from tuipet import shop
+    priced = [(v.price, shop.supply_score(v.icon), v.tier, k)
+              for k, v in shop.CATALOG.items()
+              if v.price and shop.supply_score(v.icon) is not None]
+    assert len(priced) > 50
+
+    # 1. a CHEAP good can be the rarest thing in the game
+    cheap_legendary = [k for p, _s, t, k in priced if t == "legendary" and p <= 500]
+    assert cheap_legendary, "no cheap good is rare -- still price-coupled"
+
+    # 2. ...and a DEAR good can be the commonest
+    dear_common = [k for p, _s, t, k in priced if t == "common" and p >= 2000]
+    assert dear_common, "no expensive good is common -- still price-coupled"
+
+    # 3. the correlation is broken, not merely dented
+    xs = [p for p, _s, _t, _k in priced]
+    ys = [s for _p, s, _t, _k in priced]
+    mx, my = statistics.mean(xs), statistics.mean(ys)
+    cov = sum((a - mx) * (b - my) for a, b in zip(xs, ys))
+    den = (sum((a - mx) ** 2 for a in xs) * sum((b - my) ** 2 for b in ys)) ** 0.5
+    r = cov / den
+    assert abs(r) < 0.35, f"price still predicts supply: r={r:+.3f}"
+
+    # 4. and every band still has real membership -- a ladder, not a cliff
+    for name in shop.TIER_ORDER:
+        assert sum(1 for _p, _s, t, _k in priced if t == name) >= 5, name
+
+
+def test_an_unauthored_good_falls_back_to_the_price_ladder():
+    """tuipet's own additions carry no CSV stock columns.  They must not
+    silently read as the commonest thing there is -- the price ladder is the
+    honest fallback, and it is still a statement about worth."""
+    from tuipet import shop
+    assert shop.supply_score("i:99999") is None
+    assert shop.tier_for_supply("i:99999", 9000) == shop.tier_for_price(9000)
+    assert shop.tier_for_supply("i:99999", None) is None      # grant-only

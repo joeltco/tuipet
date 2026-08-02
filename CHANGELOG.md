@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.337 — RARE NO LONGER JUST MEANS EXPENSIVE (2026-08-02)
+
+RARE NO LONGER JUST MEANS EXPENSIVE: an item's rarity used to be worked out from its price, so 'legendary' only ever meant 'costs a lot' — and at the rate bits pile up, that is about a twenty-minute walk. Rarity now comes from how many a shop will actually carry, which the game's own data has always said. A 100b capsule is the scarcest thing in the game because shops almost never have one. The Gold Pill is still legendary, but because a shop only ever stocks ONE — not because of the price tag. And a few dear items turned out to be common, because they are always on the shelf. Nothing was repriced.
+
 ## 0.5.336 — THE ITEM SHELF IS REBALANCED (2026-08-02)
 
 THE ITEM SHELF IS REBALANCED — six items stopped selling you things you already own for free. The ELIXIR now wipes your WHOLE care-mistake slate instead of curing sickness the F pill cures for nothing. The MIRACLE DRINK stops slips landing at all for a day. The GOLD PILL makes a day's battles, drills and marching cost no energy. VITAMIN G means nothing can wound your mon for a day, instead of healing what H heals free. The BOOK holds your manners steady instead of nudging them. And the xylophone, video game and TV now build DP — jogress power you could only get from sleeping. No prices moved and nothing was removed.

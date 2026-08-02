@@ -89,9 +89,14 @@ def test_the_daily_stock_cap_stops_the_money_printer():
     p = _pet()
     p.bits = 50_000
     e = next(x for x in shop.town_stock(B_TOWN, D, pet=p) if x["key"] == "steak")
-    # TIERED STOCK (D1, 2026-07-24): the steak is RARE (2000b), so a town
-    # parts with one a day -- min(authored maxStock, daily cap, tier cap).
-    assert e["left"] == shop.tier_stock("steak") == 1
+    # TIERED STOCK (D1, 2026-07-24): a town parts with tier-many a day --
+    # min(authored maxStock, daily cap, tier cap).
+    # ⭐The steak's BAND MOVED 2026-08-02 when rarity was decoupled from price:
+    # at 2000b the price ladder called it rare (1 a day), but the authored
+    # columns say a shop stocks it every time and carries twenty -- it is a
+    # COMMON good that happens to be dear, which is precisely the case the
+    # decoupling exists to express.  The cap still bites; it bites at 3.
+    assert e["left"] == shop.tier_stock("steak") == 3
     for i in range(e["left"]):
         msg, sfx = shop.town_buy(p, e, today=D)
         assert sfx == "confirm"

@@ -108,10 +108,13 @@ def test_every_home_item_does_something():
 
 def test_tier_is_populated_by_derivation_not_by_hand():
     """P2 left this hook empty on purpose; the distribution arc filled it
-    2026-07-24 -- by DERIVING each band from the canon price, so no
-    economy was invented on the way in."""
+    2026-07-24 by DERIVING each band -- so no economy was invented on the way
+    in.  ⭐The SOURCE changed 2026-08-02 (Joel: "yeah decouple rarity from
+    price"): the band now reads the authored SUPPLY columns
+    (DefaultStockChance x DefaultMaxStock) instead of the price.  Still
+    derived, still nothing invented -- just the other column."""
     for key, v in shop.CATALOG.items():
-        assert v.tier == shop.tier_for_price(v.price), key
+        assert v.tier == shop.tier_for_supply(v.icon, v.price), key
 
 
 @pytest.mark.parametrize("key", sorted(shop.CATALOG))

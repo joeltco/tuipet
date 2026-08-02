@@ -391,13 +391,96 @@ TIER_ORDER = ("common", "uncommon", "rare", "legendary")
 
 
 def tier_for_price(price):
-    """The band a price falls in, or None for a grant-only item."""
+    """The band a price falls in, or None for a grant-only item.
+
+    ⛔NO LONGER THE TIER SOURCE (2026-08-02, Joel: "yeah decouple rarity from
+    price").  Kept because it is still a readable statement of what an item
+    COSTS in band terms, and the retired-ruling comment above is history worth
+    keeping -- but `tier` comes from `tier_for_supply` now.  Do not wire this
+    back into CATALOG."""
     if price is None:
         return None
     for ceiling, name in TIER_BANDS:
         if price <= ceiling:
             return name
     return TIER_TOP
+
+
+# ⭐⭐RARITY IS SUPPLY, NOT PRICE (2026-08-02, Joel's named order).
+#
+# The old rule derived `tier` FROM PRICE, on the reasoning that "price was
+# already the game's opinion of an item's worth".  True -- but worth is not
+# scarcity, and the economy audit that day showed why it mattered: at ~440
+# bits per real minute of adventuring, the dearest good in the game is a
+# 23-minute walk.  "Legendary" meant "expensive", expensive meant twenty
+# minutes, and rarity was decorative.
+#
+# The authored CSVs already carry the game's opinion of SCARCITY, in columns
+# nothing was reading: DefaultStockChance (how often a shop stocks it at all)
+# and DefaultMaxStock (how many it will ever carry).  Their product is the
+# expected number of copies on a shelf -- a real supply number, authored
+# per item, with nothing to do with price.  So this invents no economy
+# either; it reads the OTHER column that was always there.
+#
+# Measured: price-vs-supply correlation r = -0.16 (was +1.00 by construction).
+# The Gold Pill stays legendary -- but now because a shop carries exactly ONE,
+# not because it costs 10000b.  The 3000b evolution relics drop to common,
+# because shops always stock them.  A 100b capsule becomes the rarest thing
+# in the game, because it is.
+_SUPPLY_CAP = 30.0          # DefaultMaxStock -1 == no ceiling: as common as it gets
+SUPPLY_BANDS = ((1.0, "legendary"), (4.0, "rare"), (10.0, "uncommon"))
+
+
+def _authored_supply():
+    """{icon -> expected copies on a shelf} from the authored stock columns."""
+    import csv as _csv
+    import os as _os
+    out = {}
+    here = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "data")
+    for fn, pre, idc in (("items.csv", "i", "ItemIdentificationNum"),
+                         ("foods.csv", "f", "FoodIdentificationNum")):
+        try:
+            with open(_os.path.join(here, fn), encoding="utf-8") as fh:
+                rows = list(_csv.DictReader(fh))
+        except OSError:
+            continue
+        if not rows:
+            continue
+        cc = next((c for c in rows[0] if c.startswith("DefaultStockChance")), None)
+        cm = next((c for c in rows[0] if c.startswith("DefaultMaxStock")), None)
+        if not cc or not cm:
+            continue
+        for r in rows:
+            try:
+                chance = int(str(r[cc]).split(";")[0] or 0)
+                mx = int(r[cm] or 0)
+            except (TypeError, ValueError):
+                continue
+            out[f"{pre}:{r[idc]}"] = chance / 100.0 * (_SUPPLY_CAP if mx < 0 else mx)
+    return out
+
+
+_SUPPLY = _authored_supply()
+
+
+def supply_score(icon):
+    """Expected copies of `icon` on a shelf, or None when unauthored."""
+    return _SUPPLY.get(icon)
+
+
+def tier_for_supply(icon, price=None):
+    """The band an item's AUTHORED SUPPLY falls in, or None for a grant-only
+    good.  An unauthored icon (tuipet's own additions) falls back to the price
+    ladder rather than silently reading as the commonest thing there is."""
+    if price is None:
+        return None
+    s = supply_score(icon)
+    if s is None:
+        return tier_for_price(price)
+    for ceiling, name in SUPPLY_BANDS:
+        if s <= ceiling:
+            return name
+    return "common"
 
 
 # How much RARER a tier is, both on the shelf and on the road.  One curve
@@ -447,7 +530,7 @@ CATALOG = {
     _k: Item(*_v,
              touches=_TOUCHES.get(_k, ()),
              where="road" if _k in _ROAD_ONLY else "home",
-             tier=tier_for_price(_v[2]))
+             tier=tier_for_supply(_v[1], _v[2]))
     for _k, _v in _AUTHORED.items()
 }
 

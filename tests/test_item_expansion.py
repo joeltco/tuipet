@@ -341,11 +341,18 @@ def test_the_home_capsule_shelf_is_rationed(isolate_save):
     for ~123b against its 100b price, so an unlimited home shelf would be
     a printer.  The box rides the daily tier ration instead -- three a
     day, then sold out until tomorrow; every other home row stays
-    unlimited as ever."""
+    unlimited as ever.
+
+    ⭐The ration TIGHTENED 2026-08-02 when rarity was decoupled from price: the
+    box is 100b, so the price ladder called it common (3 a day).  Its AUTHORED
+    supply is 0.1 expected copies -- the scarcest good in the game -- so it is
+    legendary now and the shelf parts with ONE.  Exactly the decoupling Joel
+    asked for, landing on the item that most needed it."""
     p = _pet(bits=10_000)
     row = next(e for e in shop.home_stock(pet=p) if e["key"] == "capsule_a")
-    assert row.get("left") == shop.tier_stock("capsule_a") == 3
-    for i in range(3):
+    ration = shop.tier_stock("capsule_a")
+    assert row.get("left") == ration == 1
+    for i in range(ration):
         msg, sfx = shop.town_buy(p, row)
         assert sfx == "confirm", (i, msg)
     msg, sfx = shop.town_buy(p, row)
