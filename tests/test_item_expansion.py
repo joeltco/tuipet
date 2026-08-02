@@ -58,7 +58,7 @@ def test_the_premiums_do_what_no_free_button_can():
     p._inc_mistake("the lights left on")
     p.add_item("elixir")
     p.use_item("elixir")
-    assert p.care_mistakes == 0 and p.mistake_day == 0
+    assert p.pardon_lapse > 0            # the WARD (the wipe moved to the drink)
     assert p.sick, "the cure is FREE -- the elixir must not sell it"
     assert p.energy == 0, "the tank is 200b -- the elixir must not sell it"
     q = _pet(injured=True)

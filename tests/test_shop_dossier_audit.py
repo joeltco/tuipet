@@ -74,12 +74,12 @@ def test_care_shelf_matches_its_blurbs():
     # ⭐the care shelf was repointed 2026-08-02 (item refactor): the drink
     # WARDS instead of scrubbing, and the Elixir does the wiping
     p = _pet(care_mistakes=7)
-    _use(p, "miracle_drink")                    # "NO care slips for a day"
+    _use(p, "elixir")                           # "NO care slips for a day"
     assert p.care_mistakes == 7 and p.pardon_lapse > 0
     p._inc_mistake("the lights left on")
     assert p.care_mistakes == 7                        # warded: nothing lands
     p = _pet(care_mistakes=7)
-    _use(p, "elixir")                    # "wipes the WHOLE care-mistake slate"
+    _use(p, "miracle_drink")             # "wipes the WHOLE slate · energy +12"
     assert p.care_mistakes == 0 and p.mistake_day == 0
     p = _pet()
     _use(p, "gold_pill")                 # "energy FULL · nothing tires it"

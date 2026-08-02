@@ -68,38 +68,58 @@ def test_every_guard_burns_on_the_body_clock():
 
 # ---- 1. the Elixir: Joel's own call ----------------------------------------
 
-def test_the_elixir_wipes_the_whole_care_mistake_slate():
-    """Joel: "why cant elixer fix ALL care mistakes or something???"  It used
-    to cure sickness AND fill the tank -- BOTH of which he had already named as
-    redundant (the free F pill; the 200b Energy Drink).
+def test_the_care_mistake_ladder_matches_the_rarity_ladder():
+    """⭐THE SECOND PASS (Joel: "isnt a full care mistake wipe kind of over
+    powered? this is the kind of shit im talking about dude").
 
-    ⚠It clears BOTH counters.  A care mistake is tallied twice: `care_mistakes`
-    (frail at 5, dead at 20) and `mistake_day` (the birthday result, which
-    feeds evol_bonus).  The old erasers only ever cleared the first, so a
-    7777b "ONE care slip erased" left half the slip on the books."""
+    He was right, and it was worse than overpowered.  The wipe first landed on
+    the ELIXIR at 2000b -- THE SAME PRICE as the Cold Compress, which scrubs
+    ONE slip -- so it deleted a sibling item's whole reason to exist, and it
+    undid the death clock for less than raising the dead (2500b).
+
+    The effect was not wrong, it was on the wrong item.  The biggest effect
+    belongs to the SCARCEST item, which is exactly what decoupling rarity from
+    price (v0.5.337) made expressible.  The ladder now runs with the supply
+    ladder, not against it."""
+    from tuipet import shop
+    rungs = [("cold_compress", "common"), ("elixir", "uncommon"),
+             ("miracle_drink", "legendary")]
+    for key, tier in rungs:
+        assert shop.CATALOG[key].tier == tier, key
+    # cheap + common: ONE slip
     p = _pet(cm=4)
-    assert p.care_mistakes == 4 and p.mistake_day == 4
-    msg = _use(p, "elixir")
-    assert "4 slips" in str(msg)
-    assert p.care_mistakes == 0 and p.mistake_day == 0
-    # ...and it no longer touches the two things it used to
-    q = _pet(cm=1, sick=True)
-    q._set_energy(3)
+    _use(p, "cold_compress")
+    assert p.care_mistakes == 3
+    # mid + uncommon: PREVENTS, does not cure
+    q = _pet(cm=4)
     _use(q, "elixir")
-    assert q.sick is True, "the elixir must NOT cure sickness -- that is free"
-    assert q.energy == 3, "the elixir must NOT fill the tank -- that is 200b"
-    # a clean slate refuses instead of vanishing
-    assert "Nothing on the slate" in str(_use(_pet(), "elixir"))
+    assert q.care_mistakes == 4 and q.pardon_lapse > 0
+    q._inc_mistake("the lights left on")
+    assert q.care_mistakes == 4
+    # scarce + dear: the whole slate, BOTH counters
+    r = _pet(cm=4)
+    assert r.mistake_day == 4
+    msg = _use(r, "miracle_drink")
+    assert "4 slips" in str(msg)
+    assert r.care_mistakes == 0 and r.mistake_day == 0
+    # ...and the wipe is dearer than raising the dead, as an undo of the death
+    # clock should be
+    assert shop.CATALOG["miracle_drink"].price > shop.CATALOG["revive_floppy"].price
+    # the elixir still sells NEITHER of the things Joel first called redundant
+    z = _pet(sick=True)
+    z._set_energy(3)
+    _use(z, "elixir")
+    assert z.sick is True and z.energy == 3
 
 
 # ---- 2. the Miracle Drink: prevention, not another cure ---------------------
 
-def test_the_miracle_drink_wards_the_slate_for_a_day():
-    """Repointed because the Elixir now wipes the slate outright: the
-    legendary stops CURING and starts PREVENTING.  While it runs, NO care
-    mistake can be booked at all -- the lights can burn all night."""
+def test_the_ward_stops_every_slip_landing():
+    """The ward sits on the ELIXIR (uncommon, five a shelf) since the second
+    pass.  While it runs, NO care mistake can be booked at all -- the lights
+    can burn all night."""
     p = _pet()
-    _use(p, "miracle_drink")
+    _use(p, "elixir")
     assert p.pardon_lapse > 0
     for why in ("the lights left on", "left hungry too long",
                 "empty effort gauge"):
@@ -108,7 +128,7 @@ def test_the_miracle_drink_wards_the_slate_for_a_day():
     p.pardon_lapse = 0.0
     p._inc_mistake("left hungry too long")
     assert p.care_mistakes == 1                    # expired: slips land again
-    assert "already warded" in str(_use(_pet(pardon_lapse=5.0), "miracle_drink"))
+    assert "already warded" in str(_use(_pet(pardon_lapse=5.0), "elixir"))
 
 
 # ---- 3. the Gold Pill: the tank stops mattering -----------------------------
@@ -213,8 +233,8 @@ def test_the_blurbs_match_the_new_jobs():
     items changed jobs; six blurbs had to change with them."""
     from tuipet import shop
     for key, must, mustnt in (
-        ("elixir", ("slate",), ("sickness", "energy")),
-        ("miracle_drink", ("NO care slips",), ("ONE care slip",)),
+        ("elixir", ("NO care slips",), ("sickness", "energy to FULL")),
+        ("miracle_drink", ("WHOLE slate",), ("ONE care slip",)),
         ("gold_pill", ("nothing tires",), ("+12",)),
         ("vitamin_g", ("CANNOT be wounded",), ("heals injury",)),
         ("book", ("HOLD",), ()),

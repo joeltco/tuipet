@@ -271,6 +271,9 @@ def test_declared_touches_match_what_the_handler_actually_moves(key):
     p.hunger, p.energy = 1, 2
     p.weight = p._base_weight() + 10
     p.care_mistakes, p.poop, p.poop_sizes = 3, 2, [1, 1]
+    # the birthday tally too: the whole-slate wipe clears BOTH counters, and a
+    # declaration is only checkable against a field that has somewhere to move
+    p.mistake_day = 3
     p.strength, p.obedience = 0, 50
     p.vaccine = p.data_power = p.virus = 50   # a bank the converters can trade
     p.sleep_lapse = 100.0        # some bedtime pressure for the Caffeine Pill
@@ -373,6 +376,9 @@ def test_the_shelf_text_promises_the_number_the_handler_delivers(key):
     # cost this test five false failures before the fixture was right)
     p.weight = p._base_weight()
     p.care_mistakes, p.poop, p.poop_sizes = 3, 2, [1, 1]
+    # the birthday tally too: the whole-slate wipe clears BOTH counters, and a
+    # declaration is only checkable against a field that has somewhere to move
+    p.mistake_day = 3
     p.obedience, p.strength = 50, 0
     p.vaccine = p.data_power = p.virus = 50   # a bank the converters can trade
     p.dna_owned = {}

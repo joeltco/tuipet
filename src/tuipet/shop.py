@@ -91,7 +91,7 @@ _AUTHORED = {
     #  the H key: a free care BUTTON with the i:80 rip and the Bandaging
     #  show; the canon time-heal (injLapse) stays underneath.  No shelf
     #  entry may ever sell either ailment cure again.)
-    "miracle_drink":   ("Miracle Drink",   "f:18", 7777, "Cure", "NO care slips for a day · energy +12", "the expensive absolution"),
+    "miracle_drink":   ("Miracle Drink",   "f:18", 7777, "Cure", "wipes the WHOLE slate · energy +12", "the expensive absolution"),
     # ---- CARE (upkeep: sleep, lights, filth, the mistake slate) -------------
     "sleeping_pill":   ("Sleep Pill",      "f:34", 300,  "Rest", "sleep now", "lights out, no argument"),
     "caffeine_pill":   ("Caffeine Pill",   "f:38", 300,  "Rest", "bedtime pushed later", "tonight runs long"),
@@ -161,7 +161,7 @@ _AUTHORED = {
     "green_pepper":    ("Green Pepper",        "f:36", 100,   "Feed", "hunger +1 · Data power +1 · obedience +1", "a spark of logic"),
     "red_pepper":      ("Red Pepper",          "f:37", 100,   "Feed", "hunger +1 · Vaccine power +1 · obedience +1", "a spark of order"),
     "med":             ("Med",                 "f:4",  None,  "Cure", "cures sickness", "the field pill"),
-    "elixir":          ("Elixir",              "f:15", 2000,  "Cure", "wipes the WHOLE care-mistake slate", "absolution in a bottle"),
+    "elixir":          ("Elixir",              "f:15", 2000,  "Cure", "NO care slips for a day", "absolution in a bottle"),
     "vitamin_g":       ("Vitamin G",           "f:16", 2000,  "Cure", "effort FULL · CANNOT be wounded for a day", "the golden ward"),
     # THE CURE LADDER (2026-07-27, Joel: "fill the cure hole").  care_mistakes
     # is the deadliest meter in the game -- 21 reads, it gates evolutions and
@@ -259,7 +259,7 @@ _TOUCHES = {
     "energy_drink": ("energy",),
     "slim_drink": ("weight",),
     "vitamin": ("strength", "vitamin_lapse"),
-    "miracle_drink": ("pardon_lapse", "energy"),
+    "miracle_drink": ("care_mistakes", "mistake_day", "energy"),
     "sleeping_pill": ("asleep", "lights", "nap"),
     # BOTH channels, because it really does use both (item sweep
     # 2026-07-24: a line pet -- every hatch -- pushes bedtime through the
@@ -313,7 +313,7 @@ _TOUCHES = {
     "green_pepper": ("hunger", "obedience", "data_power"),
     "red_pepper": ("hunger", "obedience", "vaccine"),
     "med": ('sick',),
-    "elixir": ('care_mistakes', 'mistake_day'),
+    "elixir": ('pardon_lapse',),
     "vitamin_g": ('strength', 'ward_lapse'),
     "cold_compress": ('care_mistakes', 'energy'),
     "gold_pill": ('energy', 'tonic_lapse'),

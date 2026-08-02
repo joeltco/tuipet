@@ -679,20 +679,28 @@ class CareMixin:
         -- but 241 of 417 Megas are TERMINAL, and for those it never
         resets again.  This drink is the only way back.
 
-        ⭐REPOINTED 2026-08-02 (item refactor).  It used to erase ONE slip
-        and pay +12 energy for 7777b -- which the 2000b Cold Compress (-1 slip)
-        plus a 200b Energy Drink beat outright, and which the Elixir now
-        obsoletes entirely by wiping the whole slate.  So the legendary stops
-        CURING and starts PREVENTING: for a game-day, no care mistake can be
-        booked at all -- the lights can burn, the calls can go unanswered, and
-        the slate does not move.  The Compress stays the cheap single scrub,
-        the Elixir is the full wipe, this is the day off.  (Energy +12 kept:
-        it was never the problem, and the drink still reads as a drink.)"""
-        if getattr(self, "pardon_lapse", 0.0) > 0:
-            return _Refused("The slate is already warded.")     # noqa: F405
-        self.pardon_lapse = 1440.0
+        ⭐IT WIPES THE WHOLE SLATE (2026-08-02, second pass).  It used to erase
+        ONE slip for 7777b, which the 2000b Compress already did.  The refactor
+        first gave it a day-long ward and gave the WIPE to the Elixir -- and
+        Joel called that: "isnt a full care mistake wipe kind of over powered?"
+        It was, at 2000b.  The wipe is the biggest effect on this shelf, so it
+        belongs to the scarcest item on it, and since rarity stopped meaning
+        price (v0.5.337) that is THIS one: legendary, ONE per shelf, 7777b.
+
+        Both counters go: the running total that makes a Mega frail at 5 and
+        kills at 20, and today's tally that decides the birthday result and
+        feeds evol_bonus.  For a terminal Mega -- 241 of 417 have no outgoing
+        evolution, so the counter never resets on its own again -- this is the
+        only way back, and it should be the rarest bottle in the game."""
+        total = int(self.care_mistakes)
+        if total <= 0 and int(getattr(self, "mistake_day", 0)) <= 0:
+            return _Refused("Nothing on the slate to erase.")    # noqa: F405
+        self.care_mistakes = 0
+        self.mistake_day = 0
         self._set_energy(self.energy + MIRACLE_ENERGY_GAIN)   # noqa: F405
-        return "Forgiven — nothing counts against it today."
+        self._set_anim("happy", 1.8)
+        return (f"The whole slate — {total} slip{'' if total == 1 else 's'} — "
+                "wiped clean!") if total else "The slate is clean again."
 
     def _cold_compress(self):
         """THE CHEAP ERASER (2026-07-27, Joel: "fill the cure hole").
@@ -1088,19 +1096,27 @@ class CareMixin:
         sleeper" and got called on THAT too: when a job is redundant the fix is
         a DIFFERENT JOB, not the redundant job with a modifier bolted on.)
 
-        It wipes the CARE MISTAKE SLATE -- both counters: the running total
-        that makes a Mega frail at 5 and kills at 20, and today's tally that
-        decides the birthday result and feeds evol_bonus.  Nothing else clears
-        more than one slip, and for a terminal Mega the total never resets on
-        its own again."""
-        total = int(self.care_mistakes)
-        if total <= 0 and int(getattr(self, "mistake_day", 0)) <= 0:
-            return _Refused("Nothing on the slate to erase.")  # noqa: F405
-        self.care_mistakes = 0
-        self.mistake_day = 0
-        self._set_anim("happy", 1.8)
-        return (f"The whole slate — {total} slip{'' if total == 1 else 's'} — "
-                "wiped clean!") if total else "The slate is clean again."
+        It first took the WHOLE-SLATE WIPE, and Joel called that too: "isnt a
+        full care mistake wipe kind of over powered? this is the kind of shit
+        im talking about dude".  He was right and it was worse than
+        overpowered -- at 2000b it was THE SAME PRICE as the Cold Compress,
+        which scrubs ONE slip, so it deleted a sibling item's reason to exist,
+        and it undid the whole death clock for less than raising the dead
+        (Rev. Floppy, 2500b).
+
+        The EFFECT was not wrong, it was on the wrong item.  A full wipe is
+        the biggest thing on this shelf, so it belongs to the SCARCEST thing
+        on this shelf -- and since rarity stopped meaning price (v0.5.337),
+        that is the Miracle Drink: legendary, ONE per shelf.  The Elixir is
+        uncommon, five per shelf, so it takes the day-long WARD instead: no
+        care mistake can be booked while it runs.  The ladder reads
+        cheap-and-common scrubs one, mid prevents, scarce-and-dear undoes
+        everything."""
+        if getattr(self, "pardon_lapse", 0.0) > 0:
+            return _Refused("The slate is already warded.")    # noqa: F405
+        self.pardon_lapse = 1440.0
+        self._set_anim("happy", 1.6)
+        return "Warded — nothing counts against it today."
 
     def _vitamin_g(self):
         """⭐THE WARD (item refactor 2026-08-02).  It used to HEAL the injury

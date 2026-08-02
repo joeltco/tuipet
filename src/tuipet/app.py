@@ -150,7 +150,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("RARE NO LONGER JUST MEANS EXPENSIVE: an item's rarity used to be worked out from its price, so 'legendary' only ever meant 'costs a lot' — and at the rate bits pile up, that is about a twenty-minute walk. Rarity now comes from how many a shop will actually carry, which the game's own data has always said. A 100b capsule is the scarcest thing in the game because shops almost never have one. The Gold Pill is still legendary, but because a shop only ever stocks ONE — not because of the price tag. And a few dear items turned out to be common, because they are always on the shelf. Nothing was repriced.")
+    WHATS_NEW = ("THE CARE-MISTAKE SHELF IS A LADDER NOW: wiping your whole slate was briefly a 2000b Elixir — the same price as the Cold Compress, which rubs out ONE slip — so the cheap one had no reason to exist and the death clock cost less to undo than raising the dead. The wipe moved to the MIRACLE DRINK, the scarcest bottle in the game at one per shelf. The Elixir now stops slips landing for a day instead. Cheap and common scrubs one, mid-range prevents, scarce and dear undoes everything.")
 
     BINDINGS = [
         # jogress is LOBBY-ONLY (fusion needs a real partner from the
