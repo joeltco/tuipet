@@ -121,6 +121,21 @@ def status_line(status, deco, width=26):
     return f"[b]{status}[/]   " + "  ".join(shown)
 
 
+def _fit_cells(text, budget):
+    """`text` clipped to `budget` TERMINAL CELLS, ellipsised when it does not
+    fit.  Cells, never len(): a 2-cell glyph passes a char budget and blows
+    the render (THE CELL LAW, bug report #32)."""
+    from rich.cells import cell_len
+    if cell_len(text) <= budget:
+        return text
+    out = ""
+    for ch in text:
+        if cell_len(out + ch) > budget - 1:
+            break
+        out += ch
+    return out.rstrip() + "…"
+
+
 def wrap(text, max_lines, width=CARD_W):
     """Word-wrap PLAIN text into card rows on WORD boundaries (card audit
     2026-07-24, Joel "words are getting cut off").  The Options card used a
@@ -938,7 +953,17 @@ def dna(app):
         f"[b]{p.name[:max(4, CARD_W - 9 - len(screen))]}[/]"
         f" [dim]· DNA · {screen}[/]", DIV,
         f"Bits     [{T.COIN}]{p.bits}[/]",
-        f"Field    {data.pretty_field(f)}" + ("  [dim](own)[/]" if same else ""),
+        # ⭐THE (own) MARKER WAS A THIRD COPY, AND IT CLIPPED (card audit
+        # 2026-08-04).  Measured: "Field    Virus Buster  (own)" is 28 cells
+        # against the 26-wide box, and 7 of the 10 DNA fields overflowed the
+        # same way whenever the card showed the pet's OWN field -- which is
+        # the commonest case there is.  Textual wrapped the tail onto the
+        # box's invisible next row (the CELL LAW, bug #32's family).
+        # It was also redundant: the cost row below already says "(own Field)"
+        # or "(off Field)", and the static hint says "own Field charges
+        # cheap".  A screen shows a fact ONCE -- so the marker goes, and the
+        # NAME is clipped to the budget so no future field can overflow here.
+        f"Field    {_fit_cells(data.pretty_field(f), CARD_W - 9)}",
         f"Banked   {own}     Charged {chg}",
         f"Share    {p.dna_percent(f)}%    [dim]x{m.amount}[/]",
         f"Unlocks  [b]{unlocked}[/]/{len(dna_t)} form(s)",

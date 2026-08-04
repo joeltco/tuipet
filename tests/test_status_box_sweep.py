@@ -344,3 +344,76 @@ def test_the_road_card_names_the_wound_line_and_the_gate_verdict():
     pan._trans, pan.travelling = None, True
     assert clean.pet.battle_condition(check_energy=False) is None
     assert "fight." not in plain(_card(clean, pan))
+
+
+def test_every_card_fits_the_box_in_cells():
+    """⭐THE UNIVERSAL BUDGET SWEEP (card audit 2026-08-04, Joel: "lets do an
+    audit on ALL status cards").
+
+    The box is 26x16.  Individual cards had individual budget pins, and the
+    gaps between them are where the clipping lived: this audit found the DNA
+    card at 28 cells -- `Field    Virus Buster  (own)` -- and 7 of the 10 DNA
+    fields overflowed the same way whenever the card showed the pet's OWN
+    field, which is the commonest case there is.  Textual wrapped the tail
+    onto the box's invisible next row.
+
+    ⛔This drives EVERY registered painter through the REAL dispatcher, so a
+    new card cannot ship without a budget check, and an old one cannot drift
+    into overflow silently.  Cells, never len() -- THE CELL LAW."""
+    from rich.cells import cell_len
+    from rich.text import Text
+    from tuipet import adventure, data, statusbox
+    from tuipet.adventurescreen import AdventurePanel
+    from tuipet.battlescreen import BattlePanel
+    from tuipet.dnascreen import DNAPanel
+    from tuipet.feedscreen import FeedPanel
+    from tuipet.shopscreen import ShopPanel
+
+    def _sweep(tag, app):
+        txt = app.stats_w.txt
+        rows = Text.from_markup(txt).plain.split("\n")   # raises on bad markup
+        assert len(rows) <= 16, f"{tag}: {len(rows)} rows overflow the card"
+        for r in rows:
+            assert cell_len(r) <= 26, f"{tag}: {cell_len(r)} cells |{r}|"
+
+    # the three fixed cards, in their worst states
+    for tag, lines in (
+        ("home", statusbox.home_lines(_app().pet)),
+        ("home/loaded", statusbox.home_lines(
+            _app(Pet(num=399, name="Wwwwwwwwwwwwwwwwwwwwww", stage="Mega",
+                     attribute="Vaccine")).pet)),
+        ("egg", statusbox.egg_lines(Pet(num=-1, name="", stage="Egg"))),
+    ):
+        fake = _FakeStats()
+        fake.txt = "\n".join(lines)
+        _sweep(tag, type("A", (), {"stats_w": fake})())
+
+    # every DNA field -- the case this audit caught
+    for fld in data.DNA_FIELDS:
+        app = _app()
+        app.pet.field = fld
+        _sweep(f"dna[{fld}]", _card_app(app, DNAPanel(app.pet)))
+
+    # the panels, driven through painter_for
+    app = _app()
+    road = AdventurePanel(app.pet, zone=adventure.ZONES[0])
+    road._trans, road.travelling = None, True
+    for tag, mode in (
+        ("feed", FeedPanel(app.pet)),
+        ("shop", ShopPanel(app.pet)),
+        ("bag", ShopPanel(app.pet, start_mode="bag")),
+        ("road", road),
+        ("battle", BattlePanel(app.pet, {"num": 100, "name": "MetalGreymon"},
+                               wild=True)),
+    ):
+        _sweep(tag, _card_app(_app(), mode))
+
+
+def _card_app(app, mode):
+    """Paint `mode`'s card into `app` through the real dispatcher."""
+    from tuipet import statusbox
+    app.mode = mode
+    painter = statusbox.painter_for(mode)
+    assert painter is not None, f"{type(mode).__name__} fell to bare vitals"
+    painter(app)
+    return app

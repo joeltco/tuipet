@@ -150,7 +150,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE CARE-MISTAKE SHELF IS A LADDER NOW: wiping your whole slate was briefly a 2000b Elixir — the same price as the Cold Compress, which rubs out ONE slip — so the cheap one had no reason to exist and the death clock cost less to undo than raising the dead. The wipe moved to the MIRACLE DRINK, the scarcest bottle in the game at one per shelf. The Elixir now stops slips landing for a day instead. Cheap and common scrubs one, mid-range prevents, scarce and dear undoes everything.")
+    WHATS_NEW = ("THE DNA CARD WAS CLIPPING OFF THE EDGE OF THE BOX: the Field row read 'Field  Virus Buster  (own)', which is two characters wider than the status box — so on 7 of the 10 fields the tail wrapped onto a row you cannot see. The (own) marker is gone, because the card already tells you twice: the cost line says whether you are on your own field or off it. Every card in the game is now measured against the box automatically, so this cannot creep back in anywhere.")
 
     BINDINGS = [
         # jogress is LOBBY-ONLY (fusion needs a real partner from the

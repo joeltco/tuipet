@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.339 — THE DNA CARD WAS CLIPPING OFF THE EDGE OF THE BOX (2026-08-04)
+
+THE DNA CARD WAS CLIPPING OFF THE EDGE OF THE BOX: the Field row read 'Field Virus Buster (own)', which is two characters wider than the status box — so on 7 of the 10 fields the tail wrapped onto a row you cannot see. The (own) marker is gone, because the card already tells you twice: the cost line says whether you are on your own field or off it. Every card in the game is now measured against the box automatically, so this cannot creep back in anywhere.
+
 ## 0.5.338 — THE CARE-MISTAKE SHELF IS A LADDER NOW (2026-08-02)
 
 THE CARE-MISTAKE SHELF IS A LADDER NOW: wiping your whole slate was briefly a 2000b Elixir — the same price as the Cold Compress, which rubs out ONE slip — so the cheap one had no reason to exist and the death clock cost less to undo than raising the dead. The wipe moved to the MIRACLE DRINK, the scarcest bottle in the game at one per shelf. The Elixir now stops slips landing for a day instead. Cheap and common scrubs one, mid-range prevents, scarce and dear undoes everything.
