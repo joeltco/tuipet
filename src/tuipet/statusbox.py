@@ -121,6 +121,12 @@ def status_line(status, deco, width=26):
     return f"[b]{status}[/]   " + "  ".join(shown)
 
 
+def cell_len_(text):
+    """Terminal CELLS of `text` -- the card budget's only honest ruler."""
+    from rich.cells import cell_len
+    return cell_len(text)
+
+
 def _fit_cells(text, budget):
     """`text` clipped to `budget` TERMINAL CELLS, ellipsised when it does not
     fit.  Cells, never len(): a 2-cell glyph passes a char budget and blows
@@ -775,6 +781,69 @@ class _SubView:
         return getattr(self._app, k)
 
 
+def zonepick(app):
+    """THE ZONE PICKER: what you are about to walk into.
+
+    ⭐Joel's named order 2026-08-04 ("do the zone picker one too"), the last of
+    the three the all-cards audit found on bare vitals.
+
+    The panel's own list already carries the NAME, the conquered mark and the
+    standing best, so the card does not repeat them (a screen shows a fact
+    ONCE).  It carries what the list cannot: the GATE BOSS you have to fell to
+    win, how long the road is, whether there is a town on it -- and the
+    device's own verdict on the body, read from the SAME call the gate will
+    make when you arrive (`battle_condition(check_energy=False)`, the road's
+    energy law).  The road card learned that lesson the hard way: a refusal
+    that only speaks after forty legs is a refusal that speaks too late."""
+    from . import adventure
+    p, m, T = app.pet, app.mode, theme
+    app.stats_w.border_subtitle = gen_subtitle(p)
+    if not m.indices:
+        card(app, "Adventure", ["", "[dim]no roads open yet[/]"])
+        return
+    zi = m.indices[min(m.cursor, len(m.indices) - 1)]
+    z = adventure.ZONES[zi]
+    boss = (z.get("bosses") or [None])[0]
+    conquered = adventure.is_conquered(p, zi)
+    best = m.bests.get(zi)
+    towns = len(z.get("town_legs") or ())
+    # the title, WITHOUT restating the Gate row: `_zone_display` shortens a
+    # long zone name to its BOSS ("MasterTyrannomon's Factory Night" ->
+    # "MasterTyrannomon"), which is right on the home card and wrong here --
+    # the boss already has its own row two lines down.  Keep the BIOME half
+    # instead; it is the part the Gate row cannot tell you.
+    title = z["name"]
+    if cell_len_(title) > CARD_W:
+        title = title.split("'s ", 1)[-1] if "'s " in title else title
+    lines = [
+        f"[b]{_fit_cells(title, CARD_W)}[/]",
+        f"[dim]zone {m.indices.index(zi) + 1} of {len(m.indices)} open[/]", DIV,
+        f"Gate    [{T.NEG}]{_fit_cells(boss.get('name', '?') if boss else 'no boss', CARD_W - 8)}[/]",
+        f"Road    {z['steps']} legs",
+        f"Rest    {towns} town" + ("s" if towns != 1 else ""),
+        f"Best    {best if best else '[dim]—[/]'}",
+        DIV,
+    ]
+    # the festival and the veteran road are the picker's OWN two notes; the
+    # card echoes only the one the list is not already showing
+    if m.holiday:
+        lines.append(f"[{T.COIN}]★ {_fit_cells(m.holiday, CARD_W - 2)}[/]")
+    elif conquered:
+        lines.append("[dim]veteran road[/]")
+    else:
+        lines.append("")
+    # THE BODY'S VERDICT, before the walk instead of after it
+    cond = p.battle_condition(check_energy=False)
+    if cond:
+        lines.append(f"[{T.NEG}]{_fit_cells(cond, CARD_W)}[/]")
+    elif p.asleep:
+        lines.append(f"[{T.NEG}]fast asleep[/]")
+    else:
+        lines.append(f"Energy  [b]{p.energy}[/]")
+    lines += ["", "[dim]ENTER go  ↑↓ pick[/]"]
+    app.stats_w.update("\n".join(lines))
+
+
 def road(app):
     """THE ROAD: the live run — how far, how hurt, what it earned.
 
@@ -1093,6 +1162,7 @@ def _registry():
         (digicorescreen.DigiCorePanel, digicore),
         (raidscreen.RaidPanel, raid),
         (adventurescreen.AdventurePanel, road),
+        (adventurescreen.ZonePickPanel, zonepick),
         (lobbyscreen.LobbyPanel, lobby),
         (helpscreen.HelpPanel, help_),
         (optionsscreen.OptionsPanel, options),

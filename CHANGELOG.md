@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.341 — THE ZONE PICKER TELLS YOU WHAT YOU ARE WALKING INTO (2026-08-04)
+
+THE ZONE PICKER TELLS YOU WHAT YOU ARE WALKING INTO: pick a road and the card now names the BOSS waiting at the gate, how many legs the road runs, whether there is a town to rest at, and your standing best. It also gives you the same verdict the gate itself will — so 'Too hurt to fight' turns up before you set out, not forty legs later. With this, every screen in the game has its own status card; none of them fall back to your pet vitals any more.
+
 ## 0.5.340 — THE ALBUM AND THE HALL OF MEMORY HAVE THEIR OWN CARDS NOW (2026-08-04)
 
 THE ALBUM AND THE HALL OF MEMORY HAVE THEIR OWN CARDS NOW: open either book and the box on the right used to still be reading out your pet's hunger. The album card shows how much of the collection you have found, and for a form you have not, HOW to reach it. The hall card shows your whole line — how many elders, how deep the generations go, how many fell — beside the one you are looking at, with their age, wins, cups and how they went.

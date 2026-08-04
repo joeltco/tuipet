@@ -486,3 +486,60 @@ def test_the_album_and_hall_wear_their_own_cards():
 def _rec_name(num):
     from tuipet import data
     return data.record_for(num).get("name", "?")
+
+
+def test_the_zone_picker_wears_its_own_card():
+    """⭐Joel 2026-08-04 ("do the zone picker one too") -- the last of the
+    three the all-cards audit found on bare vitals.
+
+    The panel's LIST already carries the name, the conquered mark and the
+    standing best, so the card does NOT repeat them (a screen shows a fact
+    once).  It carries what the list cannot: the gate boss, the road's length,
+    whether there is a town on it, and the DEVICE'S VERDICT ON THE BODY --
+    from the same `battle_condition(check_energy=False)` the gate itself will
+    ask.  The road card learned that: a refusal that only speaks after forty
+    legs speaks too late."""
+    import re
+    from rich.cells import cell_len
+    from tuipet import adventure
+    from tuipet.adventurescreen import ZonePickPanel
+    plain = lambda t: re.sub(r"\[/?[^\[\]]*\]", "", t)
+    app = _app()
+    app.pet.hunger = app.pet.strength = 4
+
+    m = ZonePickPanel(app.pet)
+    zi = m.indices[m.cursor]
+    z = adventure.ZONES[zi]
+    txt = plain(_card(app, m))
+    assert (z.get("bosses") or [{}])[0].get("name", "?") in txt   # the GATE
+    assert f"{z['steps']} legs" in txt                            # the LENGTH
+    assert "town" in txt                                          # the REST stop
+    assert "Energy" in txt
+
+    # the body's verdict reaches the card, verbatim, before the walk
+    for attr, val in (("injured", True), ("sick", True), ("hunger", 0),
+                      ("poop", 2)):
+        q = _app()
+        q.pet.hunger = q.pet.strength = 4
+        setattr(q.pet, attr, val)
+        want = q.pet.battle_condition(check_energy=False)
+        assert want, attr
+        assert want in plain(_card(q, ZonePickPanel(q.pet))), attr
+
+    # ⛔the title must never restate the Gate row: `_zone_display` shortens a
+    # long zone name to its BOSS, which is right on the home card and a
+    # duplicate here.  Swept over all 26 zones, worst case included.
+    for zi in range(len(adventure.ZONES)):
+        mm = ZonePickPanel(app.pet)
+        mm.indices, mm.cursor = [zi], 0
+        rows = [plain(r) for r in _card(app, mm).split("\n")]
+        gate = next(r for r in rows if r.startswith("Gate")).replace("Gate", "").strip()
+        assert rows[0] != gate, f"zone {zi}: title restates the gate ({gate!r})"
+        assert len(rows) <= 16
+        for r in rows:
+            assert cell_len(r) <= 26, f"zone {zi}: {r!r}"
+
+    # no roads open yet says so, instead of an empty frame
+    empty = ZonePickPanel(app.pet)
+    empty.indices = []
+    assert "no roads open" in plain(_card(app, empty))
