@@ -150,7 +150,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE DNA CARD WAS CLIPPING OFF THE EDGE OF THE BOX: the Field row read 'Field  Virus Buster  (own)', which is two characters wider than the status box — so on 7 of the 10 fields the tail wrapped onto a row you cannot see. The (own) marker is gone, because the card already tells you twice: the cost line says whether you are on your own field or off it. Every card in the game is now measured against the box automatically, so this cannot creep back in anywhere.")
+    WHATS_NEW = ("THE ALBUM AND THE HALL OF MEMORY HAVE THEIR OWN CARDS NOW: open either book and the box on the right used to still be reading out your pet's hunger. The album card shows how much of the collection you have found, and for a form you have not, HOW to reach it. The hall card shows your whole line — how many elders, how deep the generations go, how many fell — beside the one you are looking at, with their age, wins, cups and how they went.")
 
     BINDINGS = [
         # jogress is LOBBY-ONLY (fusion needs a real partner from the

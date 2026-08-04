@@ -109,7 +109,11 @@ class HallPanel:
         return f"lived {age} · {fate}{extra}"
 
     def _list_scene(self):
-        out = menu.header("HALL OF MEMORY", f"{self.n} elders" if self.n else "")
+        # (plural, 2026-08-04: the header read "1 elders" -- caught in the
+        #  smoke launch when the new HALL CARD beside it said "1 elder")
+        out = menu.header("HALL OF MEMORY",
+                          f"{self.n} elder{'' if self.n == 1 else 's'}"
+                          if self.n else "")
 
         def fmt(r, j):
             cur = j == self.i

@@ -505,6 +505,95 @@ def shop(app):
     card(app, ttl, lines, subtitle=gen_subtitle(p))
 
 
+def album(app):
+    """THE ALBUM: the collection at a glance, and the browsed form's dossier.
+
+    ⭐Joel's named order 2026-08-04 ("build the album and hall cards"), off the
+    all-cards audit that found this screen falling through to bare vitals --
+    you opened the bestiary and the box on the right still read out your pet's
+    hunger.  The panel's own LCD is the book (list, then the 16x16 rip); the
+    card is what a book has and a scoreboard doesn't: WHERE YOU ARE in it, and
+    the route to the entry under the cursor.
+
+    Everything here is LIVE off the panel's own data -- `roster`/`seen` are
+    `data.album_roster()` and `persistence.get_album()` -- so the card cannot
+    disagree with the page it sits beside (status-box liveness law)."""
+    m, T = app.mode, theme
+    total = max(1, m.n)
+    seen = len(m.seen)
+    pct = seen * 100 // total
+    num = m.roster[m.i] if m.n else None
+    found = num in m.seen if num is not None else False
+    rec = data.record_for(num) if num is not None else {}
+    # the MASK is the panel's own language: a discovered form wears its name,
+    # one still out there stays "???" (the digicore hidden-evo reveal rule)
+    name = _fit_cells(rec.get("name", "?"), CARD_W - 9) if found else "???"
+    stage = rec.get("stage", "") if found else "—"
+    # and for an undiscovered one, the card carries the ROUTE -- the panel
+    # computes it already (albumscreen.route_hint), it just had nowhere on
+    # the right to live
+    tail = []
+    if not found and num is not None:
+        from .albumscreen import route_hint
+        try:
+            hint = route_hint(num)
+        except Exception:
+            hint = ""
+        tail = [f"[dim]{ln}[/]" for ln in wrap(hint, 3)] if hint else []
+    # the gauge wears the raid/road card's grammar -- label, bar, percent on
+    # ONE row -- rather than floating an unlabelled bar of its own
+    card(app, "Album", [
+        f"[dim]{m.i + 1} of {m.n}[/]", "",
+        f"Found  {bar(pct, 11, T.POS)} {pct}%",
+        f"[dim]{seen} of {total} forms[/]", "",
+        f"Name    [b]{name}[/]",
+        f"Stage   {stage}"]
+        # the route only earns its separator when there IS a route (a found
+        # form has none, and two blank rows in a row is wasted budget --
+        # the all-cards audit's own trailing-blank finding)
+        + ([""] + tail if tail else [])
+        + ["", "[dim]ENTER view  ↑↓ browse[/]"],
+        subtitle=gen_subtitle(app.pet) if app.pet else "")
+
+
+def hall(app):
+    """THE HALL OF MEMORY: the lineage's ledger, and the elder under the
+    cursor.
+
+    ⭐Joel's named order 2026-08-04 ("build the album and hall cards").  The
+    album remembers SPECIES, the hall remembers INDIVIDUALS -- so this card
+    reads the LINE (how many have come before, how deep the generations run)
+    beside the one life the page is showing.  Rows are
+    `progress.legacy`, newest first, exactly as the panel reads them."""
+    m, T = app.mode, theme
+    if not m.n:
+        card(app, "Hall", ["", "[dim]no elders yet[/]", "",
+                           "[dim]a generation is written[/]",
+                           "[dim]here when it ends[/]"])
+        return
+    r = m.elders[min(m.i, m.n - 1)] if m.n else {}
+    gens = max((int(x.get("gen", 1)) for x in m.elders), default=0)
+    fell = sum(1 for x in m.elders if x.get("dead"))
+    age = age_compact(float(r.get("age", 0.0)))
+    wins = int(r.get("wins", 0))
+    lines = [
+        f"[dim]{m.i + 1} of {m.n}[/]", "",
+        f"Line    [b]{m.n}[/] elder" + ("s" if m.n != 1 else ""),
+        f"Deepest [b]gen {gens}[/]",
+        f"Fell    {fell}", "",
+        f"[b]{_fit_cells(str(r.get('name', '?')), CARD_W - 1)}[/]",
+        f"[dim]gen {int(r.get('gen', 1))} · {str(r.get('stage', '?'))[:12]}[/]",
+        f"Lived   {age}",
+        f"Won     {wins}W · [{T.COIN}]★{int(r.get('cups', 0))}[/]",
+    ]
+    if r.get("dead"):
+        cause = str(r.get("cause", "") or "old age")
+        lines.append(f"[{T.NEG}]† {_fit_cells(cause, CARD_W - 2)}[/]")
+    lines += ["", "[dim]ENTER page  ↑↓ browse[/]"]
+    card(app, "Hall", lines,
+         subtitle=gen_subtitle(app.pet) if app.pet else "")
+
+
 def eggguide(app):
     """DIGITAMA GUIDE: the browsed egg's dossier."""
     m = app.mode
@@ -981,8 +1070,8 @@ def dna(app):
 def _registry():
     """Panel class -> painter.  Built lazily: importing every screen at
     module import would be a cycle magnet."""
-    from . import (adventurescreen, assistscreen, backgroundscreen,
-                   battlescreen, bugscreen,
+    from . import (adventurescreen, albumscreen, assistscreen,
+                   backgroundscreen, battlescreen, bugscreen, hallscreen,
                    deathscreen, digicorescreen, disciplinescreen, dnascreen,
                    eggguidescreen, eggselectscreen, feedscreen, helpscreen,
                    lobbyscreen, optionsscreen, raidscreen, shopscreen,
@@ -999,6 +1088,8 @@ def _registry():
         (feedscreen.FeedPanel, feed),
         (shopscreen.ShopPanel, shop),
         (eggguidescreen.EggGuidePanel, eggguide),
+        (albumscreen.AlbumPanel, album),
+        (hallscreen.HallPanel, hall),
         (digicorescreen.DigiCorePanel, digicore),
         (raidscreen.RaidPanel, raid),
         (adventurescreen.AdventurePanel, road),

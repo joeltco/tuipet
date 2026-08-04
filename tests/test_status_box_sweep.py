@@ -417,3 +417,72 @@ def _card_app(app, mode):
     assert painter is not None, f"{type(mode).__name__} fell to bare vitals"
     painter(app)
     return app
+
+
+def test_the_album_and_hall_wear_their_own_cards():
+    """⭐Joel's named order 2026-08-04 ("build the album and hall cards"), off
+    the all-cards audit that found both falling through to BARE VITALS -- you
+    opened the bestiary or the lineage book and the box on the right was still
+    reading out your pet's hunger.  Two screens he had asked for (2026-07-21
+    and 2026-07-26) had never had a card at all.
+
+    Each shows what a BOOK has and a scoreboard doesn't: where you are in it,
+    and the entry under the cursor."""
+    import re
+    from rich.cells import cell_len
+    from tuipet.albumscreen import AlbumPanel
+    from tuipet.hallscreen import HallPanel
+    plain = lambda t: re.sub(r"\[/?[^\[\]]*\]", "", t)
+
+    app = _app()
+    # ---- the ALBUM: progress, and the browsed form -------------------------
+    ap = AlbumPanel(app.pet)
+    ap.seen = set(ap.roster[:37])
+    txt = plain(_card(app, ap))
+    assert "Album" in txt
+    assert f"37 of {ap.n} forms" in txt              # LIVE off the panel's own data
+    assert "Found" in txt
+    rec_name = _rec_name(ap.roster[0])
+    assert rec_name in txt, "a DISCOVERED form must wear its name"
+    # ...and an undiscovered one stays masked, but carries its ROUTE
+    ap.i = next(i for i, n in enumerate(ap.roster) if n not in ap.seen)
+    txt = plain(_card(app, ap))
+    assert "???" in txt, "an undiscovered form must stay masked"
+    from tuipet.albumscreen import route_hint
+    hint = route_hint(ap.roster[ap.i])
+    assert hint.split()[0] in txt, "the route must reach the card"
+
+    # ---- the HALL: the line, and the elder ---------------------------------
+    hp = HallPanel(app.pet)
+    hp.elders = [
+        {"gen": 3, "name": "Wwwwwwwwwwwwwwwwwwwwwwww", "stage": "Mega",
+         "age": 3 * 86400 + 7000, "cups": 12, "dead": True, "num": 399,
+         "cause": "a really quite long and wordy demise", "wins": 74},
+        {"gen": 2, "name": "Agumon", "stage": "Rookie", "age": 6000,
+         "cups": 0, "dead": False, "num": 100, "wins": 3},
+    ]
+    hp.n = len(hp.elders)
+    txt = plain(_card(app, hp))
+    assert "2 elders" in txt and "gen 3" in txt      # the LINE
+    assert "3d01h" in txt and "74W" in txt and "12" in txt   # the ELDER
+    assert "†" in txt, "a fallen elder must be marked"
+    hp.i = 1
+    txt = plain(_card(app, hp))
+    assert "Agumon" in txt and "†" not in txt        # a RETIRED elder is not
+
+    # an empty lineage says so instead of crashing or lying
+    empty = HallPanel(app.pet)
+    empty.elders, empty.n = [], 0
+    assert "no elders yet" in plain(_card(app, empty))
+
+    # both fit the box in every state above
+    for mode in (ap, hp, empty):
+        rows = _card(app, mode).split("\n")
+        assert len(rows) <= 16
+        for r in rows:
+            assert cell_len(plain(r)) <= 26, r
+
+
+def _rec_name(num):
+    from tuipet import data
+    return data.record_for(num).get("name", "?")

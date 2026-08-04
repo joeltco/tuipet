@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.340 — THE ALBUM AND THE HALL OF MEMORY HAVE THEIR OWN CARDS NOW (2026-08-04)
+
+THE ALBUM AND THE HALL OF MEMORY HAVE THEIR OWN CARDS NOW: open either book and the box on the right used to still be reading out your pet's hunger. The album card shows how much of the collection you have found, and for a form you have not, HOW to reach it. The hall card shows your whole line — how many elders, how deep the generations go, how many fell — beside the one you are looking at, with their age, wins, cups and how they went.
+
 ## 0.5.339 — THE DNA CARD WAS CLIPPING OFF THE EDGE OF THE BOX (2026-08-04)
 
 THE DNA CARD WAS CLIPPING OFF THE EDGE OF THE BOX: the Field row read 'Field Virus Buster (own)', which is two characters wider than the status box — so on 7 of the 10 fields the tail wrapped onto a row you cannot see. The (own) marker is gone, because the card already tells you twice: the cost line says whether you are on your own field or off it. Every card in the game is now measured against the box automatically, so this cannot creep back in anywhere.
