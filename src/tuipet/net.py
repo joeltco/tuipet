@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re as _re
 
 import websockets
 
@@ -23,12 +24,58 @@ SAVE_WIRE_MAX = 56 * 1024    # refuse to push saves near the server's 64KB drop
 #                              forever without ever landing (audit 2026-07-18)
 
 
+# --- THE VARIATION-SELECTOR LAW (Joel 2026-08-12, "the heart emoji is
+# breaking the hud") ---------------------------------------------------------
+# U+FE0F asks for EMOJI presentation, and that is the ONE width question rich
+# and terminals answer differently: rich counts '❤️' (U+2764 U+FE0F) as TWO
+# cells; the GPD over ssh draws it as ONE.  Every cell budget downstream is
+# computed from rich's number, so a single heart in a lobby line pulled the
+# message box's right edge in by a column -- GoingUnder's "get to work right
+# away ❤️", the first real emoji the lobby ever carried.
+#
+# Dropping the selector leaves the base character in TEXT presentation ('❤'),
+# which rich and every terminal agree is one cell.  The glyph still renders;
+# only the disagreement is gone.  Emoji that carry no selector (📢, 🎉) are
+# unambiguously two cells everywhere and pass through untouched.
+#
+# It happens at PARSE, not at each display site: `_replayed` dedups reconnect
+# backlog by comparing a frame's raw text against what the pane already holds,
+# so normalising per-append would have made every heart line reappear on every
+# reconnect.  One frame, one form, every reader.
+# built from chr() on purpose: the selectors are INVISIBLE, so a literal range
+# in the source would be an unreadable -- and un-reviewable -- blank
+_VARSEL = _re.compile("[%s-%s]" % (chr(0xFE00), chr(0xFE0F)))
+
+# `save` is player DATA in transit, not display text: normalising a pet name
+# inside a pulled cloud save would push the CHANGED name straight back up.
+_RAW_KEYS = ("save",)
+
+
+def display_safe(s):
+    """Strip variation selectors from one remote string (see the law above)."""
+    return _VARSEL.sub("", s) if isinstance(s, str) else s
+
+
+def _normalize(v, key=None):
+    """display_safe every string in a parsed frame, `save` payloads excepted."""
+    if key in _RAW_KEYS:
+        return v
+    if isinstance(v, str):
+        return display_safe(v)
+    if isinstance(v, dict):
+        return {k: _normalize(x, k) for k, x in v.items()}
+    if isinstance(v, list):
+        return [_normalize(x) for x in v]
+    return v
+
+
 def parse_msg(raw):
     """One JSON-envelope guard for every lobby message: (msg, type) or
-    (None, None) on anything malformed."""
+    (None, None) on anything malformed.  Also the single place remote text is
+    width-normalised for the terminal (see THE VARIATION-SELECTOR LAW)."""
     try:
         m = json.loads(raw)
-        return m, m.get("t")
+        return _normalize(m), m.get("t")
     except (ValueError, AttributeError):
         return None, None
 

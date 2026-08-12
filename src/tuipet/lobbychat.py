@@ -144,8 +144,11 @@ class ChatMixin:
         for ln, sty in view:
             t.append(_fit(ln, w) + "\n", style=sty)
         label = f"→{peer[:8]}: "
-        fw = w - len(label)
-        shown = self.buf if len(self.buf) < fw else self.buf[-(fw - 1):]
+        # CELLS, like the main composer 120 lines down -- this line was the one
+        # input in the file still measuring characters, so the cell-width law
+        # in the module header held everywhere except the DM box (2026-08-12)
+        fw = w - cell_len(label)
+        shown = self.buf if cell_len(self.buf) < fw else _tail_cells(self.buf, fw - 1)
         caret = "_" if (getattr(self, "_mq", 0) // 5) % 2 == 0 else " "
         t.append(label, style=INK_B)
         t.append(_fit(shown + caret, fw), style=INK)

@@ -150,7 +150,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("YOUR EGG PROGRESS FOLLOWS THE PET NOW: taking your pet onto another device used to move the pet and nothing else, so the new device woke up with its egg unlocks, album, lifetime wins and best runs all back at zero. All of it travels with the cartridge from this version on, and it MERGES rather than replaces — whatever each device already earned, you keep. Thanks to GoingUnder for the report.")
+    WHATS_NEW = ("EMOJI NO LONGER SHOVE THE MESSAGE BOX OUT OF LINE: a heart typed in the lobby measured two columns to the game and drew one on the terminal, so every line after it slid over and the box's right edge came in early. Emoji now arrive in the one width the game and your terminal agree on — the glyph still shows, the frame holds still. The private-message composer also stopped mismeasuring wide names.")
 
     BINDINGS = [
         # jogress is LOBBY-ONLY (fusion needs a real partner from the

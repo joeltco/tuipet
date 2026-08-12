@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.343 — EMOJI NO LONGER SHOVE THE MESSAGE BOX OUT OF LINE (2026-08-12)
+
+EMOJI NO LONGER SHOVE THE MESSAGE BOX OUT OF LINE: a heart typed in the lobby measured two columns to the game and drew one on the terminal, so every line after it slid over and the box's right edge came in early. Emoji now arrive in the one width the game and your terminal agree on — the glyph still shows, the frame holds still. The private-message composer also stopped mismeasuring wide names.
+
 ## 0.5.342 — YOUR EGG PROGRESS FOLLOWS THE PET NOW (2026-08-12)
 
 YOUR EGG PROGRESS FOLLOWS THE PET NOW: taking your pet onto another device used to move the pet and nothing else, so the new device woke up with its egg unlocks, album, lifetime wins and best runs all back at zero. All of it travels with the cartridge from this version on, and it MERGES rather than replaces — whatever each device already earned, you keep. Thanks to GoingUnder for the report.
