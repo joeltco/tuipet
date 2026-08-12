@@ -150,7 +150,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE ZONE PICKER TELLS YOU WHAT YOU ARE WALKING INTO: pick a road and the card now names the BOSS waiting at the gate, how many legs the road runs, whether there is a town to rest at, and your standing best. It also gives you the same verdict the gate itself will — so 'Too hurt to fight' turns up before you set out, not forty legs later. With this, every screen in the game has its own status card; none of them fall back to your pet vitals any more.")
+    WHATS_NEW = ("YOUR EGG PROGRESS FOLLOWS THE PET NOW: taking your pet onto another device used to move the pet and nothing else, so the new device woke up with its egg unlocks, album, lifetime wins and best runs all back at zero. All of it travels with the cartridge from this version on, and it MERGES rather than replaces — whatever each device already earned, you keep. Thanks to GoingUnder for the report.")
 
     BINDINGS = [
         # jogress is LOBBY-ONLY (fusion needs a real partner from the

@@ -573,6 +573,104 @@ def get_progress():
     }
 
 
+# --- the profile block that rides WITH the pet across devices ---------------
+# GoingUnder, 2026-08-11: "save import device to device dosent import eggs
+# progress".  The cartridge moves save.json and nothing else, but EVERY
+# cross-generation milestone the egg gates read -- eggs_owned, the album,
+# lifetime wins, max gen/stage -- lives in settings.json, which never crossed
+# the wire.  A taken pet therefore landed on the new device with its whole
+# egg-unlock history back at zero.
+#
+# Only MONOTONIC earned history travels, and it MERGES rather than replaces:
+# union for the earned sets, max for the counters.  That is the one merge rule
+# which provably cannot cost a player something they already earned on either
+# device -- and a cartridge take must never be a way to LOSE progress.
+#
+# The one-slot live values (last_gen, digimemory, bonus_seed, title_worn) are
+# deliberately NOT here: they are current state, not earned history, and no
+# merge of them is lose-nothing.  Deciding those is a design call, not this fix.
+_PROG_SETS = ("album", "eggs_owned", "titles_owned", "connections", "maps",
+              "tourneys", "festivals", "eggs_announced", "ladder_claimed",
+              "shop_unlocks")
+_PROG_MAXES = ("wins", "mega_kills", "armor_evos", "raids",
+               "max_gen", "max_stage")
+
+
+def progress_for_sync():
+    """The travelling slice of settings['progress'] (see the block above)."""
+    prog = _prog()
+    out = {}
+    for k in _PROG_SETS:
+        v = prog.get(k)
+        if v:
+            out[k] = sorted(set(v))
+    for k in _PROG_MAXES:
+        try:
+            v = int(prog.get(k, 0))
+        except (TypeError, ValueError):
+            continue
+        if v:
+            out[k] = v
+    if prog.get("xanti_ever"):
+        out["xanti_ever"] = True
+    bests = prog.get("zone_bests") or {}
+    if isinstance(bests, dict) and bests:
+        out["zone_bests"] = dict(bests)
+    return out
+
+
+def merge_progress(incoming):
+    """Fold a synced progress block into this device's settings, keeping the
+    BETTER of the two everywhere.  No-op on junk -- a malformed cloud payload
+    must never cost the local profile its history."""
+    if not isinstance(incoming, dict) or not incoming:
+        return False
+    d = load_settings()
+    prog = d.setdefault("progress", {})
+    changed = False
+    for k in _PROG_SETS:
+        v = incoming.get(k)
+        if not isinstance(v, list) or not v:
+            continue
+        merged = sorted(set(prog.get(k) or []) | set(v))
+        if merged != (prog.get(k) or []):
+            prog[k] = merged
+            changed = True
+    for k in _PROG_MAXES:
+        try:
+            v = int(incoming.get(k, 0))
+        except (TypeError, ValueError):
+            continue
+        try:
+            cur = int(prog.get(k, 0))
+        except (TypeError, ValueError):
+            cur = 0
+        if v > cur:
+            prog[k] = v
+            changed = True
+    if incoming.get("xanti_ever") and not prog.get("xanti_ever"):
+        prog["xanti_ever"] = True
+        changed = True
+    bests = incoming.get("zone_bests")
+    if isinstance(bests, dict):
+        cur = prog.setdefault("zone_bests", {})
+        for zk, zv in bests.items():
+            try:
+                zv = int(zv)
+            except (TypeError, ValueError):
+                continue
+            try:
+                have = int(cur.get(str(zk), 0))
+            except (TypeError, ValueError):
+                have = 0
+            if zv > have:
+                cur[str(zk)] = zv
+                changed = True
+    if changed:
+        save_settings(d)
+    return changed
+
+
 def add_pending_bug(rec):
     """Stash a bug that could not be sent (offline) to retry next launch.
     True when it is safely on disk -- the caller PROMISES the player it will
@@ -760,6 +858,13 @@ def to_save_dict(pet):
     data = asdict(pet)
     data["_saved_at"] = time.time()
     data["egg_order_v"] = EGG_ORDER_V   # marks post-.402 egg indices (migration guard)
+    # the account's earned history rides along, or a cartridge take lands the
+    # pet on a device with no egg progress at all (GoingUnder 2026-08-11).
+    # pet_from_save drops every key that isn't a Pet field, so an older client
+    # pulling this save simply ignores it -- no server change, no format break.
+    prog = progress_for_sync()
+    if prog:
+        data["progress"] = prog
     return data
 
 
@@ -774,7 +879,13 @@ def save(pet, path=None):
 def write_save_dict(data, path=None):
     """Atomically write a raw save dict (e.g. one pulled from the cloud) to disk.
     keep_bak: a cloud pull is the ONE writer that replaces the save with bytes
-    this device never played -- it must not also burn the local backup."""
+    this device never played -- it must not also burn the local backup.
+
+    This is the ONE funnel every cloud install goes through (the boot pull,
+    the take, and both account-switch paths), so the profile merge lives HERE
+    rather than at four call sites one of them would eventually forget."""
+    if isinstance(data, dict):
+        merge_progress(data.get("progress"))
     _atomic_write_json(path or SAVE_PATH, data, keep_bak=True)
 
 

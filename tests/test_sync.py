@@ -533,6 +533,27 @@ def test_take_moves_the_cartridge(server, monkeypatch):
     assert cloudsync.pull_save(server, "joel", "secret")["_saved_at"] == 2000.0
 
 
+def test_a_take_carries_the_profile_across_the_real_wire(server, monkeypatch):
+    """GoingUnder 2026-08-11, proved against a live server rather than inferred.
+
+    The egg progress rides inside the save dict, so it only reaches the new
+    device if the SERVER stores keys it was never taught (_valid_save is a
+    vocabulary check on stage/name, not a whitelist).  That is the assumption
+    the whole client-only fix rests on -- pin it here, on the wire."""
+    _as_device(monkeypatch, "phoneAAA", "phone")
+    persistence.egg_own(5)
+    persistence.egg_own(9)
+    persistence.wins_add(40)
+    outgoing = persistence.to_save_dict(Pet(num=-1, name="Agumon", stage="Rookie"))
+    assert cloudsync.push_save(server, "joel", "secret", outgoing) is True
+
+    _as_device(monkeypatch, "gpdBBB", "gpd")
+    ok, save = cloudsync.take(server, "joel", "secret")
+    assert ok
+    assert save.get("progress", {}).get("eggs_owned") == [5, 9]
+    assert save["progress"]["wins"] == 40
+
+
 def test_legacy_client_neither_claims_nor_pushes_to_a_held_account(server, monkeypatch):
     """A pre-cartridge client (no device id) predates the take-question: it
     may pull, but its pushes to a HELD account are dropped with why=holder."""
