@@ -1,0 +1,26 @@
+tuipet — third-party notice
+===========================
+
+The MIT license in LICENSE covers the tuipet SOURCE CODE. Everyone is free to
+use, modify, and redistribute that code, commercially or otherwise.
+
+This notice lives in its own file rather than at the bottom of LICENSE so that
+GitHub, PyPI, and automated license scanners can identify the license as plain
+MIT. Appending text to the license text itself made every one of them report
+tuipet's license as "Other", which made the project look less usable than it is.
+
+WHAT THE MIT LICENSE DOES NOT COVER
+-----------------------------------
+
+tuipet ships no game assets. The game data and sprites it reads at runtime are
+derived from DVPet (https://theundersigned.itch.io/dvpet), a Digimon fan game,
+and from the Digimon franchise (© Bandai). Those assets are the property of
+their respective owners and are NOT licensed here. See the README for how to
+regenerate them from your own copy of DVPet.
+
+The Digimon franchise and all creature names, designs, and sprites are
+© Bandai. tuipet is a non-commercial fan project, not affiliated with or
+endorsed by Bandai.
+
+Full credits and acknowledgments for the V-Pet preservation community whose
+work this project builds on are in the README.

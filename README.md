@@ -311,6 +311,24 @@ the game's own `View/SpriteAnim.class` (cfr-decompiled). Animations in
 
 `refuse` is drawn as a left/right mirror flip on alternating frames (head-shake).
 
+## License
+
+**tuipet is open source, under the [MIT License](LICENSE).**
+
+You can use it, read it, change it, fork it, publish your own version, or build
+something commercial on top of it. You don't need to ask permission, and you
+don't owe anyone anything for it. The only condition MIT asks for is that the
+copyright notice travels with copies of the code.
+
+Pull requests and forks are welcome — see the source layout in
+[Run from source](#run-from-source).
+
+One scoping note, because it isn't ours to give away: the MIT license covers
+**tuipet's code**. It does not cover the Digimon sprites and game data, which
+are © Bandai and derived from [DVPet](https://theundersigned.itch.io/dvpet) —
+the repository ships none of them, and you regenerate them from your own copy
+of DVPet (see [Asset pipeline](#asset-pipeline)). Details in [NOTICE](NOTICE).
+
 ## Credits & acknowledgments
 
 tuipet stands on the shoulders of the **Digimon V-Pet fan community** — a whole
