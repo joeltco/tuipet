@@ -22,9 +22,15 @@ from .net import ANNOUNCE, CHAT_CAP  # noqa: F401
 from .render import marquee  # noqa: F401
 from .theme import INK, INK_B, DIM, SEL  # noqa: F401  (theme.apply propagation)
 
-CHATW = 25
-ROSTW = 12
-BODY = 8
+# ⛔ THE ONE DEFINITION of the lobby's layout budget (2026-08-13).  The
+# 2026-07-17 module split COPIED this block into lobbybout and lobbyscreen
+# instead of importing it, so three modules each held their own 25/12/8/400 and
+# a later edit to any one of them would have silently missed the other two --
+# the widths agree only by luck.  They live here, next to the law and the
+# _fit/_wrap helpers that spend them; the other two re-import from this module.
+CHATW = 25              # the chat column, in CELLS (never characters)
+ROSTW = 12              # the player box beside it
+BODY = 8                # chat rows visible at once
 CHAT_MAX = 400          # server MAX_CHAT: the local input buffer stops here too
 
 # The room's default footer lines (menu audit 2026-07-21: the open-room line

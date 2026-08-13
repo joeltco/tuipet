@@ -25,11 +25,8 @@ from .net import ANNOUNCE, CHAT_CAP  # noqa: F401
 from .render import marquee  # noqa: F401
 from .theme import INK, INK_B, DIM, SEL  # noqa: F401  (theme.apply propagation)
 
-CHATW = 25
-ROSTW = 12
-BODY = 8
-CHAT_MAX = 400          # server MAX_CHAT: the local input buffer stops here too
-from .lobbychat import _fit, _wrap, _tail_cells, _hpbar  # noqa: F401
+from .lobbychat import (BODY, CHAT_MAX, CHATW, ROSTW,  # noqa: F401
+                        _fit, _wrap, _tail_cells, _hpbar)
 
 
 

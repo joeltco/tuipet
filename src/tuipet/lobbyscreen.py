@@ -39,10 +39,6 @@ from .net import CHAT_CAP
 from .render import render_scene
 from .theme import INK, INK_B, DIM, LCD_BG  # noqa: F401  (theme.apply propagation)
 
-CHATW = 25
-ROSTW = 12
-BODY = 8
-CHAT_MAX = 400          # server MAX_CHAT: the local input buffer stops here too
 PODIUM_T = 120          # the season-podium ceremony hold (~12s), raid-reveal length
 # How long a duel waits for a rival's REVEAL before calling the bout off (0.1s
 # ticks -> 45 real seconds).  It must comfortably outlast the peer's own
@@ -63,7 +59,8 @@ COLS = 40               # the LCD box width (the podium scene; pages use menu's 
 # the bout engine live in their own modules; the old names stay importable
 from .accountscreen import AccountPanel  # noqa: F401
 from .lobbybout import BoutMixin, _clamp_card  # noqa: F401
-from .lobbychat import (ChatMixin, HINTS_FOLDED, HINTS_OPEN,  # noqa: F401
+from .lobbychat import (BODY, CHAT_MAX, CHATW, ROSTW,  # noqa: F401
+                        ChatMixin, HINTS_FOLDED, HINTS_OPEN,
                         _fit, _wrap, _tail_cells, _hpbar)
 
 

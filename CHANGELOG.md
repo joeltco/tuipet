@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.345 — TUIPET IS OPEN SOURCE, AND NOW IT SAYS SO PLAINLY (2026-08-13)
+
+TUIPET IS OPEN SOURCE, AND NOW IT SAYS SO PLAINLY: the license was always MIT, but a note tacked onto the end of the license file stopped GitHub from recognising it, so the page read 'Other' and the project looked closed to anyone who went looking. The code is yours — read it, change it, fork it, publish your own, build something commercial on it, no permission needed. The sprites stay Bandai's and you still bring your own. Underneath, the lobby's column widths lived in three files at once, each with its own private copy; they come from one place now, so the chat box and the player list beside it can never drift apart.
+
 ## 0.5.344 — EVERY MENU NOW MEASURES ITS LINES THE WAY YOUR TERMINAL DRAW (2026-08-12)
 
 EVERY MENU NOW MEASURES ITS LINES THE WAY YOUR TERMINAL DRAWS THEM: headers, rows, footers and the scrolling status line all counted characters, but a wide glyph — an emoji, a Japanese name — is one character and TWO columns, so a single one pushed the line off the edge and the tail wrapped onto a row you cannot see. All of it counts columns now, at every step of the scroll, and a long title gives way to the count beside it instead of shoving it out.
