@@ -150,7 +150,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("EMOJI NO LONGER SHOVE THE MESSAGE BOX OUT OF LINE: a heart typed in the lobby measured two columns to the game and drew one on the terminal, so every line after it slid over and the box's right edge came in early. Emoji now arrive in the one width the game and your terminal agree on — the glyph still shows, the frame holds still. The private-message composer also stopped mismeasuring wide names.")
+    WHATS_NEW = ("EVERY MENU NOW MEASURES ITS LINES THE WAY YOUR TERMINAL DRAWS THEM: headers, rows, footers and the scrolling status line all counted characters, but a wide glyph — an emoji, a Japanese name — is one character and TWO columns, so a single one pushed the line off the edge and the tail wrapped onto a row you cannot see. All of it counts columns now, at every step of the scroll, and a long title gives way to the count beside it instead of shoving it out.")
 
     BINDINGS = [
         # jogress is LOBBY-ONLY (fusion needs a real partner from the

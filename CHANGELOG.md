@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.344 — EVERY MENU NOW MEASURES ITS LINES THE WAY YOUR TERMINAL DRAW (2026-08-12)
+
+EVERY MENU NOW MEASURES ITS LINES THE WAY YOUR TERMINAL DRAWS THEM: headers, rows, footers and the scrolling status line all counted characters, but a wide glyph — an emoji, a Japanese name — is one character and TWO columns, so a single one pushed the line off the edge and the tail wrapped onto a row you cannot see. All of it counts columns now, at every step of the scroll, and a long title gives way to the count beside it instead of shoving it out.
+
 ## 0.5.343 — EMOJI NO LONGER SHOVE THE MESSAGE BOX OUT OF LINE (2026-08-12)
 
 EMOJI NO LONGER SHOVE THE MESSAGE BOX OUT OF LINE: a heart typed in the lobby measured two columns to the game and drew one on the terminal, so every line after it slid over and the box's right edge came in early. Emoji now arrive in the one width the game and your terminal agree on — the glyph still shows, the frame holds still. The private-message composer also stopped mismeasuring wide names.

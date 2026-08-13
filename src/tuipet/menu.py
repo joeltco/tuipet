@@ -2,22 +2,46 @@
 bar, selectable rows with a cursor, and a footer hint. Keeps every menu
 looking the same and themed (colours come from theme via the INK/SEL names)."""
 from __future__ import annotations
+from rich.cells import cell_len, chop_cells, set_cell_size
 from rich.text import Text
 from .theme import INK, INK_B, DIM, SEL
 
 W = 38  # content width inside the 40-wide LCD
 
+# ⛔ THE CELL-WIDTH LAW, menu edition (2026-08-12).  W is a budget in terminal
+# CELLS, and an emoji or CJK glyph is ONE character but TWO cells -- so every
+# `s[:W]`, `.ljust(W)` and `len(s) <= W` in this module was measuring the wrong
+# unit.  app.py's HUD was fixed for exactly this in bug #32 (Joel v0.5.264,
+# "what is space t?") and lobbyscreen in the 2026-07-14 chat polish; menu.py
+# was the last surface still counting characters, and it is the one EVERY
+# sub-screen's note/footer/rows go through.  Measured before the fix:
+# note("📢 …") returned 39 cells into the 38-cell box, and the overflow wraps
+# onto the LCD's invisible second row.
+#
+# Every width decision below goes through cell_len / set_cell_size / _clip.
+
+
+def _clip(s, w):
+    """Truncate to at most `w` CELLS.  Never pads -- callers that need a fixed
+    field use set_cell_size; the header/footer ones append their own gap."""
+    s = str(s)
+    return s if cell_len(s) <= w else chop_cells(s, w)[0]
+
 
 def header(title, right=""):
     """Title (left, bold) + optional right-aligned info, then a divider rule."""
-    title = title[:W]
     t = Text()
     if right:
-        gap = max(1, W - len(title) - len(right))
+        # the RIGHT field is the one that must survive (it carries the count /
+        # page / cost).  Clipping the title to what's left of the budget keeps
+        # the line at W; the old max(1, ...) floor let a full-width title push
+        # the pair to W + len(right) + 1 instead (2026-08-12)
+        title = _clip(title, max(0, W - cell_len(right) - 1))
+        gap = max(1, W - cell_len(title) - cell_len(right))
         t.append(title + " " * gap, style=INK_B)
         t.append(right, style=DIM)
     else:
-        t.append(title, style=INK_B)
+        t.append(_clip(title, W), style=INK_B)
     t.append("\n")
     t.append("─" * W, style=DIM)
     t.append("\n")
@@ -28,20 +52,20 @@ def bar(title, right=""):
     """Compact 1-line title (bold) + optional right-aligned info, no divider -
     for the scene-heavy activity screens that can't spare a line."""
     t = Text()
-    title = title[:W]
     if right:
-        gap = max(1, W - len(title) - len(right))
+        title = _clip(title, max(0, W - cell_len(right) - 1))   # as in header()
+        gap = max(1, W - cell_len(title) - cell_len(right))
         t.append(title + " " * gap, style=INK_B)
         t.append(right, style=DIM)
     else:
-        t.append(title, style=INK_B)
+        t.append(_clip(title, W), style=INK_B)
     t.append("\n")
     return t
 
 
 def row(label, selected=False):
     """A selectable list row with a ▸ cursor; selected rows render inverted."""
-    line = (("▸ " if selected else "  ") + label)[:W].ljust(W)
+    line = set_cell_size(("▸ " if selected else "  ") + str(label), W)
     return Text(line + "\n", style=SEL if selected else INK)
 
 
@@ -65,7 +89,9 @@ def _scrolled(msg, tick):
     cycle = len(loop) + NOTE_HOLD                 # hold on the head again each wrap
     pos = (tick // NOTE_STEP) % cycle
     off = max(0, pos - NOTE_HOLD)
-    return (loop + loop)[off:off + W]
+    # the window is clamped in CELLS (app.py's _hud_marquee does the same): a
+    # bare char slice with a wide glyph inside renders over the box and wraps
+    return set_cell_size((loop + loop)[off:off + W], W)
 
 
 def note(msg, tick=None):
@@ -73,14 +99,14 @@ def note(msg, tick=None):
     (the battle menu's 'It IGNORED you!' vanished off the end -- audit 2026-07-04;
     then the bag's futon gate lost its tail -- 2026-07-15).  Long messages ALWAYS
     marquee now: panels pass their frame counter or inherit the module TICK."""
-    if len(msg) <= W:
+    if cell_len(msg) <= W:
         return Text(msg + "\n", style=INK_B)
     return Text(_scrolled(msg, tick) + "\n", style=INK_B)
 
 
 def footer(hint):
     """Control hints (dim), no trailing newline."""
-    return Text(hint[:W], style=DIM)
+    return Text(_clip(hint, W), style=DIM)
 
 
 def footer_note(msg, tick=None):
@@ -88,7 +114,7 @@ def footer_note(msg, tick=None):
     footers still never marquee (the shop-tease pin) -- this variant is for
     data-driven lines that cannot be pre-fit: the egg-unlock teaser was
     silently clipping 32 of 46 hints mid-word (tidy sweep 2026-07-18)."""
-    if len(msg) <= W:
+    if cell_len(msg) <= W:
         return Text(msg, style=DIM)
     return Text(_scrolled(msg, tick), style=DIM)
 
@@ -181,7 +207,7 @@ def icon_info(out, icon, info):
     for r in range(IC_ROWS):
         tx = info[r] if r < len(info) else ""
         out.append(icon[r] + "  ", style=INK)
-        out.append(tx[:tw] + "\n", style=INK_B if r == 0 else INK)
+        out.append(_clip(tx, tw) + "\n", style=INK_B if r == 0 else INK)
 
 def list_window(out, rows, cursor, vis, fmt, empty=None):
     """The shared scrolling list body: a vis-row window centred on the cursor,
