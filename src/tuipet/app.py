@@ -150,7 +150,8 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("A PM YOU COULDN'T OPEN IS A MESSAGE THAT NEVER ARRIVED: someone would send you a private message, log off, and the ✉ badge would sit in the player box telling you to press V on their name — while their name was nowhere on screen, because the box only ever listed who was connected right now. The conversation was saved on your device the whole time, unreadable. Now anyone you have a thread with keeps a row at the bottom of the player box whether they're online or not, so you can open the thread, read it, and reply; the server holds your reply and hands it over the next time they log in, and the screen says so instead of leaving you wondering.")
+    WHATS_NEW = ("THE PLAYER BOX NOW SAYS WHICH KIND OF AWAY SOMEONE IS. Last build gave everyone you have a private thread with a row of their own, online or not, so an unread ✉ from someone who logged off is finally readable — but those rows came out wearing the same dot as a tamer who is playing elsewhere, and the line under the box called them playing too. A column of people who were nowhere read as a busy lobby. A solid dot still means playing elsewhere; a hollow one means offline, nobody home, only the thread. Pick one and it says so.")
+
 
     BINDINGS = [
         # jogress is LOBBY-ONLY (fusion needs a real partner from the

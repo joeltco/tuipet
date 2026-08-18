@@ -268,11 +268,18 @@ class ChatMixin:
             if ridx < len(others):
                 pl = others[ridx]
                 cur = ridx == sel
-                ghost = not pl.get("live", True)     # playing elsewhere, or offline
+                # THREE tiers of presence, three marks (Joel 2026-08-18: the
+                # offline rows came out wearing the ghost's dot, so a column of
+                # people who were nowhere read as a column of people playing).
+                # A solid dot is a ghost -- app open, elsewhere.  A HOLLOW one
+                # is offline: nobody home, only the thread.
+                away = pl.get("id") == OFFLINE_ID    # not connected at all
+                ghost = not pl.get("live", True)     # app open, not in the room
                 nm = pl["name"]
                 unread = bool(s) and nm in s.unread
                 blk = bool(s) and nm in s.blocked
-                mark = "✉" if unread else ("✕" if blk else ("·" if ghost else ""))
+                mark = ("✉" if unread else "✕" if blk
+                        else "°" if away else "·" if ghost else "")
                 sty = SEL if cur else (INK_B if unread else (DIM if (ghost or blk) else INK))
                 # a worn honor stars the roster entry -- the room sees who's
                 # titled at a glance; an entry too long for the column
@@ -350,7 +357,12 @@ class ChatMixin:
                         tail = " — Enter to act"
                         line = marquee(f"{p['name']}: {blurb}", w - len(tail), mq) + tail
                 else:
+                    # "is playing" is the GHOST's line and was being said over
+                    # offline rows too -- the pick line has to name the state
+                    # the row is actually in, or the roster reads as a full
+                    # lobby (Joel 2026-08-18)
+                    verb = "is offline" if p.get("id") == OFFLINE_ID else "is playing"
                     tail = " — Enter to msg"
-                    line = marquee(f"{p['name']} is playing", w - len(tail), mq) + tail
+                    line = marquee(f"{p['name']} {verb}", w - len(tail), mq) + tail
             t.append(line[:w], style=DIM)
         return t

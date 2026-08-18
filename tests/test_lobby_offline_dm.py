@@ -115,3 +115,35 @@ def test_the_offline_tail_sorts_below_everyone_present():
                          {"id": 3, "name": "Mika", "pet": {}, "live": False}],
                  dms={"Abe": [("Abe", "hi")]})
     assert [p["name"] for p in pan._others()] == ["Zed", "Mika", "Abe"]
+
+
+def test_the_pick_line_says_offline_not_playing():
+    """"X is playing" is the GHOST's line. Said over an offline row it turns a
+    roster of people who are nowhere into a roster that looks busy."""
+    from tuipet.lobbychat import HINTS_OPEN
+    pan = _lobby(roster=[{"id": 3, "name": "Mika", "pet": {}, "live": False}],
+                 dms={"eddy": [("eddy", "yo")]})
+    pan.status = HINTS_OPEN
+    names = [p["name"] for p in pan._others()]
+
+    pan.sel, pan._mq = names.index("eddy"), 0
+    pick = pan.text().plain.split("\n")[-1]
+    assert "is offline" in pick, pick
+    assert "is playing" not in pick
+
+    pan.sel = names.index("Mika")            # the ghost keeps its own words
+    assert "is playing" in pan.text().plain.split("\n")[-1]
+
+
+def test_offline_rows_wear_a_different_mark_than_ghosts():
+    """One glance at the column has to separate 'playing elsewhere' from
+    'not here at all' -- both are live=False, so the dot alone can't."""
+    pan = _lobby(roster=[{"id": 3, "name": "Mika", "pet": {}, "live": False},
+                         {"id": 4, "name": "Zed", "pet": {}}],
+                 dms={"eddy": [("eddy", "yo")]})
+    pan._mq = 0
+    pan.sel = -1                             # park the ">" cursor off every row
+    rows = [ln.split("│")[-1] for ln in pan.text().plain.split("\n") if "│" in ln]
+    mark = {n: next(r for r in rows if n in r).split(n)[0].strip()
+            for n in ("Zed", "Mika", "eddy")}
+    assert mark == {"Zed": "", "Mika": "·", "eddy": "°"}, mark
