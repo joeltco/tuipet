@@ -24,6 +24,12 @@ _SRC = os.path.dirname(os.path.abspath(tuipet.__file__))
 OWNER = "lobbychat"
 NAMES = ("CHATW", "ROSTW", "BODY", "CHAT_MAX")
 
+# every lobby constant that must have exactly one home, budget or not.
+# OFFLINE_ID (2026-08-18) is a SENTINEL id -- a second copy that drifted to a
+# different value would silently stop matching, and the offline roster rows it
+# marks would start offering ghost actions that address a player who isn't there
+SINGLE_SOURCE = NAMES + ("OFFLINE_ID",)
+
 
 def _module_level_assignments(name):
     """Every module in the package that ASSIGNS `name` at top level.
@@ -51,7 +57,7 @@ def _module_level_assignments(name):
 
 
 def test_each_constant_is_assigned_in_exactly_one_module():
-    for name in NAMES:
+    for name in SINGLE_SOURCE:
         where = _module_level_assignments(name)
         assert where == [OWNER], (
             f"{name} is assigned in {where}; it must be defined only in "

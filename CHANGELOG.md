@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.346 — A PM YOU COULDN'T OPEN IS A MESSAGE THAT NEVER ARRIVED (2026-08-17)
+
+A PM YOU COULDN'T OPEN IS A MESSAGE THAT NEVER ARRIVED: someone would send you a private message, log off, and the ✉ badge would sit in the player box telling you to press V on their name — while their name was nowhere on screen, because the box only ever listed who was connected right now. The conversation was saved on your device the whole time, unreadable. Now anyone you have a thread with keeps a row at the bottom of the player box whether they're online or not, so you can open the thread, read it, and reply; the server holds your reply and hands it over the next time they log in, and the screen says so instead of leaving you wondering.
+
 ## 0.5.345 — TUIPET IS OPEN SOURCE, AND NOW IT SAYS SO PLAINLY (2026-08-13)
 
 TUIPET IS OPEN SOURCE, AND NOW IT SAYS SO PLAINLY: the license was always MIT, but a note tacked onto the end of the license file stopped GitHub from recognising it, so the page read 'Other' and the project looked closed to anyone who went looking. The code is yours — read it, change it, fork it, publish your own, build something commercial on it, no permission needed. The sprites stay Bandai's and you still bring your own. Underneath, the lobby's column widths lived in three files at once, each with its own private copy; they come from one place now, so the chat box and the player list beside it can never drift apart.

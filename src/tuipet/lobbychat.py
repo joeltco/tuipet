@@ -33,6 +33,13 @@ ROSTW = 12              # the player box beside it
 BODY = 8                # chat rows visible at once
 CHAT_MAX = 400          # server MAX_CHAT: the local input buffer stops here too
 
+# The id an OFFLINE thread-partner carries.  They aren't on the server's
+# roster, so they have no connection id -- but they still need a roster row,
+# because that row is the only door into a saved conversation (see _others).
+# The server reads a pm's `to_name` whenever the id misses, which is exactly
+# what this id does, so a message still sends (and queues) to them.
+OFFLINE_ID = -1
+
 # The room's default footer lines (menu audit 2026-07-21: the open-room line
 # ended in a BARE "· ESC" — the 2026-07-07 fit-fix had dropped its word, and
 # on Joel's live screen it read as a run-off).  WHOLE WORDS ONLY, <= 38 cells;
@@ -107,6 +114,13 @@ class ChatMixin:
                 if self.state is not None and not self.state.connected:
                     # the lobby twin's queued note (QOL sweep 2026-07-23)
                     self.status = "Offline — queued, sends on reconnect."
+                elif self.state is not None and not any(
+                        p.get("name") == self.dm_peer[1] for p in self.state.roster):
+                    # THEY'RE away, not us.  The server stores the pm and hands
+                    # it over on their next login, but the thread only shows our
+                    # own echo -- without this line a reply into an empty room
+                    # reads as a message that went nowhere.
+                    self.status = f"✉ queued — {self.dm_peer[1]} is offline."
             self.buf = ""
             return None
         if k == "up":
@@ -254,7 +268,7 @@ class ChatMixin:
             if ridx < len(others):
                 pl = others[ridx]
                 cur = ridx == sel
-                ghost = not pl.get("live", True)     # playing, not in the room
+                ghost = not pl.get("live", True)     # playing elsewhere, or offline
                 nm = pl["name"]
                 unread = bool(s) and nm in s.unread
                 blk = bool(s) and nm in s.blocked
@@ -306,6 +320,11 @@ class ChatMixin:
                 # V thread / M quick-send: one PM feature, one name (the DM
                 # label retired 2026-07-29, "call it all pm")
                 acts = "[B]attle [J]og [V/M] PM [X]block [ESC]"
+            elif pid == OFFLINE_ID:
+                # a thread-only row: say OFFLINE, not "not in lobby" (which is
+                # the ghost's state, app open elsewhere).  No [P]ing -- there's
+                # no app there to nudge; the PM queues server-side instead.
+                acts = "offline — [V/M] PM [X]block [ESC]"
             else:
                 acts = "not in lobby — [P]ing [V/M] PM [X]block [ESC]"
             full = f"{who}:  {acts}"

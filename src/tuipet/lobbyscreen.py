@@ -59,7 +59,7 @@ COLS = 40               # the LCD box width (the podium scene; pages use menu's 
 # the bout engine live in their own modules; the old names stay importable
 from .accountscreen import AccountPanel  # noqa: F401
 from .lobbybout import BoutMixin, _clamp_card  # noqa: F401
-from .lobbychat import (BODY, CHAT_MAX, CHATW, ROSTW,  # noqa: F401
+from .lobbychat import (BODY, CHAT_MAX, CHATW, OFFLINE_ID, ROSTW,  # noqa: F401
                         ChatMixin, HINTS_FOLDED, HINTS_OPEN,
                         _fit, _wrap, _tail_cells, _hpbar)
 
@@ -217,10 +217,26 @@ class LobbyPanel(BoutMixin, ChatMixin):
         return p.battle_condition()
     def _others(self):
         """Everyone else ONLINE, lobby regulars first, then the playing
-        ghosts (presence 2026-07-05: the roster carries the whole server)."""
-        others = self.state.others() if self.state else []
+        ghosts (presence 2026-07-05: the roster carries the whole server),
+        and LAST the offline people you have a thread with.
+
+        That tail is the fix for Joel's 2026-08-18 report: a roster row is
+        the ONLY door into a DM thread (V on a name), and the roster was
+        strictly who the server says is connected.  So a PM from someone
+        who then logged off could not be opened at all -- the ✉ badge sat
+        there pointing at "V on their name" for a name that was nowhere on
+        screen, and the thread stayed locked until they happened to come
+        back.  Threads persist across sessions (get_dms); their door has
+        to persist with them, or the message is written and unreachable."""
+        s = self.state
+        others = s.others() if s else []
+        here = {str(p.get("name", "")) for p in others}
+        here.add(str(s.me_name or "") if s else "")
+        away = [{"id": OFFLINE_ID, "name": nm, "live": False}
+                for nm in sorted((s.dms if s else {}), key=lambda n: str(n).lower())
+                if nm not in here]
         return sorted(others, key=lambda p: (not p.get("live", True),
-                                             str(p.get("name", "")).lower()))
+                                             str(p.get("name", "")).lower())) + away
     def _pet_of(self, pid):
         """'Agumon · Champion · lock mega' for a roster id ('' when
         unknown); a worn honor title trails as '· ★Bit Baron' (the
@@ -728,7 +744,10 @@ class LobbyPanel(BoutMixin, ChatMixin):
                     self.status, self.action_for = err, None
                     return None
                 self.client.invite(pid, "jogress"); self._sent_invites.add((pid, "jogress")); self.status = f"Jogress invite → {pname}"; self.action_for = None
-            elif k in ("p", "P") and not plive:
+            elif k in ("p", "P") and not plive and pid != OFFLINE_ID:
+                # ping is for GHOSTS only -- "come to the lobby" means nothing
+                # to someone whose app is shut, and ping() addresses by id
+                # alone, so the offline sentinel would earn a "No such player."
                 self.client.ping(pid)
                 self.status = f"Pinged {pname} \u2014 asked them to hop in the lobby!"
                 self.action_for = None
@@ -926,7 +945,7 @@ class LobbyPanel(BoutMixin, ChatMixin):
         if self.invite_prompt is not None:
             return menu.hints(("Y", "accept"), ("N", "decline"))
         if self.action_for is not None:
-            _, pname, plive = self.action_for
+            pid, pname, plive = self.action_for
             if self.state and pname in self.state.blocked:
                 # mirror the in-LCD line: a blocked name offers the way back
                 # out, nothing else (round 30: the two surfaces disagreed)
@@ -938,6 +957,8 @@ class LobbyPanel(BoutMixin, ChatMixin):
                 # (round 30's ruling) and stays under the 40-col budget.
                 return menu.hints(("B", "battle"), ("J", "jog"),
                                   ("V/M", "PM"), ("X", "block"))
+            if pid == OFFLINE_ID:      # no app to nudge: the thread is the point
+                return menu.hints(("V/M", "PM"), ("X", "block"))
             return menu.hints(("P", "ping"), ("V/M", "PM"),
                               ("X", "block"))
         if self.pm_to is not None:
