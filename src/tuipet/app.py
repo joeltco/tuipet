@@ -150,7 +150,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE PLAYER BOX NOW SAYS WHICH KIND OF AWAY SOMEONE IS. Last build gave everyone you have a private thread with a row of their own, online or not, so an unread ✉ from someone who logged off is finally readable — but those rows came out wearing the same dot as a tamer who is playing elsewhere, and the line under the box called them playing too. A column of people who were nowhere read as a busy lobby. A solid dot still means playing elsewhere; a hollow one means offline, nobody home, only the thread. Pick one and it says so.")
+    WHATS_NEW = ("A BROKEN INSTALL NOW SPEAKS UP AT LAUNCH INSTEAD OF AMBUSHING YOU LATER. One of tuipet's own data files went missing on a player's machine and the game booted anyway, played a whole session, then crashed to a wall of text the moment he opened the tournament — because the launch check only ever opened two of the eighteen files the game cannot run without. It opens all of them now, before it takes the terminal over, and if one is missing or empty it names the file and gives you the one command that puts it back. Your save is never involved. The extras that were always optional — icons, backgrounds, effects — still go quietly missing without stopping you playing.")
 
 
     BINDINGS = [

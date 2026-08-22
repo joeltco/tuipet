@@ -50,7 +50,11 @@ def _preflight():
     a non-UTF-8 locale get a readable warning, then the game runs anyway --
     a clipped game beats a locked-out player."""
     try:
-        data.load_sprites()
+        # EVERY required file, not just the two atlases this used to open:
+        # eddy's 0.5.345 boot passed this gate with tournies.csv gone and
+        # crashed hours later on the tournament key (2026-08-22).
+        data.verify_assets()
+        data.load_sprites()          # ...and these two must also PARSE
         data.load_orbs()
     except data.AssetsError as e:
         print(e)

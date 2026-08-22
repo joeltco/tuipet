@@ -29,6 +29,60 @@ def _damaged(name):
         f"tools/setup_assets.sh)")
 
 
+# ---------------------------------------------------------------------------
+# THE BUNDLED-DATA MANIFEST (2026-08-22).
+#
+# eddy's install lost tournies.csv.  The game booted, played for a whole
+# session, and only blew up the moment he pressed the tournament key --
+# because _preflight() opened exactly two of these files (sprites + orbs)
+# and waved a damaged install through on the strength of it.  The
+# "reinstall it" message is written for the player, but it can only reach
+# them if something LOOKS before the UI takes the terminal over.
+#
+# REQUIRED is the set whose loader RAISES when the file is gone.  OPTIONAL
+# is the set that answers {}/None/[] instead and keeps the game playable --
+# those must stay out of the preflight, or a missing icon atlas would lock
+# a player out of a game that would have run fine without it.
+#
+# tests/test_assets_manifest.py scans the package for every filename literal
+# that matches a file we ship and fails if it is in neither tuple, so adding
+# a data file cannot silently escape this list.
+REQUIRED_DATA = (
+    "sprites.json.gz", "orbs.json.gz",              # atlases (_load_bundled)
+    "digimon.csv", "evolutions.csv", "lines.csv",   # who a Digimon is
+    "enemies.csv", "tournies.csv", "towns.csv", "zones.csv",
+    "foods.csv", "items.csv", "vitems.json", "dropRate.csv", "lootTable.csv",
+    "titles.csv", "eggUnlock.csv",
+    # opened at IMPORT time, so a missing one dies before main() ever calls
+    # the preflight -- listed because they ARE required, not because this
+    # check is what catches them.
+    "battle_overlays.json", "train_wall.json",
+)
+
+# Degrades on purpose: a partial install loses the trimming, never the game.
+OPTIONAL_DATA = (
+    "battle_fx.json.gz", "backgrounds.json.gz", "effects.json.gz",
+    "icons.json.gz", "eggs.json.gz", "jogress_overlays.json",
+    "digicoreMenuConfig.csv", "shopConsumable.csv", "deviceAttacks.csv",
+)
+
+
+def verify_assets():
+    """Open every REQUIRED bundled file, or raise AssetsError naming the first
+    one that will not open -- the same plain words the deep loaders use.
+
+    Cheap on purpose: one open and one byte per file, no parsing.  A file that
+    exists but is EMPTY counts as damaged (an interrupted download leaves those
+    behind, and an empty csv parses to zero rows and quietly deletes a system)."""
+    for name in REQUIRED_DATA:
+        try:
+            with open(os.path.join(_DATA, name), "rb") as fh:
+                if not fh.read(1):
+                    raise OSError("empty file")
+        except OSError as e:
+            raise _damaged(name) from e
+
+
 def _load_bundled(name):
     """gunzip+parse a required atlas, or raise AssetsError in plain words."""
     try:
