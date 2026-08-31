@@ -284,7 +284,17 @@ class ChatMixin:
         # you right now, and it expires.  (Text.append does not parse markup,
         # so the literal [Y]/[N] brackets are safe here in a way they would
         # NOT be on the status card.)
-        if self.invite_prompt is not None:
+        clearing = getattr(self, "confirm_clear", None)   # getattr like _mq:
+        #     anim()/text() run for half-built rigs too
+        if clearing is not None:
+            # the room stays on the card behind this, with the doomed row still
+            # picked -- you can see exactly what you are about to forget
+            ask = f"clear the thread with {clearing[1]}?"
+            tail = "  [Y]/[N]"
+            t.append(_fit(marquee(ask, w - len(tail), mq) + tail, w)
+                     if cell_len(ask) > w - len(tail)
+                     else _fit(ask + tail, w), style=INK_B)
+        elif self.invite_prompt is not None:
             inv = self.invite_prompt
             blurb = self._pet_of(inv.get("from_id"))
             who = f"{inv.get('from_name', '?')} ({blurb})" if blurb else inv.get("from_name", "?")

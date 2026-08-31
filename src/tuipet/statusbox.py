@@ -813,6 +813,11 @@ def _lobby_action(app, m, st):
         from .lobbychat import OFFLINE_ID
         verbs = ([] if pid == OFFLINE_ID else [("P", "ping")]) \
             + [("V", "open thread"), ("M", "quick PM"), ("X", "block")]
+    # THE CARD IS THE STANDING MENU, so the wipe is advertised HERE for every
+    # kind of row -- the 40-col strip cannot fit it beside a live peer's four
+    # verbs.  Offered only when there is something to forget.
+    if m._has_thread(pname):
+        verbs = verbs + [("D", "clear thread")]
     lines += [f"[b]{k}[/]  {_esc(word)}" for k, word in verbs]
     lines += [""] * max(0, 13 - len(lines))
     lines.append("[dim]ESC  back[/]")

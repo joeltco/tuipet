@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.350 — YOU CAN CLEAR A CONVERSATION NOW, AND IT STAYS CLEARED. Ever (2026-08-31)
+
+YOU CAN CLEAR A CONVERSATION NOW, AND IT STAYS CLEARED. Every private thread you had ever opened kept a row in the lobby for good — nothing in the game could remove one, and blocking someone did not help, because the mute swept their public lines and left the transcript and its row standing. Pick a name, press D, confirm, and the conversation and its row are gone from your device for good; the person themselves is untouched — if they are in the room they stay in the room, because clearing a thread is not blocking and not a goodbye. It asks first, since there is no undo and no copy anywhere else.
+
 ## 0.5.349 — THE PLAYER LIST MOVED OUT OF THE CHAT WINDOW AND ONTO THE ST (2026-08-31)
 
 THE PLAYER LIST MOVED OUT OF THE CHAT WINDOW AND ONTO THE STATUS CARD, WHERE IT HAS THE ROOM TO SAY WHO IS ACTUALLY THERE. Beside the chat it was a twelve-column strip, and three completely different things were told apart inside it by one tiny mark each: a tamer in the room with you, a tamer with the app open somewhere else, and a tamer who is simply offline whose only presence is a saved conversation. Two builds tried to fix that by changing the marks. This one gets rid of them. The three now sit under headings that name and count them — IN THE ROOM, ELSEWHERE, THREADS — so an offline thread can never again read as somebody standing in the lobby. The chat inherited the freed width and wraps half as often, and the menu for a tamer you pick — battle, jogress, PM, block — stands still on the card instead of scrolling past on a single line. The old ←/→ fold retired with the column it used to fold away.

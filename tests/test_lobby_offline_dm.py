@@ -178,3 +178,93 @@ def test_offline_rows_sit_under_a_different_heading_than_ghosts():
         assert who in after[:nxt], f"{who} is not under {head}"
     # and the marks that caused this are gone from the surface
     assert "°" not in txt
+
+
+# ---- CLEARING a thread (Joel 2026-08-31) --------------------------------
+# "yes I should have the option to clear a thread, instead of it staying
+# there forever."  Nothing in the game ever removed a key from state.dms:
+# threads were immortal, and BLOCKING did not help -- the mute swept their
+# public lines and left the transcript and its roster row standing.
+
+def test_a_thread_can_be_cleared_and_does_not_come_back():
+    """The whole point: the row exists to open the thread, so clearing the
+    thread takes the row with it -- and the save agrees."""
+    from tuipet import persistence
+    pan = _lobby(dms={"Ryo": [("Ryo", "gg")]}, unread=["Ryo"])
+    pan._save_dms()                                   # the thread is on disk
+    assert "Ryo" in persistence.get_dms()[0]
+
+    pan.sel = pan._others().index(_row(pan, "Ryo"))
+    pan.key("enter")                                  # open Ryo's actions
+    assert pan.action_for is not None
+    pan.key("d")                                      # ask
+    assert pan.confirm_clear is not None and pan.action_for is None
+    assert "Ryo" in pan.state.dms, "D alone must not delete anything"
+    pan.key("y")                                      # confirm
+
+    assert pan.confirm_clear is None
+    assert "Ryo" not in pan.state.dms                 # the transcript
+    assert "Ryo" not in pan.state.unread              # the badge
+    assert _row(pan, "Ryo") is None                   # the door
+    assert "Ryo" not in persistence.get_dms()[0]      # and the save file
+    # a reload cannot resurrect it (the quit flush saves this same dict)
+    pan._save_dms()
+    assert "Ryo" not in persistence.get_dms()[0]
+
+
+def test_clearing_asks_before_it_forgets():
+    """A wipe is permanent and unsendable, so it asks -- and N means keep."""
+    pan = _lobby(dms={"Ryo": [("Ryo", "gg")]})
+    pan.sel = pan._others().index(_row(pan, "Ryo"))
+    pan.key("enter")
+    pan.key("d")
+    assert "clear" in pan.strip() and "keep" in pan.strip()
+    assert "clear the thread with Ryo?" in pan.text().plain
+    pan.key("n")
+    assert pan.confirm_clear is None
+    assert pan.state.dms["Ryo"] == [("Ryo", "gg")], "N must keep the thread"
+    assert _row(pan, "Ryo") is not None
+
+
+def test_clearing_a_live_peers_thread_leaves_the_PERSON_in_the_room():
+    """Clearing a conversation is not blocking and not a departure: the
+    server says who is here, and it still says Ryo."""
+    pan = _lobby(roster=[{"id": 2, "name": "Ryo", "pet": {}, "live": True}],
+                 dms={"Ryo": [("Ryo", "gg")]})
+    pan.sel = pan._others().index(_row(pan, "Ryo"))
+    pan.key("enter")
+    pan.key("d")
+    pan.key("y")
+    assert "Ryo" not in pan.state.dms                 # the thread went
+    row = _row(pan, "Ryo")
+    assert row is not None and row["id"] == 2         # the person stayed
+    assert row["id"] != OFFLINE_ID
+
+
+def test_the_clear_verb_is_offered_only_when_there_is_a_thread():
+    """No thread, nothing to forget -- and D must not fire on a blank row."""
+    pan = _lobby(roster=[{"id": 2, "name": "Zed", "pet": {}, "live": True}],
+                 dms={"Ryo": [("Ryo", "gg")]})
+    pan.sel = pan._others().index(_row(pan, "Zed"))
+    pan.key("enter")
+    assert "clear thread" not in _card_of(pan)
+    pan.key("d")
+    assert pan.confirm_clear is None                  # inert, menu still up
+    assert pan.action_for is not None
+
+    pan.key("escape")
+    pan.sel = pan._others().index(_row(pan, "Ryo"))
+    pan.key("enter")
+    assert "clear thread" in _card_of(pan)            # ...and offered here
+
+
+def test_clearing_the_thread_you_are_reading_returns_you_to_the_room():
+    """You cannot be left staring at a transcript that no longer exists."""
+    pan = _lobby(dms={"Ryo": [("Ryo", "gg")]})
+    pan.sel = pan._others().index(_row(pan, "Ryo"))
+    pan.key("enter")
+    pan.key("v")                                      # open the thread
+    assert pan.phase == "dm" and pan.dm_peer[1] == "Ryo"
+    pan._clear_thread("Ryo")
+    assert pan.phase == "lobby" and pan.dm_peer is None
+    assert pan.sel >= 0 and pan.sel <= max(0, len(pan._others()) - 1)
