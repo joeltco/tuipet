@@ -28,7 +28,8 @@ def _pet(**kw):
 
 # ---- the lobby footer (the sighting) -----------------------------------------
 def test_lobby_room_footers_fit_and_end_in_whole_words():
-    for hint in (lobbychat.HINTS_OPEN, lobbychat.HINTS_FOLDED):
+    # HINTS_FOLDED retired with the fold (2026-08-31)
+    for hint in (lobbychat.HINTS_OPEN,):
         assert len(hint) <= 38, hint
         assert not hint.endswith("ESC"), hint     # the bare-ESC run-off class
         assert hint.split()[-1].isalpha(), hint   # last token is a word, not a key

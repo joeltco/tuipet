@@ -48,6 +48,27 @@ class _StubClient:
     def update_pet(self, *a, **k): pass
 
 
+def _lobby_card(pan):
+    """The lobby's STATUS CARD, painted through the real painter.  The roster,
+    the picked tamer's dossier and the action verbs live here since 2026-08-31,
+    so the assertions that used to read pan.text() read this instead."""
+    from tuipet import statusbox
+    from tuipet.app import TuiPetApp, Stats
+
+    class _FakeStats(Stats):
+        def __init__(self): self.txt = ""
+        def update(self, t): self.txt = str(t)
+        @property
+        def border_subtitle(self): return ""
+        @border_subtitle.setter
+        def border_subtitle(self, v): pass
+
+    app = TuiPetApp.__new__(TuiPetApp)
+    app.pet, app.stats_w, app.sound, app.mode = pan.pet, _FakeStats(), False, pan
+    statusbox.lobby(app)
+    return app.stats_w.txt
+
+
 def _panel(state):
     p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=500)
     p.world_seconds = 600.0
@@ -244,10 +265,16 @@ def test_playing_ghosts_are_message_only_targets():
     sent = []
     pan.client.pm = lambda to, tx, nm=None: sent.append((to, tx, nm))
     pan.client.invite = lambda *a: sent.append(("INVITE", a))
-    assert "·mika" in pan.text().plain                      # ghost marker in the sidebar
+    # the ghost's "·" mark became a NAMED GROUP on the card (2026-08-31): a
+    # tier of presence you can read without a legend
+    room = _lobby_card(pan)
+    assert "ELSEWHERE  1" in room and "mika" in room
+    assert "IN THE ROOM  1" in room                         # you, and only you
     pan.key("enter")                                        # open mika's action menu
     assert pan.action_for == (2, "mika", False)
-    assert "not in lobby" in pan.text().plain               # message/ping menu
+    menu = _lobby_card(pan)
+    assert "elsewhere" in menu and "quick PM" in menu       # message/ping menu
+    assert "battle" not in menu                             # never on a ghost
     pan.key("b")                                            # invites are dead on a ghost
     assert pan.action_for is not None and not sent
     pan.key("m")                                            # compose opens
@@ -271,7 +298,7 @@ def test_ping_pulls_a_ghost_into_the_lobby():
     pan.client.ping = lambda to: sent.append(("PING", to))
     pan.key("enter")                                        # open mika's (ghost) menu
     assert pan.action_for == (2, "mika", False)
-    assert "[P]ing" in pan.text().plain                     # ghost menu offers the ping
+    assert "ping" in _lobby_card(pan)                       # ghost menu offers the ping
     pan.key("p")
     assert sent == [("PING", 2)] and pan.action_for is None
 
@@ -674,44 +701,41 @@ def _room(n=3):
     return s
 
 
-def test_right_folds_the_player_box_and_chat_widens():
+def test_the_fold_is_retired_and_the_chat_keeps_the_full_width():
+    """←/→ folded the roster off the LCD to widen the chat (Joel 2026-07-10).
+    The roster lives on the CARD now, so there is nothing left to fold: the
+    divider column is gone, the chat is always wide, and both keys are inert."""
     s = _room()
-    s.chat.append(("p2", "x" * 30))              # wraps in the 25-col pane
+    s.chat.append(("p2", "x" * 30))              # wrapped in the old 25-col pane
     pan = _panel(s)
-    assert "│" in pan.text().plain               # the divider = the box is up
-    assert "x" * 30 not in pan.text().plain      # long line wrapped
-    pan.key("right")                             # fold
     txt = pan.text().plain
-    assert "│" not in txt                        # box (and divider) gone
-    assert "x" * 30 in txt                       # chat re-wraps at full width
-    assert ">p2" not in txt                      # no roster cursor row
-    pan.key("left")                              # bring it back
-    txt = pan.text().plain
-    assert "│" in txt and ">p2" in txt
+    assert "│" not in txt                        # the divider column retired
+    assert "x" * 30 in txt                       # full width, always
+    assert ">p2" not in txt                      # and no roster cursor on the LCD
+    for k in ("right", "left"):
+        pan.key(k)
+        assert pan.text().plain == txt, f"{k} still moves the layout"
 
 
-def test_folded_arrows_scroll_the_chat():
+def test_arrows_always_pick_and_the_log_is_always_pgup():
+    """↑↓ used to mean two different things depending on a hidden flag. One
+    meaning now -- pick a tamer -- and the log belongs to PgUp/PgDn."""
     s = _room()
     for i in range(20):
         s.chat.append(("p2", f"line {i}"))
     pan = _panel(s)
     pan.key("down")
-    assert pan.sel == 1 and pan.scroll == 0      # box up: arrows pick players
-    pan.key("right")                             # fold
-    pan.key("up"); pan.key("up")
-    assert pan.scroll == 2                       # folded: arrows scroll the log
-    assert "▲2 back" in pan.text().plain
+    assert (pan.sel, pan.scroll) == (1, 0)
+    pan.key("down")
+    assert (pan.sel, pan.scroll) == (2, 0)       # never the log, ever
+    pan.key("pageup")
+    assert pan.scroll == lobbychat.BODY - 1
+    assert f"▲{pan.scroll} back" in pan.text().plain
     assert "line 19" not in pan.text().plain     # the live tail scrolled away
-    pan.key("down")
-    assert pan.scroll == 1
-    assert pan.sel == 1                          # the roster pick held its place
-    pan.key("escape")
-    assert pan.scroll == 0                       # Esc still snaps back to live
+    pan.key("pagedown")
+    assert (pan.sel, pan.scroll) == (2, 0)       # the pick held its place
     pan.key("enter")
-    assert pan.action_for is None                # no acting on an unseen pick
-    pan.key("left")                              # box back up
-    pan.key("down")
-    assert pan.sel == 2                          # arrows drive the roster again
+    assert pan.action_for is not None            # a pick is always actionable
 
 
 def test_folded_lines_never_overflow_the_box():

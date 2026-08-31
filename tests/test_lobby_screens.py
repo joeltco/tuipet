@@ -204,6 +204,26 @@ def test_invite_defers_while_typing():
     assert pan.invite_prompt is not None
 
 
+def _card_of(pan):
+    """The lobby's STATUS CARD, through the real painter (the roster, the
+    dossier and the action verbs moved here 2026-08-31)."""
+    from tuipet import statusbox
+    from tuipet.app import TuiPetApp, Stats
+
+    class _FakeStats(Stats):
+        def __init__(self): self.txt = ""
+        def update(self, t): self.txt = str(t)
+        @property
+        def border_subtitle(self): return ""
+        @border_subtitle.setter
+        def border_subtitle(self, v): pass
+
+    app = TuiPetApp.__new__(TuiPetApp)
+    app.pet, app.stats_w, app.sound, app.mode = pan.pet, _FakeStats(), False, pan
+    statusbox.lobby(app)
+    return app.stats_w.txt
+
+
 def test_prompt_lines_keep_their_hints_with_long_names():
     """The key hints are FIXED CHROME (v0.2.349 doctrine): a 24-char name used
     to push [Y]/[N] / [Esc] clean off the 38-col prompt line.  The name field
@@ -223,37 +243,39 @@ def test_prompt_lines_keep_their_hints_with_long_names():
         rolled += last.split(" invites")[0]
     assert long in rolled                         # the whole name scrolls past
     pan.invite_prompt = None
-    pan.action_for = (3, long, True)              # long name -> the WHOLE line marquees
-    rolled = ""
-    for i in range(400):        # the line grew "[M] PM" (round 30): a longer
-        pan._mq = i             # loop needs more frames to roll clear through
-        last = pan.text().plain.split("\n")[-1]
-        assert len(last) <= LCD_COLS              # never overruns the box
-        rolled += last
-    # round 30's ruling (M advertised) survives the PM unification
-    # (2026-07-29 "call it all pm"): the merged [V/M] token names both keys
-    assert "[B]attle" in rolled and "[V/M] PM" in rolled \
-        and "[ESC]" in rolled                          # hints roll past
-    pan.action_for = (3, long, False)             # the ghost variant
-    rolled = ""
-    for i in range(400):
-        pan._mq = i
-        last = pan.text().plain.split("\n")[-1]
-        assert len(last) <= LCD_COLS
-        rolled += last
-    assert "[P]ing" in rolled and "[V/M] PM" in rolled \
-        and "[ESC]" in rolled
-    pan.action_for = None                         # the selection status line
-    pan.sel = 1                                   # sorted: the long-name live row
+    # THE VERBS LEFT THIS LINE (2026-08-31).  They used to marquee past on it
+    # -- a menu you have to WAIT for -- and now stand still on the status card.
+    # The LCD's last row is the status line's alone.
+    for live in (True, False):
+        pan.action_for = (3, long, live)
+        rolled = ""
+        for i in range(120):
+            pan._mq = i
+            last = pan.text().plain.split("\n")[-1]
+            assert len(last) <= LCD_COLS          # never overruns the box
+            rolled += last
+        assert "[B]attle" not in rolled and "[P]ing" not in rolled
+        menu = _card_of(pan)
+        wanted = (("battle", "jogress") if live else ("ping",)) \
+            + ("open thread", "quick PM", "block", "ESC")
+        for word in wanted:
+            assert word in menu, f"live={live}: the card lost {word!r}"
+        # the 24-char name still fits the card instead of eating the verbs
+        assert max(len(r) for r in menu.split("\n")) <= 40
+    # THE PICK BLURB moved with the verbs: the LCD's last row now says only
+    # what just happened, and the card names who is picked and what they are.
+    pan.action_for = None
     pan.status = lobbychat.HINTS_OPEN
     others = pan._others()
-    target = next(i for i, p in enumerate(others) if p["name"] == long)
-    pan.sel = target
+    pan.sel = next(i for i, p in enumerate(others) if p["name"] == long)
     for i in range(120):
         pan._mq = i
         last = pan.text().plain.split("\n")[-1]
-        assert last.endswith("Enter to act"), last
+        assert last == lobbychat.HINTS_OPEN, last   # one job: the status
         assert len(last) <= LCD_COLS
+    room = _card_of(pan)
+    assert long[:12] in room                        # the pick is named on the card
+    assert max(len(r) for r in room.split("\n")) <= 40
 
 
 def test_join_leave_log_caps_at_the_shared_chat_cap():
@@ -278,7 +300,8 @@ def test_default_status_hint_renders_whole():
     pan.status = "Connecting…"
     pan.anim()                                    # the connected transition sets it
     assert pan.status == lobbychat.HINTS_OPEN
-    for hint in (lobbychat.HINTS_OPEN, lobbychat.HINTS_FOLDED):
+    # HINTS_FOLDED retired with the fold (2026-08-31)
+    for hint in (lobbychat.HINTS_OPEN,):
         assert len(hint) <= 38
         assert not hint.endswith("ESC"), hint     # every key wears its word
     last = pan.text().plain.split("\n")[-1]

@@ -225,7 +225,6 @@ def test_an_online_bout_is_progression_neutral_the_live_smoke_asserts_this():
 
 LOBBY_PAGES = {
     "lobby": {},
-    "roster folded": {"rost_hidden": True},
     "action menu": {"action_for": (2, "mika", {"num": 120, "name": "Kuwa",
                                                "stage": "Champion",
                                                "attribute": "Virus"})},

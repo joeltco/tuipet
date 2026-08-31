@@ -512,8 +512,6 @@ def _lobby_states():
     pan = LobbyPanel(_pet(), None)
     show("lobby login", pan)
     show("lobby open room", _lobby())
-    show("lobby folded", _lobby(rost_hidden=True,
-                                status="↑↓ scroll · ← player box · ESC leave"))
     show("lobby scrolled", _lobby(scroll=3))
     show("lobby action (live peer)", _lobby(action_for=(2, "Ryo", True)))
     show("lobby action (ghost)", _lobby(action_for=(3, "Verylongplayername", False)))

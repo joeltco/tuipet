@@ -28,10 +28,22 @@ from .theme import INK, INK_B, DIM, SEL  # noqa: F401  (theme.apply propagation)
 # a later edit to any one of them would have silently missed the other two --
 # the widths agree only by luck.  They live here, next to the law and the
 # _fit/_wrap helpers that spend them; the other two re-import from this module.
-CHATW = 25              # the chat column, in CELLS (never characters)
-ROSTW = 12              # the player box beside it
-BODY = 8                # chat rows visible at once
+CHATW = 25              # the chat column's OLD width, kept as the budget's unit
+ROSTW = 12              # the header's right slot (the old player-box column)
+LCDW = CHATW + ROSTW + 1   # 38 — the whole LCD line; the chat owns all of it now
+BODY = 9                # chat rows visible at once
+DM_BODY = 10            # a DM thread has no status row, so it gets one more
 CHAT_MAX = 400          # server MAX_CHAT: the local input buffer stops here too
+
+# ⛔ THE ROSTER LEFT THE LCD (Joel 2026-08-31).  It used to be a 12-cell column
+# beside the chat, where three tiers of presence rode on three MARKS -- "°"
+# offline, "·" ghost, nothing live.  Joel read that column for a week as a room
+# with four people in it; three of them were offline DM threads that the column
+# had no room to label.  A mark is not a label.  The roster now lives on the
+# STATUS CARD (statusbox.lobby), grouped under words -- IN THE ROOM / ELSEWHERE
+# / THREADS -- which is the raid-uncramp move (2026-07-23) applied to the one
+# screen that never got it: the numbers live on the card, the LCD plays the room.
+# The chat inherits the full 38 cells, the width the retired fold already proved.
 
 # The id an OFFLINE thread-partner carries.  They aren't on the server's
 # roster, so they have no connection id -- but they still need a roster row,
@@ -46,7 +58,6 @@ OFFLINE_ID = -1
 # ↑↓ pick lives on the strip below, so the LCD line doesn't repeat it.  These
 # are also the "default status" sentinels _text_lobby rewrites in place.
 HINTS_OPEN = "ENTER chat · TAB ranks · ESC leave"
-HINTS_FOLDED = "↑↓ scroll · ← player box · ESC leave"
 
 
 def _fit(s, w):
@@ -130,10 +141,10 @@ class ChatMixin:
             self.dm_scroll = max(0, self.dm_scroll - 1)
             return None
         if k == "pageup":
-            self.dm_scroll += BODY - 1         # older; _text_dm clamps
+            self.dm_scroll += DM_BODY - 1      # older; _text_dm clamps
             return None
         if k == "pagedown":
-            self.dm_scroll = max(0, self.dm_scroll - (BODY - 1))
+            self.dm_scroll = max(0, self.dm_scroll - (DM_BODY - 1))
             return None
         return self._edit(k)
     def _text_dm(self):
@@ -150,9 +161,12 @@ class ChatMixin:
             parts = _wrap(f"{who}: {tx}", w - 1)
             rows.append((parts[0], DIM if mine else INK_B))
             rows.extend((" " + ln, DIM if mine else INK_B) for ln in parts[1:])
-        body = BODY + 2      # the old in-LCD key footer's row, given to the
+        body = DM_BODY       # the old in-LCD key footer's row, given to the
         #                      history (round 30: the strip already carries
-        #                      ENTER send / ESC back -- one hint surface)
+        #                      ENTER send / ESC back -- one hint surface).
+        #                      PINNED, not BODY+n: the thread has no status row,
+        #                      so its arithmetic is its own (header 1 + 10 + the
+        #                      composer 1 = the 12-row LCD exactly)
         # clamp the scrollback to the log, like _text_lobby does for the room
         self.dm_scroll = max(0, min(self.dm_scroll, max(0, len(rows) - body)))
         self._dm_overflow = len(rows) > body         # strip(): advertise PgUp
@@ -192,8 +206,8 @@ class ChatMixin:
         else:
             self.status = "Commands: /room <phrase> · /leave"
     def _chat_w(self):
-        """The chat column's width: the folded player box cedes its columns."""
-        return CHATW + ROSTW + 1 if self.rost_hidden else CHATW
+        """The chat's width -- the WHOLE LCD line since the roster left it."""
+        return LCDW
     def _chat_rows(self):
         """The wrapped history as (line, style) rows, oldest first -- one
         style per MESSAGE (chat polish 2026-07-07): your own lines dim (you
@@ -224,119 +238,58 @@ class ChatMixin:
             rows.extend((" " + ln, sty) for ln in parts[1:])
         return rows
     def _text_lobby(self):
+        """THE ROOM, full width: identity, the chat, the composer, ONE status
+        line.  The roster, the picked tamer's dossier and the action verbs all
+        moved to the status card (2026-08-31): this line used to multiplex five
+        different jobs and MARQUEE the ones that would not fit, which is how a
+        12-key action menu came to scroll past like a news ticker."""
         s = self.state
-        others = self._others()
-        online = len(s.roster) if s else 0
-        me = (s.me_name if s and s.me_name else None) or "connecting…"
         t = Text()
-        cw = self._chat_w()
+        w = LCDW
+        mq = getattr(self, "_mq", 0) // 2
         rows = self._chat_rows()
         self.scroll = max(0, min(self.scroll, max(0, len(rows) - BODY)))
-        # ASCII only in this column (the CELL-WIDTH LAW: rjust counts chars)
-        in_room = bool(s and getattr(s, "room", None))
-        right = (f"▲{self.scroll} back" if self.scroll
-                 else (f"{online} in room" if in_room else f"{online} on"))
-        # header: identity + the live/scroll marker (folded: no divider column)
-        # -- your OWN worn honor shows here (read locally, so it's right even
-        # before the roster syncs); a long title marquees, the chrome holds
+        me = (s.me_name if s and s.me_name else None) or "connecting…"
+        # header: identity left, the LCD's OWN indicator right -- the room you
+        # are in, or how far back you have scrolled.  The head-count moved to
+        # the card with the roster (it was the same number said twice).
+        # ASCII only in the right slot (the CELL-WIDTH LAW: rjust counts chars)
         worn = data.title_name(persistence.get_title_worn())
         me_line = f"you: {me}" + (f" · ★{worn}" if worn else "")
-        mw = cw - ROSTW if self.rost_hidden else CHATW
-        mq = getattr(self, "_mq", 0) // 2
+        room = str(getattr(s, "room", None) or "") if s else ""
+        right = (f"▲{self.scroll} back" if self.scroll
+                 else (f"/{room}" if room else ""))
+        mw = w - ROSTW
         t.append(_fit(marquee(me_line, mw, mq), mw) if cell_len(me_line) > mw
-                 else _fit(me_line, mw), style=INK_B)        # confirm your identity
-        if not self.rost_hidden:
-            t.append("│", style=DIM)
-        t.append(right.rjust(ROSTW)[:ROSTW] + "\n", style=INK_B)
+                 else _fit(me_line, mw), style=INK_B)
+        t.append(_fit(right.rjust(ROSTW), ROSTW) + "\n", style=INK_B)
         end = len(rows) - self.scroll
         view = rows[max(0, end - BODY):end]
         view = [("", INK)] * (BODY - len(view)) + view
         if not rows:                                       # the empty room
-            hint = "— say hi, the room hears you —"
-            if cell_len(hint) > cw:                        # folded col fits it; narrow one doesn't
-                hint = "— say hi —"
-            view[BODY // 2] = (hint.center(cw), DIM)
-        sel = min(self.sel, len(others) - 1) if others else 0
-        rlo = max(0, min(sel - BODY // 2, len(others) - BODY)) if len(others) > BODY else 0
-        for i in range(BODY):
-            t.append(_fit(view[i][0], cw), style=view[i][1])
-            if self.rost_hidden:                 # the box is folded: chat owns the row
-                t.append("\n")
-                continue
-            t.append("│", style=DIM)
-            ridx = rlo + i
-            if ridx < len(others):
-                pl = others[ridx]
-                cur = ridx == sel
-                # THREE tiers of presence, three marks (Joel 2026-08-18: the
-                # offline rows came out wearing the ghost's dot, so a column of
-                # people who were nowhere read as a column of people playing).
-                # A solid dot is a ghost -- app open, elsewhere.  A HOLLOW one
-                # is offline: nobody home, only the thread.
-                away = pl.get("id") == OFFLINE_ID    # not connected at all
-                ghost = not pl.get("live", True)     # app open, not in the room
-                nm = pl["name"]
-                unread = bool(s) and nm in s.unread
-                blk = bool(s) and nm in s.blocked
-                mark = ("✉" if unread else "✕" if blk
-                        else "°" if away else "·" if ghost else "")
-                sty = SEL if cur else (INK_B if unread else (DIM if (ghost or blk) else INK))
-                # a worn honor stars the roster entry -- the room sees who's
-                # titled at a glance; an entry too long for the column
-                # MARQUEES (field-scroll doctrine) so the star is never lost.
-                # marquee is char-based; the _fit wrapper keeps wide glyphs
-                # (emoji names) inside the column per the cell-width law
-                star = " ★" if (pl.get("pet") or {}).get("title") else ""
-                pre, label = (">" if cur else " "), mark + nm + star
-                if cell_len(pre + label) > ROSTW:
-                    label = marquee(label, ROSTW - 1, getattr(self, "_mq", 0) // 2)
-                t.append(_fit(pre + label, ROSTW), style=sty)
-            elif i == 0 and not others:
-                t.append(_fit(" nobody yet", ROSTW), style=DIM)
-            else:
-                t.append(_fit("", ROSTW), style=INK)
-            t.append("\n")
+            view[BODY // 2] = ("— say hi, the room hears you —".center(w), DIM)
+        for ln, sty in view:
+            t.append(_fit(ln, w) + "\n", style=sty)
         if self.pm_to is not None:                           # the input line is a PM compose
             label = f"✉{self.pm_to[1][:8]}: "
         else:
             label = "say: "
         t.append(label, style=INK_B)
-        fw = CHATW + ROSTW - cell_len(label)
+        fw = w - cell_len(label)
         shown = self.buf if cell_len(self.buf) < fw else _tail_cells(self.buf, fw - 1)
         caret = "_" if (getattr(self, "_mq", 0) // 5) % 2 == 0 else " "
         t.append(_fit(shown + caret, fw) + "\n", style=INK)
-        # the prompt lines: the KEY HINTS are fixed chrome and must never clip
-        # off the end -- a 24-char name used to push [Y]/[N] and [Esc] out of
-        # the 38-col line entirely (lobby audit 2026-07-07); the NAME field
-        # marquees instead (the v0.2.349 field-scroll doctrine)
-        w = CHATW + ROSTW + 1
-        mq = self._mq // 2 if hasattr(self, "_mq") else 0
+        # THE LAST LINE HAS ONE JOB: say what just happened.  An invite is the
+        # one thing allowed to take it -- it is a question the room is asking
+        # you right now, and it expires.  (Text.append does not parse markup,
+        # so the literal [Y]/[N] brackets are safe here in a way they would
+        # NOT be on the status card.)
         if self.invite_prompt is not None:
             inv = self.invite_prompt
             blurb = self._pet_of(inv.get("from_id"))
             who = f"{inv.get('from_name', '?')} ({blurb})" if blurb else inv.get("from_name", "?")
             tail = f" invites {inv['kind']}  [Y]/[N]"
             t.append(_fit(marquee(who, w - len(tail), mq) + tail, w), style=INK_B)
-        elif self.action_for is not None:
-            pid, pname, plive = self.action_for
-            blurb = self._pet_of(pid)
-            who = f"{pname} ({blurb})" if blurb else pname
-            if self.state and pname in self.state.blocked:
-                acts = "[X]unblock  [ESC]"
-            elif plive:
-                # V thread / M quick-send: one PM feature, one name (the DM
-                # label retired 2026-07-29, "call it all pm")
-                acts = "[B]attle [J]og [V/M] PM [X]block [ESC]"
-            elif pid == OFFLINE_ID:
-                # a thread-only row: say OFFLINE, not "not in lobby" (which is
-                # the ghost's state, app open elsewhere).  No [P]ing -- there's
-                # no app there to nudge; the PM queues server-side instead.
-                acts = "offline — [V/M] PM [X]block [ESC]"
-            else:
-                acts = "not in lobby — [P]ing [V/M] PM [X]block [ESC]"
-            full = f"{who}:  {acts}"
-            # whole line scrolls when it overflows (Joel 2026-07-09), else static
-            t.append(marquee(full, w, mq) if len(full) > w else _fit(full, w), style=INK_B)
         elif self.scroll:
             # scrolled into the log: the line teaches its own way back
             t.append("▲ older — PgUp/PgDn · ESC back to live"[:w], style=DIM)
@@ -346,23 +299,5 @@ class ChatMixin:
                                        or "reconnecting" in line or "Retrying" in line):
                 # liveness: the static wait line read as a hang (QOL 2026-07-23)
                 line = line[:-1] + "." * (1 + (mq // 5) % 3)
-            if self.rost_hidden and line == HINTS_OPEN:
-                # the box is folded: ↑↓ drive the log now, not the roster pick
-                line = HINTS_FOLDED
-            elif others and line == HINTS_OPEN:
-                p = others[sel]
-                if p.get("live", True):
-                    blurb = self._pet_of(p["id"])
-                    if blurb:
-                        tail = " — Enter to act"
-                        line = marquee(f"{p['name']}: {blurb}", w - len(tail), mq) + tail
-                else:
-                    # "is playing" is the GHOST's line and was being said over
-                    # offline rows too -- the pick line has to name the state
-                    # the row is actually in, or the roster reads as a full
-                    # lobby (Joel 2026-08-18)
-                    verb = "is offline" if p.get("id") == OFFLINE_ID else "is playing"
-                    tail = " — Enter to msg"
-                    line = marquee(f"{p['name']} {verb}", w - len(tail), mq) + tail
             t.append(line[:w], style=DIM)
         return t

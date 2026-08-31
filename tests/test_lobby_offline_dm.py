@@ -117,33 +117,64 @@ def test_the_offline_tail_sorts_below_everyone_present():
     assert [p["name"] for p in pan._others()] == ["Zed", "Mika", "Abe"]
 
 
+def _card_of(pan):
+    """The lobby's STATUS CARD -- the roster and the pick line moved here
+    on 2026-08-31."""
+    from tuipet import statusbox
+    from tuipet.app import TuiPetApp, Stats
+
+    class _FakeStats(Stats):
+        def __init__(self): self.txt = ""
+        def update(self, t): self.txt = str(t)
+        @property
+        def border_subtitle(self): return ""
+        @border_subtitle.setter
+        def border_subtitle(self, v): pass
+
+    app = TuiPetApp.__new__(TuiPetApp)
+    app.pet, app.stats_w, app.sound, app.mode = pan.pet, _FakeStats(), False, pan
+    statusbox.lobby(app)
+    return app.stats_w.txt
+
+
 def test_the_pick_line_says_offline_not_playing():
-    """"X is playing" is the GHOST's line. Said over an offline row it turns a
-    roster of people who are nowhere into a roster that looks busy."""
-    from tuipet.lobbychat import HINTS_OPEN
+    """"X is playing" is the GHOST's line.  Said over an offline row it turns
+    a roster of people who are nowhere into a roster that looks busy.  The
+    line lives on the CARD now, but it still has to name the RIGHT state."""
     pan = _lobby(roster=[{"id": 3, "name": "Mika", "pet": {}, "live": False}],
                  dms={"eddy": [("eddy", "yo")]})
-    pan.status = HINTS_OPEN
     names = [p["name"] for p in pan._others()]
 
     pan.sel, pan._mq = names.index("eddy"), 0
-    pick = pan.text().plain.split("\n")[-1]
-    assert "is offline" in pick, pick
-    assert "is playing" not in pick
+    pick = _card_of(pan).split("\n")[-1]
+    assert "offline" in pick, pick
+    assert "elsewhere" not in pick and "in the room" not in pick
 
     pan.sel = names.index("Mika")            # the ghost keeps its own words
-    assert "is playing" in pan.text().plain.split("\n")[-1]
+    pick = _card_of(pan).split("\n")[-1]
+    assert "elsewhere" in pick and "offline" not in pick, pick
 
 
-def test_offline_rows_wear_a_different_mark_than_ghosts():
-    """One glance at the column has to separate 'playing elsewhere' from
-    'not here at all' -- both are live=False, so the dot alone can't."""
+def test_offline_rows_sit_under_a_different_heading_than_ghosts():
+    """One glance has to separate 'playing elsewhere' from 'not here at all'
+    -- both are live=False, so a mark alone never could.
+
+    THIS IS THE BUG THAT FORCED THE REFACTOR (Joel 2026-08-31).  The two
+    states were a "·" and a "°" in a 12-cell column; he read that column for
+    a week as a room with people in it.  They are LABELLED GROUPS now, and
+    the label is the thing that cannot be misread."""
     pan = _lobby(roster=[{"id": 3, "name": "Mika", "pet": {}, "live": False},
                          {"id": 4, "name": "Zed", "pet": {}}],
                  dms={"eddy": [("eddy", "yo")]})
-    pan._mq = 0
-    pan.sel = -1                             # park the ">" cursor off every row
-    rows = [ln.split("│")[-1] for ln in pan.text().plain.split("\n") if "│" in ln]
-    mark = {n: next(r for r in rows if n in r).split(n)[0].strip()
-            for n in ("Zed", "Mika", "eddy")}
-    assert mark == {"Zed": "", "Mika": "·", "eddy": "°"}, mark
+    pan._mq, pan.sel = 0, 0
+    txt = _card_of(pan)
+    # each name sits under its OWN heading, in order
+    for head, who in (("IN THE ROOM", "Zed"), ("ELSEWHERE", "Mika"),
+                      ("THREADS", "eddy")):
+        assert head in txt, f"{head} missing"
+        after = txt.split(head, 1)[1]
+        nxt = min([after.index(h) for h in ("IN THE ROOM", "ELSEWHERE", "THREADS")
+                   if h in after] or [len(after)])
+        assert who in after[:nxt], f"{who} is not under {head}"
+    # and the marks that caused this are gone from the surface
+    assert "°" not in txt

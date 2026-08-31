@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # tuipet bug monitor: stream NEW player bug reports off the lobby server.
 # Each new line in bugs.jsonl becomes one notification.
-N=56                       # lines already seen at restart (2026-08-18)
+N=57                       # lines already seen at restart (2026-08-31)
 FAILS=0
 while true; do
   if OUT=$(ssh -o ConnectTimeout=15 -o BatchMode=yes root@68.183.59.19 \

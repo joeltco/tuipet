@@ -135,8 +135,27 @@ def _fake_lobby():
     return pan
 
 
+def _card_of(pan):
+    """The lobby's STATUS CARD -- the roster moved here 2026-08-31."""
+    from tuipet import statusbox
+    from tuipet.app import TuiPetApp, Stats
+
+    class _FakeStats(Stats):
+        def __init__(self): self.txt = ""
+        def update(self, t): self.txt = str(t)
+        @property
+        def border_subtitle(self): return ""
+        @border_subtitle.setter
+        def border_subtitle(self, v): pass
+
+    app = TuiPetApp.__new__(TuiPetApp)
+    app.pet, app.stats_w, app.sound, app.mode = pan.pet, _FakeStats(), False, pan
+    statusbox.lobby(app)
+    return app.stats_w.txt
+
+
 def test_the_roster_stars_titled_players():
-    t = _fake_lobby().text().plain
+    t = _card_of(_fake_lobby())
     assert "Roxi ★" in t                     # titled peer wears the star
     assert "JoeltCo ★" not in t              # untitled stays plain
 
@@ -152,15 +171,16 @@ def test_your_own_worn_honor_shows_on_the_you_line():
     assert "you: JoeltCo · ★" in head        # marquee head shows the honor
 
 
-def test_long_roster_entries_scroll_the_star_into_view():
+def test_a_long_roster_entry_keeps_its_star_without_marqueeing():
+    """In the old 12-cell column a titled long name had to MARQUEE for its ★
+    to come round into view.  The card is 26 wide and the honor is PINNED, so
+    the name loses its tail instead and the star is on screen every frame."""
     pan = _fake_lobby()
-    pan._mq = 0
-    t0 = pan.text().plain
-    assert "Averylongt" in t0                # the head of the long entry
-    assert "mername ★" not in t0             # ...whose star is off-column
-    pan._mq = 38                             # step 19 -> the window has slid
-    t1 = pan.text().plain
-    assert "mername ★" in t1, "the marquee must carry the star into view"
+    for mq in (0, 19, 38):                   # no frame may be starless
+        pan._mq = mq
+        t = _card_of(pan)
+        assert "Averylongt" in t             # the head of the long entry
+        assert t.count("★") == 2, t          # BOTH titled peers, every frame
 
 
 def test_the_prestige_ladder_reaches_a_million():

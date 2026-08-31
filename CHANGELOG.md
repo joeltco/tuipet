@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.349 — THE PLAYER LIST MOVED OUT OF THE CHAT WINDOW AND ONTO THE ST (2026-08-31)
+
+THE PLAYER LIST MOVED OUT OF THE CHAT WINDOW AND ONTO THE STATUS CARD, WHERE IT HAS THE ROOM TO SAY WHO IS ACTUALLY THERE. Beside the chat it was a twelve-column strip, and three completely different things were told apart inside it by one tiny mark each: a tamer in the room with you, a tamer with the app open somewhere else, and a tamer who is simply offline whose only presence is a saved conversation. Two builds tried to fix that by changing the marks. This one gets rid of them. The three now sit under headings that name and count them — IN THE ROOM, ELSEWHERE, THREADS — so an offline thread can never again read as somebody standing in the lobby. The chat inherited the freed width and wraps half as often, and the menu for a tamer you pick — battle, jogress, PM, block — stands still on the card instead of scrolling past on a single line. The old ←/→ fold retired with the column it used to fold away.
+
 ## 0.5.348 — A BROKEN INSTALL NOW SPEAKS UP AT LAUNCH INSTEAD OF AMBUSHIN (2026-08-22)
 
 A BROKEN INSTALL NOW SPEAKS UP AT LAUNCH INSTEAD OF AMBUSHING YOU LATER. One of tuipet's own data files went missing on a player's machine and the game booted anyway, played a whole session, then crashed to a wall of text the moment he opened the tournament — because the launch check only ever opened two of the eighteen files the game cannot run without. It opens all of them now, before it takes the terminal over, and if one is missing or empty it names the file and gives you the one command that puts it back. Your save is never involved. The extras that were always optional — icons, backgrounds, effects — still go quietly missing without stopping you playing.

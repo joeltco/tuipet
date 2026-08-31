@@ -155,10 +155,9 @@ def test_lobby_strip_is_fully_contextual():
                 {"id": 2, "name": "mika", "pet": {}, "live": True}]
     pan = lobbyscreen.LobbyPanel(_pet(), lambda n, pw, c: _Stub(s),
                                  name="joel", pw="x")
-    assert "fold" in _ok(pan.strip(), "lobby:open")
-    pan.rost_hidden = True
-    assert "players" in _ok(pan.strip(), "lobby:folded")
-    pan.rost_hidden = False
+    # the fold retired 2026-08-31: one lobby strip, and ↑↓ have one meaning
+    assert "pick" in _ok(pan.strip(), "lobby:open")
+    assert "fold" not in _ok(pan.strip(), "lobby:open")
     s.unread.add("mika")                       # a fresh ✉ pops its nudge first
     assert "✉ mika" in _ok(pan.strip(), "lobby:unread")
     s.unread.clear()

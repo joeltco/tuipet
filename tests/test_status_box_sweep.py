@@ -99,6 +99,135 @@ def test_lobby_card_connecting():
     assert "Lobby" in txt and "connecting" in txt
 
 
+# ---- THE LOBBY CARD (Joel 2026-08-31) ------------------------------------
+# The roster moved onto this card out of a 12-cell LCD column where three tiers
+# of presence rode on three MARKS.  Joel read that column for a week as a room
+# with four people in it -- three were offline DM threads, and the column had no
+# width to say so.  These pin the two things that fix: the tiers are NAMED, and
+# every phase of the lobby paints a card that fits 26x16.
+
+CARD_W, CARD_H = 26, 16
+
+
+def _vis(line):
+    import re
+    return len(re.sub(r"\[/?[^\[\]]*\]", "", line))
+
+
+def _lobby_panel(app, **kw):
+    from tuipet.lobbyscreen import LobbyPanel
+    from tuipet import net
+    pan = LobbyPanel.__new__(LobbyPanel)
+    st = net.LobbyState()
+    st.connected, st.me_id, st.me_name = True, 1, "joel"
+    st.roster = [{"id": 1, "name": "joel", "pet": {}, "live": True},
+                 {"id": 2, "name": "Ryo",
+                  "pet": {"name": "Kuwagamon", "stage": "Champion",
+                          "form": "mega", "title": "Bit Baron"}, "live": True},
+                 {"id": 3, "name": "W" * 24, "pet": {}, "live": False}]
+    st.dms = {"eddy": [("eddy", "yo")], "oniushu": [], "Roxi": []}
+    pan.pet, pan.state, pan._last_name = app.pet, st, "joel"
+    pan.phase, pan.sel, pan.bshow = "lobby", 0, None
+    pan.action_for = pan.pm_to = pan.invite_prompt = pan.dm_peer = None
+    pan.client = pan.partner = pan.jresult = pan.jphase = None
+    pan.partner_species = pan.fail_reason = pan.opp_card = pan.bphase = None
+    pan.j_peer_two_phase = False
+    pan.bt_outcome, pan.bt_reward = "", None
+    pan.my_hp = pan.my_max = pan.opp_hp = pan.opp_max = 5
+    pan._mq = 0
+    for k, v in kw.items():
+        setattr(pan, k, v)
+    return pan
+
+
+def _fits(txt, tag):
+    lines = txt.split("\n")
+    assert len(lines) <= CARD_H, f"{tag}: {len(lines)} rows overflow the card"
+    w = max(_vis(l) for l in lines)
+    assert w <= CARD_W, f"{tag}: {w} cols overflow the card"
+
+
+def test_lobby_card_names_the_presence_tiers_instead_of_marking_them():
+    """THE BUG THAT STARTED IT: offline DM threads sat in the roster column
+    wearing a "°" and read as people in the room.  On the card each tier is a
+    LABELLED GROUP carrying its own count, so an offline thread can never sit
+    under a heading that claims anyone is present."""
+    app = _app()
+    txt = _card(app, _lobby_panel(app))
+    assert "IN THE ROOM  2" in txt          # joel + Ryo, and it says so
+    assert "ELSEWHERE  1" in txt            # the ghost, named not marked
+    assert "THREADS  3" in txt              # eddy / oniushu / Roxi
+    # the hollow mark that caused all this is gone from the surface entirely
+    # ("·" survives as an honest separator inside the dossier line, not as a
+    #  tier of presence anybody has to decode)
+    assert "°" not in txt
+    _fits(txt, "lobby room")
+    # the list is a VIEWPORT, so a long room scrolls -- and the window follows
+    # the pick, or ENTER would act on a row you cannot see
+    others = _lobby_panel(app)._others()
+    tail = next(i for i, q in enumerate(others) if q["name"] == "Roxi")
+    picked = _card(app, _lobby_panel(app, sel=tail))
+    assert "Roxi" in picked and "▸" in picked
+    _fits(picked, "lobby room scrolled")
+
+
+def test_lobby_card_survives_a_room_with_nobody_in_it():
+    """The empty room is the state Joel actually plays in most."""
+    app = _app()
+    pan = _lobby_panel(app)
+    pan.state.roster = [{"id": 1, "name": "joel", "pet": {}, "live": True}]
+    pan.state.dms = {}
+    txt = _card(app, pan)
+    assert "IN THE ROOM  1" in txt and "just you" in txt
+    assert "ELSEWHERE" not in txt and "THREADS" not in txt
+    _fits(txt, "lobby empty")
+
+
+def test_every_lobby_phase_paints_a_card_that_fits():
+    """One painter, phase-dispatched: the card used to print the chat lobby's
+    hints through a duel, a fusion and an open DM thread alike."""
+    app = _app()
+    pages = {
+        "room": {},
+        "long name picked": {"sel": 2},
+        "action live": {"action_for": (2, "Ryo", True)},
+        "action ghost": {"action_for": (3, "W" * 24, False)},
+        "action offline": {"action_for": (-1, "eddy", False)},
+        "thread": {"phase": "dm", "dm_peer": (2, "Ryo")},
+        "thread offline": {"phase": "dm", "dm_peer": (-1, "eddy")},
+        "jogress": {"phase": "jogress", "partner": (2, "Ryo"),
+                    "jphase": "result", "jresult": {"name": "AncientGreymon"},
+                    "partner_species": "Kuwagamon"},
+        "jogress failed": {"phase": "jogress", "partner": (2, "Ryo"),
+                           "jphase": "failed",
+                           "fail_reason": "No resonance with that partner."},
+        "duel": {"phase": "battle", "partner": (2, "Ryo"), "bphase": "fight",
+                 "opp_card": {"name": "Kuwagamon", "stage": "Champion"}},
+        "duel over": {"phase": "battle", "partner": (2, "Ryo"),
+                      "bphase": "over", "bt_outcome": "★ YOU WIN! ★",
+                      "bt_reward": "+300b  (weekend bonus!)"},
+    }
+    for tag, kw in sorted(pages.items()):
+        txt = _card(app, _lobby_panel(app, **kw))
+        assert txt.strip(), f"{tag}: painted nothing"
+        _fits(txt, tag)
+
+
+def test_lobby_card_escapes_a_name_that_looks_like_markup():
+    """Card lines are rich MARKUP strings and names are player-typed: a tamer
+    called "[b" would eat the rest of the card.  (The LCD is a Text object and
+    parses no markup, which is why the guard is only on this side.)"""
+    app = _app()
+    pan = _lobby_panel(app)
+    pan.state.roster[1]["name"] = "[b]evil[/]"
+    pan.state.dms = {"[/dim]x": []}
+    txt = _card(app, pan)
+    assert "evil" in txt
+    _fits(txt, "markup name")
+    from rich.text import Text
+    Text.from_markup(txt)          # the real renderer must accept it
+
+
 def test_help_options_bug_cards():
     from tuipet.helpscreen import HelpPanel
     from tuipet.optionsscreen import OptionsPanel

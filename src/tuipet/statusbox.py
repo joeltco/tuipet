@@ -676,22 +676,251 @@ def raid(app):
         subtitle=gen_subtitle(app.pet))
 
 
+def _esc(text):
+    """Player-typed text on a MARKUP surface.  Card lines are rich markup
+    STRINGS, so a tamer named "[b" would swallow the rest of the card (or
+    raise) the moment it was painted.  The LCD is a rich Text object and
+    parses no markup, which is why this guard lives only here."""
+    from rich.markup import escape
+    return escape(str(text))
+
+
+def _presence_word(pl):
+    """The three tiers of presence, IN WORDS (Joel 2026-08-31).
+
+    They used to be three MARKS in a 12-cell column -- "°" offline, "·" a
+    ghost, nothing at all for someone actually in the room.  Joel read that
+    column for a week as a room with people in it; the three names were
+    offline DM threads, and the column had no width to say so.  A mark is
+    not a label: on the card there is room for the word."""
+    from .lobbychat import OFFLINE_ID
+    if pl.get("id") == OFFLINE_ID:
+        return "offline"
+    return "in the room" if pl.get("live", True) else "elsewhere"
+
+
+def _lobby_entries(m, st):
+    """The roster as LABELLED GROUPS: (kind, payload, roster_index) rows,
+    ready to window.  Grouping is what makes the presence tiers readable --
+    a header names each one and carries its count, so an offline thread can
+    never sit under a heading that says anyone is here."""
+    from .lobbychat import OFFLINE_ID
+    others = list(m._others())
+    live, ghosts, threads = [], [], []
+    for i, pl in enumerate(others):
+        if pl.get("id") == OFFLINE_ID:
+            threads.append((i, pl))
+        elif not pl.get("live", True):
+            ghosts.append((i, pl))
+        else:
+            live.append((i, pl))
+    ent = []
+    # the head-count includes YOU -- you are in the room you are counting
+    ent.append(("hdr", f"IN THE ROOM  {len(live) + 1}", None))
+    if live:
+        ent.extend(("row", pl, i) for i, pl in live)
+    else:
+        ent.append(("dim", "just you", None))
+    for title, members in (("ELSEWHERE", ghosts), ("THREADS", threads)):
+        if not members:
+            continue
+        ent.append(("gap", "", None))
+        ent.append(("hdr", f"{title}  {len(members)}", None))
+        ent.extend(("row", pl, i) for i, pl in members)
+    return others, ent
+
+
+def _lobby_row(pl, st, cur):
+    """One roster row: the pick marker, the name, the worn honor, and the
+    badge that says something is waiting on it.
+
+    THE HONOR IS PINNED.  In the old 12-cell column a titled name had to
+    MARQUEE for its ★ to come round into view (honors 2026-07-14); the card
+    has the width to just show it, so a long name loses its TAIL and never
+    its star -- the room still sees who is titled at a glance."""
+    nm = str(pl.get("name", "?"))
+    unread = bool(st) and nm in getattr(st, "unread", set())
+    blocked = bool(st) and nm in getattr(st, "blocked", set())
+    star = " ★" if (pl.get("pet") or {}).get("title") else ""
+    badge = " ✉" if unread else (" ✕" if blocked else "")
+    mark = "▸" if cur else " "
+    room = CARD_W - 2 - cell_len_(star) - cell_len_(badge)
+    txt = _esc(f"{mark} {_fit_cells(nm, room)}{star}{badge}")
+    if cur:
+        return f"[b]{txt}[/]"
+    return f"[dim]{txt}[/]" if (blocked or not pl.get("live", True)) else txt
+
+
+def _lobby_room(app, m, st):
+    """THE ROOM card: who is here, grouped and named."""
+    others, ent = _lobby_entries(m, st)
+    sel = min(max(0, getattr(m, "sel", 0)), max(0, len(others) - 1))
+    rows = 10                      # the list's viewport inside the card:
+    #                                the 14 body rows less name/pet/gap/pick
+    # keep the PICKED row on screen (it is the one ENTER acts on)
+    at = next((n for n, e in enumerate(ent) if e[2] == sel), 0)
+    lo = 0 if len(ent) <= rows else max(0, min(at - rows // 2, len(ent) - rows))
+    out = []
+    for kind, payload, idx in ent[lo:lo + rows]:
+        if kind == "hdr":
+            out.append(f"[b]{_esc(payload)}[/]")
+        elif kind == "dim":
+            out.append(f"[dim]{_esc(payload)}[/]")
+        elif kind == "gap":
+            out.append("")
+        else:
+            out.append(_lobby_row(payload, st, idx == sel))
+    out += [""] * (rows - len(out))
+    # the pick line: what the LCD's last row used to marquee at you
+    if others:
+        pl = others[sel]
+        blurb = m._pet_of(pl["id"]) if pl.get("live", True) else ""
+        tail = blurb or _presence_word(pl)
+        pick = _fit_cells(f"{pl.get('name', '?')} · {tail}", CARD_W)
+    else:
+        pick = "nobody else is on"
+    links = persistence.get_progress().get("connections", 0)
+    ride = _fit_cells(f"{app.pet.name} · {links} link"
+                      + ("s" if links != 1 else ""), CARD_W)
+    card(app, "Lobby", [f"[b]{_esc(_fit_cells(m._last_name or '?', CARD_W))}[/]",
+                        f"[dim]{_esc(ride)}[/]", ""] + out
+                       + [f"[dim]{_esc(pick)}[/]"])
+
+
+def _lobby_action(app, m, st):
+    """THE PICKED TAMER: their dossier and the verbs, standing still.
+
+    These verbs used to live on the LCD's last line, which is 38 cells wide
+    and already had five other jobs -- so "[B]attle [J]og [V/M] PM [X]block
+    [ESC]" MARQUEED past like a news ticker.  A menu you have to wait for is
+    not a menu."""
+    pid, pname, plive = m.action_for
+    blocked = bool(st) and pname in getattr(st, "blocked", set())
+    pl = next((q for q in (getattr(st, "roster", []) or []) if q.get("id") == pid),
+              {"id": pid, "live": plive})
+    dossier = m._pet_of(pid)
+    lines = [f"[b]{_esc(_fit_cells(pname, CARD_W))}[/]",
+             f"[dim]{_esc(_presence_word(pl))}[/]"]
+    for part in wrap(dossier, 2) if dossier else []:
+        lines.append(f"[dim]{_esc(part)}[/]")
+    lines.append("")
+    if blocked:
+        verbs = [("X", "unblock")]
+    elif plive:
+        verbs = [("B", "battle"), ("J", "jogress"), ("V", "open thread"),
+                 ("M", "quick PM"), ("X", "block")]
+    else:
+        from .lobbychat import OFFLINE_ID
+        verbs = ([] if pid == OFFLINE_ID else [("P", "ping")]) \
+            + [("V", "open thread"), ("M", "quick PM"), ("X", "block")]
+    lines += [f"[b]{k}[/]  {_esc(word)}" for k, word in verbs]
+    lines += [""] * max(0, 13 - len(lines))
+    lines.append("[dim]ESC  back[/]")
+    card(app, "Tamer", lines[:14])
+
+
+def _lobby_thread(app, m, st):
+    """THE OPEN THREAD: who you are talking to, and whether they can hear it."""
+    pid, pname = m.dm_peer
+    pl = next((q for q in (getattr(st, "roster", []) or []) if q.get("id") == pid),
+              {"id": pid, "live": False})
+    said = len((getattr(st, "dms", {}) or {}).get(pname, []))
+    here = pl.get("live", True) and any(q.get("id") == pid
+                                        for q in (getattr(st, "roster", []) or []))
+    lines = [f"[b]✉ {_esc(_fit_cells(pname, CARD_W - 2))}[/]",
+             f"[dim]{_esc(_presence_word(pl))}[/]", ""]
+    dossier = m._pet_of(pid)
+    for part in wrap(dossier, 2) if dossier else []:
+        lines.append(f"[dim]{_esc(part)}[/]")
+    lines += ["", f"Said   {said} line" + ("s" if said != 1 else ""),
+              "[dim]thread saved[/]", ""]
+    lines.append("[dim]they read it now[/]" if here
+                 else "[dim]queued till they log in[/]")
+    lines += [""] * max(0, 13 - len(lines))
+    lines.append("[dim]ESC  back to the room[/]")
+    card(app, "Thread", lines[:14])
+
+
+def _lobby_ladder(app, m):
+    """THE SEASON: the LCD page lists the rungs, the card holds YOUR standing."""
+    lad = getattr(m.client, "ladder", None) if m.client else None
+    if not lad:
+        card(app, "Ladder", ["", "[dim]fetching the season…[/]"])
+        return
+    rank, wins = (list(lad.get("you") or (0, 0)) + [0, 0])[:2]
+    days = int(lad.get("days_left") or 0)
+    top = list(lad.get("top") or [])
+    lead = f"{_fit_cells(str(top[0][0]), 12)} · {int(top[0][1])}W" if top else "—"
+    card(app, "Ladder", [
+        f"[b]season {_esc(str(lad.get('season', '?')))}[/]",
+        "[dim]online wins only[/]", "",
+        (f"You    #{rank} · {wins}W" if rank else "You    [dim]unranked[/]"),
+        f"Top    {_esc(lead)}",
+        f"Rungs  {len(top)} filled", "",
+        ("[dim]resets today[/]" if days == 0
+         else f"[dim]resets in {days} day" + ("s" if days != 1 else "") + "[/]")])
+
+
+def _lobby_session(app, m):
+    """A SESSION with no panel of its own: the jogress handshake, or a duel
+    whose arena failed to build.  (A duel that HAS its panel never reaches
+    here -- LobbyPanel.sub hands the card to the BattlePanel.)"""
+    who = m.partner[1] if m.partner else "?"
+    if m.phase == "jogress":
+        res = (m.jresult or {}).get("name")
+        lines = [f"[b]✦ with {_esc(_fit_cells(who, 18))}[/]", ""]
+        if res:
+            lines += [f"[dim]{_esc(_fit_cells(app.pet.name, CARD_W - 2))}[/]",
+                      f"[dim]+ {_esc(_fit_cells(m.partner_species or who, CARD_W - 4))}[/]",
+                      f"[b]→ {_esc(_fit_cells(res, CARD_W - 4))}[/]", ""]
+            lines.append("[dim]both must say yes[/]" if m.j_peer_two_phase
+                         else "[dim]ENTER completes it[/]")
+        elif m.jphase == "failed":
+            lines += wrap(m.fail_reason or "No resonance.", 3)
+        else:
+            lines.append("[dim]syncing DNA…[/]")
+        card(app, "Jogress", lines[:14])
+        return
+    lines = [f"[b]vs {_esc(_fit_cells(who, 22))}[/]",
+             f"[dim]{_esc(_fit_cells(app.pet.name, CARD_W))} stands in[/]", ""]
+    if m.bphase == "over":
+        outcome = m.bt_outcome or "—"          # hoisted, same 3.10/3.11 rule
+        lines += [f"[b]{_esc(_fit_cells(outcome, CARD_W))}[/]"]
+        if m.bt_reward:
+            lines += [f"[dim]{_esc(part)}[/]" for part in wrap(m.bt_reward, 2)]
+    else:
+        oc = m.opp_card or {}
+        lines += [f"You    {m.my_hp}/{m.my_max}",
+                  f"Them   {m.opp_hp}/{m.opp_max}", "",
+                  f"[dim]{_esc(_fit_cells(str(oc.get('name', '?')), 12))}"
+                  f" · {_esc(str(oc.get('stage', '?'))[:9])}[/]"]
+    card(app, "Duel", lines[:14])
+
+
 def lobby(app):
-    """LOBBY: your card and the room."""
+    """LOBBY: the room, and whatever the room is doing right now.
+
+    ONE painter, phase-dispatched -- the card used to print "Here N tamer /
+    Links N / type to chat" through every one of these phases, so a duel, a
+    fusion and an open DM thread all wore the chat lobby's hints (the
+    status-box liveness rule, applied to the last screen that broke it)."""
     m = app.mode
     st = m.state
-    if st is None or getattr(st, "me_id", None) is None:
+    if getattr(m, "phase", None) == "login" or st is None \
+            or getattr(st, "me_id", None) is None:
         card(app, "Lobby", ["", "[dim]connecting…[/]"])
         return
-    roster = list(getattr(st, "roster", []) or [])
-    links = persistence.get_progress().get("connections", 0)
-    card(app, "Lobby", [
-        f"[b]{(m._last_name or '?')[:18]}[/]",
-        f"[dim]{app.pet.name[:14]} rides along[/]", "",
-        f"Here   {len(roster)} tamer" + ("s" if len(roster) != 1 else ""),
-        f"Links  {links} lifetime", "",
-        "[dim]type to chat · ENTER[/]",
-        "[dim]↑↓ pick a tamer[/]"])
+    phase = getattr(m, "phase", "lobby")
+    if phase == "ladder":
+        _lobby_ladder(app, m)
+    elif phase in ("jogress", "battle"):
+        _lobby_session(app, m)
+    elif phase == "dm" and m.dm_peer:
+        _lobby_thread(app, m, st)
+    elif m.action_for is not None:
+        _lobby_action(app, m, st)
+    else:
+        _lobby_room(app, m, st)
 
 
 def help_(app):
