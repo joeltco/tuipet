@@ -1,7 +1,15 @@
 #!/usr/bin/env bash
 # tuipet bug monitor: stream NEW player bug reports off the lobby server.
 # Each new line in bugs.jsonl becomes one notification.
-N=57                       # lines already seen at restart (2026-08-31)
+# Baseline from the LIVE file, not a hardcoded count: a stale N re-fires every
+# report above it (the 2026-10-01 "x" flood would replay 46 lines on every arm).
+N=$(ssh -o ConnectTimeout=15 -o BatchMode=yes root@68.183.59.19 \
+      "wc -l < /opt/tuipet-lobby/bugs.jsonl" 2>/dev/null | tr -d ' ')
+if [ -z "$N" ]; then
+  echo "MONITOR BLIND: cannot reach the lobby to baseline bugs.jsonl — not arming"
+  exit 1
+fi
+echo "MONITOR ARMED: baselined at $N reports in bugs.jsonl"
 FAILS=0
 while true; do
   if OUT=$(ssh -o ConnectTimeout=15 -o BatchMode=yes root@68.183.59.19 \

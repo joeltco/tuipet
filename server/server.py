@@ -43,6 +43,9 @@ HOLDERS_PATH = os.environ.get(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "holders.json"))
 MAX_BUG_TEXT = 2000
 MAX_BUGS_PER_CONN = 5           # a real player files one or two, not a firehose
+MAX_BUGS_PER_IP = 6             # ...and a reconnect must not hand out a fresh five
+BUG_IP_WINDOW = 3600.0          # seconds the per-IP budget covers
+MAX_BUG_IPS = 512               # tracked IPs before expired ones are swept
 MAX_BUG_FILE = 5 * 1024 * 1024  # stop appending past 5MB -- the disk-fill backstop
 
 # ---- admin channel (key-authed): live feed + announcements ------------------
@@ -390,6 +393,40 @@ class Client:
 
 CLIENTS: dict[int, Client] = {}
 
+# Per-IP bug budget.  MAX_BUGS_PER_CONN counts on ONE socket, so one connection
+# per report walked straight through it: 2026-10-01 took 46 reports in 46
+# seconds, every one on its own connection with bugs_sent==1.  nginx hands us
+# the real peer in X-Real-IP; ws.remote_address is always the proxy (127.0.0.1),
+# so keying on that would have pooled every player on earth into one budget.
+_BUG_IPS: dict[str, deque[float]] = {}
+
+
+def _peer_ip(ws):
+    req = getattr(ws, "request", None)
+    if req is not None:
+        for h in ("X-Real-IP", "X-Forwarded-For"):
+            v = req.headers.get(h)
+            if v:
+                return v.split(",")[0].strip()[:64]
+    addr = getattr(ws, "remote_address", None)
+    return str(addr[0])[:64] if addr else "?"
+
+
+def _bug_budget_ok(ip):
+    """True if this IP may file one more report, charging it when it may."""
+    now = time.monotonic()
+    if len(_BUG_IPS) > MAX_BUG_IPS:
+        for k in [k for k, v in _BUG_IPS.items()
+                  if not v or now - v[-1] > BUG_IP_WINDOW]:
+            del _BUG_IPS[k]
+    hits = _BUG_IPS.setdefault(ip, deque())
+    while hits and now - hits[0] > BUG_IP_WINDOW:
+        hits.popleft()
+    if len(hits) >= MAX_BUGS_PER_IP:
+        return False
+    hits.append(now)
+    return True
+
 
 def _clean(s, limit):
     # None must clean to "" -- str(None) minted the literal name "None"
@@ -640,10 +677,18 @@ async def _handle_bug(client, m):
     """Append an anonymous bug report to bugs.jsonl and ack it (no login
     required -- a player hits a bug before they ever open the lobby).
     Abuse-capped (audit 2026-07-10): a few reports per connection, only the
-    known pet fields stored, and the file stops growing past a hard size."""
+    known pet fields stored, and the file stops growing past a hard size.
+    Also per-IP across reconnects (2026-10-01), which is the cap that bites."""
     client.bugs_sent += 1
     text = (str(m.get("text") or "")).strip()[:MAX_BUG_TEXT]
     if not text or client.bugs_sent > MAX_BUGS_PER_CONN:
+        await _send(client, {"t": "bug_ok", "ok": False})
+        return
+    # charged only once the report is real, so empty frames cost nobody a slot
+    ip = _peer_ip(client.ws)
+    if not _bug_budget_ok(ip):
+        LOG.info("bug refused: %s over %d/%ds", ip, MAX_BUGS_PER_IP,
+                 int(BUG_IP_WINDOW))
         await _send(client, {"t": "bug_ok", "ok": False})
         return
     pet = m.get("pet") if isinstance(m.get("pet"), dict) else {}
