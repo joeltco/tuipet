@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.5.351 — NO MORE CRASH AT LAUNCH ON AN OLDER PYTHON. A player on a Ma (2026-10-11)
+
+NO MORE CRASH AT LAUNCH ON AN OLDER PYTHON. A player on a Mac with the stock Python 3.8 had the game die right after it opened, before the egg could hatch: the background check for a newer version, and the cloud save calls, used a helper that only exists from Python 3.9 on. They now use one every Python has. tuipet still asks for Python 3.10 or newer, and that is still the best way to play it.
+
 ## 0.5.350 — YOU CAN CLEAR A CONVERSATION NOW, AND IT STAYS CLEARED. Ever (2026-08-31)
 
 YOU CAN CLEAR A CONVERSATION NOW, AND IT STAYS CLEARED. Every private thread you had ever opened kept a row in the lobby for good — nothing in the game could remove one, and blocking someone did not help, because the mute swept their public lines and left the transcript and its row standing. Pick a name, press D, confirm, and the conversation and its row are gone from your device for good; the person themselves is untouched — if they are in the room they stay in the room, because clearing a thread is not blocking and not a goodbye. It asks first, since there is no undo and no copy anywhere else.

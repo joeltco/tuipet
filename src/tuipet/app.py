@@ -52,6 +52,17 @@ import re as _re
 _NAV_KEYS = frozenset({"up", "down", "left", "right", "j", "k", "h", "l", "tab",
                        "pageup", "pagedown"})
 
+async def _to_thread(fn, *args):
+    """asyncio.to_thread for every python a player actually runs.
+
+    asyncio.to_thread is 3.9+; a macOS player on the stock Xcode python 3.8.9
+    crashed on it at boot (bug report 2026-10-11) -- the update check runs in
+    a worker on launch, so it killed the game before the egg hatched.
+    run_in_executor on the default pool is the same thing on every version."""
+    import asyncio
+    return await asyncio.get_running_loop().run_in_executor(None, fn, *args)
+
+
 HUD_W = 40              # message-box content width (CSS #msg: 44 - 2 border - 2 padding)
 
 
@@ -150,7 +161,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("YOU CAN CLEAR A CONVERSATION NOW, AND IT STAYS CLEARED. Every private thread you had ever opened kept a row in the lobby for good — nothing in the game could remove one, and blocking someone did not help, because the mute swept their public lines and left the transcript and its row standing. Pick a name, press D, confirm, and the conversation and its row are gone from your device for good; the person themselves is untouched — if they are in the room they stay in the room, because clearing a thread is not blocking and not a goodbye. It asks first, since there is no undo and no copy anywhere else.")
+    WHATS_NEW = ("NO MORE CRASH AT LAUNCH ON AN OLDER PYTHON. A player on a Mac with the stock Python 3.8 had the game die right after it opened, before the egg could hatch: the background check for a newer version, and the cloud save calls, used a helper that only exists from Python 3.9 on. They now use one every Python has. tuipet still asks for Python 3.10 or newer, and that is still the best way to play it.")
 
 
     BINDINGS = [
@@ -382,8 +393,7 @@ class TuiPetApp(ActionsMixin, App):
         command.  A failed install says so and hands the command over too; it
         never pretends the update happened.
         """
-        import asyncio
-        latest = await asyncio.to_thread(update_check.latest_if_newer)
+        latest = await _to_thread(update_check.latest_if_newer)
         if not latest:
             return
         if not persistence.get_auto_update():          # the player opted out
@@ -393,7 +403,7 @@ class TuiPetApp(ActionsMixin, App):
             self._update_msg = f"⬆ tuipet {latest} out — {update_check.manual_command()}"
             return
         self._update_msg = f"⬆ installing tuipet {latest}…"
-        ok, _msg = await asyncio.to_thread(update_check.run_upgrade)
+        ok, _msg = await _to_thread(update_check.run_upgrade)
         if ok:
             self._updated_to = latest
             self._update_msg = f"✔ tuipet {latest} installed — restart to play it"
@@ -894,10 +904,9 @@ class TuiPetApp(ActionsMixin, App):
         can't, and a typo'd password must not strand the player on a fresh
         start).  Device-lifetime progress (album, lifetime wins, owned eggs)
         stays local, like canon's device-scoped Shared file."""
-        import asyncio
         old_name, old_pw = persistence.get_account()
         self._verdict("Switching account…")
-        verdict, save = await asyncio.to_thread(
+        verdict, save = await _to_thread(
             cloudsync.probe, _lobby_uri(), name, pw)
         if verdict == "badpw":
             self._verdict("Wrong password for that name.")
@@ -936,14 +945,14 @@ class TuiPetApp(ActionsMixin, App):
                 self._verdict(f"Signed in as {_hud_esc(name)} — this device is current.")
             return
         if old_name:
-            parked = await asyncio.to_thread(        # last-write-wins guarded upload
+            parked = await _to_thread(        # last-write-wins guarded upload
                 cloudsync.push_save, _lobby_uri(), old_name, old_pw,
                 persistence.to_save_dict(self.pet))
             if not parked:
                 # push_save also answers False when the OLD cloud is already
                 # newer (another device carries this pet) -- that counts as
                 # parked.  Distinguish it from a real failed send.
-                cloud = await asyncio.to_thread(
+                cloud = await _to_thread(
                     cloudsync.pull_save, _lobby_uri(), old_name, old_pw)
                 parked = bool(cloud) and (float(cloud.get("_saved_at") or 0)
                                           >= persistence.local_saved_at())
