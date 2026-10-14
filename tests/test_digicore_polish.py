@@ -8,7 +8,7 @@ import pytest
 from rich.cells import cell_len
 from rich.text import Text
 
-from tuipet import data, digicore, evolution, helpscreen, lines, menu, persistence, statusbox
+from tuipet import digicore, evolution, helpscreen, lines, menu, persistence, statusbox
 from tuipet.digicorescreen import DigiCorePanel
 from tuipet.pet import Pet
 
