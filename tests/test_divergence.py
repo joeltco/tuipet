@@ -1,3 +1,4 @@
+import pytest
 """DNA divergence — the wild road ("ultimate v-pet" arc 2026-07-07).
 
 The lines are the raising spine; the corpus graph reaches ~1,454 forms.
@@ -33,6 +34,7 @@ def test_under_threshold_stays_on_chart():
     assert evolution.divergence_target(p) is None
 
 
+@pytest.mark.usefixtures("care_ok")
 def test_armed_steer_picks_the_field_edge():
     """Agumon's graph: DeepSaver -> Coelamon (88), NightmareSoldier ->
     Ogremon (91) -- each the single plain edge in its Field."""
@@ -50,6 +52,7 @@ def test_item_and_special_roads_stay_closed():
         assert evolution.divergence_target(p) is None, f
 
 
+@pytest.mark.usefixtures("care_ok")
 def test_divergence_beats_the_line_and_reanchors():
     """A ver1 Agumon steered DeepSaver lands on Coelamon -- which ver4's
     chart claims, so the pet re-anchors there; the charge is consumed."""
@@ -61,6 +64,7 @@ def test_divergence_beats_the_line_and_reanchors():
     assert sum(p.dna_applied.values()) == 0        # reset_dna consumed the steer
 
 
+@pytest.mark.usefixtures("care_ok")
 def test_wild_landing_leaves_the_charts():
     """Agumon steered MetalEmpire lands on HiCommandramon (1528) -- no chart
     claims it, so the pet goes off-road onto the corpus engine."""
@@ -82,6 +86,7 @@ def test_divergence_roads_maps_the_doors():
     assert not any(t in (116, 117, 118) for t in flat)   # Failed forms excluded
 
 
+@pytest.mark.usefixtures("care_ok")
 def test_dna_screen_surfaces_the_roads():
     """Legibility (arc 2): the Divergence page lists the fields' wild roads,
     the charge page marks road-bearing fields, and arming shows on the tag."""

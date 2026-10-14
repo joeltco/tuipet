@@ -1,3 +1,4 @@
+import pytest
 """Digicore vs DVPet setupDigicore / getDigicoreBackground / EvolSilhouette."""
 from tuipet.pet import Pet
 from tuipet import data
@@ -603,6 +604,7 @@ def _armed_pet():
     return p
 
 
+@pytest.mark.usefixtures("care_ok")
 def test_the_gaze_teases_the_armed_steer_not_the_line():
     from tuipet import digicore, lines
     p = _armed_pet()
@@ -613,6 +615,7 @@ def test_the_gaze_teases_the_armed_steer_not_the_line():
     assert digicore.next_evolution(p) in line_next
 
 
+@pytest.mark.usefixtures("care_ok")
 def test_the_evolves_chart_tops_with_the_armed_row():
     from tuipet import digicore
     p = _armed_pet()
@@ -624,6 +627,7 @@ def test_the_evolves_chart_tops_with_the_armed_row():
     assert len(rows) > 1
 
 
+@pytest.mark.usefixtures("care_ok")
 def test_the_armed_row_wears_its_own_tag_and_sheet():
     from tuipet.digicorescreen import DigiCorePanel
     p = _armed_pet()

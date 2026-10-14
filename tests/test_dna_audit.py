@@ -1,3 +1,4 @@
+import pytest
 """DNA system audit (2026-07-22, own-thing terms: shipped behavior IS the
 spec -- no source-game diffing).  The full battery ran every UI claim
 against the mechanics; nearly everything held.  Fixed: the result page
@@ -158,6 +159,7 @@ def test_the_mash_scene_and_result_blink_animate():
 
 # --- the teachings ride where the player IS (gameplay polish #12-14) ---------
 
+@pytest.mark.usefixtures("care_ok")
 def test_the_charge_screen_shows_both_truths_without_a_marquee():
     """DNA audit 2026-10-14: the road and wipe law are readable together."""
     from tuipet.dnascreen import DNAPanel
@@ -189,6 +191,7 @@ def test_the_dna_home_teaches_the_whole_loop():
     assert "charge ONE Field" in plain and "road" in plain
 
 
+@pytest.mark.usefixtures("care_ok")
 def test_the_hud_carries_the_standing_armed_notice():
     """Gameplay polish #14: an armed steer set hours ago fired with zero
     warning outside the DNA screen.  The idle HUD now carries it -- and

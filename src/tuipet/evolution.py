@@ -421,12 +421,14 @@ def divergence_target(pet):
                 and getattr(pet, "x_antibody", "None") == "None":
             continue        # Induced X-forms stay X-egg territory (LINES_SPEC §4)
         out.append(t)
-    if not out:
+    # DNA RESPECTS CARE (Joel 2026-10-14, design call #1: "B"): the steer
+    # picks only among the Field's forms whose care gates the pet meets.
+    # None qualify -> no steer, and normal evolution decides.  (It used to
+    # fall back to the best-fulfilled edge, so heavy neglect + 8 DNA still
+    # earned the form.)
+    pool = [t for t in out if check(pet, t, roll=False)]
+    if not pool:
         return None
-    # the paid steer always fires: gates pick among qualifiers, else the
-    # best-fulfilled edge (select()'s never-stuck fallback idiom)
-    valid = [t for t in out if check(pet, t)]
-    pool = valid or out
     best = max(fulfilled(pet, t) for t in pool)
     top = [t for t in pool if abs(fulfilled(pet, t) - best) < 1e-9]
     if len(top) > 1:
@@ -470,7 +472,9 @@ def divergence_options(pet):
     if not field or field == "None" or need is None \
             or pet.dna_applied.get(field, 0) < need:
         return []
-    return sorted(set(divergence_roads(pet).get(field, [])))
+    # only the forms the pet's care qualifies for (DNA respects care, 2026-10-14)
+    return sorted(t for t in set(divergence_roads(pet).get(field, []))
+                  if check(pet, t, roll=False))
 
 
 def is_mode_form(num):

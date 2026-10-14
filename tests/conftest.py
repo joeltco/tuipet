@@ -43,6 +43,19 @@ def no_live_lobby(monkeypatch):
     yield
 
 
+@pytest.fixture
+def care_ok(monkeypatch):
+    """The pet's care qualifies for every form (evolution.check passes).  For
+    DNA-steer tests that test something else -- since 2026-10-14 the steer
+    only picks among forms the pet's care qualifies for (Joel's call #1)."""
+    from tuipet import evolution
+    real = evolution.check
+    monkeypatch.setattr(evolution, "check",
+                        lambda pet, num, *a, **kw: True if kw.get("roll") is False
+                        else real(pet, num, *a, **kw))
+    yield
+
+
 @pytest.fixture(autouse=True)
 def weekday_bits(monkeypatch):
     """Pin weekend_bonus to a weekday (x1.0) so every bit-amount pin in the

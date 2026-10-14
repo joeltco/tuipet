@@ -89,6 +89,7 @@ def test_a1_elder_hold_and_growth_window_wording():
     assert "growth held: elder" in fits(DigiCorePanel(p))
 
 
+@pytest.mark.usefixtures("care_ok")
 def test_a1_armed_off_chart_growth_counts_window_without_touching_bank():
     p = pet(192, "ver1")
     assert not lines.evo_rows(p)

@@ -111,6 +111,7 @@ def test_legacy_integral_counts_keep_all_bank_and_uncapped_charge():
     assert set(p.dna_owned) == set(data.DNA_FIELDS)
 
 
+@pytest.mark.usefixtures("care_ok")
 def test_every_armed_preview_is_stable_and_does_not_consume_rng():
     p = pet()
     p.line_id = "ver1"
@@ -142,11 +143,17 @@ def test_off_chart_preview_also_preserves_rng():
     assert random.getstate() == state
 
 
-def test_final_evolution_still_rolls_choice_and_honors_existing_fallback(monkeypatch):
+def test_dna_respects_care_and_still_rolls_the_final_choice(monkeypatch):
+    """Joel 2026-10-14, design call #1 "B": DNA steers only among forms the
+    pet's care qualifies for; none qualify -> no steer (it used to fall back
+    to the best-fulfilled edge anyway)."""
     p = pet()
     p.dna_applied["DragonsRoar"] = 8
-    calls = []
     monkeypatch.setattr(evolution, "check", lambda *a, **kw: False)
+    assert evolution.divergence_target(p) is None
+    assert evolution.divergence_options(p) == []
+    calls = []
+    monkeypatch.setattr(evolution, "check", lambda *a, **kw: True)
     monkeypatch.setattr(evolution, "fulfilled", lambda *a: 0)
     monkeypatch.setattr(evolution, "deviation", lambda *a: 0)
     def choose(options):
@@ -169,6 +176,7 @@ def test_stats_none_to_charge_card_matches_committed_field():
     assert panel.key("enter") == ("done", ("charged", "VirusBuster", 1))
 
 
+@pytest.mark.usefixtures("care_ok")
 def test_dna_card_has_road_progress_instead_of_fake_unlocks():
     p = pet()
     p.dna_applied["DeepSaver"] = 8

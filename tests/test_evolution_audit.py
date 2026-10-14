@@ -189,6 +189,7 @@ def test_the_elder_gate_cannot_strand_a_pet_mid_ladder():
 
 # ---- the two off-chart doors --------------------------------------------
 
+@pytest.mark.usefixtures("care_ok")
 def test_an_armed_field_steers_the_next_evolution_and_clears_its_charge():
     p = _raised()
     fld = p.field if p.field not in ("", "None") else "NatureSpirit"
