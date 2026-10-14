@@ -8,7 +8,7 @@ import pytest
 from rich.cells import cell_len
 from rich.text import Text
 
-from tuipet import digicore, evolution, helpscreen, lines, menu, persistence, statusbox
+from tuipet import data, digicore, evolution, helpscreen, lines, menu, persistence, statusbox
 from tuipet.digicorescreen import DigiCorePanel
 from tuipet.pet import Pet
 
@@ -308,3 +308,14 @@ def test_a9_docs_describe_tuipet_keys_and_existing_clock_truth():
     src = inspect.getsource(digicore)
     assert "is_injured() is hard False" not in src and "adventure\n    # left" not in src
     assert "also ranks corpus" in src
+
+
+@pytest.mark.parametrize("num", [1109, 1111, 1112, 1113, 1129])
+def test_item_and_mode_only_forms_show_no_growth_countdown(num):
+    """VB audit 2026-10-14: these evolve only by a Beast Spirit item, or (antibody-
+    less Bolgmon) by Mode/X -- the core must not count a timer that never fires."""
+    from tuipet.pet import Pet
+    rec = data.load_sprites()[1][num]
+    p = Pet(num=num, name=rec["name"], stage=rec["stage"], attribute="Vaccine")
+    assert not digicore.has_timed_next(p)
+    assert digicore.growth_clock(p) is None and not digicore.growth_pending(p)

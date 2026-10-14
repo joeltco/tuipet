@@ -34,6 +34,32 @@ def has_next(pet):
     return bool(data.load_evolutions().get(pet.num))
 
 
+def has_timed_next(pet):
+    """Can the growth TIMER evolve this pet?  Line pets: their chart rows.
+    Off-chart pets: a corpus target the timer may select -- not an item door,
+    not a Mode/Death/Xros/Fusion special, not an Induced X-form without the
+    antibody.  (VB audit 2026-10-14: Blitzmon/Ranamon/Arbormon/Mercuremon
+    evolve only by their Beast Spirit and antibody-less Bolgmon only by Mode
+    or X; the core counted a growth window that never comes.)"""
+    if lines.active(pet):
+        return bool(lines.evo_rows(pet))
+    reqs = data.load_requirements()
+    _, by_num = data.load_sprites()
+    for t in data.load_evolutions().get(pet.num, []):
+        rec, req = by_num.get(t), reqs.get(t, {})
+        if rec is None or t == pet.num or rec["stage"] == pet.stage:
+            continue
+        if req.get("evol_item", -1) != -1:
+            continue
+        if req.get("special", "None") in ("Mode", "Death", "Xros", "Fusion"):
+            continue
+        if req.get("xantibody", "None") == "Induced" \
+                and getattr(pet, "x_antibody", "None") == "None":
+            continue
+        return True
+    return False
+
+
 def growth_clock(pet):
     """The existing hatch/growth window, or None for an untimed final form."""
     # DigiCore audit 2026-10-14: Godzilla has a finite Mega window; other
@@ -41,7 +67,7 @@ def growth_clock(pet):
     if pet.num == -1:
         return pet.EGG_DURATION
     growth = pet._evolve_after()
-    onward = has_next(pet) or bool(evolution.divergence_options(pet))
+    onward = has_timed_next(pet) or bool(evolution.divergence_options(pet))
     return growth if growth < 9e8 and onward else None
 
 
