@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.3 — FAIR SHOPS. Grow Capsules are boss prizes now (maps 7 and 23 (2026-10-14)
+
+FAIR SHOPS. Grow Capsules are boss prizes now (maps 7 and 23), one per stage. Evolution relics need a ready body, deals are 25% off everyday goods, each town prices its own shelf, and the money loops are closed.
+
 ## 0.6.2 — SHARPER SHOTS. Chibi Godzilla's fireball shows its hot core, (2026-10-14)
 
 SHARPER SHOTS. Chibi Godzilla's fireball shows its hot core, Mugendramon M fires a real burst instead of a black block, and Frozomon throws Frigimon's snowball instead of a blank square.
