@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.12 — CARE POLISH. Overfeeding no longer counts as a care mistake, (2026-10-14)
+
+CARE POLISH. Overfeeding no longer counts as a care mistake, a rescued pet no longer dies the next second, care progress survives a restart, and the home hints always name a fix you can actually do.
+
 ## 0.6.11 — MENU POLISH. Every menu now tells the truth (2026-10-14)
 
 MENU POLISH. Every menu now tells the truth: help text matches the rules, cards name the right keys, shop limits are shown before you buy, and long names and big numbers fit their boxes.
