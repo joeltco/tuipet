@@ -1113,3 +1113,20 @@ godzilla,Mega,1648,1640,"CM 0-1, GC 352+, BTL 15+, WIN 12/15",23:00,Mugendramon 
 godzilla,Mega,1649,1640,"CM 0-1, GC 0-351, BTL 15+, WIN 12/15 | CM 2-3, BTL 15+, WIN 12/15",23:00,Mechagodzilla
 godzilla,Mega,1649,1641,"CM 0-2, BTL 15+, WIN 12/15",23:00,Mechagodzilla
 godzilla,Mega,1650,1644,"FRAG, CM 0-2, BTL 15+, WIN 12/15",23:00,Burning Godzilla (VI+)
+vbe,Fresh,1603,egg,TIME,20:00,"Mokumon (official Volcanic Beat DIM card, humulos vbdm/vol)"
+vbe,InTraining,21,1603,TIME,21:00,Peti Meramon
+vbe,Rookie,489,21,TIME,21:00,Vorvomon
+vbe,Champion,97,489,"TR 10+, LV 4+, BTL 8+",22:00,Birdramon
+vbe,Champion,124,489,"TR 8+, LV 3+, BTL 5+",22:00,Tyranomon
+vbe,Champion,498,489,"TR 5+, LV 2+, BTL 3+",22:00,Lavorvomon
+vbe,Champion,95,489,TIME,22:00,Meramon
+vbe,Ultimate,267,97;124,"TR 12+, LV 6+, BTL 15+, WIN 11/15",23:00,Master Tyranomon
+vbe,Ultimate,390,95;498,"TR 12+, LV 6+, BTL 15+, WIN 11/15",23:00,Flaremon
+vbe,Ultimate,217,95;124,"TR 10+, LV 5+, BTL 10+, WIN 5/10",23:00,Death Meramon
+vbe,Ultimate,424,97;498,"TR 10+, LV 5+, BTL 10+, WIN 5/10",23:00,Volcamon
+vbe,Ultimate,503,97;498,"TR 8+, LV 4+, BTL 10+, WIN 5/10",23:00,Lavogaritamon
+vbe,Ultimate,250,95;124,"TR 8+, LV 4+, BTL 10+, WIN 5/10",23:00,Groundramon
+vbe,Mega,724,390;217;424,"TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",23:00,Ancient Volcamon
+vbe,Mega,635,390;217;250,"TR 20+, LV 7+, BTL 20+, WIN 14/20",23:00,Marsmon
+vbe,Mega,507,267;424;503,"TR 15+, LV 6+, BTL 15+, WIN 11/15",23:00,Volcanicdramon
+vbe,Mega,1243,267;503;250,"TR 10+, LV 6+, BTL 15+, WIN 8/15",23:00,Cannondramon

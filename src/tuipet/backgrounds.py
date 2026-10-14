@@ -151,6 +151,7 @@ EGG_BG = {
     45: "datatunnel",    # Kera Digitama (h: Hard Disk)
     46: "city",          # Godzilla Egg (* the kaiju come ashore at the city --
                          #   the device's G-Cell scenes end "Inside City")
+    47: "volcano",       # Volcanic Beat Egg (VB DIM card; its egg unlocks on the Volcano road)
 }
 
 

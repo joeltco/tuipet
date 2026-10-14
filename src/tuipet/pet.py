@@ -368,6 +368,10 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
         croot, lid = lines_mod.canonical_root(target)
         if croot is not None:
             target = croot
+        bound = egg_mod.hatch_line(self.egg_type)
+        line = lines_mod.load_lines().get(bound) if bound else None
+        if line is not None and line["root"] == target:
+            lid = bound                       # the egg names its chart (shared baby)
         self.evolve_to(target)
         self.line_id = lid                    # binds the pet to its line for life
         self.hatching = False

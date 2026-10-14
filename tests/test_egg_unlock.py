@@ -116,8 +116,10 @@ def test_no_egg_gated_on_an_unmodeled_system():
     for idx, rule in rules.items():
         if rule["start"]:
             continue
-        if any(rule[k] is not None for k in ("food", "item", "habitat", "zone")):
-            stranded.append((idx, [k for k in ("food", "item", "habitat", "zone")
+        # (zone is MODELED since 2026-10-15: one adventure map's boss cleared,
+        #  the Volcanic Beat egg's gate -- egg._conditions_met)
+        if any(rule[k] is not None for k in ("food", "item", "habitat")):
+            stranded.append((idx, [k for k in ("food", "item", "habitat")
                                    if rule[k] is not None]))
     assert not stranded, f"eggs gated on unmodeled systems (permanently locked): {stranded}"
 

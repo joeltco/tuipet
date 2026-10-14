@@ -27,6 +27,17 @@ def _real_eggs():
         return None
 
 
+def hatch_line(egg_type=0):
+    """The line an egg EXPLICITLY binds its hatchling to ('' = derive it from
+    the hatch root).  Two eggs can share a baby -- the Volcanic Beat and the
+    Nightmare Soldiers eggs both hatch Mokumon -- so the root alone can't say
+    which chart the pet belongs to (2026-10-15)."""
+    eggs = _real_eggs()
+    if not eggs or not (0 <= egg_type < len(eggs)):
+        return ""
+    return str(eggs[egg_type].get("hatch_line") or "")
+
+
 def frames(egg_type=0):
     """Real Digitama egg (spritesEgg0.png, the Egg-stage creature sheet): the 3 real
     DVPet frames -- [0] idle egg, [1] settle/bulge, [2] cracked-open (shell breaks,
@@ -177,12 +188,22 @@ def _conditions_met(rule, prog):
         return False
     if rule["mood"] is not None and prog["last_mood"] < rule["mood"]:
         return False
-    # gates tuipet does not model -> egg stays locked (food/item/habitat used, or
-    # the fine-grained per-zone boss slot -- region-boss clears use rule["map"])
+    # gates tuipet does not model -> egg stays locked (food/item/habitat used)
     if rule["food"] is not None or rule["item"] is not None or rule["habitat"] is not None:
         return False
+    # the ZoneEnemyBeat slot = ONE adventure map's boss cleared (0-based index
+    # into the 30-map world; Volcanic Beat egg, 2026-10-14).  A cleared AREA
+    # implies its maps too (maps unlock in order), so saves from before the
+    # per-map record still count.  Anything non-numeric stays locked.
     if rule["zone"] is not None:
-        return False
+        try:
+            mi = int(str(rule["zone"]).split(":")[0])
+        except ValueError:
+            return False
+        areas = prog.get("maps", ()) or ()
+        if mi not in (prog.get("maps_cleared", ()) or ()) \
+                and not any(6 * (a + 1) > mi for a in areas):
+            return False
     return True
 
 

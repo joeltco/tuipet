@@ -589,6 +589,9 @@ class AdventurePanel(menu.SubHost):
             if out == "won":
                 unlocked = adventure.record_win(self.pet, self.adv.zone)   # progression
                 from . import persistence              # profile signals: unlocks
+                zi = adventure.zone_index(self.adv.zone)
+                if zi is not None:
+                    persistence.map_cleared_add(zi)    # map-specific egg gates
                 area = self.adv.zone.get("map")
                 area_done = (unlocked and area is not None
                              and adventure.is_map_cleared(self.pet, area))

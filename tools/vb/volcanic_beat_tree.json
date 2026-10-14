@@ -1,0 +1,1373 @@
+{
+  "card": "VOLCANIC BEAT",
+  "line_id": "vbe",
+  "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor",
+  "source_kind": "Saved Humulos HTML; live page checked 2026-10-14",
+  "requirements_scope": "Each listed icon is AND; N/A means no constraint. No icons on I-II-III. No attribute Jogress inferred as connector edges.",
+  "source_hashes": {
+    "_astra/vbdm_vol.html": "281985d9690c848254c015a041f6422dabe5aedec78181b7a0fbdb3ff6394eb1",
+    "src/tuipet/data/digimon.csv": "445e7c04bcb13e3fe3106ca8d75591aac6484c244a819d64f6929ed1de0e9f25",
+    "src/tuipet/data/sprites.json.gz": "e275515239cd5a278dadf9deef5cf7a50d0e6fab3c7c3eee5724ffed3d6b354d",
+    "src/tuipet/data/lines.csv": "9b4371292058d90cc06772268267888f983173eb698fa16ddead5bba72693a42",
+    "LINES_SPEC.md": "d5bdcdf61107589bbb8e3b6cc39fc48e4867949e34f4c2dc2dd8e3904f73d8a9"
+  },
+  "node_count": 17,
+  "edge_count": 30,
+  "nodes": [
+    {
+      "slug": "moku",
+      "name": "Mokumon",
+      "stage": "I",
+      "tuipet_stage": "Fresh",
+      "attribute": "None",
+      "parents": [],
+      "connector_classes": [],
+      "requirements": [],
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor",
+      "source_locator": "#vbe baby column",
+      "device_generic_time_to_next_stage_quote": "1 Hour",
+      "device_time_source": "https://humulos.com/digimon/vbdm/#faq",
+      "device_time_note": "Generic FAQ table, not an additional connector or promise of onward evolution; VI is terminal on this card.",
+      "dex_num": 1603,
+      "proposed_rule": "TIME"
+    },
+    {
+      "slug": "petimera",
+      "name": "Peti Meramon",
+      "stage": "II",
+      "tuipet_stage": "InTraining",
+      "attribute": "None",
+      "parents": [
+        "moku"
+      ],
+      "connector_classes": [
+        "vbe_moku_lineOut"
+      ],
+      "requirements": [],
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor",
+      "source_locator": "#vbe_petimera_Req_column",
+      "device_generic_time_to_next_stage_quote": "3 Hours",
+      "device_time_source": "https://humulos.com/digimon/vbdm/#faq",
+      "device_time_note": "Generic FAQ table, not an additional connector or promise of onward evolution; VI is terminal on this card.",
+      "connector_note": "Unbranched adjacent stage columns; preceding horizontal lineOut, no requirement text.",
+      "dex_num": 21,
+      "proposed_rule": "TIME"
+    },
+    {
+      "slug": "vorvo",
+      "name": "Vorvomon",
+      "stage": "III",
+      "tuipet_stage": "Rookie",
+      "attribute": "Virus",
+      "parents": [
+        "petimera"
+      ],
+      "connector_classes": [
+        "vbe_petimera_lineOut"
+      ],
+      "requirements": [],
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor",
+      "source_locator": "#vbe child column",
+      "device_generic_time_to_next_stage_quote": "16 Hours",
+      "device_time_source": "https://humulos.com/digimon/vbdm/#faq",
+      "device_time_note": "Generic FAQ table, not an additional connector or promise of onward evolution; VI is terminal on this card.",
+      "connector_note": "Unbranched adjacent stage columns; preceding horizontal lineOut, no requirement text.",
+      "dex_num": 489,
+      "proposed_rule": "TIME"
+    },
+    {
+      "slug": "birdra",
+      "name": "Birdramon",
+      "stage": "IV",
+      "tuipet_stage": "Champion",
+      "attribute": "Vaccine",
+      "parents": [
+        "vorvo"
+      ],
+      "connector_classes": [
+        "vbe_vorvo_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "1,300+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor",
+      "source_locator": "#vbe_birdra_Req_column",
+      "device_generic_time_to_next_stage_quote": "24 Hours",
+      "device_time_source": "https://humulos.com/digimon/vbdm/#faq",
+      "device_time_note": "Generic FAQ table, not an additional connector or promise of onward evolution; VI is terminal on this card.",
+      "dex_num": 97,
+      "proposed_rule": "TR 10+, LV 4+, BTL 8+"
+    },
+    {
+      "slug": "mera",
+      "name": "Meramon",
+      "stage": "IV",
+      "tuipet_stage": "Champion",
+      "attribute": "Data",
+      "parents": [
+        "vorvo"
+      ],
+      "connector_classes": [
+        "vbe_vorvo_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor",
+      "source_locator": "#vbe_mera_Req_column",
+      "device_generic_time_to_next_stage_quote": "24 Hours",
+      "device_time_source": "https://humulos.com/digimon/vbdm/#faq",
+      "device_time_note": "Generic FAQ table, not an additional connector or promise of onward evolution; VI is terminal on this card.",
+      "dex_num": 95,
+      "proposed_rule": "TIME"
+    },
+    {
+      "slug": "tyrano",
+      "name": "Tyranomon",
+      "stage": "IV",
+      "tuipet_stage": "Champion",
+      "attribute": "Data",
+      "parents": [
+        "vorvo"
+      ],
+      "connector_classes": [
+        "vbe_vorvo_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "900+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "5+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor",
+      "source_locator": "#vbe_tyrano_Req_column",
+      "device_generic_time_to_next_stage_quote": "24 Hours",
+      "device_time_source": "https://humulos.com/digimon/vbdm/#faq",
+      "device_time_note": "Generic FAQ table, not an additional connector or promise of onward evolution; VI is terminal on this card.",
+      "dex_num": 124,
+      "proposed_rule": "TR 8+, LV 3+, BTL 5+"
+    },
+    {
+      "slug": "lavorvo",
+      "name": "Lavorvomon",
+      "stage": "IV",
+      "tuipet_stage": "Champion",
+      "attribute": "Virus",
+      "parents": [
+        "vorvo"
+      ],
+      "connector_classes": [
+        "vbe_vorvo_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "5+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "600+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "3+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor",
+      "source_locator": "#vbe_lavorvo_Req_column",
+      "device_generic_time_to_next_stage_quote": "24 Hours",
+      "device_time_source": "https://humulos.com/digimon/vbdm/#faq",
+      "device_time_note": "Generic FAQ table, not an additional connector or promise of onward evolution; VI is terminal on this card.",
+      "dex_num": 498,
+      "proposed_rule": "TR 5+, LV 2+, BTL 3+"
+    },
+    {
+      "slug": "mastertyrano",
+      "name": "Master Tyranomon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Vaccine",
+      "parents": [
+        "birdra",
+        "tyrano"
+      ],
+      "connector_classes": [
+        "vbe_birdra_line",
+        "vbe_tyrano_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor",
+      "source_locator": "#vbe_mastertyrano_Req_column",
+      "device_generic_time_to_next_stage_quote": "24 Hours",
+      "device_time_source": "https://humulos.com/digimon/vbdm/#faq",
+      "device_time_note": "Generic FAQ table, not an additional connector or promise of onward evolution; VI is terminal on this card.",
+      "dex_num": 267,
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15"
+    },
+    {
+      "slug": "flare",
+      "name": "Flaremon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Vaccine",
+      "parents": [
+        "mera",
+        "lavorvo"
+      ],
+      "connector_classes": [
+        "vbe_mera_line",
+        "vbe_lavorvo_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor",
+      "source_locator": "#vbe_flare_Req_column",
+      "device_generic_time_to_next_stage_quote": "24 Hours",
+      "device_time_source": "https://humulos.com/digimon/vbdm/#faq",
+      "device_time_note": "Generic FAQ table, not an additional connector or promise of onward evolution; VI is terminal on this card.",
+      "dex_num": 390,
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15"
+    },
+    {
+      "slug": "deathmera",
+      "name": "Death Meramon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Data",
+      "parents": [
+        "mera",
+        "tyrano"
+      ],
+      "connector_classes": [
+        "vbe_mera_line",
+        "vbe_tyrano_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor",
+      "source_locator": "#vbe_deathmera_Req_column",
+      "device_generic_time_to_next_stage_quote": "24 Hours",
+      "device_time_source": "https://humulos.com/digimon/vbdm/#faq",
+      "device_time_note": "Generic FAQ table, not an additional connector or promise of onward evolution; VI is terminal on this card.",
+      "dex_num": 217,
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10"
+    },
+    {
+      "slug": "volca",
+      "name": "Volcamon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Data",
+      "parents": [
+        "birdra",
+        "lavorvo"
+      ],
+      "connector_classes": [
+        "vbe_birdra_line",
+        "vbe_lavorvo_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor",
+      "source_locator": "#vbe_volca_Req_column",
+      "device_generic_time_to_next_stage_quote": "24 Hours",
+      "device_time_source": "https://humulos.com/digimon/vbdm/#faq",
+      "device_time_note": "Generic FAQ table, not an additional connector or promise of onward evolution; VI is terminal on this card.",
+      "dex_num": 424,
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10"
+    },
+    {
+      "slug": "lavogarita",
+      "name": "Lavogaritamon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Virus",
+      "parents": [
+        "birdra",
+        "lavorvo"
+      ],
+      "connector_classes": [
+        "vbe_birdra_line",
+        "vbe_lavorvo_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor",
+      "source_locator": "#vbe_lavogarita_Req_column",
+      "device_generic_time_to_next_stage_quote": "24 Hours",
+      "device_time_source": "https://humulos.com/digimon/vbdm/#faq",
+      "device_time_note": "Generic FAQ table, not an additional connector or promise of onward evolution; VI is terminal on this card.",
+      "dex_num": 503,
+      "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10"
+    },
+    {
+      "slug": "groundra",
+      "name": "Groundramon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Virus",
+      "parents": [
+        "mera",
+        "tyrano"
+      ],
+      "connector_classes": [
+        "vbe_mera_line",
+        "vbe_tyrano_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor",
+      "source_locator": "#vbe_groundra_Req_column",
+      "device_generic_time_to_next_stage_quote": "24 Hours",
+      "device_time_source": "https://humulos.com/digimon/vbdm/#faq",
+      "device_time_note": "Generic FAQ table, not an additional connector or promise of onward evolution; VI is terminal on this card.",
+      "dex_num": 250,
+      "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10"
+    },
+    {
+      "slug": "mars",
+      "name": "Marsmon",
+      "stage": "VI",
+      "tuipet_stage": "Mega",
+      "attribute": "Vaccine",
+      "parents": [
+        "flare",
+        "deathmera",
+        "groundra"
+      ],
+      "connector_classes": [
+        "vbe_flare_line",
+        "vbe_deathmera_line",
+        "vbe_groundra_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "5,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor",
+      "source_locator": "#vbe_mars_Req_column",
+      "device_generic_time_to_next_stage_quote": "3 Hours",
+      "device_time_source": "https://humulos.com/digimon/vbdm/#faq",
+      "device_time_note": "Generic FAQ table, not an additional connector or promise of onward evolution; VI is terminal on this card.",
+      "dex_num": 635,
+      "proposed_rule": "TR 20+, LV 7+, BTL 20+, WIN 14/20"
+    },
+    {
+      "slug": "cannondra",
+      "name": "Cannondramon",
+      "stage": "VI",
+      "tuipet_stage": "Mega",
+      "attribute": "Data",
+      "parents": [
+        "mastertyrano",
+        "lavogarita",
+        "groundra"
+      ],
+      "connector_classes": [
+        "vbe_mastertyrano_line",
+        "vbe_lavogarita_line",
+        "vbe_groundra_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor",
+      "source_locator": "#vbe_cannondra_Req_column",
+      "device_generic_time_to_next_stage_quote": "3 Hours",
+      "device_time_source": "https://humulos.com/digimon/vbdm/#faq",
+      "device_time_note": "Generic FAQ table, not an additional connector or promise of onward evolution; VI is terminal on this card.",
+      "dex_num": 1243,
+      "proposed_rule": "TR 10+, LV 6+, BTL 15+, WIN 8/15"
+    },
+    {
+      "slug": "volcanicdra",
+      "name": "Volcanicdramon",
+      "stage": "VI",
+      "tuipet_stage": "Mega",
+      "attribute": "Virus",
+      "parents": [
+        "mastertyrano",
+        "volca",
+        "lavogarita"
+      ],
+      "connector_classes": [
+        "vbe_mastertyrano_line",
+        "vbe_volca_line",
+        "vbe_lavogarita_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor",
+      "source_locator": "#vbe_volcanicdra_Req_column",
+      "device_generic_time_to_next_stage_quote": "3 Hours",
+      "device_time_source": "https://humulos.com/digimon/vbdm/#faq",
+      "device_time_note": "Generic FAQ table, not an additional connector or promise of onward evolution; VI is terminal on this card.",
+      "dex_num": 507,
+      "proposed_rule": "TR 15+, LV 6+, BTL 15+, WIN 11/15"
+    },
+    {
+      "slug": "ancientvolca",
+      "name": "Ancient Volcamon",
+      "stage": "VI",
+      "tuipet_stage": "Mega",
+      "attribute": "Virus",
+      "parents": [
+        "flare",
+        "deathmera",
+        "volca"
+      ],
+      "connector_classes": [
+        "vbe_flare_line",
+        "vbe_deathmera_line",
+        "vbe_volca_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "7,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "25+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        },
+        {
+          "label_quote": "Special unlock",
+          "value_quote": "Stage 15 Cleared"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor",
+      "source_locator": "#vbe_ancientvolca_Req_column",
+      "device_generic_time_to_next_stage_quote": "3 Hours",
+      "device_time_source": "https://humulos.com/digimon/vbdm/#faq",
+      "device_time_note": "Generic FAQ table, not an additional connector or promise of onward evolution; VI is terminal on this card.",
+      "dex_num": 724,
+      "proposed_rule": "TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14"
+    }
+  ],
+  "edges": [
+    {
+      "parent": "moku",
+      "child": "petimera",
+      "connector_class": "vbe_moku_lineOut",
+      "requirements": [],
+      "proposed_rule": "TIME",
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor"
+    },
+    {
+      "parent": "petimera",
+      "child": "vorvo",
+      "connector_class": "vbe_petimera_lineOut",
+      "requirements": [],
+      "proposed_rule": "TIME",
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor"
+    },
+    {
+      "parent": "vorvo",
+      "child": "birdra",
+      "connector_class": "vbe_vorvo_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "1,300+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 4+, BTL 8+",
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor"
+    },
+    {
+      "parent": "vorvo",
+      "child": "mera",
+      "connector_class": "vbe_vorvo_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "proposed_rule": "TIME",
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor"
+    },
+    {
+      "parent": "vorvo",
+      "child": "tyrano",
+      "connector_class": "vbe_vorvo_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "900+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "5+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 3+, BTL 5+",
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor"
+    },
+    {
+      "parent": "vorvo",
+      "child": "lavorvo",
+      "connector_class": "vbe_vorvo_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "5+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "600+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "3+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "proposed_rule": "TR 5+, LV 2+, BTL 3+",
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor"
+    },
+    {
+      "parent": "birdra",
+      "child": "mastertyrano",
+      "connector_class": "vbe_birdra_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor"
+    },
+    {
+      "parent": "tyrano",
+      "child": "mastertyrano",
+      "connector_class": "vbe_tyrano_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor"
+    },
+    {
+      "parent": "mera",
+      "child": "flare",
+      "connector_class": "vbe_mera_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor"
+    },
+    {
+      "parent": "lavorvo",
+      "child": "flare",
+      "connector_class": "vbe_lavorvo_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor"
+    },
+    {
+      "parent": "mera",
+      "child": "deathmera",
+      "connector_class": "vbe_mera_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor"
+    },
+    {
+      "parent": "tyrano",
+      "child": "deathmera",
+      "connector_class": "vbe_tyrano_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor"
+    },
+    {
+      "parent": "birdra",
+      "child": "volca",
+      "connector_class": "vbe_birdra_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor"
+    },
+    {
+      "parent": "lavorvo",
+      "child": "volca",
+      "connector_class": "vbe_lavorvo_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor"
+    },
+    {
+      "parent": "birdra",
+      "child": "lavogarita",
+      "connector_class": "vbe_birdra_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor"
+    },
+    {
+      "parent": "lavorvo",
+      "child": "lavogarita",
+      "connector_class": "vbe_lavorvo_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor"
+    },
+    {
+      "parent": "mera",
+      "child": "groundra",
+      "connector_class": "vbe_mera_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor"
+    },
+    {
+      "parent": "tyrano",
+      "child": "groundra",
+      "connector_class": "vbe_tyrano_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor"
+    },
+    {
+      "parent": "flare",
+      "child": "mars",
+      "connector_class": "vbe_flare_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "5,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 7+, BTL 20+, WIN 14/20",
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor"
+    },
+    {
+      "parent": "deathmera",
+      "child": "mars",
+      "connector_class": "vbe_deathmera_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "5,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 7+, BTL 20+, WIN 14/20",
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor"
+    },
+    {
+      "parent": "groundra",
+      "child": "mars",
+      "connector_class": "vbe_groundra_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "5,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 7+, BTL 20+, WIN 14/20",
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor"
+    },
+    {
+      "parent": "mastertyrano",
+      "child": "cannondra",
+      "connector_class": "vbe_mastertyrano_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 6+, BTL 15+, WIN 8/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor"
+    },
+    {
+      "parent": "lavogarita",
+      "child": "cannondra",
+      "connector_class": "vbe_lavogarita_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 6+, BTL 15+, WIN 8/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor"
+    },
+    {
+      "parent": "groundra",
+      "child": "cannondra",
+      "connector_class": "vbe_groundra_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 6+, BTL 15+, WIN 8/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor"
+    },
+    {
+      "parent": "mastertyrano",
+      "child": "volcanicdra",
+      "connector_class": "vbe_mastertyrano_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 15+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor"
+    },
+    {
+      "parent": "volca",
+      "child": "volcanicdra",
+      "connector_class": "vbe_volca_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 15+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor"
+    },
+    {
+      "parent": "lavogarita",
+      "child": "volcanicdra",
+      "connector_class": "vbe_lavogarita_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 15+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor"
+    },
+    {
+      "parent": "flare",
+      "child": "ancientvolca",
+      "connector_class": "vbe_flare_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "7,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "25+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        },
+        {
+          "label_quote": "Special unlock",
+          "value_quote": "Stage 15 Cleared"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor"
+    },
+    {
+      "parent": "deathmera",
+      "child": "ancientvolca",
+      "connector_class": "vbe_deathmera_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "7,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "25+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        },
+        {
+          "label_quote": "Special unlock",
+          "value_quote": "Stage 15 Cleared"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor"
+    },
+    {
+      "parent": "volca",
+      "child": "ancientvolca",
+      "connector_class": "vbe_volca_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "7,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "25+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        },
+        {
+          "label_quote": "Special unlock",
+          "value_quote": "Stage 15 Cleared"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",
+      "source": "https://humulos.com/digimon/vbdm/vol/#vbe_anchor"
+    }
+  ]
+}

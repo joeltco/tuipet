@@ -345,6 +345,13 @@ def map_complete_add(map_index):
     _note_set("maps", int(map_index))
 
 
+def map_cleared_add(map_index):
+    """One adventure MAP's boss cleared (0-based index into the 30-map world).
+    `maps` holds whole AREAS (6 maps each); a map-specific egg gate needs the
+    map itself (Volcanic Beat egg = the Volcano road, 2026-10-14)."""
+    _note_set("maps_cleared", int(map_index))
+
+
 def zone_best_set(zone_index, score):
     """Record an adventure run's SCORE against the zone's standing best
     (arcade arc, 2026-07-21).  Returns True when it's a NEW best -- the
@@ -657,6 +664,7 @@ def get_progress():
         "max_stage": int(prog.get("max_stage", 0)),
         "xanti_ever": bool(prog.get("xanti_ever", False)),
         "maps": set(prog.get("maps", [])),
+        "maps_cleared": set(prog.get("maps_cleared", [])),
         "raids": int(prog.get("raids", 0)),
         "tourneys": set(prog.get("tourneys", [])),
         "last_field": last.get("field", "None"),
@@ -685,7 +693,7 @@ def get_progress():
 # The one-slot live values (last_gen, digimemory, bonus_seed, title_worn) are
 # deliberately NOT here: they are current state, not earned history, and no
 # merge of them is lose-nothing.  Deciding those is a design call, not this fix.
-_PROG_SETS = ("album", "eggs_owned", "titles_owned", "connections", "maps",
+_PROG_SETS = ("album", "eggs_owned", "titles_owned", "connections", "maps", "maps_cleared",
               "tourneys", "festivals", "eggs_announced", "ladder_claimed",
               "shop_unlocks")
 _PROG_MAXES = ("wins", "mega_kills", "armor_evos", "raids",

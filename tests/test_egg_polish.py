@@ -99,3 +99,24 @@ def test_retirement_cannot_reset_profile_daily_egg_limit():
     assert app.pet.bits == 40000
     assert app.pet.town_bought == ledger
     assert second not in persistence.get_eggs_owned()
+
+
+def test_volcanic_beat_egg_hatches_its_own_line_and_opens_on_the_volcano_road():
+    """Joel 2026-10-15: the official Volcanic Beat DIM card as an egg line,
+    earned by clearing the Volcano road (map 21, index 20)."""
+    from tuipet import adventure, data, egg, lines
+    idx = next(i for i in range(egg.count()) if egg.hatch_name(i) == "Volcanic Beat Egg")
+    assert adventure.MAPS[20]["scene"] == "volcano"
+    rule = data.load_egg_unlock()[idx]
+    base = {"maps": set(), "maps_cleared": set(), "raids": 0}
+    prog = dict(persistence.get_progress(), **base)
+    assert not egg._conditions_met(rule, prog)
+    prog["maps_cleared"] = {20}
+    assert egg._conditions_met(rule, prog)
+    prog.update(maps_cleared=set(), maps={3})          # area 4 cleared = maps 19-24
+    assert egg._conditions_met(rule, prog)
+    p = Pet.new_egg(egg_type=idx)
+    p._hatch_into_fresh()
+    assert p.num == 1603 and p.line_id == "vbe" and lines.active(p)
+    v = lines.load_lines()["vbe"]
+    assert len(v["members"]) == 17

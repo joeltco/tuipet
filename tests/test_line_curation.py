@@ -13,6 +13,9 @@ STAGES = ["Fresh", "InTraining", "Rookie", "Champion", "Ultimate", "Mega"]
 # design; ver1's Betamon road + the ver2-verE canon rewrite, 2026-07-07 --
 # every device line now matches its humulos DM20 chart)
 DECLARED_EDGES = {
+    # vbe -- the official Volcanic Beat DIM card's connectors the corpus graph
+    # never carried (humulos vbdm/vol; Joel approved the line 2026-10-15)
+    (97, 267), (124, 217), (97, 424), (95, 250), (250, 635), (424, 507), (390, 724), (217, 724), (424, 724),
     (29, 95), (29, 102), (31, 87), (31, 91), (33, 94), (33, 115),
     (34, 101), (34, 136), (34, 140), (35, 94), (35, 114), (35, 148),
     (37, 90), (37, 95), (37, 102), (43, 101), (43, 109), (43, 136),
