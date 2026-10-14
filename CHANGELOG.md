@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.8 — ERASE MEANS ERASE. Erase all data now wipes your cloud save  (2026-10-14)
+
+ERASE MEANS ERASE. Erase all data now wipes your cloud save too, so signing back in starts fresh instead of bringing the old pet back.
+
 ## 0.6.7 — STEADIER UPDATES. The game loads all its data at launch, so  (2026-10-14)
 
 STEADIER UPDATES. The game loads all its data at launch, so a background update can no longer crash the session you are playing.
