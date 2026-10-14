@@ -65,17 +65,15 @@ def test_divergence_beats_the_line_and_reanchors():
 
 
 @pytest.mark.usefixtures("care_ok")
-@pytest.mark.usefixtures("care_ok")
-def test_dna_never_steers_off_the_charts():
-    """Joel 2026-10-14, design call #2 "B": DNA steers only to forms some egg
-    chart claims.  Agumon's Metal Empire road was HiCommandramon (1528), which
-    no chart claims -- so that charge arms nothing and the line evolves."""
+def test_wild_landing_leaves_the_charts():
+    """Agumon steered MetalEmpire lands on HiCommandramon (1528) -- no chart
+    claims it, so the pet goes off-road onto the corpus engine."""
     assert not any(1528 in line["members"] for line in lines.load_lines().values())
     p = mk(29, "Rookie", charge={"MetalEmpire": evolution.DIVERGE_NEED["Rookie"]})
-    assert evolution.divergence_target(p) is None
-    assert "MetalEmpire" not in evolution.divergence_roads(p)
-    assert all(t in evolution.charted_forms()
-               for ts in evolution.divergence_roads(p).values() for t in ts)
+    assert evolution.divergence_target(p) == 1528
+    p.stage_seconds = 9e9
+    p._maybe_evolve()
+    assert p.num == 1528 and p.line_id == "" and not lines.active(p)
 
 
 def test_divergence_roads_maps_the_doors():
