@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.9 — DNA POLISH. The DNA screens now show real numbers and every  (2026-10-14)
+
+DNA POLISH. The DNA screens now show real numbers and every road a charge can take, the preview no longer changes its mind, and a damaged DNA save can no longer crash the game.
+
 ## 0.6.8 — ERASE MEANS ERASE. Erase all data now wipes your cloud save  (2026-10-14)
 
 ERASE MEANS ERASE. Erase all data now wipes your cloud save too, so signing back in starts fresh instead of bringing the old pet back.
