@@ -106,7 +106,7 @@ _AUTHORED = {
     "grow_capsule":    ("Grow Capsule",    "i:78", None,  "Evolve", "growth: a quarter of this stage", "time in a bottle"),
     "anti_evo_chip":   ("Anti-Evo Chip",   "f:32", 1000, "Evolve", "toggle evolution lock", "holds this form"),
     "x_antibody":      ("X-Antibody",      "i:79", 2000, "Evolve", "the X-Antibody takes hold", "the X factor"),
-    "dna_crystal":     ("DNA Crystal",     "i:35", 1500, "Power", "+10 own-Field DNA banked", "a Field's worth of code"),
+    "dna_crystal":     ("DNA Crystal",     "i:35",  150, "Power", "+10 own-Field DNA banked", "a Field's worth of code"),
     # ---- THE ATTRIBUTE CHIPS (items refactor P6, 2026-07-23) ---------------
     # The one LIVE lever with no purchasable support: Va/D/Vi powers gate
     # hundreds of evolution rows (>10 / >20 / >25 / >50) and the only ways to

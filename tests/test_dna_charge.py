@@ -188,3 +188,10 @@ def test_a_charge_never_outruns_the_energy_that_pays_for_it():
     assert p.apply_dna(off, 5)
     assert p.energy == 0 and p.obedience == ob
     assert p.dna_affordable(off) == 0 and not p.apply_dna(off, 1)
+
+
+def test_the_dna_crystal_costs_150b():
+    """Joel 2026-10-15 (DNA call #6 = A): 1500b for 10 DNA vs ~10b by the
+    mash; 150b keeps a 15x premium for no mash and a sure Field."""
+    from tuipet import shop
+    assert shop.CATALOG["dna_crystal"].price == 150

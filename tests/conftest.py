@@ -198,3 +198,15 @@ def road_card(pan):
     app = _App()
     statusbox.painter_for(pan)(app)
     return re.sub(r"\[/?[^\[\]]*\]", "", app.stats_w.txt)
+
+
+@pytest.fixture(autouse=True)
+def _restore_sys_path():
+    """Tests that import the lobby server push its folder onto sys.path on
+    EVERY call; over a full run the path grew until a subprocess test's
+    PYTHONPATH broke exec ("Argument list too long", 2026-10-15).  Each test
+    gets back the sys.path it started with."""
+    import sys
+    saved = list(sys.path)
+    yield
+    sys.path[:] = saved
