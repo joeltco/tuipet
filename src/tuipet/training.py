@@ -37,7 +37,7 @@ IDLE, TURN, ATTACK, CHEER_A, CHEER_B, WEARY = 0, 1, 6, 5, 7, 9
 # the SULK pair (Jeering's deserved 4/6, the same beats _fxk_jeer bounces):
 # the middle grade's tell -- the shot landed, the wall didn't break
 SULK_A, SULK_B = 4, 6
-VERDICT_T = 4          # the aftermath hold (animation audit 2026-10-14: was 14)
+VERDICT_T = 14         # the aftermath hold (original speed; SPACE skips)
 
 # the 0.5 target wall (Wall_1 standing / Wall_2 crumbled), ported verbatim
 # from the clone's battle_fx rips (v0.4.12; row-string form)
@@ -187,7 +187,9 @@ class TrainingPanel:
         if m == "windup":
             # the windup is two ticks since the animation audit (2026-10-14):
             # ready, then the charge -- the battle's own pair
-            pose = TURN if fr.get("wu", 0) == 0 else ATTACK
+            from .battlescreen import WINDUP_T
+            wu = fr.get("wu", 0) * 6 // max(1, WINDUP_T)
+            pose = (TURN, TURN, IDLE, IDLE, ATTACK, ATTACK)[min(wu, 5)]
         elif m == "fire_out":
             pose = ATTACK
         elif m == "break":

@@ -903,9 +903,7 @@ def test_the_podium_ceremony_holds_then_any_key_skips():
     with the payout line pinned for PODIUM_T; any key skips (show idiom);
     the durable status line survives for after the show."""
     from copy import deepcopy
-    from tuipet.lobbyscreen import PODIUM_T
-    # Animation audit 2026-10-14: 2s podium; dismissal cannot re-claim or type into chat.
-    assert PODIUM_T == 20
+    # Animation audit 2026-10-14: original >120-tick hold; dismissal cannot re-claim or type into chat.
     s = LobbyState()
     pan = _panel(s)
     pan.client.ladder = {"award": {"season": "2026-06"}}
@@ -917,7 +915,7 @@ def test_the_podium_ceremony_holds_then_any_key_skips():
     assert pan.pshow is not None
     plain = pan.text().plain
     assert "PODIUM" in plain and "+25000b" in pan.pshow["line"]
-    for _ in range(PODIUM_T // 2):
+    for _ in range(30):
         pan.anim()
     assert pan.pshow is not None                   # mid-hold: still on stage
     assert "PODIUM" in pan.text().plain
@@ -929,7 +927,7 @@ def test_the_podium_ceremony_holds_then_any_key_skips():
     assert (pan.pet.__dict__, claims, pan.buf) == before
     # and left alone, the hold expires on its own
     pan.pshow = {"t": 0, "line": "x"}
-    for _ in range(PODIUM_T - 1):
+    for _ in range(120):
         pan.anim()
     assert pan.pshow is not None
     pan.anim()

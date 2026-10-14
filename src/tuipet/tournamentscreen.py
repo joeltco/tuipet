@@ -23,19 +23,19 @@ FIGHT_ROWS = 12   # the ONE locked arena (was a squat 8-row band that
 # AWARD CEREMONY: the champion cheering under a pulsing arena light (the
 # zoneChange idiom) before the tree and the numbers.  Real art only; the
 # Joel approved skips 2026-10-14; a skip never also acts on the bracket.
-NPC_T = 8         # .8s per advancing winner's crossing
-CEREMONY_T = 20   # first podium: 2s
-CEREMONY_REPEAT_T = 8
+NPC_T = 20        # ticks per advancing winner's crossing (ORIGINAL SPEED (Joel 2026-10-14: "i never told you to speed up animations"); skips stay)
+CEREMONY_T = 40   # the podium beat
+CEREMONY_REPEAT_T = 40
 
 # MATCH INTRODUCTIONS (fun arc, Joel: "do the match introductions"): SPACE
 # on the faceoff page stages the walk-ins before the bell -- the challenger
 # strides in from the RIGHT and is announced, your mon answers from the
 # LEFT, both hold the faceoff, then the fight opens itself.  The faceoff
 # page stays the decision point; the intro is the committed entrance.
-INTRO_OPP_T = 6   # the challenger's walk-in
-INTRO_PET_T = 6   # your mon's answer
-INTRO_HOLD_T = 6  # first entrance: 1.8s total
-INTRO_REPEAT_T = 2  # each repeat phase: .2s
+INTRO_OPP_T = 14  # the challenger's walk-in
+INTRO_PET_T = 14  # your mon's answer
+INTRO_HOLD_T = 10 # the held stare-down, then the bell
+INTRO_REPEAT_T = None  # no short repeat
 
 
 class TournamentPanel(menu.SubHost):
@@ -84,7 +84,8 @@ class TournamentPanel(menu.SubHost):
         return self._intro.get("beats", (INTRO_OPP_T, INTRO_PET_T, INTRO_HOLD_T))
 
     def _start_intro(self):
-        beats = ((INTRO_OPP_T, INTRO_PET_T, INTRO_HOLD_T) if first_show("cup_intro")
+        beats = ((INTRO_OPP_T, INTRO_PET_T, INTRO_HOLD_T)
+                 if first_show("cup_intro") or not INTRO_REPEAT_T
                  else (INTRO_REPEAT_T,) * 3)
         self._intro = {"t": 0, "beats": beats}
         self.sfx = "menu"

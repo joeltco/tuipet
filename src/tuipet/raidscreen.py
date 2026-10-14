@@ -24,8 +24,8 @@ from . import menu
 COLS, ROWS = 40, 12
 BOARD_POLL_T = 50   # frames between gate polls on the BOARD (~5s)
 POOL_POLL_T = 20    # ...and DURING a volley (~2s): the bar has ~20s to move
-FALL_T = 12
-REWARD_T = 30
+FALL_T = 40            # ORIGINAL SPEED (Joel 2026-10-14: "i never told you to speed up animations"); skips stay
+REWARD_T = 120
 
 
 def _fmt(n):

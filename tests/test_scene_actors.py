@@ -301,8 +301,8 @@ def test_dodge_turns_away_while_airborne():
     from tuipet import strikefx
     from tuipet.pet import Pet
     from tuipet import battlescreen as bs
-    # Animation audit 2026-10-14: six-frame dodge retains four airborne/two landing beats.
-    assert bs.DODGE_T == 6
+    # Joel reversed speed changes 2026-10-14: restore the original dodge and landing.
+    assert bs.DODGE_T == 14
     rows = ["0110", "1100", "0110"]                    # asymmetric ink
     # the seam: turn inverts each side's normal mirror flag
     place, _ = strikefx.place_combatant(True, rows)
@@ -333,8 +333,8 @@ def test_dodge_turns_away_while_airborne():
         fr = {"m": "dodge", "view": "pet", "prog": dt / bs.DODGE_T,
               "ph": pan.battle.pet_hp, "fh": pan.battle.enemy_hp}
         assert pan._render_scene_frame(fr) is not None
-    assert all(seen[dt] for dt in range(1, 5)), "airborne beats must turn"
-    assert not any(seen[dt] for dt in range(5, bs.DODGE_T + 1)), \
+    assert all(seen[dt] for dt in range(1, 10)), "airborne beats must turn"
+    assert not any(seen[dt] for dt in range(10, bs.DODGE_T + 1)), \
         "touchdown + return steps land facing forward"
 
 

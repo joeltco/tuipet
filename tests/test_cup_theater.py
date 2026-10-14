@@ -54,8 +54,8 @@ def _win_match(pan):
 
 def test_a_quarterfinal_win_parades_the_advancing_field():
     from copy import deepcopy
-    # Animation audit 2026-10-14: .8s/NPC, and skips never forfeit or fight again.
-    assert NPC_T == 8
+    # Animation audit 2026-10-14: 2s/NPC restored; skips never forfeit or fight again.
+    assert NPC_T == 20
     pan = _in_bracket()
     _win_match(pan)
     assert pan._advance is not None
@@ -80,8 +80,8 @@ def test_a_quarterfinal_win_parades_the_advancing_field():
 
 def test_the_crown_plays_the_ceremony_before_the_numbers():
     from copy import deepcopy
-    # Animation audit 2026-10-14: 2s first podium; skips keep the awarded trophy/purse.
-    assert CEREMONY_T == 20
+    # Animation audit 2026-10-14: 4s podium restored; skips keep the awarded trophy/purse.
+    assert CEREMONY_T == 40
     pan = _in_bracket()
     for _ in range(3):                         # QF, semi, final
         while pan._advance is not None:        # let the parades play
@@ -143,8 +143,8 @@ def test_space_stages_the_introductions_then_the_bell():
     assert pan._intro is not None and pan.sub is None   # the show, not the fight
     assert "introductions" in pan.strip()
     total = INTRO_OPP_T + INTRO_PET_T + INTRO_HOLD_T
-    # Animation audit 2026-10-14: 1.8s first entrance; a skip never locks or forfeits.
-    assert total == 18
+    # Animation audit 2026-10-14: full 3.8s entrance restored; skips never lock or forfeit.
+    assert (INTRO_OPP_T, INTRO_PET_T, INTRO_HOLD_T) == (14, 14, 10)
     saw = set()
     for _ in range(total):
         assert pan.tourney.over is False
@@ -168,7 +168,7 @@ def test_space_stages_the_introductions_then_the_bell():
     skip = _in_bracket()
     opp = skip.tourney.current_opponent()
     skip.key("space")
-    assert sum(skip._intro["beats"]) == 6      # subsequent entrances last .6s
+    assert skip._intro["beats"] == (14, 14, 10)  # repeats also play in full
     before = deepcopy(skip.pet.__dict__), deepcopy(skip.tourney.tree), skip.tourney.last
     assert skip.key("escape") is None
     assert skip._intro is None and isinstance(skip.sub, BattlePanel)

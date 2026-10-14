@@ -347,12 +347,12 @@ def test_the_claim_reveal_pins_the_prize_line_and_cheers_the_pet():
     """The prize toast printed once and the context alternation talked over
     it (Joel 2026-07-28: "i didnt know what i got last time either") -- a
     felled claim now holds the PET on the arena in its victory cheer with
-    the full prize line pinned for 3s. An escaped claim pins its
+    the full prize line pinned for ~12s. An escaped claim pins its
     consolation line but leaves the stage alone."""
     from copy import deepcopy
     from tuipet.raidscreen import REWARD_T
-    # Animation audit 2026-10-14: 3s prize reveal; skipping cannot claim, raid or leave.
-    assert REWARD_T == 30
+    # Animation audit 2026-10-14: 12s reveal restored; skipping cannot claim, raid or leave.
+    assert REWARD_T == 120
     pan = _panel()
     pan.pet.name = "Blitz"
     pan.client.raid = _view(_mega(), hp=700, start=0.0, now=100.0)
@@ -365,12 +365,13 @@ def test_the_claim_reveal_pins_the_prize_line_and_cheers_the_pet():
     assert "Blitz" in plain                       # the champion owns the stage
     assert "Rank 1: 5000b" in plain               # the head of the line shows
     assert "Vitamin" in pan.msg                   # the FULL line marquees
-    for _ in range(REWARD_T - 1):                 # the whole hold: the prize
+    for _ in range(115):                 # the whole hold: the prize
         pan.anim()                                # line stays pinned -- the
         assert "weekly boss" not in pan.text().plain   # cadence never talks over
         assert "Rank 1: 5000b" in pan.msg
     assert pan._won is not None
-    pan.anim()
+    for _ in range(6):
+        pan.anim()
     assert pan._won is None                       # the reveal lets go
     assert "Blitz" not in pan.text().plain
     # the escaped claim: pinned line, no cheer takeover

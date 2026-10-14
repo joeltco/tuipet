@@ -44,9 +44,9 @@ COLS, ROWS = 40, 12           # the ONE locked LCD arena, like every other scree
 
 # Joel approved skips 2026-10-14: keep four clear pulses, then the ending
 # parade when present. Each map keeps its own first-clear ceremony flag.
-PULSE_T = 20
-PULSE_REPEAT_T = 6
-PULSE_ON = ((2, 4), (6, 8), (10, 12), (14, 20))
+PULSE_T = 54                  # ORIGINAL SPEED (Joel 2026-10-14: "i never told you to speed up animations"); skips stay
+PULSE_REPEAT_T = 54
+PULSE_ON = ((5, 10), (15, 20), (25, 30), (35, 54))
 STRIP_W = 40                  # the message box's CELL budget (== app.HUD_W;
 #                               importing app here would be circular)
 # (HINT_BEAT retired 2026-07-30 on Joel's order -- "thin the strip to just the
@@ -55,14 +55,14 @@ STRIP_W = 40                  # the message box's CELL budget (== app.HUD_W;
 #  hearts and the chain were sharing this 40-cell line with the keys; the road
 #  card carries every one of those now, so all three labelled keys fit at once
 #  and the line holds still.)
-PARADE_T = 12                 # edge-to-edge crossing: three bosses in 3.6s
+PARADE_T = 40                 # ticks for one boss to march across
 
 # The investigateLeft playbook: shorten its passive legs, not the dig meter.
 # Walk left, suspense, reveal, then carry back instead of snapping home.
-INV_WALK_T = 4                # walk-left leg
-INV_REVEAL_T = 8              # brief suspense after the unchanged meter
-INV_HOLD_T = 14               # readable loot reveal
-INV_END_T = 20                # walk-back complete: 2s fixed choreography
+INV_WALK_T = 12               # walk-left leg
+INV_REVEAL_T = 30             # dots done -> the reveal pose fires
+INV_HOLD_T = 42               # reveal held (the find shown beside the cheer)
+INV_END_T = 54                # walk-back (ReturnItem) complete
 
 # the TIMED DIG (arcade arc, Joel 2026-07-21 "do the timed dig"): reaching
 # the dig spot runs the CANON timing bar -- the same sprite and the same
@@ -82,7 +82,7 @@ DIG_METER_T = 48              # one full 0..24..0 sweep, then the spade falls
 # art: roster frames for the pouncer, atlas "attention"/"hit" for the fx.
 HZ_TELE_T = 8                 # the "!" telegraph window
 HZ_LUNGE_T = 8                # the pounce crosses the right half
-HZ_END_T = 4                  # .4s verdict; reflex windows stay .8 + .8
+HZ_END_T = 10                 # the verdict beat (the duck-under / the burst)
 
 # CONDITION WALKS + TRAVEL REFUSALS (restored from the old build's audit
 # pass 3 / canTravel port, 2026-07-21): a SICK pet drags the idleUnwell
@@ -91,7 +91,7 @@ HZ_END_T = 4                  # .4s verdict; reflex windows stay .8 + .8
 # rolls) as the roadside nap; and a pet pushed PAST EMPTY plants its feet
 # (petcare.check_stop_travel -- today's calibration, deliberately soft:
 # only negative energy refuses.  NEVER revert to chance-based refusals).
-REFUSE_T = 8                  # .8s head-shake before the recovery choice
+REFUSE_T = 24                 # the refusal head-shake (the fx convention)
 
 WALK_BEAT = 5                 # idleWalk pose-flip cadence while marching
 MARCH_PX = 0.5                # the march: px per 0.1s tick across the window
@@ -123,10 +123,10 @@ def _fit(name, budget):
 # 1:1 onto tuipet's 0.1s tick; sounds are the canon device mapping.  Ported
 # verbatim from adventurescreen @ ed22b64 (v0.5.7) -- Joel: "same teleport
 # animation."
-TELE_LEAVE_T = 10             # first entry: 1s depart + 1s arrive
-TELE_ARRIVE_T = 10
-TELE_REPEAT_T = 3             # repeat entry: .3s each phase
-TELE_HOME_T = 4               # homecoming: .4s each phase
+TELE_LEAVE_T = 50             # ORIGINAL SPEED (Joel 2026-10-14: "i never told you to speed up animations"); skips stay
+TELE_ARRIVE_T = 46
+TELE_REPEAT_T = None          # no short repeat
+TELE_HOME_T = None            # homecoming plays the full teleport
 TELE_ON = ((3, 9), (15, 18), (21, 22))        # leave: curtain flash spans
 TELE_APPEAR_ON = ((1, 2), (5, 8), (14, 20))   # arrive: flicker spans (t-23)
 TELE_LEAVE_SNDS = {3: "strongHit", 15: "strongHit", 21: "strongHit",
@@ -201,8 +201,8 @@ class AdventurePanel(menu.SubHost):
         # leaving home rides the canon teleport (dir "in" == INTO the adventure:
         # leave-phase plays over HOME, arrive-phase materialises on the road)
         first = first_show("adventure_entry")
-        self._tele_leave_t = TELE_LEAVE_T if first else TELE_REPEAT_T
-        self._tele_arrive_t = TELE_ARRIVE_T if first else TELE_REPEAT_T
+        self._tele_leave_t = TELE_LEAVE_T if first or not TELE_REPEAT_T else TELE_REPEAT_T
+        self._tele_arrive_t = TELE_ARRIVE_T if first or not TELE_REPEAT_T else TELE_REPEAT_T
         self._trans = {"dir": "in", "phase": "leave", "t": 0}
 
     # -- clock ----------------------------------------------------------------
@@ -662,7 +662,8 @@ class AdventurePanel(menu.SubHost):
                               if zi is not None else False)
             self._summary = True              # results, then a key teleports
             return
-        self._tele_leave_t = self._tele_arrive_t = TELE_HOME_T
+        self._tele_leave_t = TELE_HOME_T or TELE_LEAVE_T
+        self._tele_arrive_t = TELE_HOME_T or TELE_ARRIVE_T
         self._trans = {"dir": "out", "phase": "leave", "t": 0}
 
     def _tele_time(self, tr):

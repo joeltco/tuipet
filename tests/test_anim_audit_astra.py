@@ -4,11 +4,11 @@ from types import SimpleNamespace
 
 import pytest
 
-from tuipet import adventure, battlescreen, dnascreen, persistence, tournament
+from tuipet import adventure, battlescreen, dnascreen, tournament
 from tuipet.adventurescreen import AdventurePanel
 from tuipet.battlescreen import BattlePanel, boss_death_timeline, round_timeline
 from tuipet.lobbybout import BoutMixin
-from tuipet.lobbyscreen import LobbyPanel, PODIUM_T
+from tuipet.lobbyscreen import LobbyPanel
 from tuipet.pet import Pet
 from tuipet.raidscreen import RaidPanel
 from tuipet.tournamentscreen import TournamentPanel
@@ -34,25 +34,26 @@ def _cup():
 
 @pytest.mark.parametrize("dealt,taken", [(1, 1), (1, 0), (0, 1), (0, 0)])
 @pytest.mark.parametrize("first", [True, False])
-def test_full_round_is_three_seconds_without_changing_hp(dealt, taken, first):
+def test_full_round_keeps_original_duration_without_changing_hp(dealt, taken, first):
+    # Joel reversed speed changes 2026-10-14; only passive skips remain approved.
     timeline = round_timeline(5, 5, dealt, taken, first)
-    assert len(timeline) == 30
+    assert len(timeline) == 103 + 7 * (bool(dealt) + bool(taken))
     assert (timeline[-1]["ph"], timeline[-1]["fh"]) == (5 - taken, 5 - dealt)
-    assert sum(f["m"] == "faceoff" for f in timeline) == 2
-    assert sum(f["m"] == "windup" for f in timeline) == 4
-    assert sum(f["m"] == "fire_out" for f in timeline) == 6
-    assert sum(f["m"] == "fire_in" for f in timeline) == 6
+    assert sum(f["m"] == "faceoff" for f in timeline) == 9
+    assert sum(f["m"] == "windup" for f in timeline) == 18
+    assert sum(f["m"] == "fire_out" for f in timeline) == 24
+    assert sum(f["m"] == "fire_in" for f in timeline) == 24
 
 
-def test_boss_ko_keeps_flickers_and_all_squash_stages_in_twelve_ticks():
+def test_boss_ko_keeps_original_forty_ticks_and_all_stages():
     timeline = boss_death_timeline(3)
-    assert len(timeline) == 12
-    assert sum(f["stage"] == "on" for f in timeline) == 3
-    assert [f["keep"] for f in timeline if f["stage"] == "squash"] == [8, 4, 2]
+    assert len(timeline) == 40
+    assert sum(f["stage"] == "on" for f in timeline) == 12
+    assert [f["keep"] for f in timeline if f["stage"] == "squash"] == [8] * 6 + [4] * 6 + [2] * 6
     assert all((f["ph"], f["fh"]) == (3, 0) for f in timeline)
 
 
-def test_short_dodge_still_turns_away_and_lands_facing_the_foe(monkeypatch):
+def test_original_dodge_turns_away_and_lands_facing_the_foe(monkeypatch):
     panel = BattlePanel(_pet())
     facing = []
     original = panel._place_one
@@ -63,22 +64,21 @@ def test_short_dodge_still_turns_away_and_lands_facing_the_foe(monkeypatch):
 
     monkeypatch.setattr(panel, "_place_one", place)
     dodge = [f for f in round_timeline(5, 5, 0, 1, True) if f["m"] == "dodge"]
-    assert len(dodge) == 6
+    assert len(dodge) == 14
     for frame in dodge:
         assert panel._render_scene_frame(frame) is not None
-    assert facing == [True, True, True, True, False, False]
+    assert facing == [True] * 9 + [False] * 5
 
 
 @pytest.mark.parametrize("options", [{}, {"wild": True}, {"raid": True}, {"duel": True}])
-def test_battle_first_and_repeat_intro_are_profile_persistent(options):
+def test_battle_first_and_repeat_intro_both_play_full_length(options):
     pet = _pet()
     first = BattlePanel(pet, **options)
-    assert len(first.timeline) == 12
+    assert len(first.timeline) == 36
     repeat = BattlePanel(_pet(), **options)
-    assert len(repeat.timeline) == 4
-    assert "battle_intro" in persistence.load_settings()["progress"]["animations_seen"]
-    # Both budgets are elapsed clocks, not just shortened frame arrays.
-    for panel, ticks in ((first, 12), (repeat, 4)):
+    assert len(repeat.timeline) == 36
+    # Check elapsed clocks as well as frame arrays; repetition never shortens them.
+    for panel, ticks in ((first, 36), (repeat, 36)):
         for _ in range(ticks - 1):
             panel.anim()
         assert panel.phase == "intro"
@@ -100,10 +100,10 @@ def test_intro_skip_never_locks_flees_or_builds_a_battle(key):
     assert panel.locked is None
 
 
-def test_cup_battle_does_not_consume_generic_first_intro_flag():
+def test_cup_battle_starts_at_bar_and_preserves_full_generic_intro():
     panel = BattlePanel(_pet(), skip_intro=True)
     assert panel.phase == "ready"
-    assert len(BattlePanel(_pet()).timeline) == 12
+    assert len(BattlePanel(_pet()).timeline) == 36
     assert battlescreen.LOCK_ARM_T == 5 and battlescreen.SKIP_DEBOUNCE == 6
     assert battlescreen.DUEL_AUTOLOCK_T == 300
 
@@ -129,9 +129,9 @@ def test_duel_fight_still_labels_and_applies_forfeit():
     assert calls == ["forfeit"]
 
 
-def test_entry_repeat_and_homecoming_elapsed_budgets():
+def test_entry_repeat_and_homecoming_keep_full_teleport():
     first, repeat = _road(), _road()
-    for panel, ticks in ((first, 20), (repeat, 6)):
+    for panel, ticks in ((first, 96), (repeat, 96)):
         for _ in range(ticks - 1):
             panel.anim()
         assert panel._trans is not None and not getattr(panel.pet, "away", False)
@@ -139,7 +139,7 @@ def test_entry_repeat_and_homecoming_elapsed_budgets():
         assert panel._trans is None and panel.pet.away
         panel._summary_shown = True
         panel._go_home()
-        for _ in range(7):
+        for _ in range(95):
             panel.anim()
         assert panel.auto_close is None
         panel.anim()
@@ -169,16 +169,16 @@ def _dig(panel):
     panel._dig()
 
 
-def test_dig_timeout_keeps_full_meter_but_fixed_show_is_two_seconds():
+def test_dig_timeout_keeps_original_fixed_show_and_full_meter():
     panel = _road()
     _dig(panel)
-    for _ in range(67):
+    for _ in range(101):
         panel.anim()
     assert panel._scene is not None
     panel.anim()
     assert panel._scene is None
     from tuipet.adventurescreen import DIG_METER_T, INV_END_T
-    assert (DIG_METER_T, INV_END_T) == (48, 20)
+    assert (DIG_METER_T, INV_END_T) == (48, 54)
 
 
 @pytest.mark.parametrize("key", ["escape", "space", "enter", "t", "z"])
@@ -201,9 +201,10 @@ def test_dig_skip_after_lock_keeps_grade_reward_and_road_position(key):
 
 
 def test_dig_escape_cannot_skip_or_grade_a_live_meter():
+    from tuipet.adventurescreen import INV_WALK_T
     panel = _road()
     _dig(panel)
-    for _ in range(4):
+    for _ in range(INV_WALK_T):
         panel.anim()
     panel.key("escape")
     assert panel._scene is not None and panel._scene["grade"] is None
@@ -211,12 +212,13 @@ def test_dig_escape_cannot_skip_or_grade_a_live_meter():
 
 
 def test_skipping_an_already_revealed_dig_does_not_repeat_the_reward_chime():
+    from tuipet.adventurescreen import INV_WALK_T, INV_REVEAL_T
     panel = _road()
     _dig(panel)
-    for _ in range(4):
+    for _ in range(INV_WALK_T):
         panel.anim()
     panel.key("space")
-    for _ in range(4):
+    for _ in range(INV_REVEAL_T - INV_WALK_T):
         panel.anim()
     assert panel.sfx == "reward"
     panel.sfx = None  # the app drained this frame's sound
@@ -224,9 +226,9 @@ def test_skipping_an_already_revealed_dig_does_not_repeat_the_reward_chime():
     assert panel._scene is None and panel.sfx is None
 
 
-def test_hazard_windows_unchanged_and_verdict_four_ticks():
+def test_hazard_windows_and_verdict_keep_original_durations():
     from tuipet.adventurescreen import HZ_TELE_T, HZ_LUNGE_T, HZ_END_T, REFUSE_T
-    assert (HZ_TELE_T, HZ_LUNGE_T, HZ_END_T, REFUSE_T) == (8, 8, 4, 8)
+    assert (HZ_TELE_T, HZ_LUNGE_T, HZ_END_T, REFUSE_T) == (8, 8, 10, 24)
     panel = _road()
     panel.key("z")
     panel._hazard = {"t": 0, "dodged": False, "hit": False}
@@ -235,7 +237,7 @@ def test_hazard_windows_unchanged_and_verdict_four_ticks():
     panel.key("space")
     assert panel._hazard["dodged"]
     energy = panel.pet.energy
-    for _ in range(11):
+    for _ in range(17):
         panel._hazard_tick()
     assert panel._hazard is not None
     panel._hazard_tick()
@@ -249,9 +251,9 @@ def _clear(panel):
     panel._battle_done(SimpleNamespace(won=True))
 
 
-def test_map_clear_first_and_repeat_flags_are_per_map():
+def test_map_clear_first_and_repeat_both_keep_full_duration():
     first, repeat, other = _road(), _road(), _road(zone=adventure.ZONES[1])
-    for panel, ticks in ((first, 20), (repeat, 6), (other, 20)):
+    for panel, ticks in ((first, 54), (repeat, 54), (other, 54)):
         _clear(panel)
         assert panel._pulse["ticks"] == ticks
         before = (panel.pet.bits, deepcopy(panel.pet.inventory), panel.pet.adv_progress)
@@ -278,20 +280,20 @@ def test_pulse_and_final_parade_skips_land_on_summary_without_double_reward():
     assert (panel.pet.bits, panel.pet.inventory, panel.pet.adv_progress) == before
 
 
-def test_final_parade_is_thirty_six_ticks():
+def test_final_parade_keeps_forty_ticks_per_boss():
     panel = _road()
     panel.key("z")
     panel._parade = {"t": 0, "nums": [100] * 3, "msg": "ending"}
-    for _ in range(35):
+    for _ in range(119):
         panel.anim()
     assert panel._parade is not None
     panel.anim()
     assert panel._parade is None
 
 
-def test_cup_first_repeat_walkin_elapsed_budget_and_skip_consumption():
+def test_cup_first_repeat_walkin_full_duration_and_skip_consumption():
     first, repeat = _cup(), _cup()
-    for panel, ticks in ((first, 18), (repeat, 6)):
+    for panel, ticks in ((first, 38), (repeat, 38)):
         panel.key("space")
         for _ in range(ticks - 1):
             panel.anim()
@@ -316,16 +318,16 @@ def test_cup_show_skip_only_returns_to_bracket(show, key):
     assert not panel.tourney.over and panel.pet.__dict__ == before
 
 
-def test_cup_npc_and_podium_budgets_and_repeat_persistence():
+def test_cup_npc_and_repeat_podium_keep_original_durations():
     panel = _cup()
     panel._advance = {"t": 0, "nums": [100] * 3}
-    for _ in range(23):
+    for _ in range(59):
         panel.anim()
     assert panel._advance is not None
     panel.anim()
     assert panel._advance is None
     # Complete two real brackets; rewards occur before the podium, never on skip.
-    for ticks in (20, 8):
+    for ticks in (40, 40):
         panel = _cup()
         for _ in range(3):
             panel._advance = None
@@ -346,19 +348,19 @@ def _raid():
     return RaidPanel(_pet(), lambda *args: client, client=client)
 
 
-def test_raid_fall_twelve_ticks_and_reward_thirty_ticks():
+def test_raid_fall_and_reward_keep_original_durations():
     panel = _raid()
     panel._pool_seen = (1, 100, 1000, "boss", 100)
     panel.client.raid = {"now": 2, "boss": {"start": 2, "hp": 100, "num": 100}}
     panel.anim()
-    assert panel._fell[2] == panel.frame_i + 12
-    for _ in range(11):
+    assert panel._fell[2] == panel.frame_i + 40
+    for _ in range(39):
         panel.anim()
     assert panel._fell is not None
     panel.anim()
     assert panel._fell is None
     panel._apply_reward({"ok": True, "defeated": False, "bits": 100})
-    for _ in range(29):
+    for _ in range(119):
         panel.anim()
     assert panel._won is not None
     panel.anim()
@@ -376,7 +378,7 @@ def test_raid_reward_skip_never_claims_or_starts_or_leaves(key):
     assert (panel.pet.bits, panel.pet.battles, panel.pet.energy) == before
 
 
-def test_ladder_podium_expires_after_twenty_ticks():
+def test_ladder_podium_expires_after_original_120_tick_hold():
     panel = LobbyPanel.__new__(LobbyPanel)
     panel.client = None
     panel.bshow = panel.jshow = None
@@ -385,14 +387,14 @@ def test_ladder_podium_expires_after_twenty_ticks():
     panel.entry = None
     # The clock also checks the relay state; no connection means no events.
     panel.state = None
-    for _ in range(19):
+    for _ in range(120):
         panel.anim()
     assert panel.pshow is not None
     panel.anim()
-    assert panel.pshow is None and PODIUM_T == 20
+    assert panel.pshow is None
 
 
-def test_dna_result_stops_blinking_after_eight_ticks():
+def test_dna_result_holds_readable_text_after_initial_blink():
     panel = dnascreen.DNAPanel(_pet())
     panel.phase = "result"
     panel.won = ("Dragon'sRoar", 1, 1, 1, 0)

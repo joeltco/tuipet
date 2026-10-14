@@ -39,7 +39,7 @@ from .net import CHAT_CAP
 from .render import render_scene
 from .theme import INK, INK_B, DIM, LCD_BG  # noqa: F401  (theme.apply propagation)
 
-PODIUM_T = 20           # two seconds; Joel approved skips 2026-10-14
+PODIUM_T = 121          # the season-podium ceremony hold (~12s) -- ORIGINAL SPEED (Joel 2026-10-14: "i never told you to speed up animations"); skips stay
 # How long a duel waits for a rival's REVEAL before calling the bout off (0.1s
 # ticks -> 45 real seconds).  It must comfortably outlast the peer's own
 # DUEL_AUTOLOCK_T (300 ticks / 30s): a rival still staring at their bar is

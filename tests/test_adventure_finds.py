@@ -96,8 +96,8 @@ def test_the_discover_sequence_plays_out_and_resumes_the_march(monkeypatch):
     back, and puts the mon back on the road; after grading, a skip keeps the loot."""
     from copy import deepcopy
     from tuipet.adventurescreen import (INV_WALK_T, INV_REVEAL_T, INV_END_T)
-    # Animation audit 2026-10-14: two-second fixed phases, with safe post-lock skips.
-    assert INV_END_T == 20
+    # Animation audit 2026-10-14: original fixed phases restored; post-lock skips stay safe.
+    assert INV_END_T == 54
     monkeypatch.setattr(adventure, "ENCOUNTER_CHANCE", 0.0)
     monkeypatch.setattr(adventure, "HAZARD_CHANCE", 0.0)
     monkeypatch.setattr(adventure, "FIND_CHANCE", 1.0)

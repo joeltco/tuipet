@@ -134,8 +134,8 @@ def test_the_zone_pulse_flashes_the_world_and_locks_input(monkeypatch):
     from copy import deepcopy
     from tuipet.adventurescreen import PULSE_ON, PULSE_T
     from tuipet import menu
-    # Animation audit 2026-10-14: a two-second pulse is skippable, never a flee.
-    assert PULSE_T == 20
+    # Animation audit 2026-10-14: original pulse timing restored; skipping is never a flee.
+    assert PULSE_T == 54
     pan = _panel_at_boss(monkeypatch)
     pan.sub = None
     pan._battle_done(_Win())

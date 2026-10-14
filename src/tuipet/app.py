@@ -161,7 +161,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("SIGN IN FIRST. A fresh install now asks for your account before the egg carousel, so your cloud pet comes straight to the new device, and signing in later from Options brings your pet over properly too.")
+    WHATS_NEW = ("BACK TO NORMAL SPEED. Battles, adventure, cups and the home animations play at their original pace again, and any key still skips a show when you want to move on.")
 
 
     BINDINGS = [

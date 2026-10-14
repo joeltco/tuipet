@@ -37,8 +37,8 @@ def test_leaving_home_rides_the_teleport_and_lands_on_the_road():
     p = _champ()
     pan = AdventurePanel(p)
     assert pan._trans == {"dir": "in", "phase": "leave", "t": 0}
-    # Animation audit 2026-10-14: first entry is 2s; a skip only lands on the road.
-    assert TELE_LEAVE_T + TELE_ARRIVE_T == 20
+    # Animation audit 2026-10-14: full 9.6s entry restored; a skip only lands on the road.
+    assert (TELE_LEAVE_T, TELE_ARRIVE_T) == (50, 46)
     seen_leave = seen_arrive = False
     for _ in range(TELE_LEAVE_T + TELE_ARRIVE_T + 2):
         pan.anim()

@@ -52,7 +52,7 @@ CHARGE = 4                                      # the classic V-pet shoot frame 
 # the 16px creature band on the 24px LCD (y6..y22); orbs must stay INSIDE it
 
 # Joel approved faster passive shows and skips, 2026-10-14 (one tick = 0.1s).
-BANNER_FLASHES, BANNER_HOLD = 2, 1
+BANNER_FLASHES, BANNER_HOLD = 3, 4              # ORIGINAL SPEED (Joel 2026-10-14: "i never told you to speed up animations"); skips stay
 SKIP_DEBOUNCE = 6                                # ticks after the bar LOCKS before skip keys register
 LOCK_ARM_T = 5                                   # ticks after the bar APPEARS before a lock registers
 #                                                  (the intro-mash guard, Joel 2026-07-23 "i was
@@ -62,14 +62,14 @@ LOCK_ARM_T = 5                                   # ticks after the bar APPEARS b
 #                                                  bar at the LEFT EDGE and locked a miss before
 #                                                  the player ever started timing.  Same class as
 #                                                  the hazard dodge's mash bleed.)
-REVEAL_T = 8                                     # first intro: .4 banner + .8 reveal
-INTRO_REPEAT_T = 4                               # .2 banner + .2 reveal
-FACEOFF_T = 2                                    # .2s stare-down
-WINDUP_T = 2                                     # .2s charge
-FIRE_T = 3                                       # .3s per orb leg
-EXPLODE_HOLD, EXPLODE_FRAMES = 1, 3               # .3s hit flash
-FLINCH_T = 3                                     # .3s hurt pose
-DODGE_T = 6                                      # .6s weave
+REVEAL_T = 12                                    # 1.2s opponent reveal/taunt (startBattle)
+INTRO_REPEAT_T = None                            # no short repeat: every intro plays in full
+FACEOFF_T = 9                                    # 0.9s stare-down
+WINDUP_T = 9                                     # 0.9s charge / rear-back before firing
+FIRE_T = 12                                      # 1.2s per orb leg
+EXPLODE_HOLD, EXPLODE_FRAMES = 3, 9              # 0.9s strobing hit flash
+FLINCH_T = 12                                    # 1.2s held hurt pose
+DODGE_T = 14                                     # 1.4s weave
 
 BAR_MAX = 24                                     # the timing bar sweeps 0..24
 # A DUEL's bar locks itself after this long (0.1s ticks -> 30 real seconds).
@@ -169,9 +169,9 @@ def round_timeline(ph0, fh0, pdmg, edmg, player_first, effect=None,
 
 
 BOSSDIE_FLICKERS = 3                             # zoneBossDeath: 3 lit/dark cycles...
-BOSSDIE_ON, BOSSDIE_OFF = 1, 1
-BOSSDIE_STEP_T = 1                               # ...then a 3-step squash into the ground
-BOSSDIE_END_T = 3                                # total KO: 6 + 3 + 3 = 12 ticks
+BOSSDIE_ON, BOSSDIE_OFF = 4, 2
+BOSSDIE_STEP_T = 6                               # ...then a 3-step squash into the ground
+BOSSDIE_END_T = 4
 
 
 def boss_death_timeline(ph):
@@ -269,7 +269,7 @@ class BattlePanel:
             tl += [{"m": "banner", "f": 0}] * BANNER_HOLD
             tl += [{"m": "banner", "f": 1}] * BANNER_HOLD
         tl += [{"m": "reveal", "view": "foe"}] * REVEAL_T
-        if not skip_intro and not first_show("battle_intro"):
+        if INTRO_REPEAT_T and not skip_intro and not first_show("battle_intro"):
             tl = [{"m": "banner", "f": f} for f in (0, 1)]
             tl += [{"m": "reveal", "view": "foe"}] * (INTRO_REPEAT_T - 2)
         self.timeline = tl
@@ -574,7 +574,9 @@ class BattlePanel:
                         else (COLLAPSE, WEARY))[(self.frame_i // 3) % 2]
             elif m == "windup":
                 # Keep readiness and charge before the attack, on the two-tick windup.
-                pose = TURN if fr.get("wu", 0) == 0 else CHARGE
+                # the classic battlePlayerShootAnim beat: ready -> idle -> charge
+                wu = fr.get("wu", 0) * 6 // max(1, WINDUP_T)
+                pose = (TURN, TURN, IDLE, IDLE, CHARGE, CHARGE)[min(wu, 5)]
             elif m == "fire_out":
                 pose = ATTACK
             elif m == "reveal":

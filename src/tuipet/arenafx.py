@@ -282,15 +282,14 @@ def _effect_overlay(pet, frame_i, cols, px_h, tick=0):
 
 # ---- the animation audit's pacing (2026-10-14, Joel: "fix all") ------------
 # The happy/sad tail chains onto most shows; at 3.1s it was half of them.
-CHEER_STEPS = 10
-JEER_STEPS = 8
+CHEER_STEPS = 31             # ORIGINAL SPEED (Joel 2026-10-14); skips stay
+JEER_STEPS = 31
 # Steps advanced per 10 Hz tick.  First sight plays at FX_RATE; every later
 # showing of the same show at FX_RATE_REPEAT (AUTO-SKIP ON REPEAT).
-FX_RATE = {"evolve": 2, "inherit": 2, "dna_charge": 3, "losing": 4, "gift": 5,
-           "clean": 3, "spit": 3, "poop": 2, "assist": 2, "play": 3, "item": 3}
-FX_RATE_REPEAT = {"eat": 3, "item": 6, "assist": 4, "play": 6}
+FX_RATE = {}
+FX_RATE_REPEAT = {}
 FX_UNSKIPPABLE = frozenset({"dying"})
-REPEAT_TAIL_STEPS = 5         # the cheer/jeer after an already-seen item show
+REPEAT_TAIL_STEPS = 31        # (no shortened tail: original speed)
 SKIP_DEBOUNCE_STEPS = 3
 
 

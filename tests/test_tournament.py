@@ -372,8 +372,8 @@ def test_mid_bracket_contracts():
     # walk-ins hold the stage, then the bell opens the fight itself
     from tuipet.tournamentscreen import INTRO_OPP_T, INTRO_PET_T, INTRO_HOLD_T
     assert pan3._intro is not None and pan3.sub is None
-    # Animation audit 2026-10-14: second Space skips the intro, never locks the bar.
-    assert INTRO_OPP_T + INTRO_PET_T + INTRO_HOLD_T == 18
+    # Joel reversed speed changes 2026-10-14: full intro timing, but Space only skips.
+    assert (INTRO_OPP_T, INTRO_PET_T, INTRO_HOLD_T) == (14, 14, 10)
     before = deepcopy(p3.__dict__), deepcopy(pan3.tourney.tree), pan3.tourney.last
     pan3.key("space")
     assert pan3._intro is None and pan3.sub is not None
@@ -398,7 +398,7 @@ def test_mid_bracket_contracts():
     assert pan3.sub is None and not pan3.tourney.over
     assert "back out" in pan3.tourney.last      # the tree page says so
     pan3.key("space")                         # the match still waits
-    assert pan3._intro is not None and sum(pan3._intro["beats"]) == 6
+    assert pan3._intro is not None and pan3._intro["beats"] == (14, 14, 10)
     before = deepcopy(p3.__dict__), deepcopy(pan3.tourney.tree), pan3.tourney.last
     pan3.key("space")
     assert pan3._intro is None and pan3.sub.phase == "ready"
