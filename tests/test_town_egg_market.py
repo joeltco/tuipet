@@ -89,3 +89,28 @@ def test_town_hub_has_an_eggs_slot_that_mounts_the_market():
     t.sub = None
     t._sub_done(None)
     assert t.sub is None
+
+
+def test_a_starter_is_never_bought_and_never_spends_the_days_egg(tmp_path, monkeypatch):
+    """Shop-egg audit 2026-10-15: buying starter 0 cost 0b, banked it and
+    used up the day's one egg."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    p = _pet(bits=12000)
+    msg, sfx = shop.town_egg_buy(p, 0)
+    assert sfx == "error" and p.bits == 12000
+    assert not shop.egg_bought_today(p)
+
+
+def test_after_the_days_egg_the_other_shelf_eggs_read_sold_out(tmp_path, monkeypatch):
+    from tuipet.shopscreen import ShopPanel
+    monkeypatch.setenv("HOME", str(tmp_path))
+    p = _pet(bits=12000)
+    pan = ShopPanel(p, town_id=0)
+    pan.tab = pan._tabs().index("Eggs")
+    rows = pan._rows()
+    shop.town_egg_buy(p, rows[0]["egg_idx"])
+    assert shop.egg_bought_today(p)
+    pan.cursor = 1
+    pan.msg_t = 0
+    plain = pan.text().plain
+    assert "sold out" in plain and "10000b" not in plain

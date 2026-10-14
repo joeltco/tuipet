@@ -106,12 +106,12 @@ def test_crest_egg_maps_to_the_classic_digimental():
 def test_shop_panel_walks_every_tab_and_the_bag():
     p = _pet()
     pan = ShopPanel(p)
-    assert pan._tabs() == ["Food", "Items", "Eggs", "Honors"]
+    assert pan._tabs() == ["Food", "Items", "Honors"]   # crests: towns only
     for _ in range(len(pan._tabs())):
         assert pan.text().plain
         pan.key("right")
     pan.key("tab")                       # the bag: goods tabs, no Honors
-    assert pan._tabs() == ["Food", "Items", "Eggs"]
+    assert pan._tabs() == ["Food", "Items", "Crests"]
     assert pan.text().plain
 
 
@@ -135,13 +135,17 @@ def test_the_classic_tab_bar_is_back():
     pan = ShopPanel(_pet())
     pan.msg_t = 0
     plain = pan.text().plain
-    assert "[Food] Items  Eggs  Honors" in plain
+    assert "[Food] Items  Honors" in plain
     pan.key("right")
-    assert " Food [Items] Eggs  Honors" in pan.text().plain
-    # the Eggs tab is the DIGIMENTAL shelf -- goods, never digitama
-    pan.key("right")
-    rows = pan._rows()
-    assert rows and all(str(e["key"]).startswith("egg_of_") for e in rows)
+    assert " Food [Items] Honors" in pan.text().plain
+    # crests are adventure-town exclusives (Joel 2026-10-15): the home shop
+    # never sells one; a town's Crests tab holds goods, never digitama
+    assert not any(e["category"] == shop.ARMOR_CATEGORY
+                   for e in shop.home_stock(pet=_pet()))
+    tpan = ShopPanel(_pet(), town_id=20)                  # Volcano: Courage
+    tpan.tab = tpan._tabs().index("Crests")
+    rows = tpan._rows()
+    assert rows and all(str(e["key"]).split(":")[-1].startswith("egg_of_") for e in rows)
     assert not any(e.get("egg_idx") is not None for e in rows)
 
 
@@ -238,9 +242,9 @@ def test_the_eggs_tab_renders_like_every_other_tab():
     from tuipet import data
     assert not hasattr(data, "load_armor_eggs")
     p = _pet()
-    pan = ShopPanel(p)
+    pan = ShopPanel(p, town_id=20)            # crests sell in towns (Volcano: Courage)
     pan.msg_t = 0
-    pan.tab = pan._tabs().index("Eggs")
+    pan.tab = pan._tabs().index("Crests")
     assert not hasattr(pan, "_eggs_text")
     assert not hasattr(pan, "_armor_egg")
     plain = pan.text().plain

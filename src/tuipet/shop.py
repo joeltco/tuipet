@@ -805,6 +805,24 @@ DIGIMENTAL_GATES = {
 }
 
 
+# CRESTS ARE ADVENTURE-TOWN EXCLUSIVES (Joel 2026-10-15): the home shop no
+# longer sells them; each crest is stocked in the two towns that fit its
+# virtue/element, and its unlock wave (DIGIMENTAL_GATES) still decides when.
+CREST_TOWNS = {
+    "egg_of_courage": (20, 12),       # Volcano, Desert -- fire
+    "egg_of_friendship": (11, 27),    # Mountains, Factory -- thunder
+    "egg_of_love": (1, 7),            # Flower Field, Flower Field Sunset -- sky
+    "egg_of_knowledge": (10, 14),     # Teal Hollow, City Sunset
+    "egg_of_sincerity": (13, 4),      # Seafloor, Beach -- water
+    "egg_of_reliability": (9, 8),     # Jungle, Golden Hollow -- forest
+    "egg_of_hope": (5, 6),            # Island Day, Moonlit Meadow
+    "egg_of_light": (18, 19),         # White City, Boulevard
+    "egg_of_kindness": (2, 0),        # Lakeside, Green Hills
+    "egg_of_miracles": (26, 28),      # Bay Bridge Night, Factory Night -- late
+    "egg_of_destiny": (29, 21),       # Data Tunnel, Island Sunset -- late
+}
+
+
 def digimental_open(key, prog=None):
     """Is this Digimental's wave reached?  (Non-digimental keys are open.)"""
     gate = DIGIMENTAL_GATES.get(key)
@@ -1149,6 +1167,16 @@ def _town_rows(town_id):
         econ = {"price": local, "sale_factor": 2, "resell_factor": 2,
                 "max_stock": TOWN_DAILY_CAP}
         rows.append((f"town:{town_id}:{key}", key, econ, local))
+    for key, towns in CREST_TOWNS.items():           # this town's crests, once open
+        if town_id not in towns or not digimental_open(key):
+            continue
+        v = data.load_vitems().get(key)
+        if not isinstance(v, dict):
+            continue
+        local = town_price(town_id, key, _price(v))
+        econ = {"price": local, "sale_factor": 2, "resell_factor": 2,
+                "max_stock": TOWN_DAILY_CAP}
+        rows.append((f"town:{town_id}:{key}", key, econ, local))
     return rows
 
 
@@ -1313,8 +1341,10 @@ def home_stock(today=None, pet=None):
     out = []
     for e in catalog():
         k = e["key"]
+        if e["category"] == ARMOR_CATEGORY:
+            continue                   # crests are adventure-town exclusives (2026-10-15)
         if (k != deal and k not in HOME_STAPLES and k not in band
-                and e["category"] not in (ARMOR_CATEGORY, "Road")):
+                and e["category"] != "Road"):
             # not on today's shelf -- come back tomorrow.  TWO shelves
             # bypass the band, because both are DOORS, not stock: the
             # Digimental shelf (the crest system's single door) and the
@@ -1381,6 +1411,12 @@ def town_stock(town_id, today=None, pet=None):
     return out
 
 
+def egg_bought_today(pet, today=None):
+    """Has the profile used today's one egg purchase?"""
+    tb = getattr(pet, "town_bought", None) or {}
+    return tb.get("day") == _today_ordinal(today) and bool(tb.get(f"{GLOBAL_SHOP_ID}:egg"))
+
+
 def town_egg_rows(town_id):
     """The town's digitama band as SHOP ROWS (shops-look-the-same,
     2026-07-22: Joel — "the egg tabs in town shops are different than the
@@ -1408,6 +1444,10 @@ def town_egg_buy(pet, idx):
         # the single buy path guards what the shelf filter promises: a
         # lineage egg is never permanently ownable (egg audit 2026-07-25)
         return ("A lineage egg — it hatches for those who earn it.", "error")
+    if rule is not None and rule["start"]:
+        # a starter is free and always yours: never charge for it or spend
+        # the day's purchase on it (shop-egg audit 2026-10-15)
+        return ("A starter egg — it's already yours.", "error")
     if idx in egg_mod.owned_now():       # same read as the shelf: never sell
         return ("You already own that egg.", "error")   # what's already earned
     day = _today_ordinal()

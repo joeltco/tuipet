@@ -55,8 +55,11 @@ from . import menu
 GROUPS = (("Food", ("Feed",)),
           ("Items", ("Rest", "Cure", "Drill", "Manners", "Power",
                      "Treasure", "Evolve", "Road")),
-          ("Eggs", (shop.ARMOR_CATEGORY,)),
+          ("Crests", (shop.ARMOR_CATEGORY,)),
           ("Honors", None))
+# The hatch-egg band is a town tab of its own ("Eggs" means hatch eggs only;
+# the crests were labelled "Eggs" too -- the shop-egg audit 2026-10-15)
+EGGS_TAB = "Eggs"
 
 # the tab whose rows carry sub-headers (the only one holding >1 category)
 _GROUPED_TAB = "Items"
@@ -159,8 +162,8 @@ class ShopPanel:
         prestige).  Bag: the goods tabs over what you own."""
         if self.mode == "shop":
             if self.town is not None:
-                return ["Food", "Items", "Eggs"]
-            return [g for g, _ in GROUPS]
+                return ["Food", "Items", "Crests", EGGS_TAB]
+            return ["Food", "Items", "Honors"]      # crests sell in towns only
         return [g for g, cats in GROUPS if cats is not None]
 
     def _grouped(self, rows, tab_name, cats):
@@ -215,6 +218,8 @@ class ShopPanel:
     def _rows(self):
         tabs = self._tabs()
         name = tabs[self.tab % len(tabs)]
+        if self.mode == "shop" and self.town is not None and name == EGGS_TAB:
+            return shop.town_egg_rows(self.town)    # the digitama band, shop-row shape
         cats = dict(GROUPS)[name]
         if self.mode == "shop":
             if cats is None:            # the HONORS board (prestige sink)
@@ -224,8 +229,6 @@ class ShopPanel:
                              worn=t["id"] == worn)
                         for t in data.load_titles()]
             if self.town is not None:      # the town counter: authored stock
-                if name == "Eggs":         # the digitama band, shop-row shape
-                    return shop.town_egg_rows(self.town)
                 return self._grouped(
                     [e for e in shop.town_stock(self.town, pet=self.pet)
                      if e["category"] in cats], name, cats)
@@ -480,7 +483,9 @@ class ShopPanel:
             desc = textwrap.wrap(sel.get("desc") or "a tamer honor", tw)[:2]
             return [sel["name"][:tw], state] + desc + [""] * (2 - len(desc))
         if sel.get("egg_idx") is not None:     # the town digitama band
-            state = "owned" if sel.get("owned") else "%db" % sel["price"]
+            state = ("owned" if sel.get("owned")
+                     else "sold out today" if shop.egg_bought_today(self.pet)
+                     else "%db" % sel["price"])
             return [sel["name"][:tw], state,
                     "a digitama, bought outright"[:tw],
                     "joins your hatch carousel"[:tw]]
@@ -577,6 +582,8 @@ class ShopPanel:
                 if e.get("egg_idx") is not None:     # digitama: owned/price
                     if e.get("owned"):
                         return "%-18s %3s %7s" % (e["name"][:18], "", "owned")
+                    if shop.egg_bought_today(self.pet):    # one egg a day, spent
+                        return "%-18s %3s %7s" % (e["name"][:18], "", "sold out")
                     return dim_if_short(
                         "%-18s %3s %7s" % (e["name"][:18], "",
                                            ("%6db" % e["price"]).strip()), e, i)
