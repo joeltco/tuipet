@@ -163,6 +163,69 @@ DECLARED_EDGES = {
     (1316, 1237),   # device-chart rebuild
     (1359, 868),   # device-chart rebuild
     (1359, 1237),   # device-chart rebuild
+    # the GODZILLA line (Digital Monster COLOR Godzilla 70th Edition, humulos
+    # dmgz chart; wired 2026-10-13): 28 new kaiju forms the corpus graph never
+    # carried, plus the device's own roads through Agumon/Monodramon/Greymon/
+    # Raremon/MetalGreymon -- hand-authored like the device-chart rebuild
+    (29, 93),   # godzilla line (dmgz 70th chart)
+    (29, 112),   # godzilla line (dmgz 70th chart)
+    (29, 1629),   # godzilla line (dmgz 70th chart)
+    (29, 1631),   # godzilla line (dmgz 70th chart)
+    (29, 1634),   # godzilla line (dmgz 70th chart)
+    (93, 220),   # godzilla line (dmgz 70th chart)
+    (93, 1636),   # godzilla line (dmgz 70th chart)
+    (93, 1639),   # godzilla line (dmgz 70th chart)
+    (112, 1639),   # godzilla line (dmgz 70th chart)
+    (112, 1641),   # godzilla line (dmgz 70th chart)
+    (220, 280),   # godzilla line (dmgz 70th chart)
+    (220, 1645),   # godzilla line (dmgz 70th chart)
+    (405, 93),   # godzilla line (dmgz 70th chart)
+    (405, 112),   # godzilla line (dmgz 70th chart)
+    (405, 1631),   # godzilla line (dmgz 70th chart)
+    (405, 1632),   # godzilla line (dmgz 70th chart)
+    (405, 1633),   # godzilla line (dmgz 70th chart)
+    (405, 1634),   # godzilla line (dmgz 70th chart)
+    (1623, 1624),   # godzilla line (dmgz 70th chart)
+    (1624, 29),   # godzilla line (dmgz 70th chart)
+    (1624, 405),   # godzilla line (dmgz 70th chart)
+    (1624, 1625),   # godzilla line (dmgz 70th chart)
+    (1625, 1626),   # godzilla line (dmgz 70th chart)
+    (1625, 1627),   # godzilla line (dmgz 70th chart)
+    (1625, 1628),   # godzilla line (dmgz 70th chart)
+    (1625, 1629),   # godzilla line (dmgz 70th chart)
+    (1625, 1630),   # godzilla line (dmgz 70th chart)
+    (1625, 1632),   # godzilla line (dmgz 70th chart)
+    (1625, 1634),   # godzilla line (dmgz 70th chart)
+    (1628, 1635),   # godzilla line (dmgz 70th chart)
+    (1628, 1636),   # godzilla line (dmgz 70th chart)
+    (1628, 1640),   # godzilla line (dmgz 70th chart)
+    (1628, 1643),   # godzilla line (dmgz 70th chart)
+    (1629, 1635),   # godzilla line (dmgz 70th chart)
+    (1629, 1638),   # godzilla line (dmgz 70th chart)
+    (1629, 1643),   # godzilla line (dmgz 70th chart)
+    (1630, 1637),   # godzilla line (dmgz 70th chart)
+    (1630, 1643),   # godzilla line (dmgz 70th chart)
+    (1631, 220),   # godzilla line (dmgz 70th chart)
+    (1631, 1640),   # godzilla line (dmgz 70th chart)
+    (1632, 1637),   # godzilla line (dmgz 70th chart)
+    (1632, 1642),   # godzilla line (dmgz 70th chart)
+    (1633, 1641),   # godzilla line (dmgz 70th chart)
+    (1633, 1642),   # godzilla line (dmgz 70th chart)
+    (1634, 220),   # godzilla line (dmgz 70th chart)
+    (1634, 1642),   # godzilla line (dmgz 70th chart)
+    (1635, 1644),   # godzilla line (dmgz 70th chart)
+    (1635, 1646),   # godzilla line (dmgz 70th chart)
+    (1636, 1645),   # godzilla line (dmgz 70th chart)
+    (1636, 1647),   # godzilla line (dmgz 70th chart)
+    (1637, 1644),   # godzilla line (dmgz 70th chart)
+    (1637, 1646),   # godzilla line (dmgz 70th chart)
+    (1638, 1645),   # godzilla line (dmgz 70th chart)
+    (1638, 1647),   # godzilla line (dmgz 70th chart)
+    (1639, 1648),   # godzilla line (dmgz 70th chart)
+    (1640, 1648),   # godzilla line (dmgz 70th chart)
+    (1640, 1649),   # godzilla line (dmgz 70th chart)
+    (1641, 1649),   # godzilla line (dmgz 70th chart)
+    (1644, 1650),   # godzilla line (dmgz 70th chart)
 }
 
 
@@ -188,7 +251,7 @@ def test_every_edge_is_real_or_declared():
                     (lid, p, num)
 
 
-DMX_STAGE_QUIRKS = {"x3a", "x3b", "kera"}   # real-device stage jumps
+DMX_STAGE_QUIRKS = {"x3a", "x3b", "kera", "godzilla"}   # godzilla: 1994 -> Burning (VI+)   # real-device stage jumps
 
 
 def test_every_line_has_one_root_and_monotonic_stages():
@@ -292,12 +355,14 @@ def test_hand_curated_lines_survived_the_curator():
 def _care_only(rule):
     """Strip battle-ish atoms; None if any alternative is battle-gated."""
     return [[a for a in alt if a[0] not in ("win", "btl", "lv", "ko6", "area",
-                                            "jogress")]
+                                            "jogress", "gc", "rand", "noarea",
+                                            "frag")]
             for alt in rule]
 
 
 def _has_battle(rule):
-    return any(a[0] in ("win", "btl", "lv", "ko6", "area", "jogress")
+    return any(a[0] in ("win", "btl", "lv", "ko6", "area", "jogress",
+                        "gc", "rand", "noarea", "frag")
                for alt in rule for a in alt)
 
 

@@ -23,7 +23,8 @@ LINES_CSV = os.path.join(os.path.dirname(__file__), "..", "src", "tuipet", "data
 # canon bonus line (kept against the humulos DM20 charts, canon scan 2026-07-08)
 # and tuipet's own authored lines (petitmon/pichimon, Joel 2026-07-09 -- canon
 # evolution families, tuipet-authored conditions)
-HAND_CURATED = ("ver1", "ver2", "ver3", "ver4", "ver5", "verE", "verX", "sakumon", "petitmon", "pichimon")
+HAND_CURATED = ("ver1", "ver2", "ver3", "ver4", "ver5", "verE", "verX", "sakumon", "petitmon", "pichimon",
+                "godzilla")   # the dmgz 70th chart, hand-wired 2026-10-13
 STAGE_ORDER = ["Fresh", "InTraining", "Rookie", "Champion", "Ultimate", "Mega"]
 # Baby II sleeps at 21:00 on every DM20 chart; Baby I is canon-NA (house 20:00)
 BEDTIME = {"Fresh": "20:00", "InTraining": "21:00", "Rookie": "21:00",

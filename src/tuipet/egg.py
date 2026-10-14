@@ -45,6 +45,11 @@ def frames(egg_type=0):
 ROLES = {"idle": [0, 1], "egg_idle": [0, 1], "hatch": [0, 1, 2]}  # frames: egg -> crack -> baby
 
 
+# the Godzilla line's egg: a waiting G-Cell Fragment (left at a G-Erosion
+# kaiju's grave, app._death_ceremony) rides into the next one hatched
+GODZILLA_EGG = "Godzilla Egg"
+
+
 def _idx(egg_type, n):
     """A SAFE bank index whatever the caller holds -- the 'guide' incident
     (2026-07-18) proved a sentinel string can reach the renderer through a

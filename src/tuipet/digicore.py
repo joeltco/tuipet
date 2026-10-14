@@ -348,6 +348,13 @@ def build_pages(pet):
         ("Age", _mins(pet.age_seconds)),
         ("Battles", f"{pet.wins}W / {pet.battles} · {pet.bits}b"),
     ]
+    if getattr(pet, "line_id", "") == "godzilla":
+        # the device's G-Cell meter (Godzilla line): filled cells per colour
+        # -- blue 14, yellow 10, red 20 -- the units the evolution routes
+        # count in.  Only this line reads it, so only this line shows it.
+        b, y, r = _petbase.gcell_cells(getattr(pet, "gcell", 0))
+        status.append(("G-Cell", f"B{b}/14 Y{y}/10 R{r}/20"
+                                 + (" · frag" if getattr(pet, "gcell_fragment", False) else "")))
     # the POWER page is the BATTLE ledger (framing fixed, gameplay polish
     # #17 2026-07-22): the Va/D/Vi attribute powers stopped gating growth
     # when those checks left evolution.check() -- lines never read them

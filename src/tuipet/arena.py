@@ -48,6 +48,7 @@ def bar(v, width=12, color=None):
 
 _FX = data.load_effects()
 GRAVESTONE = _FX.get("grave", [None])[0]      # real DVPet death.png
+GCELL_SHARD = _FX.get("gcell_fragment") or []   # a G-Cell Fragment stands in the grave's place
 
 
 def _flip_frames(frames, _fr, first, role=None):
@@ -106,8 +107,12 @@ class Screen(FxMixin, Static):
         # weather system; BASIC VPET 2026-07-16)
         wf = self.frame_i // 4                  # effect overlays keep their ~0.4s cadence
         if pet.dead:                           # a grave marker (the live path builds its own overlay below)
+            # the fallen kaiju's G-Cell Fragment REPLACES the grave (Joel
+            # 2026-10-13), twinkling on the effect cadence
+            marker = (GCELL_SHARD[wf % len(GCELL_SHARD)]
+                      if getattr(pet, "gcell_frag_left", False) and GCELL_SHARD else GRAVESTONE)
             self.update(render_screen(
-                GRAVESTONE, SCREEN_COLS, SCREEN_ROWS, on, bg, bgimg=bgimg,
+                marker, SCREEN_COLS, SCREEN_ROWS, on, bg, bgimg=bgimg,
                 overlay=_clip_win(_effect_overlay(pet, wf, SCREEN_COLS, SCREEN_ROWS * 2, tick=self.frame_i)),
                 clip=_WINDOW))
             return

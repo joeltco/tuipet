@@ -13,6 +13,7 @@ from . import lines as lines_mod  # noqa: F401
 from . import shop  # noqa: F401
 from . import theme  # noqa: F401
 from .petbase import *  # noqa: F401,F403  (constants resolve HERE, per mixin)
+from .petbase import GCELL_PROTEIN
 
 
 def _live_memory(mem):
@@ -203,6 +204,7 @@ class CareMixin:
         self._set_energy(self.energy + PILL_ENERGY_GAIN)
         self._set_weight(self.weight + PILL_WEIGHT_GAIN)
         self._last_meal_starving = False     # a tonic is never wolfed down
+        self.gcell_add(GCELL_PROTEIN)        # G-Cells: the device's Protein (strength food) costs 4
         self._set_anim("eat", 1.4)
         return "Took the pill."
 

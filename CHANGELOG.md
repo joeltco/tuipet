@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.0 — THE GODZILLA LINE HAS LANDED. The full Digital Monster COLOR (2026-10-13)
+
+THE GODZILLA LINE HAS LANDED. The full Digital Monster COLOR Godzilla 70th Edition chart is in tuipet: 28 new kaiju, from Botamon G and Baby Godzilla up through SpaceGodzilla, Kiryu, Destoroyah and Godzilla 1994, plus the G-Erosion forms of MetalGreymon, SkullGreymon and WarGreymon. Raise any Digimon to Mega to earn the Godzilla Egg. Godzilla-line pets carry the device's G-Cell meter: battle wins, wild encounters on the road and clean training strikes fill it, while losses, care mistakes and pills drain it, and it decides which kaiju your pet becomes. Check it on the data book's status page. And when a fallen G-Erosion kaiju leaves a G-Cell Fragment where its grave should be, the next Godzilla Egg hatches carrying it, which is the only road to Burning Godzilla.
+
 ## 0.5.351 — NO MORE CRASH AT LAUNCH ON AN OLDER PYTHON. A player on a Ma (2026-10-11)
 
 NO MORE CRASH AT LAUNCH ON AN OLDER PYTHON. A player on a Mac with the stock Python 3.8 had the game die right after it opened, before the egg could hatch: the background check for a newer version, and the cloud save calls, used a helper that only exists from Python 3.9 on. They now use one every Python has. tuipet still asks for Python 3.10 or newer, and that is still the best way to play it.

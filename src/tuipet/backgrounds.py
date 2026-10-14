@@ -149,6 +149,8 @@ EGG_BG = {
     43: "greenhills",    # Virus Busters Ver. 20th Egg (h: Plains)
     44: "cityday",       # Digitama X3 (* the Royal Knights' white city)
     45: "datatunnel",    # Kera Digitama (h: Hard Disk)
+    46: "city",          # Godzilla Egg (* the kaiju come ashore at the city --
+                         #   the device's G-Cell scenes end "Inside City")
 }
 
 

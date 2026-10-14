@@ -536,6 +536,12 @@ def bank_bonus_seed(n):
     _note_put("bonus_seed", int(n))
 
 
+def gcell_fragment_waiting():
+    """A G-Cell Fragment left at a G-Erosion kaiju's grave, not yet hatched
+    into a Godzilla Egg (app._death_ceremony / app._hatch_new)."""
+    return bool(_prog().get("gcell_frag"))
+
+
 def take_bonus_seed():
     return int(_note_take("bonus_seed") or 0)
 

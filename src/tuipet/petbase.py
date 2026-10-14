@@ -1036,6 +1036,33 @@ def online_reward(won, draw=False, now=None):
 
 
 
+# ---- the G-Cell meter (Godzilla line; humulos dmgz manual, G-Cells) -------------
+# one long meter: 14 blue cells x 8 pts, then 10 yellow x 12, then 20 red x 12
+GCELL_BLUE, GCELL_YELLOW, GCELL_RED = 14, 10, 20
+GCELL_BLUE_PTS, GCELL_HI_PTS = 8, 12
+GCELL_MAX = GCELL_BLUE * GCELL_BLUE_PTS + (GCELL_YELLOW + GCELL_RED) * GCELL_HI_PTS   # 472
+# the manual's point table, verbatim
+GCELL_ENCOUNTER_WIN, GCELL_ENCOUNTER_LOSE = 12, -6     # random encounter (= an adventure wild)
+GCELL_BATTLE_WIN, GCELL_BATTLE_LOSE = 6, -4
+GCELL_TRAIN_OK, GCELL_TRAIN_FAIL2, GCELL_TRAIN_FAIL1 = 4, 2, -2
+GCELL_PROTEIN = -4                                     # the device's Protein = tuipet's Pill
+GCELL_MISTAKE = -8
+# a G-Cell Fragment: 15% on the death of these (dex) -- Jr, MetalGreymon G, 1954,
+# SkullGreymon G, 1994, WarGreymon G, 1999
+GCELL_FRAG_CHANCE = 0.15
+GCELL_FRAG_DROPPERS = frozenset({1635, 1636, 1638, 1639, 1644, 1645, 1647})
+
+
+def gcell_cells(points):
+    """Filled (blue, yellow, red) cells for a G-Cell point total."""
+    p = max(0, min(GCELL_MAX, int(points)))
+    blue_full = GCELL_BLUE * GCELL_BLUE_PTS
+    blue = min(GCELL_BLUE, p // GCELL_BLUE_PTS)
+    rest = max(0, p - blue_full)
+    yellow = min(GCELL_YELLOW, rest // GCELL_HI_PTS)
+    red = min(GCELL_RED, max(0, rest - GCELL_YELLOW * GCELL_HI_PTS) // GCELL_HI_PTS)
+    return blue, yellow, red
+
 # every name (underscored included) rides the star-import back into pet.py
 # and into each mixin module -- the tier-5 name-resolution contract
 __all__ = [n for n in dir() if not n.startswith("__")]

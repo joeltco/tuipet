@@ -13,6 +13,8 @@ from . import lines as lines_mod  # noqa: F401
 from . import shop  # noqa: F401
 from . import theme  # noqa: F401
 from .petbase import *  # noqa: F401,F403  (constants resolve HERE, per mixin)
+from .petbase import (GCELL_TRAIN_OK, GCELL_TRAIN_FAIL2, GCELL_TRAIN_FAIL1,
+                      GCELL_BATTLE_WIN, GCELL_BATTLE_LOSE)
 
 
 class BattleMixin:
@@ -229,6 +231,10 @@ class BattleMixin:
         if self.weight > self._base_weight():
             self._set_weight(max(self._base_weight(), self.weight - 2))
         g = grade or ("mega" if success else "miss")
+        # G-Cells (dmgz manual): success +4, a phase-2 failure +2, a phase-1
+        # failure -2.  tuipet's drill is one sweep, so its three grades map
+        # onto the device's three outcomes: clean strike / near hit / whiff.
+        self.gcell_add({"mega": GCELL_TRAIN_OK, "normal": GCELL_TRAIN_FAIL2}.get(g, GCELL_TRAIN_FAIL1))
         if g == "mega":
             # the praise window opens for a CLEAN STRIKE only (Joel
             # 2026-07-25 "tighten"): it read `success`, so a shoulder hit
@@ -342,6 +348,10 @@ class BattleMixin:
         self._set_weight(max(self._base_weight(), self.weight - BATTLE_WEIGHT_COST))
         if online:
             return ""
+        # G-Cells (dmgz manual): a battle win +6, a loss -4 -- local bouts only,
+        # like every other progression channel (LINES_SPEC §2).  An adventure
+        # wild tops this up to the encounter's +12/-6 (adventurescreen).
+        self.gcell_add(GCELL_BATTLE_WIN if won else GCELL_BATTLE_LOSE)
         self.battles += 1
         self.stage_battles += 1                          # LINES_SPEC BTL gate (per-stage)
         self.battle_log = (self.battle_log + [1 if won else 0])[-15:]   # Pen20 rolling window

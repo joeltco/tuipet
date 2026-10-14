@@ -15,6 +15,7 @@ from . import lines as lines_mod  # noqa: F401
 from . import backgrounds  # noqa: F401
 from . import theme  # noqa: F401
 from .petbase import *  # noqa: F401,F403  (the constant bed; __all__ carries _names)
+from .petbase import GCELL_MAX, gcell_cells
 from .petbattle import BattleMixin
 from .petbody import BodyMixin
 from .petcare import CareMixin
@@ -228,6 +229,16 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
     # until revenge settles the grudge.  Real losses only, never forfeits.
     rival_num: int = -1
     rival_name: str = ""
+    # THE G-CELL METER (Godzilla line, Joel 2026-10-13: "G-cell meter. Can we
+    # build that?").  The Digital Monster COLOR Godzilla 70th device's one long
+    # meter: 44 cells = 14 blue x 8 pts, 10 yellow x 12, 20 red x 12 (472 pts),
+    # LIFETIME -- the manual's evolution-reset list leaves it out.  Moved by
+    # gcell_add() at the device's events (humulos dmgz manual).  Old saves
+    # default to 0 / False / -1 (asdict / fields(Pet)).
+    gcell: int = 0
+    gcell_fragment: bool = False    # hatched from a G-Cell Fragment (the FRAG line atom)
+    gcell_frag_left: bool = False   # this pet's death LEFT a fragment: it stands where the grave would
+    stage_roll: int = -1            # 0..99, rolled at each evolution (the RAND line atom)
     egg_type: int = 0
     bg_pick: str = ""               # picked home scene ("" = follow the egg; E picker 2026-07-17)
     generation: int = 1
@@ -754,6 +765,9 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
         # per-stage care record resets; the next stage's care decides the next form
         self.care_mistakes = self.overeat = self.disturb = 0
         self.stage_trainings = self.stage_battles = 0     # battle_log persists (Pen20 rolling window)
+        # the device's 50% coin (Chibi Godzilla / Chibi Mechagodzilla): ONE roll
+        # per stage, so re-checking the rule each tick can't re-flip it
+        self.stage_roll = random.randrange(100)
         self.injuries = 0
         self.inj_length = self.fatigue_length = 0.0
         self.levels_fought = []
@@ -836,6 +850,15 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
         return (self.num != -1 and not self.dead
                 and self.stage not in ("Egg", "Fresh")
                 and evolution.can_mode_change(self))
+
+    # ---- the G-Cell meter -----------------------------------------------------
+    def gcell_add(self, delta):
+        """Move the G-Cell meter by the manual's point table, clamped 0..472."""
+        self.gcell = max(0, min(GCELL_MAX, int(getattr(self, "gcell", 0)) + int(delta)))
+
+    def gcell_cells(self):
+        """(blue, yellow, red) cells FILLED -- earlier colours stay counted."""
+        return gcell_cells(getattr(self, "gcell", 0))
 
     # ---- care actions --------------------------------------------------------
     def _set_anim(self, name, ttl):

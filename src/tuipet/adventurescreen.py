@@ -37,7 +37,8 @@ carries progress in the fight family's grammar instead.)
 from __future__ import annotations
 from rich.cells import cell_len
 from . import data, grid, menu
-from .petbase import BATTLE_MIN_ENERGY
+from .petbase import (BATTLE_MIN_ENERGY, GCELL_ENCOUNTER_WIN, GCELL_ENCOUNTER_LOSE,
+                      GCELL_BATTLE_WIN, GCELL_BATTLE_LOSE)
 from . import adventure
 from . import shop
 from . import strikefx
@@ -625,6 +626,12 @@ class AdventurePanel(menu.SubHost):
             self.adv.fights += 1
             if won:
                 self.adv.wins += 1
+            if not self._fighting_boss:
+                # G-Cells (dmgz manual): a wayside wild is the device's RANDOM
+                # ENCOUNTER, +12 / -6.  record_battle already paid the plain
+                # bout's +6 / -4, so top it up to the encounter's numbers.
+                self.pet.gcell_add((GCELL_ENCOUNTER_WIN - GCELL_BATTLE_WIN) if won
+                                   else (GCELL_ENCOUNTER_LOSE - GCELL_BATTLE_LOSE))
         self.adv.chain(won)                   # the streak: BEFORE the bounty, so
         #                                       this win's own chain pays it
         drop = None

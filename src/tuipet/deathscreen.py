@@ -5,6 +5,17 @@ from .theme import LCD_ON, LCD_BG, DIM, SIL_SCENE  # noqa: F401  (palette names 
 
 COLS, ROWS = 40, 12   # the ONE locked arena: the grave rests in the home scenery
 GRAVE = (data.load_effects().get("grave") or [None])[0]
+# a fallen G-Erosion kaiju's G-Cell Fragment stands IN PLACE of the grave (Joel
+# 2026-10-13: "let it replace the grave"): the official shard, twinkling
+FRAGMENT = data.load_effects().get("gcell_fragment") or []
+
+
+def marker(pet, tick=0):
+    """The sprite standing where the pet fell: its G-Cell Fragment if it left
+    one, else the grave."""
+    if getattr(pet, "gcell_frag_left", False) and FRAGMENT:
+        return FRAGMENT[(tick // 4) % len(FRAGMENT)]
+    return GRAVE
 
 
 def _age_str(secs):
@@ -119,6 +130,11 @@ class DeathPanel:
         if self.new_mem:
             m = self.new_mem
             rip += f" · etched Va+{m['vaccine']} D+{m['data']} Vi+{m['virus']}"
+        if getattr(p, "gcell_frag_left", False):
+            # dmgz manual: the fragment appears behind the grave; the next
+            # Godzilla Egg hatches carrying it
+            rip += " · left a G-Cell Fragment"
+
         # field 18 + chrome 22 = 40: ESC wears its word (the bare "· ESC"
         # read as a clipped run-off -- menu audit 2026-07-21); "out" is the
         # app's leave-to-home word
@@ -132,5 +148,5 @@ class DeathPanel:
             return out
         # the memorial is a PLACE (audit 2026-07-04): the grave stands grounded
         # in the pet's home scenery, filling the LCD; words ride the strip
-        return menu.paint([grid.center(grid.prep(GRAVE, ph=ROWS * 2))],
+        return menu.paint([grid.center(grid.prep(marker(p, getattr(self, "_mq", 0)), ph=ROWS * 2))],
                           p.background(), rows=ROWS, cols=COLS)

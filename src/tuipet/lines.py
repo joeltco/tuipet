@@ -71,11 +71,18 @@ def parse_rule(text):
                                                   "None") for a in attrs):
                         raise ValueError(f"bad JOGRESS partner: {part!r}")
                     atoms.append(("jogress", attrs, None))
-            elif kind == "AREA":
+            elif kind in ("AREA", "NOAREA"):
+                # NOAREA n = map n NOT yet cleared (the dmgz "Area 7 not
+                # cleared" routes) -- the map arm only; no raid fallback
                 if not arg:
-                    raise ValueError(f"AREA atom needs a map: {part!r}")
-                atoms.append(("area", arg, None))
-            elif kind in ("CM", "TR", "OF", "BTL", "LV", "KO6"):
+                    raise ValueError(f"{kind} atom needs a map: {part!r}")
+                atoms.append((kind.lower(), arg, None))
+            elif kind == "FRAG":
+                # hatched from a G-Cell Fragment (Godzilla line, dmgz manual)
+                atoms.append(("frag", None, None))
+            elif kind in ("CM", "TR", "OF", "BTL", "LV", "KO6", "GC", "RAND"):
+                # GC = G-Cell points (0..472); RAND = the per-stage 0..99 roll
+                # (the device's 50% coin, rolled once at evolution)
                 lo, hi = _bracket(arg)
                 atoms.append((kind.lower(), lo, hi))
             else:
@@ -200,7 +207,21 @@ def _pet_level(pet):
 def _actual(pet, kind):
     return {"cm": pet.care_mistakes, "tr": pet.stage_trainings,
             "of": pet.overeat, "btl": pet.stage_battles,
-            "lv": _pet_level(pet), "ko6": pet.mega_kills}[kind]
+            "lv": _pet_level(pet), "ko6": pet.mega_kills,
+            "gc": int(getattr(pet, "gcell", 0) or 0),
+            "rand": int(getattr(pet, "stage_roll", -1))}[kind]
+
+
+def _map_cleared(pet, n):
+    """Adventure map n (0-based) cleared: the device-lifetime profile set,
+    or this life's own road (the AREA atom's map arm)."""
+    from . import adventure, persistence   # late: adventure imports data/pet
+    try:
+        prog = persistence.get_progress()
+        return bool(n in (prog.get("maps", ()) or ())
+                    or adventure.is_map_cleared(pet, n + 1))
+    except Exception:
+        return False
 
 
 def _felled_raids():
@@ -217,6 +238,10 @@ def _atom_met(pet, atom):
         return False       # a door, not a timer rule: only the lobby fusion opens it
     if kind == "win":
         return sum(pet.battle_log[-b:]) >= a
+    if kind == "frag":
+        return bool(getattr(pet, "gcell_fragment", False))
+    if kind == "noarea":
+        return not _map_cleared(pet, int(a) if str(a).lstrip("-").isdigit() else 0)
     if kind == "area":
         # AREA n = adventure area n CLEARED -- the authored meaning, RESTORED
         # 2026-07-21 (run care/evo arc) now that adventure is back.  Area
@@ -349,7 +374,8 @@ def win_gate_progress(pet):
 # ---- data-book presentation (digicorescreen) --------------------------------
 
 _TXT = {"cm": "care slips", "tr": "trainings", "of": "overfeeds",
-        "btl": "battles this stage", "lv": "level", "ko6": "Mega-class felled"}
+        "btl": "battles this stage", "lv": "level", "ko6": "Mega-class felled",
+        "gc": "G-Cell pts"}
 
 # what fills a WIN window (and what doesn't): drills feed TR gates, lobby
 # duels feed nothing (L17), and a raid attempt writes NOTHING on the pet
@@ -409,6 +435,16 @@ def _atom_row(pet, atom):
         n = int(a) if str(a).lstrip("-").isdigit() else 0
         return _atom_met(pet, atom), (f"clear map {n + 1} (or fell {n + 1} "
                                       f"raid boss{'es' if n else ''})")
+    if kind == "frag":
+        return _atom_met(pet, atom), "hatched from a G-Cell Fragment"
+    if kind == "noarea":
+        n = int(a) if str(a).lstrip("-").isdigit() else 0
+        return _atom_met(pet, atom), f"map {n + 1} not yet cleared"
+    if kind == "rand":
+        # the device's coin: the roll is fixed for the stage, so say the odds,
+        # never the hidden number
+        lo, hi = int(a), (99 if b is None else int(b))
+        return _atom_met(pet, atom), f"{hi - lo + 1}% chance (rolled at evolution)"
     span = f"{a}+" if b is None else (f"{a}" if a == b else f"{a}-{b}")
     return _atom_met(pet, atom), f"{_TXT[kind]} {span}  (now {_actual(pet, kind)})"
 

@@ -14,6 +14,7 @@ from . import lines as lines_mod  # noqa: F401
 from . import shop  # noqa: F401
 from . import theme  # noqa: F401
 from .petbase import *  # noqa: F401,F403  (constants resolve HERE, per mixin)
+from .petbase import GCELL_MISTAKE
 
 
 class BodyMixin:
@@ -157,6 +158,7 @@ class BodyMixin:
         self.care_mistakes += 1
         self.mistake_reason = reason
         self.mistake_day += 1                        # MistakeIncMissedDayChange
+        self.gcell_add(GCELL_MISTAKE)                # G-Cells: a care mistake costs 8 pts (dmgz manual)
 
     def _tick_asleep(self, dt):
         """The sleep branch: lights neglect, deep-sleep regen, the awakeLapse
