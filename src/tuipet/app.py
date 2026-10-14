@@ -162,7 +162,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("LADDER FIX. The season card shows your own online wins again instead of the leader's.")
+    WHATS_NEW = ("NO WASTED ITEMS. An item that would do nothing now refuses and stays in your bag, the Grow Capsule works on the Godzilla Mega, and the help explains the G-Cell meter.")
 
 
     BINDINGS = [

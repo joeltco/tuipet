@@ -83,6 +83,12 @@ HELP = [
     ("Each egg has its own line to a Mega.", 0),
     # evolution audit 2026-10-14: a chart's Mega route isn't every branch.
     ("Some branches stop early.", 0),
+    # final sweep 2026-10-14: explain the Godzilla chart's live dial.
+    ("Godzilla G-Cells: 0-472 points.", 0),
+    ("Local fights and drills change it;", 0),
+    ("pills and care slips lower it.", 0),
+    ("A fallen kaiju may leave a fragment", 0),
+    ("for your next Godzilla Egg.", 0),
     # "a clean hit saves your battle form" read backwards: EVERY grade
     # saves, only MEGA is worth anything, and fights lock their own bar
     # (battle audit 2026-10-14: proto 4 applies this to lobby duels too)

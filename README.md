@@ -13,9 +13,9 @@ fan community — see [Credits & acknowledgments](#credits--acknowledgments).
 
 **Status: live and actively developed** — see the
 [changelog](CHANGELOG.md) for what each release brought. tuipet is its own game: the core
-V-Pet behaviour — every mechanic, animation, and evolution line — is built
-on and verified against the real devices, with data cross-referenced against
-community references. Regular updates ship as the game grows.
+V-Pet behaviour draws on documented device evolution charts and community
+references, with tuipet's own care, combat, economy and progression rules.
+Regular updates ship as the game grows.
 
 ## What's inside
 
@@ -29,8 +29,7 @@ community references. Regular updates ship as the game grows.
   falls is the only road to Burning Godzilla.
 - **1,576 creatures**, 11 animation frames each, extracted from the game's
   sprite atlases as 1-bit bitmaps (`src/tuipet/data/sprites.json.gz`).
-- A **basic V-Pet done properly**, every surviving system faithful to the
-  real devices: care (hunger, effort, filth, sleep, lights), training
+- A **basic V-Pet** with care (hunger, effort, filth, sleep, lights), training
   drills, evolution (care-quality gates + DNA divergence + armor
   Digimentals + jogress), an **Adventure** mode (30 maps,
   bosses, towns), raid bosses, cups on a real-calendar schedule
@@ -147,8 +146,10 @@ explore, then grow, then manage:
 | **t** | train | **ENTER** | accept a found gift |
 | **p** | discipline (praise·scold) | | |
 
-SPACE works wherever ENTER does, and PageUp/PageDown leap through every
-long list.
+<!-- final sweep 2026-10-14: the road and DigiCore distinguish these keys. -->
+SPACE doubles ENTER on most screens; DigiCore uses it for gaze/page, and
+the road distinguishes walking on from entering or digging. PageUp/PageDown
+leap through supported long lists. ESC returns from a screen.
 
 **m** is the battle key: a real recorded bout against a rival of your
 pet's own stage, right at home — no purse, and each bout spends energy,
@@ -263,7 +264,7 @@ your pet grows up with (until you repaint it).
 through their own device art (fish, steak, a feast, one mushroom you should
 NOT feed), care goods and growth tools, and **toys that actually play** —
 the ball bounces, the skateboard rides, the TV glows — each nudging a real
-meter (exercise sheds weight, couch time buys energy). Every item wears its
+meter (exercise sheds weight, couch time builds DP for fusion). Every item wears its
 own device sprite, and the live dossier shows the effect, a word of
 character, what you already hold, and (for a crest egg) the armor form it
 would trigger right now. **b** is the bag: use with ENTER, sell back for
@@ -364,8 +365,10 @@ Pull requests and forks are welcome — see the source layout in
 One scoping note, because it isn't ours to give away: the MIT license covers
 **tuipet's code**. It does not cover the Digimon sprites and game data, which
 are © Bandai and derived from [DVPet](https://theundersigned.itch.io/dvpet) —
-the repository ships none of them, and you regenerate them from your own copy
-of DVPet (see [Asset pipeline](#asset-pipeline)). Details in [NOTICE](NOTICE).
+the bundled assets remain the property of their respective owners and are
+not covered by the code's MIT license. The [Asset pipeline](#asset-pipeline)
+describes regenerating source assets from your own copy of DVPet.
+Details in [NOTICE](NOTICE).
 
 ## Credits & acknowledgments
 

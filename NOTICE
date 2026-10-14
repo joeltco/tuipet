@@ -12,11 +12,12 @@ tuipet's license as "Other", which made the project look less usable than it is.
 WHAT THE MIT LICENSE DOES NOT COVER
 -----------------------------------
 
-tuipet ships no game assets. The game data and sprites it reads at runtime are
+tuipet bundles game assets separately from its MIT-licensed code.
+The game data and sprites it reads at runtime are
 derived from DVPet (https://theundersigned.itch.io/dvpet), a Digimon fan game,
 and from the Digimon franchise (© Bandai). Those assets are the property of
 their respective owners and are NOT licensed here. See the README for how to
-regenerate them from your own copy of DVPet.
+regenerate source assets from your own copy of DVPet.
 
 The Digimon franchise and all creature names, designs, and sprites are
 © Bandai. tuipet is a non-commercial fan project, not affiliated with or

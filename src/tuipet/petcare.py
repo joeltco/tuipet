@@ -13,7 +13,7 @@ from . import lines as lines_mod  # noqa: F401
 from . import shop  # noqa: F401
 from . import theme  # noqa: F401
 from .petbase import *  # noqa: F401,F403  (constants resolve HERE, per mixin)
-from .petbase import GCELL_PROTEIN
+from .petbase import GCELL_PROTEIN, WEIGHT_LIMIT_MULTIPLE
 
 
 def _live_memory(mem):
@@ -810,6 +810,11 @@ class CareMixin:
         trampoline's bounce is light training (effort, 0-4 gauge).
         ⭐`dp` is the play shelf's payout since the item refactor 2026-08-02 --
         the jogress meter, which only a night's sleep otherwise fills."""
+        # final sweep 2026-10-14: keep exercise toys when every dial is full.
+        floor = max(1, self._base_weight() - round(self._base_weight() * WEIGHT_LIMIT_MULTIPLE))
+        if (weight < 0 and self.weight <= floor and not energy
+                and not obedience and not dp and (not strength or self.strength >= 4)):
+            return _Refused("Nothing left to train or trim.")  # noqa: F405
         if dp:
             from .petbase import DP_MAX
             if self.dp >= DP_MAX:
@@ -932,7 +937,8 @@ class CareMixin:
         7200, but dt is game-minutes 1:1 -- 2.5x the longest stage in the
         game, from one 500b bottle."""
         from . import digicore
-        dur = self.STAGE_DURATION.get(self.stage, 0)
+        # final sweep 2026-10-14: read the same finite clock as growth/DigiCore.
+        dur = self._evolve_after()
         if not dur or dur >= 9e8 or not digicore.has_next(self):
             return _Refused(f"{self.name} has nothing left to hurry.")  # noqa: F405
         here = f"{self.num}:{self.stage}"
@@ -975,6 +981,9 @@ class CareMixin:
     def _training_pack(self):
         """The Dumbbell: +10 stage trainings, capped 999 (the source's canon
         value -- the +5 was unexplained drift; TUIPET catalog 2026-07-18)."""
+        # final sweep 2026-10-14: a capped counter must not burn a dose.
+        if self.stage_trainings >= 999:
+            return _Refused("Training is already full.")  # noqa: F405
         self.stage_trainings = min(999, self.stage_trainings + 10)
         return "Training +10."
 
@@ -1038,7 +1047,9 @@ class CareMixin:
         return f"{mem.get('name', 'The ancestor')}'s power lives on!"
 
     def _super_carrot(self):
-        if self.weight <= 1:
+        # final sweep 2026-10-14: _set_weight's species floor is above 1.
+        floor = max(1, self._base_weight() - round(self._base_weight() * WEIGHT_LIMIT_MULTIPLE))
+        if self.weight <= floor:
             return _Refused("Nothing left to trim.")
         self._set_weight(max(1, self.weight - 10))
         return "Feather-light!"
@@ -1075,6 +1086,11 @@ class CareMixin:
         processFoodEvol (evolution.food_select) sat with zero callers.
         Eating a new-table food now asks it; the meal is an extra gate,
         never a bypass."""
+        # final sweep 2026-10-14: these nonmeals have only one capped dial.
+        if key == "ai_supplement" and self.strength >= 4:
+            return _Refused("Effort is already full.")  # noqa: F405
+        if key == "bitter_herbs" and self.obedience >= MAX_OBEDIENCE:  # noqa: F405
+            return _Refused("Manners are already full.")  # noqa: F405
         out = self._snack(**self._SNACK_FX[key])
         if isinstance(out, _Refused):  # noqa: F405
             return out
