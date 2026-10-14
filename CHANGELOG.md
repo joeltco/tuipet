@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.17 — EGG POLISH. Retiring keeps your unused DigiMemory and today' (2026-10-14)
+
+EGG POLISH. Retiring keeps your unused DigiMemory and today's egg limit, a G-Cell Fragment survives an egg re-pick, and every lifespan reads in real time again.
+
 ## 0.6.16 — SYNC POLISH. Signing in, switching accounts and taking your  (2026-10-14)
 
 SYNC POLISH. Signing in, switching accounts and taking your pet between devices are sturdier, a damaged profile falls back to its backup, and muted players stay muted everywhere.
