@@ -323,7 +323,7 @@ def test_the_core_gaze_looms_over_the_core_background():
         dc.render_scene = real
     assert cap and all(b is not None for b in cap)   # every gaze frame carries it
     assert msgs == ["the core stirs…", "the core opens…",
-                    "A shape looms in the core…"]  # the message box narrates
+                    "One possible future looms…"]  # the message box narrates
 
 
 def test_evolves_page_windows_instead_of_overflowing():
@@ -360,7 +360,7 @@ def test_egg_gaze_shows_the_egg_and_teases_the_hatchling():
     assert pan._pet_rows(-1), "the egg sprite must render (not an empty core)"
     assert theme.SIL_SCENE in str(pan.text().markup), "no sprite ink on the LCD"
     pan.teaser_t = 20                                  # beat three: the tease
-    assert "A shape looms" in pan.strip(), pan.strip()
+    assert "One possible future" in pan.strip(), pan.strip()
 
 
 def test_egg_data_pages_leak_no_sentinels_and_labels_never_collide():

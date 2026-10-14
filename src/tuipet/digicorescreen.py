@@ -307,7 +307,9 @@ class DigiCorePanel:
             return f"One of {len(options)} DNA road forms may follow."
         return ("Nothing stirs — this is its final form."
                 if next_evolution(self.pet) is None
-                else "A shape looms in the core…")
+                # a hint, never a promise: chance, care and partner doors can
+                # all change the real road (Joel 2026-10-15, DigiCore call #7 = A)
+                else "One possible future looms…")
 
     def _detail_scene(self):
         """One candidate's requirement checklist (evolution.requirement_report):
