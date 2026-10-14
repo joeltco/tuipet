@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.0.post1 — THE GODZILLA LINE HAS LANDED, COMPLETE. The full Digital Mon (2026-10-13)
+
+THE GODZILLA LINE HAS LANDED, COMPLETE. The full Digital Monster COLOR Godzilla 70th Edition chart is in tuipet: 28 new kaiju, from Botamon G and Baby Godzilla up through SpaceGodzilla, Kiryu, Destoroyah and Godzilla 1994, plus the G-Erosion forms of MetalGreymon, SkullGreymon and WarGreymon, each firing its own shot in battle. Raise any Digimon to Mega to earn the Godzilla Egg. Godzilla-line pets carry the device's G-Cell meter: battle wins, wild encounters on the road and clean training strikes fill it, while losses, care mistakes and pills drain it, and it decides which kaiju your pet becomes. Check it on the data book's status page. And when a fallen G-Erosion kaiju leaves a G-Cell Fragment where its grave should be, the next Godzilla Egg hatches carrying it, which is the only road to Burning Godzilla.
+
 ## 0.6.0 — THE GODZILLA LINE HAS LANDED. The full Digital Monster COLOR (2026-10-13)
 
 THE GODZILLA LINE HAS LANDED. The full Digital Monster COLOR Godzilla 70th Edition chart is in tuipet: 28 new kaiju, from Botamon G and Baby Godzilla up through SpaceGodzilla, Kiryu, Destoroyah and Godzilla 1994, plus the G-Erosion forms of MetalGreymon, SkullGreymon and WarGreymon. Raise any Digimon to Mega to earn the Godzilla Egg. Godzilla-line pets carry the device's G-Cell meter: battle wins, wild encounters on the road and clean training strikes fill it, while losses, care mistakes and pills drain it, and it decides which kaiju your pet becomes. Check it on the data book's status page. And when a fallen G-Erosion kaiju leaves a G-Cell Fragment where its grave should be, the next Godzilla Egg hatches carrying it, which is the only road to Burning Godzilla.

@@ -192,3 +192,16 @@ def test_the_fragment_replaces_the_grave():
         panel._mq = t
         seen += panel.strip()
     assert "Fragment" in seen
+
+
+def test_every_godzilla_form_fires_its_own_dsprite_shot():
+    """v0.6.1: 0.6.0 shipped the line on the generic orb.  Every new form now
+    fires its own DSprite attack (stats.attack_sprite), e.g. the 1994 family
+    shares Attack_17 and Kiryu fires Attack_32."""
+    from tuipet import data
+    dev = data.load_orbs()["device"]
+    for num in range(1623, 1651):
+        shot = data.attack_orb(num, "Virus", 0)
+        assert shot in [v[0] for k, v in dev.items() if k.startswith("gz_")], num
+    assert data.attack_orb(1644, "Data", 300) == data.attack_orb(1650, "Vaccine", 0)   # 1994 == Burning (#17)
+    assert data.attack_orb(1640, "Data", 0) != data.attack_orb(1644, "Data", 0)        # Kiryu has its own

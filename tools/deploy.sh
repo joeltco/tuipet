@@ -39,7 +39,10 @@ NEXT=$(python3 - "$CUR" "$BUMP" <<'PY'
 import sys
 cur, bump = sys.argv[1], sys.argv[2]
 if bump not in ("patch", "minor", "major"):
-    assert all(p.isdigit() for p in bump.split(".")) and bump.count(".") == 2, f"bad version '{bump}'"
+    import re
+    # X.Y.Z, or X.Y.Z.postN -- a fix to a published version (PyPI never takes
+    # the same version twice; 0.6.0.post1 completed the Godzilla release)
+    assert re.fullmatch(r"\d+\.\d+\.\d+(\.post\d+)?", bump), f"bad version '{bump}'"
     print(bump); sys.exit()
 maj, mn, pa = (list(map(int, cur.split("."))) + [0, 0, 0])[:3]
 if   bump == "patch": pa += 1

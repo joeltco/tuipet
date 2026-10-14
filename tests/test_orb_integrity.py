@@ -101,12 +101,13 @@ def test_the_device_bank_is_complete_and_in_band():
     the bank against an extractor clobber (the effects.json.gz lesson)."""
     import csv as _csv
     dev = data.load_orbs()["device"]
-    assert len(dev) == 75, len(dev)      # 6 species have no DU weapon: DVPet fallback
+    # 75 DU weapons + 28 Godzilla-line shots (DSprite attack sheet, v0.6.1)
+    assert len(dev) == 103, len(dev)     # 6 species have no DU weapon: DVPet fallback
     ddir = os.path.join(os.path.dirname(data.__file__), "data")
     roster = {"".join(c for c in r["Name"].lower() if c.isalnum())
               for r in _csv.DictReader(open(os.path.join(ddir, "digimon.csv")))}
     rows = list(_csv.DictReader(open(os.path.join(ddir, "deviceAttacks.csv"))))
-    assert len(rows) == 75
+    assert len(rows) == 103
     for r in rows:
         nm = "".join(c for c in r["Name"].lower() if c.isalnum())
         assert nm in roster, f"{r['Name']} not in roster"
