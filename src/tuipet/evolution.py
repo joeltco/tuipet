@@ -8,6 +8,7 @@ GreaterThan -> actual > threshold, LessThan -> actual < threshold, EqualTo -> ==
 """
 from __future__ import annotations
 import random
+from functools import lru_cache
 from . import data
 
 WEIGHT_THRESH = 0.5  # Config.OverUnderWeightThreshold
@@ -420,6 +421,8 @@ def divergence_target(pet):
         if req.get("xantibody", "None") == "Induced" \
                 and getattr(pet, "x_antibody", "None") == "None":
             continue        # Induced X-forms stay X-egg territory (LINES_SPEC §4)
+        if t not in charted_forms():
+            continue        # classic charts only (design call #2)
         out.append(t)
     # DNA RESPECTS CARE (Joel 2026-10-14, design call #1: "B"): the steer
     # picks only among the Field's forms whose care gates the pet meets.
@@ -437,6 +440,16 @@ def divergence_target(pet):
     return random.choice(top)
 
 
+@lru_cache(maxsize=1)
+def charted_forms():
+    """Every form some egg chart (lines.csv) claims.  DNA may only steer to
+    these (Joel 2026-10-14, design call #2 "B"): never off-chart into the
+    DVPet corpus, where the fan-drawn Vital Bracelet forms live."""
+    from . import lines
+    return frozenset(n for line in lines.load_lines().values()
+                     for n in line["members"])
+
+
 def divergence_roads(pet):
     """{field: [target nums]} of every next-stage graph edge from the current
     form, by Field -- the DNA screen's map of where each charge can lead
@@ -447,6 +460,7 @@ def divergence_roads(pet):
         return {}
     _, by_num = data.load_sprites()
     reqs = data.load_requirements()
+    charted = charted_forms()
     roads = {}
     for t in data.load_evolutions().get(pet.num, []):
         rec = by_num.get(t)
@@ -460,6 +474,8 @@ def divergence_roads(pet):
         if req.get("xantibody", "None") == "Induced" \
                 and getattr(pet, "x_antibody", "None") == "None":
             continue
+        if t not in charted:
+            continue        # classic charts only (design call #2)
         roads.setdefault(rec["field"], []).append(t)
     return roads
 
