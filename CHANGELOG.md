@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.6 — BACK TO NORMAL SPEED. Battles, adventure, cups and the home  (2026-10-14)
+
+BACK TO NORMAL SPEED. Battles, adventure, cups and the home animations play at their original pace again, and any key still skips a show when you want to move on.
+
 ## 0.6.5 — SIGN IN FIRST. A fresh install now asks for your account bef (2026-10-14)
 
 SIGN IN FIRST. A fresh install now asks for your account before the egg carousel, so your cloud pet comes straight to the new device, and signing in later from Options brings your pet over properly too.
