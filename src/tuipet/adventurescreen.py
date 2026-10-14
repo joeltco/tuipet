@@ -348,6 +348,9 @@ class AdventurePanel(menu.SubHost):
         what hurrying looks like -- and the march clock restarts from the
         press, so a hurry re-paces the road instead of double-stepping into
         an auto tick that was already about to fire."""
+        # adventure audit 2026-10-14: manual travel obeys the roadside nap too.
+        if self.pet.asleep:
+            return
         self._stride(max(1, TRAVEL_TICKS - self._travel_t))
         self._travel_t = 0
         self._advance()
@@ -512,6 +515,8 @@ class AdventurePanel(menu.SubHost):
         key refuses.  It slips away instead: no bout, no life, a grace leg
         -- the pilgrimage to the town's sickbed stays walkable."""
         if (cond := self.pet.battle_condition(check_energy=False)) is not None:
+            # adventure audit 2026-10-14: this slip is a flee, so it breaks the chain.
+            self.adv.chain(False)
             self.adv.resolve(False, fled=True)
             self._note = f"{cond.rstrip('.!')} — slipped away."
             self._note_t = NOTE_HOLD
@@ -850,6 +855,13 @@ class AdventurePanel(menu.SubHost):
             return f"[b]★ {_fit(msg or 'The road is complete!', 29)}[/] [dim]KEY skip[/]"
         if self._summary:
             return menu.hints(("any key", "home"))
+        # adventure audit 2026-10-14: gate input already uses this same item menu.
+        if self._transport is not None:
+            from . import shop
+            key = self._transport[self._transport_cursor]
+            name = (shop.entry(key) or {}).get("name", "Transport")
+            nav = " ↑↓" if len(self._transport) > 1 else ""
+            return f"[b]⟿ {name}[/]  [dim]ENTER use{nav} · ESC[/]"
         if self._at_gate:                      # knocked back before the boss
             hearts = "♥" * self.adv.lives + "[dim]♡[/]" * (MAX_LIVES - self.adv.lives)
             if self._heal_t > 0 and self._note:
@@ -870,12 +882,6 @@ class AdventurePanel(menu.SubHost):
         if self.travelling:
             lost = MAX_LIVES - self.adv.lives
             hearts = "♥" * self.adv.lives + "[dim]♡[/]" * lost
-            if self._transport is not None:
-                from . import shop
-                key = self._transport[self._transport_cursor]
-                name = (shop.entry(key) or {}).get("name", "Transport")
-                nav = " ↑↓" if len(self._transport) > 1 else ""
-                return f"[b]⟿ {name}[/]  [dim]ENTER use{nav} · ESC[/]"
             if self._town_prompt:
                 return "[b]⌂ A town[/]  [dim]ENTER visit · SPACE walk on[/]"
             if self.pet.asleep:
@@ -1438,19 +1444,18 @@ class ZonePickPanel:
         right = "★ FESTIVAL" if self.holiday else f"{len(self.indices)}/{len(ZONES)}"
         out = menu.header("ADVENTURE", right)
         self.cursor = menu.list_window(out, self.indices, self.cursor, self.VIS, self._fmt)
-        if self.holiday:
+        # adventure audit 2026-10-14: a festival never restores a claimed boss purse.
+        if (adventure.is_conquered(self.pet, self.indices[self.cursor])
+                and self._bounty_claimed(self.indices[self.cursor])):
+            out.append_text(menu.note("✓ veteran — bounty claimed today"))
+        elif self.holiday:
             out.append_text(menu.note(f"★ {self.holiday}: 2× bits · more loot!"))
         elif adventure.is_conquered(self.pet, self.indices[self.cursor]):
             # the VETERAN ROAD tease (replay scaling 2026-07-21) -- the
-            # festival note owns the slot on the rarer festival days; the
-            # rationed bounty says so up front (audit 2026-07-25)
-            if self._bounty_claimed(self.indices[self.cursor]):
-                # <= 38 so it HOLDS STILL (a marqueeing ration notice reads
-                # as decoration)
-                out.append_text(menu.note("✓ veteran — bounty claimed today"))
-            else:
-                out.append_text(menu.note("✓ veteran road: foes fight trained "
-                                          "· bounties +50%"))
+            # festival note owns the slot when the bounty is still available
+            # (adventure audit 2026-10-14).
+            out.append_text(menu.note("✓ veteran road: foes fight trained "
+                                      "· bounties +50%"))
         else:
             # a steady card: the note row never blinks in and out as the
             # cursor crosses a conquered row (audit 2026-07-25: the footer

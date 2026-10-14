@@ -162,7 +162,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("BATTLE POLISH. A zero-damage raid throw no longer earns raid rewards, every throw reports, cup purses preview what you will really win, and the help text matches how battles actually work.")
+    WHATS_NEW = ("ADVENTURE POLISH. The gate shows which item you are about to use, festival maps say when the boss bounty is spent, slipping away from a fight breaks your win streak, and a sleeping traveller cannot be hurried.")
 
 
     BINDINGS = [
