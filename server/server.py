@@ -815,8 +815,9 @@ RAID_DMG_MULT = 5000
 # _clamp_card fix accepted (round-3 audit 2026-07-16).
 RAID_MULT_BY_NUM_PATH = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "raid_stage_mult.json")
+# battle audit 2026-10-14: raid text I/O names the save/catalog encoding.
 try:
-    with open(RAID_MULT_BY_NUM_PATH) as _f:
+    with open(RAID_MULT_BY_NUM_PATH, encoding="utf-8") as _f:
         RAID_MULT_BY_NUM = {int(k): int(v) for k, v in json.load(_f).items()}
 except (OSError, ValueError):
     RAID_MULT_BY_NUM = {}
@@ -833,7 +834,7 @@ RAID_HISTORY_KEEP = 5
 
 def _load_raid():
     try:
-        with open(RAID_PATH) as f:
+        with open(RAID_PATH, encoding="utf-8") as f:
             d = json.load(f)
         d.setdefault("boss", None)
         d.setdefault("board", {})
@@ -852,7 +853,7 @@ RAID = _load_raid()
 def _save_raid():
     try:
         tmp = RAID_PATH + ".tmp"
-        with open(tmp, "w") as f:
+        with open(tmp, "w", encoding="utf-8") as f:
             json.dump(RAID, f)
         os.replace(tmp, RAID_PATH)
     except OSError:
@@ -861,7 +862,7 @@ def _save_raid():
 
 def _raid_pool():
     try:
-        with open(RAID_POOL_PATH) as f:
+        with open(RAID_POOL_PATH, encoding="utf-8") as f:
             return json.load(f)
     except Exception:
         return [{"num": 0, "name": "Unknown Boss", "energy_max": 65}]
@@ -962,7 +963,8 @@ def _raid_award(name):
     for rec in sorted(RAID["history"], key=lambda r: r["id"], reverse=True):
         if name in RAID["claimed"].get(rec["id"], []):
             continue
-        if name not in rec["board"]:
+        # battle audit 2026-10-14: an old zero-damage row is not a contribution.
+        if int((rec["board"].get(name) or {}).get("damage", 0)) <= 0:
             continue
         rank = _raid_rank(rec["board"], name)
         if rec["defeated"]:
@@ -1017,13 +1019,16 @@ def _raid_hit(name, raw, num, now=None):
     rec["left"] -= 1
     try:
         raw = int(raw or 0)                # wire-supplied: "abc" was a crash
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
+        # battle audit 2026-10-14: Infinity is malformed damage too.
         raw = 0
     raw = max(0, min(raw, RAID_MAX_RAW))
     dealt = raw * RAID_DMG_MULT * _raid_mult_for_num(num)
     b["hp"] = max(0, b["hp"] - dealt)
-    entry = RAID["board"].setdefault(name, {"damage": 0, "ts": now})
-    entry["damage"] += dealt
+    # battle audit 2026-10-14: whiffs spend attempts but earn no claim rank.
+    if dealt > 0:
+        entry = RAID["board"].setdefault(name, {"damage": 0, "ts": now})
+        entry["damage"] += dealt
     # the ts is the FIRST report's stamp (the rank tie-break is "earliest
     # report", as _raid_rank documents) -- refreshing it on every hit turned
     # the tie-break into last-hit

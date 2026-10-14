@@ -84,11 +84,12 @@ HELP = [
     # evolution audit 2026-10-14: a chart's Mega route isn't every branch.
     ("Some branches stop early.", 0),
     # "a clean hit saves your battle form" read backwards: EVERY grade
-    # saves, only MEGA is worth anything, and home fights lock their own
-    # bar -- the saved form is what LOBBY rivals face (audit 2026-07-25)
+    # saves, only MEGA is worth anything, and fights lock their own bar
+    # (battle audit 2026-10-14: proto 4 applies this to lobby duels too)
     ("t train - time the strike: PERFECT", 1),
-    ("  locks the power form your lobby", 0),
-    ("  rivals will face", 0),
+    # battle audit 2026-10-14: lobby commits a live lock, not the saved drill.
+    ("  sharpens aim; every attempt trains", 0),
+    ("  effort; battles lock their own bar", 0),
     # the DNA arc told as ONE story (Joel 2026-07-22: "what does dna even
     # do lol" -- the pages teach the pieces, the guide tells the loop)
     ("x DNA - steer the next evolution:", 1),

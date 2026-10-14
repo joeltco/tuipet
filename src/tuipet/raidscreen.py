@@ -154,6 +154,10 @@ class RaidPanel(menu.SubHost):
                 self._credited += dealt
                 self.msg = f"Gate credits {dealt:,} damage!"
                 self.sfx = "attackHit"
+            elif hit.get("ok"):
+                # battle audit 2026-10-14: a whiff still spends an attempt.
+                self.msg = "Not a scratch — attempt spent. Rest and try again."
+                self.sfx = "refuse"
             else:
                 # the gate REFUSED the report -- speak ITS reason (the ack
                 # carries `why`: a fallen boss OR spent attempts; the old
@@ -284,15 +288,17 @@ class RaidPanel(menu.SubHost):
         # back None, and an ESC mid-show fast-runs the bout to completion.
         self.pet.record_battle(bool(getattr(b, "won", False)), online=True)
         dealt = int(getattr(b, "dealt", 0) or 0)
-        if dealt > 0 and self.view:
-            self.client.raid_hit(dealt)
-            self._dealt += dealt
+        # battle audit 2026-10-14: every thrown volley spends an attempt;
+        # a whiff or a poll's missing cached view must not refund it.
+        self.client.raid_hit(dealt)
+        self._dealt += dealt
+        if dealt > 0:
             # NEUTRAL until the ack lands: "reported!" used to stand even
             # when the gate rejected it or the socket was down (raid review
             # 2026-07-18); the ack path speaks the credit or the refusal
             self.msg = f"Landed {dealt} — reporting to the gate…"
         else:
-            self.msg = "Not a scratch. Rest and try again."
+            self.msg = "Not a scratch — reporting the attempt…"
 
     def key(self, k):
         if self.sub is not None:
@@ -388,7 +394,8 @@ class RaidPanel(menu.SubHost):
             left = max(0, int(b.get("end", 0) - v.get("now", 0)))
             days, hrs = left // 86400, left % 86400 // 3600
             fest = _cad.holiday()
-            # the relay pays x1.5 on WEEKENDS only -- "2x" and a festival
+            # battle audit 2026-10-14: the relay bonuses weekend FINISHES.
+            # The relay pays x1.5 on WEEKENDS only -- "2x" and a festival
             # bonus were promises the server never paid (raid review
             # 2026-07-18); the festival stays as pure calendar flavor.
             # The weekend note keys off the SERVER'S clock (its own `now`,
@@ -400,7 +407,7 @@ class RaidPanel(menu.SubHost):
             srv_wknd = _time.gmtime(v.get("now", _time.time())).tm_wday >= 5
             alt = (f"weekly boss · {days}d {hrs}h left"
                    + (f" · {fest}" if fest
-                      else " · weekend claims pay 1.5x" if srv_wknd else ""))
+                      else " · weekend finishes pay 1.5x" if srv_wknd else ""))
         if self.msg and (not alt or (self.frame_i // 40) % 2 == 0):
             return self.msg
         return alt or self.msg

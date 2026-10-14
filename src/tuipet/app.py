@@ -162,7 +162,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("EVOLUTION POLISH. X3 Megas can reach their X forms again, mode changes stay on your line, and the evolution guide is more honest about branches that end early.")
+    WHATS_NEW = ("BATTLE POLISH. A zero-damage raid throw no longer earns raid rewards, every throw reports, cup purses preview what you will really win, and the help text matches how battles actually work.")
 
 
     BINDINGS = [

@@ -265,8 +265,7 @@ def test_the_help_claims_match_the_shipped_mechanics():
     the code -- each ban below pins one of them OUT:
     - the Bandage left the bag for the F menu (R3 2026-07-23),
     - eggs are town-bought / map-unlocked, never a road find,
-    - every grade saves a form (only MEGA matters, and only LOBBY rivals
-      ever see it -- home fights lock their own bar),
+    - every grade saves a form (only MEGA matters; all fights use a live lock),
     - the assistant bills a visit fee AND an hourly wage,
     - the 5-mistake death is stage-tenure, not elder age."""
     text = "\n".join(t for t, _k in HELP)
@@ -275,7 +274,8 @@ def test_the_help_claims_match_the_shipped_mechanics():
     assert "find loot and eggs" not in text
     assert "sell eggs" in text and "map clears" in text
     assert "hit saves your battle form" not in text
-    assert "power form your lobby" in text            # the form's real reach
+    # battle audit 2026-10-14: proto 4 duels commit their own live bar lock.
+    assert "battles lock their own bar" in text
     assert "bits/hour" not in text
     assert "elder can go" not in text
 

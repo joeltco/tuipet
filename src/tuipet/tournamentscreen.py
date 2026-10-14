@@ -168,6 +168,10 @@ class TournamentPanel(menu.SubHost):
                     self.tree_view = True               # backed out: the tree waits
             return None
         if self.phase == "select":
+            if k in ("up", "k", "down", "j", "pageup", "pagedown", "enter", "space", "f"):
+                # battle audit 2026-10-14: input can arrive before the
+                # rollover renders -- the keys that read the schedule refresh it
+                self.sched = tournament.schedule(self.pet)
             n = len(self.sched)
             if k in ("up", "k"):
                 self.cursor = (self.cursor - 1) % n
@@ -452,7 +456,7 @@ class TournamentPanel(menu.SubHost):
             if tr_line:
                 from .pet import weekend_bonus
                 fee = tournament.entry_fee(self.pet, tr_line)
-                purse = int(fee * tournament.ENTRY_FEE_DIV * weekend_bonus())
+                purse = int(tournament.preview_purse(self.pet, tr_line) * weekend_bonus())
                 wk = " \u00b7 wknd x1.5" if weekend_bonus() > 1 else ""
                 out.append("  stake %db \u00b7 purse ~%db%s\n" % (fee, purse, wk),
                            style=DIM)

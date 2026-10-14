@@ -33,6 +33,17 @@ def isolate_save(tmp_path, monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def no_live_lobby(monkeypatch):
+    """⛔NO TEST MAY REACH THE LIVE LOBBY (2026-10-14).  The account-switch
+    tests start the real SyncClient, and with the default URL it logged into
+    wss://ff3mmo.com as test accounts ("joel", "newbie") thousands of times,
+    pushing test saves onto the production server.  Every test now points at
+    a closed local port; a test that runs its own server sets its own URL."""
+    monkeypatch.setenv("TUIPET_LOBBY_URL", "ws://127.0.0.1:9/")
+    yield
+
+
+@pytest.fixture(autouse=True)
 def weekday_bits(monkeypatch):
     """Pin weekend_bonus to a weekday (x1.0) so every bit-amount pin in the
     suite is deterministic no matter which real day it runs on. The weekend

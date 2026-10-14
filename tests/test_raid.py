@@ -574,7 +574,8 @@ def test_the_panel_reports_honestly_and_stays_live():
     # and the promise matches the payout (the cadence line moved into
     # _context_line with the 12-row layout, raid-menu fix 2026-07-19)
     src = inspect.getsource(RaidPanel._context_line)
-    assert "weekend claims pay 1.5x" in src and "weekend pays 2x" not in src
+    # battle audit 2026-10-14: the bonus keys off end day, never claim day.
+    assert "weekend finishes pay 1.5x" in src and "weekend pays 2x" not in src
 
 
 def test_claim_key_takes_both_cases():
@@ -644,7 +645,7 @@ def test_weekend_note_follows_the_servers_clock(monkeypatch):
         pan.client.raid = v
         pan.msg = ""
         line = pan._context_line(v, v["boss"])
-        assert ("weekend claims pay 1.5x" in line) is expect, (now, line)
+        assert ("weekend finishes pay 1.5x" in line) is expect, (now, line)
 
 
 # ---- round 29 pins (raid screen tidy, 2026-07-19) --------------------------
@@ -726,7 +727,7 @@ def test_the_weekend_note_names_the_claim():
     pan.client.raid = v
     pan.msg = ""                                        # let the cadence line show
     line = pan._context_line(v, v["boss"])
-    assert "weekend claims pay 1.5x" in line
+    assert "weekend finishes pay 1.5x" in line
 
 
 def test_raid_hit_wire_carries_no_stage():

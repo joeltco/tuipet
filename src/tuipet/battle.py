@@ -5,7 +5,8 @@ the ultimate truth for animations and mechanics).
 Both sides start at 5 HP.  The whole fight is PRECOMPUTED round by round
 (the screen replays it): each round both sides roll to hit; damage per
 landed hit is the side's PROJECTILE count, which comes from its trained
-hit-type (mega: 90% double / normal: 50% / miss: 20%).  The per-round hit
+hit-type (mega: 90% double / normal/miss: 50%; battle audit 2026-10-14,
+the approved Pen20 lock makes a miss fight at normal stats).  The per-round hit
 chance is care's scoreboard — win rate, stage rank, this-stage training,
 lifetime training, strength/hunger/energy meters, weight closeness and the
 attribute triangle all feed it.  Transcribed EXACTLY from the source rule

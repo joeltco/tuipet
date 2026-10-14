@@ -9,6 +9,7 @@ wire card passes through it.
 from __future__ import annotations
 
 import hashlib
+import math
 import random
 
 from rich.cells import cell_len, chop_cells, set_cell_size  # noqa: F401
@@ -44,7 +45,9 @@ def _clamp_card(card):
     Module-level because seeded PvP feeds BOTH engines identically-clamped
     cards -- including one's own, clamped exactly as the peer clamps it."""
     def _n(v, d=0, lo=0, hi=999):
-        if not isinstance(v, (int, float)) or isinstance(v, bool):
+        # battle audit 2026-10-14: peer JSON can contain NaN/Infinity.
+        if not isinstance(v, (int, float)) or isinstance(v, bool) \
+                or (isinstance(v, float) and not math.isfinite(v)):
             v = d
         return max(lo, min(int(v), hi))
     card = dict(card)

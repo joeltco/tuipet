@@ -184,6 +184,21 @@ def entry_fee(pet, t):
     return int(7 * base * t["bit_mod"]) // ENTRY_FEE_DIV
 
 
+def preview_purse(pet, t):
+    """Expected field purse before the calendar bonus; not the entry stake."""
+    # battle audit 2026-10-14: rounded stakes omit MaxBits and title defense.
+    tier = t["enemy_stage"] or t["age_limit"] or pet_tier(pet) or "Mega"
+    base = TOURNEY_BITS.get(tier, 0)
+    if tier == "Mega" and pet_tier(pet) is None:
+        base = TOURNEY_MAX_BITS
+    total = 0
+    for _ in range(7):
+        total = int(total + base * t["bit_mod"])
+    if t["id"] in (getattr(pet, "trophies_won", None) or {}):
+        total = total * 3 // 2
+    return total
+
+
 def _rand_trophy_ids(pet):
     """Tournament.randTrophyIDs: bucket the cups by age tier, then fill
     the 24 hourly slots rotating open/Rookie/open/Champion/open/Ultimate/open/
@@ -304,7 +319,8 @@ def next_winnable(pet):
         tr = trophy_by_id(tid)
         # the hour gate only speaks for THIS hour; a FUTURE slot is judged on
         # the rest of the rules (we have not reached it yet)
-        if tr and _eligibility_rest(pet, tr) is None:
+        # battle audit 2026-10-14: "open NOW" must not promise an unpaid stake.
+        if tr and _eligibility_rest(pet, tr) is None and _stake_check(pet, tr) is None:
             return (i, tr)
     return None
 

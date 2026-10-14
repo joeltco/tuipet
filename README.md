@@ -149,11 +149,14 @@ with the game's exact fulfilled-requirement scoring and deviation
 tiebreak. Per-stage counters
 reset on evolution; power and battle records carry for life. Good care with
 focused training walks the classic lines; neglect finds Numemon.
-Battle-gated Champions and above need real fights — adventure, raids and
-cups feed the same record.
+<!-- battle audit 2026-10-14: describe the recorded progression channels. -->
+Battle-gated Champions and above need local fights — home battles, adventure
+and cups feed the battle record. Lobby duels and raid volleys bill the body
+without feeding that record; defeated raid claims separately count Mega kills.
 
 **Training** (`t`) is the timing drill: stop the sweep on the beat to land
-the hit — effort and the drilled attribute power grow with clean rounds.
+the hit — every attempt grows effort and training, and saves its strike grade.
+Local battle wins grow power in the defeated foe's attribute.
 Battles resolve as the device's HP race.
 
 **Armor evolution**: the shop's Eggs tab sells the 11 crest Digimentals in
@@ -206,6 +209,11 @@ Semifinal → Final) with real rolled entrants; the other pairs auto-resolve
 between your rounds. Titles pay the canonical purse, count trophies, and
 gate tournament egg unlocks. An alarm can call you when a cup you care
 about opens.
+<!-- battle audit 2026-10-14: fees and elimination fractions are existing rules. -->
+Each entry spends a stake and its hourly slot (all unrun slots open on festival
+days); the featured cup runs once per real day. A quarterfinal exit pays nothing,
+a semifinal loss one third of the purse, and a final loss half. A title defense
+pays 1.5× the purse, and weekend payouts also receive 1.5×.
 
 ## Online
 
