@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.18 — LADDER FIX. The season card shows your own online wins again (2026-10-14)
+
+LADDER FIX. The season card shows your own online wins again instead of the leader's.
+
 ## 0.6.17 — EGG POLISH. Retiring keeps your unused DigiMemory and today' (2026-10-14)
 
 EGG POLISH. Retiring keeps your unused DigiMemory and today's egg limit, a G-Cell Fragment survives an egg re-pick, and every lifespan reads in real time again.
