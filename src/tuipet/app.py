@@ -31,6 +31,7 @@ from . import sound
 from . import update as update_check
 from . import cloudsync
 from . import shop
+from .petbase import TRAIN_ENERGY_COST
 from .pet import Pet
 from .petbase import POOPDANCE_AT, GCELL_FRAG_DROPPERS, GCELL_FRAG_CHANCE
 
@@ -161,7 +162,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("MENU POLISH. Every menu now tells the truth: help text matches the rules, cards name the right keys, shop limits are shown before you buy, and long names and big numbers fit their boxes.")
+    WHATS_NEW = ("CARE POLISH. Overfeeding no longer counts as a care mistake, a rescued pet no longer dies the next second, care progress survives a restart, and the home hints always name a fix you can actually do.")
 
 
     BINDINGS = [
@@ -1592,6 +1593,17 @@ class TuiPetApp(ActionsMixin, App):
         # the pill is the FEED menu's second row -- free and infinite (the
         # canon meat/pill picker), NOT a bag item; the v0.5.169 hint sent a
         # panicked player to the bag (Joel caught it 2026-07-22)
+        # care audit 2026-10-14: name a usable remedy, including its
+        # prerequisites; a dark sleeper only needs the frailty warning.
+        elif p.asleep:
+            if not p.is_frail():
+                return ""
+            left = max(0, 5 - p.care_mistakes)
+            msg = (f"{name} frail — "
+                   + (f"{left} more slip{'s' if left != 1 else ''} could be fatal!"
+                      if left else "handle with perfect care!"))
+        elif p.poop and (p.sick or p.hunger == 0 or p.strength == 0):
+            msg = f"{name} needs cleaning! ([b]C[/])"
         elif p.sick:          msg = f"{name} is sick! ([b]F[/] — feed it the pill)"
         # ...and the injury cure is the H KEY (2026-07-26 final ruling:
         # "remove bandage as an item alltogether and just add an h heal
@@ -1599,6 +1611,8 @@ class TuiPetApp(ActionsMixin, App):
         # lesson these lines keep re-learning.
         elif p.is_injured():  msg = f"{name} is hurt! ([b]H[/] — patch it up)"
         elif p.hunger == 0:   msg = f"{name} is hungry! ([b]F[/])"
+        elif p.strength == 0 and p.energy < TRAIN_ENERGY_COST:
+            msg = f"{name}'s effort is empty! ([b]F[/] — pill)"
         elif p.strength == 0: msg = f"{name}'s effort is empty — train it! ([b]T[/])"
         elif p.poop >= 3:     msg = f"{name} needs cleaning! ([b]C[/])"
         # ...and never nag a SLEEPER to rest (bug report 2026-07-26,

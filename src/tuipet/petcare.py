@@ -122,7 +122,8 @@ class CareMixin:
         F menu picks MEAT or PILL; the whole DVPet food catalog -- taste
         tiers, nutrition macros, calories, food evolutions -- left with it.
         Kept as the meat entry so the assistant and old callers still feed."""
-        return self.feed_meat()
+        # care audit 2026-10-14: compatibility callers keep the serving type.
+        return self.feed_meat(assisted=assisted)
 
     def feed_meat(self, assisted=False):
         """Meat: hunger +1, weight +1.  The source's refusal gates (canon
@@ -147,17 +148,10 @@ class CareMixin:
             self._set_anim("refuse", 1.0)
             return "Clean up first!"
         if self.hunger >= FULL_HUNGER:
-            # THE OVERFEED PENALTY (D2, 2026-07-23): canon overeatPenalty
-            # bills a stuffed pet -- weight piles on and it counts as a
-            # care slip.  This branch was "penalty-free", which made
-            # feeding the one care verb you could not get wrong; a vpet's
-            # food has to be a decision.  The pet head-shakes FIRST, so
-            # nothing is charged before you have been warned.  (The bag's
-            # own foods refuse at a full belly and the assistant only
-            # serves at hunger 0, so this is the single stuffing door.)
+            # care audit 2026-10-14: Joel's three-call ruling excludes
+            # overfeeding; its weight and evolution OF penalties still stand.
             self.overeat += 1                    # the OF-gate signal (evolution)
             self._set_weight(self.weight + 1)
-            self.care_mistakes += 1
             self._set_anim("refuse", 1.0)
             return f"{self.name} is too full! (✗ overfed)"
         # (a HIRED assistant is never blown off -- you paid for that
@@ -238,7 +232,8 @@ class CareMixin:
         (from the pre-strip discipline audit)."""
         if (_g := self._guard()) is not None:
             return _g
-        if self.world_seconds <= getattr(self, "praise_window", 0.0):
+        # care audit 2026-10-14: zero is the absent-window sentinel.
+        if 0 < getattr(self, "praise_window", 0.0) >= self.world_seconds:
             self.praise_window = 0.0
             self._set_obedience(self.obedience + 10)
             self._set_anim("happy", 1.8)

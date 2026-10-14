@@ -1347,7 +1347,8 @@ def discipline(app):
     app.stats_w.border_subtitle = gen_subtitle(p)
     if p.discipline_call:
         moment = f"[{T.NEG}]acting up![/]"
-    elif p.world_seconds <= getattr(p, "praise_window", 0.0):
+    # care audit 2026-10-14: zero means no earned praise window.
+    elif 0 < getattr(p, "praise_window", 0.0) >= p.world_seconds:
         moment = f"[{T.POS}]a proud moment[/]"
     else:
         moment = "[dim]calm[/]"

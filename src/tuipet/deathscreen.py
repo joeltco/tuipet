@@ -21,9 +21,9 @@ def marker(pet, tick=0):
 def _age_str(secs):
     """Readable lifespan for the memorial (was raw minutes)."""
     secs = int(max(0, secs))
-    d, rem = divmod(secs, 86400)
-    h, rem = divmod(rem, 3600)
-    m = rem // 60
+    # care audit 2026-10-14: age_seconds stores game MINUTES.
+    d, rem = divmod(secs, 1440)
+    h, m = divmod(rem, 60)
     if d:
         return f"{d}d {h}h"
     if h:

@@ -46,8 +46,9 @@ class DisciplinePanel:
             # landed praise look like it did nothing.  (The asleep/dead/
             # young guards live at the door in action_discipline, so a
             # panel that is open always reaches the verb.)
+            # care audit 2026-10-14: unset windows cannot earn a show.
             if self.cursor == 0:
-                landed, msg, show = (p.world_seconds <= getattr(p, "praise_window", 0.0),
+                landed, msg, show = (0 < getattr(p, "praise_window", 0.0) >= p.world_seconds,
                                      p.praise(), "cheer")
             else:
                 landed, msg, show = bool(p.discipline_call), p.scold(), "jeer"
@@ -60,7 +61,7 @@ class DisciplinePanel:
         p = self.pet
         if p.discipline_call:
             return "it is ACTING UP — a scold lands"
-        if p.world_seconds <= getattr(p, "praise_window", 0.0):
+        if 0 < getattr(p, "praise_window", 0.0) >= p.world_seconds:
             return "a PROUD moment — praise lands"
         return "all calm — neither will land"
 

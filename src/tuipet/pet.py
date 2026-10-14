@@ -180,6 +180,17 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
     _str_call_t: float = 0.0        # effort-call answer window / post-mistake postpone
     _ac_pay: float = 0.0            # the assistant's hourly retainer accumulator
     _dp_t: float = 0.0              # sleep DP-refill accumulator
+    # care audit 2026-10-14: reload must preserve partial care progress.
+    _sleep_min: float = 0.0
+    _nap_e: float = 0.0
+    _nap_cycle: float = 0.0
+    _to_nap_t: float = 0.0
+    _ac_cool: float = 0.0
+    _obed_t: float = 0.0
+    _lit_obed_hit: bool = False
+    _interest_t: float = 0.0
+    _mood_rec_t: float = 0.0
+    _rank_t: float = 0.0
     _exercise_day: int = -1         # daily exercise counter's day stamp
     # the FIFTH that escaped it (item sweep 2026-07-24): the bedtime grace
     # clock -- a disturb's postpone AND the whole effect of a 300b Caffeine
@@ -569,7 +580,10 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
             # no Death form takes it: it lives on -- the continuous death checks
             # need the fatal counters off the trigger line (a mechanical floor;
             # DVPet's checks are edge events so canon never faces this)
-            self.care_mistakes = min(self.care_mistakes, 19)
+            # care audit 2026-10-14: rescue must clear the applicable cap.
+            cap = (4 if self.stage in ("Ultimate", "Mega")
+                   and self.stage_seconds >= self.LATE_STAGE_WINDOW else 19)
+            self.care_mistakes = min(self.care_mistakes, cap)
             self.injuries = min(self.injuries, 19)
         self._set_anim("happy", 2.0)                  # the rescue ends in a cheer
         return old if targets else None
@@ -791,7 +805,10 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
         # per stage, so re-checking the rule each tick can't re-flip it
         self.stage_roll = random.randrange(100)
         self.injuries = 0
-        self.inj_length = self.fatigue_length = 0.0
+        # care audit 2026-10-14: a carried wound retains its natural cure.
+        if not self.injured:
+            self.inj_length = 0.0
+        self.fatigue_length = 0.0
         self.levels_fought = []
         self.reset_dna()                # DNA.resetDNA: charged DNA clears each evolution
         self.food_eaten = {c: 0 for c in data.FOOD_CATEGORIES}   # MajorFood resets per stage

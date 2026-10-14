@@ -223,7 +223,8 @@ def test_every_care_mistake_has_exactly_one_source(monkeypatch):
     r = _pet(hunger=4)
     before = r.care_mistakes
     r.feed_meat()
-    assert r.care_mistakes == before + 1
+    # care audit 2026-10-14: overfeeding is not an unanswered call.
+    assert r.care_mistakes == before
 
 
 def test_the_death_ladder_holds_at_both_ends():

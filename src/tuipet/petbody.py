@@ -883,6 +883,8 @@ class BodyMixin:
         self._calm_discipline_call()                # bedtime placates the tantrum (canon
         #                                             sleep-onset setDisciplineCall(false))
         self._lights_t = 0.0                        # setAsleep resets _callMinutesLights
+        # care audit 2026-10-14: the obedience ding is once per NIGHT.
+        self._lit_obed_hit = False
         gain = max(1, getattr(self, "_sleep_energy_gain", 3))
         need = math.ceil(max(0, self.max_energy - self.energy) / gain) * 60.0
         self.awake_limit = _clamp(need, MIN_AWAKE_LIMIT, MAX_AWAKE_LIMIT)
