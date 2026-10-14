@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.13 — EVOLUTION POLISH. X3 Megas can reach their X forms again, mo (2026-10-14)
+
+EVOLUTION POLISH. X3 Megas can reach their X forms again, mode changes stay on your line, and the evolution guide is more honest about branches that end early.
+
 ## 0.6.12 — CARE POLISH. Overfeeding no longer counts as a care mistake, (2026-10-14)
 
 CARE POLISH. Overfeeding no longer counts as a care mistake, a rescued pet no longer dies the next second, care progress survives a restart, and the home hints always name a fix you can actually do.
