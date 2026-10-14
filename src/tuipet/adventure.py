@@ -628,6 +628,7 @@ class Adventure:
             return ("encounter", enemy)
         self.loc += 1
         self._march_drain()              # the leg's toll: energy / calories / effort
+        self.pet.burn_wards(1.0)         # a marched leg spends the battle wards
         if self._in_town(self.loc):
             if not self._resting:        # just stepped into a town: rest up
                 self._resting = True

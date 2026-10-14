@@ -190,7 +190,7 @@ def test_the_bag_dossier_shows_resale():
     plain = pan.text().plain
     from tuipet.app import _hud_plain
     assert "R sell" in _hud_plain(pan.strip())   # keys ride the STRIP (round 31)
-    assert "sells 100b" in plain              # resale in the dossier info
+    assert "sells 300b" in plain              # resale in the dossier info (600b drink)
 
 
 def test_crest_note_is_the_live_gate():

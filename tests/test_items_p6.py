@@ -59,7 +59,9 @@ def test_every_chip_is_backed_by_its_canon_row():
 def test_the_omni_chip_is_canon_too():
     row = _foods()["33"]
     e = shop.CATALOG["omni_chip_g"]
-    assert e.icon == "f:33" and e.price == int(row["DefaultPrice"])
+    # boss-reward only since the shop/loot audit 2026-10-14 (the Mega maps'
+    # first clear); the authored row still sets its icon and its +30s
+    assert e.icon == "f:33" and e.price is None and int(row["DefaultPrice"]) == 8000
     for col in ("Vaccine", "Data", "Virus"):
         assert int(row[col]) == 30
 

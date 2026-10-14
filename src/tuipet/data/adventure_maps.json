@@ -372,7 +372,8 @@
    "meat"
   ],
   "reward": [
-   "vitamin"
+   "vitamin",
+   "grow_capsule"
   ]
  },
  {
@@ -1315,7 +1316,8 @@
   ],
   "reward": [
    "hp_chip_g",
-   "human_ice_spirit"
+   "human_ice_spirit",
+   "grow_capsule"
   ]
  },
  {

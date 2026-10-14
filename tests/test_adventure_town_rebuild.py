@@ -66,10 +66,11 @@ def test_town_cap_and_sell_rates():
         assert shop.town_buy(pet, row, today)[1] == "confirm"
     assert shop.town_buy(pet, row, today)[1] == "error"
     assert pet.inventory["fish"] <= shop.TOWN_DAILY_CAP
-    assert shop.town_sell_price("fish", 0) == shop.CATALOG["fish"].price // 2
+    assert shop.town_sell_price("fish", 0) == shop.town_price(0, "fish", shop.CATALOG["fish"].price) // 2
     deep_only = next(k for k, v in shop.CATALOG.items()
                      if v.price and v.tier == "legendary" and k not in shop._ROAD_ONLY)
-    assert shop.town_sell_price(deep_only, 0) == shop.CATALOG[deep_only].price * 7 // 10
+    # an absent good pays half, like everywhere (7/10 minted bits on sale buys; audit 2026-10-14)
+    assert shop.town_sell_price(deep_only, 0) == shop.CATALOG[deep_only].price // 2
 
 
 def test_deep_town_egg_buy_uses_the_existing_counter():

@@ -263,6 +263,14 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
     # DVPet's 375b town steak vs the 2000b catalog would otherwise be a
     # money printer through the demand resale)
     town_bought: dict = _dcf(default_factory=dict)
+    # shop/loot audit 2026-10-14: attribute power BOUGHT this generation
+    # ({"vaccine": n, ...}, capped at the counter), the stage a Grow Capsule
+    # was already used in ("<num>:<stage>", one per stage), and the
+    # once-per-generation items already spent (Cold Compress, Miracle Drink)
+    bought_power: dict = _dcf(default_factory=dict)
+    grow_used: str = ""
+    once_used: list = _dcf(default_factory=list)
+    duel_paid: dict = _dcf(default_factory=dict)   # {opponent: [paid duel times]} (3/hour)
     # the day's claimed REPLAY boss bounties {"day": ordinal, "<zi>": 1} --
     # a conquered zone's boss pays its veteran bounty once per real day
     # (anti-printer, adventure audit 2026-07-25: the road was the one

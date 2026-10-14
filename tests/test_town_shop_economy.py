@@ -27,7 +27,7 @@ def test_the_rotating_deal_is_one_a_day_and_canon_half():
     deals = [e for e in stock if e["deal"]]
     assert len(deals) == 1                             # ONE deal, not a sale rack
     d = deals[0]
-    assert d["price"] == d["base_price"] // 2          # canon checkSale, factor 2
+    assert d["price"] == shop.deal_price(d["base_price"])   # 25% off (audit 2026-10-14)
     again = [e["key"] for e in shop.town_stock(A_TOWN, D) if e["deal"]]
     assert again == [d["key"]]                         # stable all day
     sids = {shop.town_deal_sid(A_TOWN, D + datetime.timedelta(days=i))
@@ -37,8 +37,9 @@ def test_the_rotating_deal_is_one_a_day_and_canon_half():
 
 def test_a_festival_puts_the_whole_counter_on_sale():
     stock = shop.town_stock(A_TOWN, FEST)
-    assert stock and all(e["deal"] for e in stock)
-    assert all(e["price"] == e["base_price"] // 2 for e in stock)
+    # every everyday good, 25% off; progression goods never (audit 2026-10-14)
+    assert stock and all(e["deal"] == shop.deal_ok(e["key"]) for e in stock)
+    assert all(e["price"] == shop.deal_price(e["base_price"]) for e in stock if e["deal"])
 
 
 def test_the_daily_stock_cap_stops_the_money_printer():
@@ -105,7 +106,7 @@ def test_the_home_shop_has_a_daily_deal():
     deals = [e for e in rows if e.get("deal")]
     assert len(deals) == 1, "exactly one home deal a day"
     d = deals[0]
-    assert d["price"] == max(1, d["base_price"] // shop.HOME_DEAL_FACTOR)
+    assert d["price"] == shop.deal_price(d["base_price"])
     assert d["price"] < d["base_price"]
 
 

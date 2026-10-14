@@ -161,7 +161,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("SHARPER SHOTS. Chibi Godzilla's fireball shows its hot core, Mugendramon M fires a real burst instead of a black block, and Frozomon throws Frigimon's snowball instead of a blank square.")
+    WHATS_NEW = ("FAIR SHOPS. Grow Capsules are boss prizes now (maps 7 and 23), one per stage. Evolution relics need a ready body, deals are 25% off everyday goods, each town prices its own shelf, and the money loops are closed.")
 
 
     BINDINGS = [

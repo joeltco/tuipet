@@ -553,7 +553,8 @@ def test_abort_mid_fight_is_a_forfeit_win_not_a_void():
     pan._on_relay({"from_id": 2, "payload": {"kind": "battle", "abort": True}})
     assert pan.client.reports == [(True, "Ryo")], "the winning half files"
     # L17 ruling: the purse pays and the ladder credits; wins stay still
-    assert pan.pet.wins == wins0 and pan.pet.bits > bits0
+    # the win files, but a forfeit pays no purse (shop/loot audit 2026-10-14)
+    assert pan.pet.wins == wins0 and pan.pet.bits == bits0
     assert pan.bphase == "over" and "you win" in pan.bt_outcome.lower()
     _fits(pan, "forfeit-win over screen")
 

@@ -11,7 +11,9 @@ Every row is derived from data already in the game, never invented:
   finds  = food + care catalog items for the terrain family
   reward = the tier's power item (+ a Human Spirit on the ten deepest maps,
            + the X-Program on the Mega maps: the retired road was their only
-           source -- the spirits as zone finds, the X-Program as an elite drop)
+           source -- the spirits as zone finds, the X-Program as an elite drop;
+           + a Grow Capsule on maps 7 and 23, its only source since the
+           shop stopped selling it -- shop/loot audit 2026-10-14)
 Run:  PYTHONPATH=src python3 tools/build_adventure_maps.py
 """
 import json, os, sys
@@ -66,6 +68,7 @@ MAPS = [
     ("datatunnel", "Mega", [DA], WIRE),
 ]
 NAME_OVERRIDE = {"islandnight": "Monster Island"}
+GROW_CAPSULE_MAPS = (6, 22)        # maps 7 and 23 (0-based)
 UP = {"Rookie": "Champion", "Champion": "Ultimate", "Ultimate": "Mega", "Mega": "Mega"}
 REWARD = {"Rookie": "vitamin", "Champion": "hp_chip", "Ultimate": "hp_chip_g", "Mega": "omni_chip_g"}
 SPIRITS = ["human_fire_spirit", "human_light_spirit", "human_ice_spirit", "human_wind_spirit",
@@ -101,6 +104,8 @@ def main():
         deep = len(MAPS) - len(SPIRITS)
         if i >= deep:
             reward.append(SPIRITS[i - deep])
+        if i in GROW_CAPSULE_MAPS:
+            reward.append("grow_capsule")
         out.append({"id": scene, "name": NAME_OVERRIDE.get(scene, backgrounds.NAMES[scene]),
                     "scene": scene, "tier": tier,
                     "fields": "Godzilla kaiju" if fields == GZ else fields,

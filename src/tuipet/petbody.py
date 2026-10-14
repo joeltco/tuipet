@@ -54,6 +54,18 @@ class BodyMixin:
             self._special_idle()
         self._maybe_evolve()
 
+    WARD_LAPSES = ("vitamin_lapse", "tonic_lapse", "ward_lapse")
+    BOUT_WARD_MINUTES = 60.0      # one bout ~ a minute of real play (measured ~60s)
+
+    def burn_wards(self, minutes):
+        """Spend the battle wards (Vitamin, Gold Pill, Vitamin G) on time the
+        life clock never sees: the road and the arena run behind a paused
+        menu, so a "24-hour" pill used to last unlimited runs (shop/loot
+        audit 2026-10-14)."""
+        for g in self.WARD_LAPSES:
+            if getattr(self, g, 0.0) > 0:
+                setattr(self, g, max(0.0, getattr(self, g) - minutes))
+
     def _tick_clock(self, dt):
         """The world clock: hour rollover (tournament alarm) + weather -- these
         run even over the grave."""

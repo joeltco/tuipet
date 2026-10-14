@@ -238,8 +238,7 @@ class BoutMixin:
         report = getattr(self.client, "ladder_report", None)
         if report and opp_nm and not draw:
             report(won, opp_nm)
-        from .pet import online_reward
-        purse = online_reward(won, draw=draw)
+        purse = self._paid_purse(won, draw=draw)
         self.pet.record_battle(won and not draw, online=True)
         # pet.add_bits died with the classic revert (v0.5.0) -- every online
         # payout has crashed on BOTH sides since; caught by the live two-bot
@@ -333,6 +332,26 @@ class BoutMixin:
             self.client.relay(self.partner[0], {"kind": "battle", "abort": True})
         self._return_to_lobby("Forfeit — counted as a loss." if counted
                               else "You forfeited.")
+    PAID_DUELS_PER_HOUR = 3            # per opponent (audit 2026-10-14)
+
+    def _paid_purse(self, won, draw=False):
+        """The purse for a FINISHED duel, paid for at most three duels per
+        opponent per hour; past that the bout still counts, it just pays 0."""
+        import time as _time
+        from .pet import online_reward
+        opp = (self.partner or (0, ""))[1] or (self.opp_card or {}).get("name") or "?"
+        now = _time.time()
+        led = dict(getattr(self.pet, "duel_paid", None) or {})
+        recent = [t for t in led.get(opp, []) if now - t < 3600]
+        if len(recent) >= self.PAID_DUELS_PER_HOUR:
+            led[opp] = recent
+            self.pet.duel_paid = led
+            return 0
+        led[opp] = recent + [now]
+        self.pet.duel_paid = {k: v for k, v in led.items()
+                              if any(now - t < 3600 for t in v)}
+        return online_reward(won, draw=draw)
+
     def _opp_fled(self):
         """The partner walked out of a RUNNING seeded fight (abort relay or
         roster vanish): that is THEIR forfeit.  File the winner's half so the
@@ -343,14 +362,12 @@ class BoutMixin:
         report = getattr(self.client, "ladder_report", None)
         if report and opp_nm:
             report(True, opp_nm)
-        from .pet import online_reward
-        purse = online_reward(True)
+        # a FORFEIT pays no purse (shop/loot audit 2026-10-14): a friend
+        # starting and abandoning bouts minted 200b a time.  The win still
+        # counts on the record and the ladder.
         self.pet.record_battle(True, online=True)
-        self.pet.bits += int(purse)
         self.bt_outcome = "Opponent fled — you win!"
-        from .pet import weekend_bonus
-        self.bt_reward = f"+{purse}b" + ("  (weekend bonus!)"      # calendar, not amount
-                                         if weekend_bonus() > 1 else "") + _evo_note(self.pet)
+        self.bt_reward = "no purse for a forfeit" + _evo_note(self.pet)
         self.bt_payload = ("battle_msg", self.bt_outcome)
         self.bphase = "over"
         self._show_verdict(True, False, "your rival walked out")

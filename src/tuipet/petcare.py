@@ -336,6 +336,12 @@ class CareMixin:
                               # give Beast), the X-Program is an elite drop,
                               # and a gift is supposed to be NICE
                               "x_program", "burnt_food", "hedonism_101",
+                              # progression skips and boss-only rewards are
+                              # never gift-wrapped (shop/loot audit 2026-10-14)
+                              "grow_capsule", "time_gear", "hp_chip", "hp_chip_g",
+                              "omni_chip_g", "horn_helmet", "grey_claws",
+                              "water_bottle", "torn_tatter", "white_wings",
+                              "black_wings", "metal_armor", "flaming_wings",
                               "prank_capsule_a", "prank_capsule_b",
                               "human_fire_spirit", "human_light_spirit",
                               "human_ice_spirit", "human_wind_spirit",
@@ -541,13 +547,21 @@ class CareMixin:
         # anything else DISTURBS -- then applies.  The FUTON joins the exempt
         # set (2026-07-26): it is the sleep family's fourth member -- sliding
         # a bed under a sleeper is the opposite of a disturbance.
+        if key in self._ONCE_PER_LIFE and key in (getattr(self, "once_used", None) or []):
+            # the care erasers work once per generation (shop/loot audit
+            # 2026-10-14): a repeatable eraser rewrote the care record
+            return _Refused("It won't work twice in one life.")  # noqa: F405
         if self.asleep and key not in ("music_player", "sleeping_pill",
                                        "futon"):
             self._disturbed()
         out = fx()
         if not isinstance(out, _Refused) and out is not None:
             self.take_item(key)
+            if key in self._ONCE_PER_LIFE:
+                self.once_used = list(getattr(self, "once_used", None) or []) + [key]
         return out
+
+    _ONCE_PER_LIFE = frozenset({"cold_compress", "miracle_drink"})
 
     def _crest_egg(self, key):
         """A crest egg -> the classic Digimental item-evolution flow."""
@@ -925,6 +939,11 @@ class CareMixin:
         dur = self.STAGE_DURATION.get(self.stage, 0)
         if not dur or dur >= 9e8 or not digicore.has_next(self):
             return _Refused(f"{self.name} has nothing left to hurry.")  # noqa: F405
+        here = f"{self.num}:{self.stage}"
+        if getattr(self, "grow_used", "") == here:
+            # one capsule per stage (shop/loot audit 2026-10-14): a stack
+            # compressed egg->Mega's ~2h of timers into seconds
+            return _Refused(f"{self.name} already took one this stage.")  # noqa: F405
         ceiling = dur - 1.0                       # never reaches the gate
         target = min(self.stage_seconds + dur * GROW_CAPSULE_FRACTION,  # noqa: F405
                      ceiling)
@@ -932,6 +951,7 @@ class CareMixin:
             return _Refused("The growth clock is already full.")  # noqa: F405
         moved = target - self.stage_seconds
         self.stage_seconds = target
+        self.grow_used = here
         return f"Time lurches forward. (+{int(moved)}min)"
 
     def _anti_evo(self):
@@ -1275,6 +1295,18 @@ class CareMixin:
             target = evolution.item_select(self, item_id)
         else:
             target = evolution.item_direct(self, self._DIRECT_EVO_TARGET[key])
+            if target is not None:
+                # "if the body is ready" means it now (shop/loot audit
+                # 2026-10-14): an Agumon with 19 care mistakes at 0 seconds
+                # wore Grey Claws into Greymon.  The relic opens the door
+                # only for a body that meets the form's own care gates and
+                # has lived half its stage.
+                dur = self.STAGE_DURATION.get(self.stage, 0)
+                if (not evolution.check(self, target, item=evolution.item_gate(target),
+                                        roll=False)
+                        or (dur and dur < 9e8
+                            and self.stage_seconds < dur * RELIC_STAGE_FRACTION)):  # noqa: F405
+                    target = None
         if target is None:
             self._set_anim("refuse", 1.0)
             return _Refused(f"{self.name} can't use that yet.")  # noqa: F405

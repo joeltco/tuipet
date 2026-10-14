@@ -964,7 +964,8 @@ def _raid_award(name):
                        min(RAID_RANK_BITS[3], int(RAID_RANK_BITS[3] * share * 5)))
             items = 0
         return {"id": rec["id"], "rank": rank, "defeated": rec["defeated"],
-                "boss": rec["boss_name"], "bits": bits, "items": items}
+                "boss": rec["boss_name"], "bits": bits, "items": items,
+                "ended": rec.get("ended")}
     return None
 
 
@@ -1024,10 +1025,13 @@ def _raid_claim(name, raid_id, now=None):
         return {"t": "raid_reward", "ok": False}
     import random as _r
     bits = a["bits"]
-    wd = time.gmtime(now).tm_wday
+    # the weekend half-again rides the day the raid ENDED, not the day it
+    # is claimed (shop/loot audit 2026-10-14: holding a weekday claim to
+    # Saturday was a free +50%).  UTC like the attempt ledger and the
+    # ladder season: ONE day-clock (two-clocks audit 2026-07-18)
+    ended = a.get("ended")
+    wd = time.gmtime(ended if ended is not None else now).tm_wday
     if wd >= 5:
-        # weekend claims pay half again -- UTC like the attempt ledger and
-        # the ladder season: ONE day-clock (two-clocks audit 2026-07-18)
         bits = int(bits * 1.5)
     items = [_r.choice(RAID_ITEM_POOL) for _ in range(a["items"])]
     RAID["claimed"].setdefault(a["id"], []).append(name)

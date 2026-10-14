@@ -193,7 +193,7 @@ def test_an_opponents_flight_pays_once_even_if_the_abort_repeats():
     pan._opp_fled()
     mid = _ledger(pan.pet)
     assert pan.client.reports == [(True, "mika")]
-    assert mid["bits"] > 1000                        # the purse landed
+    assert mid["bits"] == 1000      # a forfeit pays no purse (shop/loot audit 2026-10-14)
     pan._on_relay({"t": "relay", "from_id": 2, "from_name": "mika",
                    "payload": {"kind": "battle", "abort": True}})
     assert _ledger(pan.pet) == mid

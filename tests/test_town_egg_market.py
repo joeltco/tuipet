@@ -32,7 +32,7 @@ def test_egg_price_charges_for_earnable_eggs():
                    if (data.load_egg_unlock().get(i) or {}).get("start"))
     earned = shop.town_egg_stock(0)[0]
     assert shop.egg_price(starter) == 0
-    assert shop.egg_price(earned) == 800
+    assert shop.egg_price(earned) == shop.EGG_BUY_PRICE == 10000   # audit 2026-10-14
 
 
 def test_the_grid_renders_real_8x8_egg_thumbnails():
@@ -48,16 +48,16 @@ def test_the_grid_renders_real_8x8_egg_thumbnails():
 
 def test_buying_an_egg_spends_bits_and_owns_it(tmp_path, monkeypatch):
     monkeypatch.setenv("HOME", str(tmp_path))
-    p = _pet(bits=2000)
+    p = _pet(bits=12000)
     pan = TownEggPanel(p, town_id=0)
     idx = pan.stock[0]
     pan.i = 0
     pan._buy()
-    assert p.bits == 1200                               # 2000 - 800
+    assert p.bits == 2000                               # 12000 - 10000
     assert idx in set(persistence.get_eggs_owned())     # joins the carousel
     # a second buy of the same egg is refused (already owned)
     pan._buy()
-    assert p.bits == 1200
+    assert p.bits == 2000
 
 
 def test_buying_refused_without_bits(tmp_path, monkeypatch):

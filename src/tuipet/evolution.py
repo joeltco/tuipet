@@ -86,7 +86,7 @@ def _dna_ok(pet, req):
     return all(_cmp(cond, val, pet.dna_percent(f)) for f, (cond, val) in dna.items())
 
 
-def check(pet, num, item=-1, food=-1, connecting=False):
+def check(pet, num, item=-1, food=-1, connecting=False, roll=True):
     """checkEvolReq, verbatim semantics (canon re-audit 2026-07):
 
     * NO DNA gate-forgiveness (the canon consume-once excuse left with the
@@ -181,6 +181,8 @@ def check(pet, num, item=-1, food=-1, connecting=False):
         return False
     # probability: prob >= probBound -> always; else prob must beat a roll.
     # DVPet boosts prob by the care bonus + winRate*coefficient (checkEvolReq).
+    if not roll:
+        return True          # care gates only (a relic names its form outright)
     boost = getattr(pet, "evol_bonus", 0) + int(_win_rate(pet) * WIN_RATE_PROB_COEF)
     prob, bound = req["prob"] + boost, req["probBound"]
     if prob < bound:
@@ -313,6 +315,11 @@ def food_select(pet, food_id):
         mind = min(deviation(pet, t) for t in top)
         top = [t for t in top if deviation(pet, t) == mind]
     return random.choice(top)
+
+
+def item_gate(num):
+    """The EvolItemID a form requires (-1 = none)."""
+    return (data.load_requirements().get(num) or {}).get("evol_item", -1)
 
 
 def item_direct(pet, dexnum):

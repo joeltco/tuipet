@@ -154,7 +154,7 @@ def test_every_profitable_town_flip_is_rationed():
 
 
 def test_the_ration_is_the_tier_ration():
-    for key in ("omni_chip_g", "anti_evo_chip"):
+    for key in ("gold_pill", "anti_evo_chip"):    # (omni is boss-only since 2026-10-14)
         tid = next(t for t in TOWNS
                    if any(r["key"] == key
                           for r in shop.town_stock(t, D, pet=_buyer())))
@@ -199,7 +199,7 @@ def test_the_mash_guard_eats_the_first_full_price_press():
         before = p.bits
         panel.key("enter")
         spend.append(before - p.bits)
-    assert spend[:ration] == [max(1, full // shop.HOME_DEAL_FACTOR)] * ration
+    assert spend[:ration] == [shop.deal_price(full)] * ration
     assert spend[ration] == 0              # the guard press costs nothing
     assert spend[ration + 1] == full       # and the next one is honest
 
@@ -328,12 +328,14 @@ def test_a_deal_is_always_half():
     for tid in TOWNS[:8]:
         for r in shop.town_stock(tid, D, pet=_buyer()):
             if r.get("deal"):
-                assert r["price"] == max(1, r["base_price"] // 2)
+                assert r["price"] == shop.deal_price(r["base_price"])
 
 
 def test_a_festival_puts_the_whole_counter_on_sale():
+    """Every EVERYDAY good is on sale on a festival; progression goods never
+    are (shop/loot audit 2026-10-14)."""
     rows = shop.town_stock(TOWNS[0], FEST, pet=_buyer())
-    assert rows and all(r.get("deal") for r in rows)
+    assert rows and all(bool(r.get("deal")) == shop.deal_ok(r["key"]) for r in rows)
 
 
 # ---- the egg market -----------------------------------------------------
@@ -354,11 +356,14 @@ def test_no_two_towns_sell_an_identical_egg_band():
 
 
 def test_an_egg_is_bought_once_and_costs_real_bits():
-    p = _buyer(bits=1000)
+    p = _buyer(bits=30000)
     idx = shop.town_egg_stock(TOWNS[0])[0]
     msg, sfx = shop.town_egg_buy(p, idx)
-    assert sfx == "reward" and p.bits == 1000 - shop.egg_price(idx)
+    assert sfx == "reward" and p.bits == 30000 - shop.egg_price(idx)
     assert shop.town_egg_buy(p, idx)[1] == "error"     # already owned
+    # one egg a day across every counter (shop/loot audit 2026-10-14)
+    other = next(i for i in shop.town_egg_stock(TOWNS[1]) if i != idx)
+    assert shop.town_egg_buy(p, other)[1] == "error" and p.bits == 30000 - shop.egg_price(idx)
     broke = _buyer(bits=10)
     assert shop.town_egg_buy(broke, shop.town_egg_stock(TOWNS[1])[0])[1] == "error"
     assert broke.bits == 10

@@ -75,7 +75,7 @@ _AUTHORED = {
     "vegetable":       ("Vegetable",       "f:3",  150,  "Feed", "hunger +1 · weight -1", "crunchy diet fare"),
     "tuna":            ("Tuna",            "f:14", 400,  "Feed", "hunger +2 · energy +1", "a hearty catch"),
     "cake":            ("Cake",            "f:6",  300,  "Feed", "hunger +1 · energy +2 · weight +2", "a celebration slice"),
-    "cheese_burger":   ("Cheese burger",   "f:57", 50,   "Feed", "fills the belly · weight +4", "greasy, regrettable"),
+    "cheese_burger":   ("Cheese burger",   "f:57", 300,   "Feed", "fills the belly · weight +4", "greasy, regrettable"),
     "giga_meal":       ("Giga Meal",       "f:28", 800,  "Feed", "fills belly · energy +4 · weight +6", "a feast fit for a Mega"),
     "steak":           ("Steak",           "f:8",  2000, "Feed", "fills belly · 12h satiety", "the premium table"),
     "poison_mushroom": ("Poison Mushroom", "f:13", 200,  "Feed", "DO NOT FEED", "it does look delicious"),
@@ -99,11 +99,11 @@ _AUTHORED = {
     "textbook":        ("Textbook",        "i:0",  1500, "Manners", "obedience +20", "study makes a good pupil"),
     "port_potty":      ("Port. Potty",     "i:83", 2000, "Rest", "clean + auto-clean 24h", "it cleans itself"),
     # ---- TRAINING (the body: effort, weight, drills) ------------------------
-    "energy_drink":    ("Energy Drink",    "f:17", 200,  "Rest", "energy to FULL", "instant pep"),
-    "slim_drink":      ("Slim Drink",      "f:23", 100,  "Drill", "weight -10", "the crash diet"),
+    "energy_drink":    ("Energy Drink",    "f:17", 600,  "Rest", "energy to FULL", "instant pep"),
+    "slim_drink":      ("Slim Drink",      "f:23", 800,  "Drill", "weight -10", "the crash diet"),
     "dumbbell":        ("Dumbbell",        "i:7",  300,  "Drill", "training +10", "reps in a box"),
     # ---- EVOLUTION (the gates: growth, locks, X, DNA) -----------------------
-    "grow_capsule":    ("Grow Capsule",    "i:78", 500,  "Evolve", "growth: a quarter of this stage", "time in a bottle"),
+    "grow_capsule":    ("Grow Capsule",    "i:78", None,  "Evolve", "growth: a quarter of this stage", "time in a bottle"),
     "anti_evo_chip":   ("Anti-Evo Chip",   "f:32", 1000, "Evolve", "toggle evolution lock", "holds this form"),
     "x_antibody":      ("X-Antibody",      "i:79", 2000, "Evolve", "the X-Antibody takes hold", "the X factor"),
     "dna_crystal":     ("DNA Crystal",     "i:35", 1500, "Power", "+10 own-Field DNA banked", "a Field's worth of code"),
@@ -119,7 +119,7 @@ _AUTHORED = {
     "vaccine_chip_g":  ("Vaccine Chip G",  "f:20", 3000, "Power", "Vaccine power +30", "the golden dose"),
     "data_chip_g":     ("Data Chip G",     "f:21", 3000, "Power", "Data power +30", "the golden dose"),
     "virus_chip_g":    ("Virus Chip G",    "f:22", 3000, "Power", "Virus power +30", "the golden dose"),
-    "omni_chip_g":     ("Omni Chip G",     "f:33", 8000, "Power", "all three powers +30", "every colour at once"),
+    "omni_chip_g":     ("Omni Chip G",     "f:33", None, "Power", "all three powers +30", "every colour at once"),
     # ---- LEGACY (death and inheritance -- NOT medicine, which is why the
     # old "Medical" name had to go: it never held a med) ---------------------
     # i:64 (the notched-square disk glyph): i:32 is DVPet's own Digimemory
@@ -130,12 +130,12 @@ _AUTHORED = {
     # ---- PLAY (the shows the engine already ships; small LIVE stat dials:
     # exercise sheds weight, couch time buys energy at a weight price) --------
     "ball":            ("Ball",            "i:3",  100,  "Drill", "play! weight -1", "a grand kickabout"),
-    "skateboard":      ("Skateboard",      "i:6",  500,  "Drill", "ride! weight -2 · energy -1", "shred the living room"),
+    "skateboard":      ("Skateboard",      "i:6",  200,  "Drill", "ride! weight -2 · energy -1", "shred the living room"),
     "xylophone":       ("Xylophone",       "i:63", 800,  "Rest", "a recital · DP +1", "music hath charms"),
     "video_game":      ("Video Game",      "i:65", 600,  "Rest", "couch time · DP +1 · weight +1", "one more level…"),
     "television":      ("Television",      "i:10", 1000, "Rest", "deep couch · DP +2 · weight +1", "glued to the screen"),
     # ---- ADVENTURE (the road's own shelf -- cleared maps open it) -----------
-    "shortcut": ("Shortcut", "i:30", 750, "Road", "on the road: jump to the boss", "the short way"),
+    "shortcut": ("Shortcut", "i:30", 2000, "Road", "on the road: jump to the boss", "the short way"),
     "rest_kit": ("Rest Kit", "i:31", 500, "Road", "on the road: rest to half tank", "a bedroll and a breather"),
     "life_recovery":      ("Life Recovery",    "i:27", 1000, "Road", "restore adventure lives on the road", "a second wind"),
     # ======================= THE EXPANSION (2026-07-26) =====================
@@ -170,36 +170,36 @@ _AUTHORED = {
     # freed by the same day's cuts: nothing is drawn, ever.
     "cold_compress":   ("Cold Compress",       "i:67", 2000,  "Cure", "ONE care slip erased · costs energy", "relief, the hard way"),
     "gold_pill":       ("Gold Pill",           "f:19", 10000, "Cure", "energy FULL · nothing tires it for a day", "vitality, gilded"),
-    "supplement":      ("Supplement",          "f:25", 100,   "Drill", "effort FULL · obedience +5 · weight +1", "discipline in a dose"),
-    "food_pill":       ("Food Pill",           "f:41", 100,   "Feed", "fills belly · obedience +5 · weight +3", "a meal, compressed"),
+    "supplement":      ("Supplement",          "f:25", 400,   "Drill", "effort FULL · obedience +5 · weight +1", "discipline in a dose"),
+    "food_pill":       ("Food Pill",           "f:41", 400,   "Feed", "fills belly · obedience +5 · weight +3", "a meal, compressed"),
     "ai_supplement":   ("AI Supplement",       "f:43", None,  "Drill", "effort +1", "the assistant's own blend"),
     "ai_food_pill":    ("AI Food Pill",        "f:44", None,  "Cure", "hunger +1", "the assistant's ration"),
-    "hp_chip":         ("HP Chip",             "f:26", 1500,  "Power", "all three powers +5", "vitality etched in silicon"),
-    "hp_chip_g":       ("HP Chip G",           "f:27", 3000,  "Power", "all three powers +10", "the golden constitution"),
+    "hp_chip":         ("HP Chip",             "f:26", None,  "Power", "all three powers +5", "vitality etched in silicon"),
+    "hp_chip_g":       ("HP Chip G",           "f:27", None,  "Power", "all three powers +10", "the golden constitution"),
     "hedonism_101":    ("Hedonism 101",        "i:1",  2000,  "Manners", "manners OBLITERATED · DO NOT STUDY", "the forbidden syllabus"),
     "book":            ("Book",                "i:2",  1000,  "Manners", "obedience +5 · manners HOLD for a day", "a well-thumbed guide"),
     "board_game":      ("Board Game",          "i:5",  2000,  "Power", "Vaccine power -15 · Data power +15 · obedience +5", "logic beats order"),
     "computer_game":   ("Computer Game",       "i:8",  2000,  "Power", "Virus power -15 · Data power +15", "logic tames chaos"),
-    "trampoline":      ("Trampoline",          "i:13", 2500,  "Drill", "bounce! effort +1 · weight -1", "gravity, negotiable"),
+    "trampoline":      ("Trampoline",          "i:13", 300,  "Drill", "bounce! effort +1 · weight -1", "gravity, negotiable"),
     "x_program":       ("X-Program Sample",    "i:14", None,  "Evolve", "belly + effort emptied · the X takes hold", "survive it, transcend"),
     "digitron":        ("Digitron",            "i:33", 6000,  "Evolve", "a dark evolution, if one answers", "a mysterious dark fluid"),
-    "horn_helmet":     ("Horn Helmet",         "i:34", 3000,  "Evolve", "evolve: Kabuterimon, if the body is ready", "the beetle's crown"),
-    "grey_claws":      ("Grey Claws",          "i:36", 3000,  "Evolve", "evolve: Greymon, if the body is ready", "the tyrant's grip"),
-    "water_bottle":    ("Water Bottle",        "i:37", 3000,  "Evolve", "evolve: Seadramon, if the body is ready", "the serpent's sea"),
-    "torn_tatter":     ("Torn Tatter",         "i:38", 3000,  "Evolve", "evolve: Bakemon, if the body is ready", "the ghost's shroud"),
-    "white_wings":     ("White Wings",         "i:39", 3000,  "Evolve", "evolve: Angemon, if the body is ready", "the angel's lift"),
-    "black_wings":     ("Black Wings",         "i:40", 3000,  "Evolve", "evolve: Devimon, if the body is ready", "the fallen's lift"),
-    "metal_armor":     ("Metal Armor",         "i:41", 3000,  "Evolve", "evolve: MetalMamemon, if the body is ready", "the mercenary's shell"),
-    "flaming_wings":   ("Flaming Wings",       "i:42", 3000,  "Evolve", "evolve: Birdramon, if the body is ready", "the firebird's pinions"),
+    "horn_helmet":     ("Horn Helmet",         "i:34", 6000,  "Evolve", "evolve: Kabuterimon, if the body is ready", "the beetle's crown"),
+    "grey_claws":      ("Grey Claws",          "i:36", 6000,  "Evolve", "evolve: Greymon, if the body is ready", "the tyrant's grip"),
+    "water_bottle":    ("Water Bottle",        "i:37", 6000,  "Evolve", "evolve: Seadramon, if the body is ready", "the serpent's sea"),
+    "torn_tatter":     ("Torn Tatter",         "i:38", 6000,  "Evolve", "evolve: Bakemon, if the body is ready", "the ghost's shroud"),
+    "white_wings":     ("White Wings",         "i:39", 6000,  "Evolve", "evolve: Angemon, if the body is ready", "the angel's lift"),
+    "black_wings":     ("Black Wings",         "i:40", 6000,  "Evolve", "evolve: Devimon, if the body is ready", "the fallen's lift"),
+    "metal_armor":     ("Metal Armor",         "i:41", 6000,  "Evolve", "evolve: MetalMamemon, if the body is ready", "the mercenary's shell"),
+    "flaming_wings":   ("Flaming Wings",       "i:42", 6000,  "Evolve", "evolve: Birdramon, if the body is ready", "the firebird's pinions"),
     "toy_oven":        ("Toy Oven",            "i:66", 500,   "Feed", "fresh-baked! hunger -1 (makes room)", "smells like seconds"),
-    "capsule_a":       ("Capsule",             "i:68", 100,   "Treasure", "open: a surprise item (finer on festivals)", "the corner-shop gacha"),
-    "capsule_b":       ("Blue Capsule",             "i:69", None,  "Treasure", "open: an uncommon surprise", "a cut above the counter"),
-    "capsule_c":       ("Green Capsule",             "i:70", None,  "Treasure", "open: an uncommon surprise", "road-found, road-worthy"),
-    "capsule_d":       ("Red Capsule",             "i:72", None,  "Treasure", "open: a rare surprise", "warm to the touch"),
-    "capsule_e":       ("Silver Capsule",             "i:73", None,  "Treasure", "open: a rare surprise", "heavier than it looks"),
-    "capsule_f":       ("Gold Capsule",             "i:74", None,  "Treasure", "open: a fine surprise", "it practically hums"),
-    "capsule_g":       ("Prism Capsule",             "i:75", None,  "Treasure", "open: a fine surprise", "light bends around it"),
-    "capsule_h":       ("Royal Capsule",             "i:76", None,  "Treasure", "open: the finest surprise", "festival stock, the good shelf"),
+    "capsule_a":       ("Capsule",             "i:68", 1500,   "Treasure", "open: a surprise item (finer on festivals)", "the corner-shop gacha"),
+    "capsule_b":       ("Blue Capsule",             "i:69", None,  "Treasure", "open: a surprise item (finer on festivals)", "a cut above the counter"),
+    "capsule_c":       ("Green Capsule",             "i:70", None,  "Treasure", "open: a surprise item (finer on festivals)", "road-found, road-worthy"),
+    "capsule_d":       ("Red Capsule",             "i:72", None,  "Treasure", "open: a surprise item (finer on festivals)", "warm to the touch"),
+    "capsule_e":       ("Silver Capsule",             "i:73", None,  "Treasure", "open: a surprise item (finer on festivals)", "heavier than it looks"),
+    "capsule_f":       ("Gold Capsule",             "i:74", None,  "Treasure", "open: a surprise item (finer on festivals)", "it practically hums"),
+    "capsule_g":       ("Prism Capsule",             "i:75", None,  "Treasure", "open: a surprise item (finer on festivals)", "light bends around it"),
+    "capsule_h":       ("Royal Capsule",             "i:76", None,  "Treasure", "open: a surprise item (finer on festivals)", "festival stock, the good shelf"),
     "prank_capsule_a": ("Rattling Capsule",             "i:71", None,  "Treasure", "open: a surprise. probably fine.", "something inside is ALIVE"),
     "prank_capsule_b": ("Hissing Capsule",             "i:77", None,  "Treasure", "open: a surprise. definitely fine.", "do you smell smoke?"),
     "futon":           ("Futon",               "i:81", 1000,  "Rest", "the next daytime doze rests to FULL", "deepest daytime sleep"),
@@ -257,7 +257,7 @@ _TOUCHES = {
     "energy_drink": ("energy",),
     "slim_drink": ("weight",),
     "vitamin": ("strength", "vitamin_lapse"),
-    "miracle_drink": ("care_mistakes", "mistake_day", "energy"),
+    "miracle_drink": ("care_mistakes", "mistake_day", "energy", "once_used"),
     "sleeping_pill": ("asleep", "lights", "nap"),
     # BOTH channels, because it really does use both (item sweep
     # 2026-07-24: a line pet -- every hatch -- pushes bedtime through the
@@ -270,7 +270,7 @@ _TOUCHES = {
     "port_potty": ("poop", "poop_sizes", "auto_clean_until"),
     # ---- GROWTH ----
     "dumbbell": ("stage_trainings",),
-    "grow_capsule": ("stage_seconds",),
+    "grow_capsule": ("stage_seconds", "grow_used"),
     "anti_evo_chip": ("evo_blocked",),
     "x_antibody": ("x_antibody",),
     "dna_crystal": ("dna_owned",),
@@ -313,7 +313,7 @@ _TOUCHES = {
     "med": ('sick',),
     "elixir": ('pardon_lapse',),
     "vitamin_g": ('strength', 'ward_lapse'),
-    "cold_compress": ('care_mistakes', 'energy'),
+    "cold_compress": ('care_mistakes', 'energy', 'once_used'),
     "gold_pill": ('energy', 'tonic_lapse'),
     "supplement": ('strength', 'obedience', 'weight'),
     "food_pill": ('hunger', 'obedience', 'weight'),
@@ -518,13 +518,53 @@ _ROAD_ONLY = frozenset({"life_recovery", "shortcut", "rest_kit"})
 
 # THE catalog: the authored table, field-named.  Everything downstream
 # reads this, never `_AUTHORED`.
+# the eight direct-evolution relics (petcare._DIRECT_EVO_TARGET's keys)
+RELICS = frozenset({"horn_helmet", "grey_claws", "water_bottle", "torn_tatter",
+                    "white_wings", "black_wings", "metal_armor", "flaming_wings"})
+
+# Tiers set by ruling, not by the authored supply columns (shop/loot audit
+# 2026-10-14, Joel: "fix all"): the relics skip a stage, so they are rare
+# (Ultimate towns on), and the X-Antibody stops being a first-town buy.
+_TIER_OVERRIDE = dict.fromkeys(RELICS, "rare")
+_TIER_OVERRIDE["x_antibody"] = "rare"
+
 CATALOG = {
     _k: Item(*_v,
              touches=_TOUCHES.get(_k, ()),
              where="road" if _k in _ROAD_ONLY else "home",
-             tier=tier_for_supply(_v[1], _v[2]))
+             tier=(_TIER_OVERRIDE.get(_k) if _v[2] is not None else None)
+             or tier_for_supply(_v[1], _v[2]))
     for _k, _v in _AUTHORED.items()
 }
+
+# ONE purchase per profile per real day, across EVERY counter (home + all
+# towns together): the goods that skip progression or out-value their price
+# (audit 2026-10-14).  The per-town ration alone let seven towns sell seven.
+GLOBAL_DAILY = RELICS | {"capsule_a", "digitron", "vaccine_chip", "data_chip",
+                         "virus_chip", "vaccine_chip_g", "data_chip_g",
+                         "virus_chip_g"}
+GLOBAL_SHOP_ID = "all"
+
+# Bought attribute power is capped per generation (earned chips are exempt:
+# this counts at the counter, never at use).
+CHIP_POWER = {"vaccine_chip": {"vaccine": 15}, "data_chip": {"data": 15},
+              "virus_chip": {"virus": 15}, "vaccine_chip_g": {"vaccine": 30},
+              "data_chip_g": {"data": 30}, "virus_chip_g": {"virus": 30}}
+BOUGHT_POWER_CAP = 30
+
+# Daily deals: 25% off, and only everyday goods (food, rest, drills,
+# manners) -- never a progression skip (audit 2026-10-14).
+DEAL_CATEGORIES = frozenset({"Feed", "Rest", "Drill", "Manners"})
+DEAL_NUM, DEAL_DEN = 3, 4
+
+
+def deal_price(price):
+    return max(1, price * DEAL_NUM // DEAL_DEN)
+
+
+def deal_ok(key):
+    v = CATALOG.get(key)
+    return bool(v and v.price is not None and v.category in DEAL_CATEGORIES)
 
 # the road's shelf unlocks by CLEARING MAPS (the profile `maps` set): once a
 # tamer clears maps, the road tools go on sale at home.
@@ -823,7 +863,13 @@ def egg_price(idx):
     shortcut costs real bits.  Starters (never stocked) are free."""
     from . import data
     rule = data.load_egg_unlock().get(idx) or {}
-    return 0 if rule.get("start") else 800
+    # 800b skipped any egg's unlock condition for ~2 minutes of play (shop/
+    # loot audit 2026-10-14): buying outright is now the expensive road,
+    # one new egg per profile per day; earning it stays free
+    return 0 if rule.get("start") else EGG_BUY_PRICE
+
+
+EGG_BUY_PRICE = 10000
 
 # (the DVPet staple props -- Toilet/Port. Potty/Futon, items.csv 81-83, and
 # their uses/cap stock maths -- left 2026-07-17: strict-DSprite items
@@ -1010,7 +1056,7 @@ def sell(pet, e):
 
 
 # Towns pay more for goods outside their tier shelf.
-TOWN_DEMAND_NUM, TOWN_DEMAND_DEN = 7, 10
+TOWN_DEMAND_NUM, TOWN_DEMAND_DEN = 1, 2   # 7/10 minted bits on sale buys (audit 2026-10-14)
 TOWN_DAILY_CAP = 3        # per town, item and day
 
 
@@ -1024,6 +1070,22 @@ _TOWN_BANDS = {"Rookie": 0, "Champion": 1, "Ultimate": 2, "Mega": 3}
 _SHOP_BANDS = {"common": 0, "uncommon": 1, "rare": 2, "legendary": 3}
 
 
+# Each town prices its own shelf (audit 2026-10-14: every town charged the
+# home price for everything).  A stable per-town, per-item markup of 0..30%
+# in 10% steps -- the road costs a little more than home, and which town is
+# cheap for what is part of knowing the map.  Road tools are the exception:
+# on the road they sell at home price.
+TOWN_MARKUPS = (100, 110, 120, 130)
+
+
+def town_price(town_id, key, price):
+    if key in _ROAD_ONLY:
+        return price
+    import zlib
+    m = TOWN_MARKUPS[zlib.crc32(f"townprice:{town_id}:{key}".encode()) % len(TOWN_MARKUPS)]
+    return max(1, price * m // 100)
+
+
 def _town_rows(town_id):
     """Every priced good up to this map's tier, plus all road tools."""
     from . import adventure
@@ -1034,9 +1096,10 @@ def _town_rows(town_id):
             continue
         if key not in _ROAD_ONLY and _SHOP_BANDS[item.tier] > band:
             continue
-        econ = {"price": item.price, "sale_factor": 2, "resell_factor": 2,
+        local = town_price(town_id, key, item.price)
+        econ = {"price": local, "sale_factor": 2, "resell_factor": 2,
                 "max_stock": TOWN_DAILY_CAP}
-        rows.append((f"town:{town_id}:{key}", key, econ, item.price))
+        rows.append((f"town:{town_id}:{key}", key, econ, local))
     return rows
 
 
@@ -1085,7 +1148,7 @@ def town_deal_sid(town_id, today=None, prog=None):
     Dealt over the OPEN rows only: a deal on a row the tamer can't see is
     no deal at all (the v0.5.164 lesson -- the deal rolled onto the
     invisible Adventure shelf about half of all days)."""
-    rows = _open_rows(town_id, prog)
+    rows = [r for r in _open_rows(town_id, prog) if deal_ok(r[1])]
     if not rows:
         return None
     return rows[_deal_index(town_id, len(rows), today)][0]
@@ -1100,8 +1163,7 @@ HOME_DEAL_FACTOR = 2
 
 @lru_cache(maxsize=1)
 def _home_deal_pool():
-    return sorted(k for k, v in CATALOG.items()
-                  if v.price is not None and v.category != "Road")
+    return sorted(k for k in CATALOG if deal_ok(k))
 
 
 def home_deal_key(today=None):
@@ -1114,10 +1176,8 @@ def home_deal_key(today=None):
 
 HOME_SHOP_ID = "home"        # the deal ledger's pseudo-town (see home_stock)
 
-# keys whose contents out-value their price BY CONSTRUCTION (the capsule
-# rolls the gift pool), so the always-open home shelf must ration them
-# like a deal row or mint bits (expansion audit 2026-07-26)
-HOME_RATIONED = frozenset({"capsule_a"})
+# (HOME_RATIONED -- the capsule-only home ration -- became GLOBAL_DAILY,
+# audit 2026-10-14: one a day across every counter, deal or not.)
 
 
 # THE HOME COUNTER, refactored (2026-07-27, Joel: "shops need the same
@@ -1171,6 +1231,17 @@ def home_band(today=None):
     return hand
 
 
+def _global_left(key, taken):
+    """Today's profile-wide ration for a GLOBAL_DAILY key (every counter)."""
+    return max(0, 1 - int(taken.get(f"{GLOBAL_SHOP_ID}:{key}", 0)))
+
+
+def _deal_left(key, taken):
+    """Deal-priced copies left today across EVERY counter: town hopping must
+    not multiply one item's discount (audit 2026-10-14)."""
+    return max(0, tier_stock(key) - int(taken.get(f"deal:{key}", 0)))
+
+
 def _ration_left(shop_id, key, taken):
     """Today's remaining ration for a tier-limited row -- THE one place the
     arithmetic lives (assembly dedup 2026-07-27: home and town each hand-
@@ -1202,19 +1273,18 @@ def home_stock(today=None, pet=None):
             # warp must not wait three days to buy it; the gate IS its
             # scarcity).  Everything else rotates.
             continue
-        if k in HOME_RATIONED and k != deal:
-            # THE CAPSULE RATION (expansion audit 2026-07-26): its contents
-            # out-value its price by construction, so the always-open shelf
-            # rations it like a deal row or it prints bits
-            left = _ration_left(HOME_SHOP_ID, k, taken)
-            out.append(dict(e, left=left, town_id=HOME_SHOP_ID))
+        if k in GLOBAL_DAILY:
+            # ONE a day across every counter, never an unlimited fallback
+            # (audit 2026-10-14 CRITICAL: a spent capsule deal fell back to
+            # unlimited 100b boxes worth ~487b each)
+            out.append(dict(e, left=_global_left(k, taken), town_id=HOME_SHOP_ID))
             continue
         if k == deal:
             base = e["price"]
-            left = _ration_left(HOME_SHOP_ID, k, taken)
+            left = min(_ration_left(HOME_SHOP_ID, k, taken), _deal_left(k, taken))
             e = (dict(e, deal=True, base_price=base, left=left,
                       town_id=HOME_SHOP_ID,
-                      price=max(1, base // HOME_DEAL_FACTOR)) if left > 0
+                      price=deal_price(base)) if left > 0
                  else dict(e, deal_spent=True))
         out.append(e)
     return out
@@ -1246,12 +1316,17 @@ def town_stock(town_id, today=None, pet=None):
         e = entry(k)
         if not e:
             continue
-        on = fest or sid == deal
-        price = local // max(1, o["sale_factor"]) if on else local
+        # a deal (the town's daily row, or every everyday good on a
+        # festival) is 25% off and only while the profile-wide deal ration
+        # lasts; progression goods are never discounted
+        on = (fest or sid == deal) and deal_ok(k) and _deal_left(k, taken) > 0
+        price = deal_price(local) if on else local
         # Rarity and the daily cap both bound each town's ration.
         left = min(_ration_left(town_id, k, taken),
                    max(0, min(o["max_stock"], TOWN_DAILY_CAP)
                        - int(taken.get(f"{town_id}:{k}", 0))))
+        if k in GLOBAL_DAILY:
+            left = min(left, _global_left(k, taken))
         out.append(dict(e, price=max(1, price), base_price=local,
                         deal=on, left=left, town_id=town_id))
     return out
@@ -1283,10 +1358,18 @@ def town_egg_buy(pet, idx):
         return ("A lineage egg — it hatches for those who earn it.", "error")
     if idx in egg_mod.owned_now():       # same read as the shelf: never sell
         return ("You already own that egg.", "error")   # what's already earned
+    day = _today_ordinal()
+    tb = getattr(pet, "town_bought", None) or {}
+    if tb.get("day") == day and tb.get(f"{GLOBAL_SHOP_ID}:egg"):
+        return ("One egg a day — come back tomorrow.", "error")
     price = egg_price(idx)
     if not pet.spend_bits(price):
         return (f"{price}b — not enough bits.", "error")
     persistence.egg_own(idx)
+    if tb.get("day") != day:
+        tb = {"day": day}
+    tb[f"{GLOBAL_SHOP_ID}:egg"] = 1
+    pet.town_bought = tb
     return (f"Bought the {egg_mod.hatch_name(idx)} egg — "
             "it's on your carousel!", "reward")
 
@@ -1311,20 +1394,36 @@ def town_buy(pet, e, today=None):
     if live is None or live.get("left", 0) <= 0:
         return ("Sold out today — come back tomorrow.", "error")
     e = live
+    gain = CHIP_POWER.get(e["key"])
+    if gain:
+        bought = getattr(pet, "bought_power", None) or {}
+        if any(int(bought.get(a, 0)) + n > BOUGHT_POWER_CAP for a, n in gain.items()):
+            return ("That's all the power the counter will sell this "
+                    "generation — earn the rest.", "error")
     msg, sfx = buy(pet, e)
     if sfx == "confirm":
         day = _today_ordinal(today)
         tb = getattr(pet, "town_bought", None) or {}
         if tb.get("day") != day:
             tb = {"day": day}                  # a new day sweeps the ledger
-        k = f"{e['town_id']}:{e['key']}"
-        tb[k] = int(tb.get(k, 0)) + 1
+        keys = [f"{e['town_id']}:{e['key']}"]
+        if e["key"] in GLOBAL_DAILY:
+            keys.append(f"{GLOBAL_SHOP_ID}:{e['key']}")
+        if e.get("deal"):
+            keys.append(f"deal:{e['key']}")
+        for k in keys:
+            tb[k] = int(tb.get(k, 0)) + 1
         pet.town_bought = tb
+        if gain:
+            bought = dict(getattr(pet, "bought_power", None) or {})
+            for a, n in gain.items():
+                bought[a] = int(bought.get(a, 0)) + n
+            pet.bought_power = bought
     return (msg, sfx)
 
 
 def town_sell_price(key, town_id):
-    """Stocked goods pay local resale; absent goods pay 70% of catalog."""
+    """Stocked goods pay local resale; absent goods pay half of catalog."""
     hit = _stocked(town_id, key)
     if hit is not None:
         o, local = hit

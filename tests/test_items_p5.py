@@ -103,7 +103,8 @@ def test_a_terminal_mega_can_still_be_walked_back_from_death():
 
 def test_the_eraser_lives_in_medicine():
     assert shop.CATALOG["miracle_drink"].category == "Cure"   # Medicine -> Cure, 2026-07-27
-    assert shop.CATALOG["miracle_drink"].touches == ("care_mistakes", "mistake_day", "energy")
+    assert shop.CATALOG["miracle_drink"].touches == ("care_mistakes", "mistake_day", "energy",
+                                                     "once_used")   # once a life (2026-10-14)
 
 
 # ---- R4: the Textbook goes back to canon -----------------------------------

@@ -347,16 +347,16 @@ def test_the_shop_eggs_tab_buys_through_the_single_source():
     from tuipet import persistence, shop
     from tuipet.shopscreen import ShopPanel
     app = _app()
-    app.pet.bits = 5000
+    app.pet.bits = 15000
     pan = ShopPanel(app.pet, town_id=1, start_tab="Eggs")
     rows = pan._rows()
     idx = next(e["egg_idx"] for e in rows if not e["owned"])
     pan.cursor = next(i for i, e in enumerate(rows) if e["egg_idx"] == idx)
     pan.key("enter")
     assert idx in persistence.get_eggs_owned()
-    assert app.pet.bits == 5000 - shop.egg_price(idx)
+    assert app.pet.bits == 15000 - shop.egg_price(idx)
     pan.key("enter")                             # again: refuses, no double bill
-    assert app.pet.bits == 5000 - shop.egg_price(idx)
+    assert app.pet.bits == 15000 - shop.egg_price(idx)
     assert pan.text()                            # and the tab renders
 
 

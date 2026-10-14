@@ -27,8 +27,12 @@ def test_tier_is_derived_from_authored_supply_not_from_price():
     the economy audit measured expensive at ~23 real minutes of adventuring,
     so rarity was decorative.  It reads the authored SUPPLY columns now:
     DefaultStockChance x DefaultMaxStock = expected copies on a shelf."""
+    # (the shop/loot audit 2026-10-14 ruled a few tiers outright: the relics
+    #  and the X-Antibody -- _TIER_OVERRIDE -- everything else is derived)
     for key, v in shop.CATALOG.items():
-        assert v.tier == shop.tier_for_supply(v.icon, v.price), key
+        want = (shop._TIER_OVERRIDE.get(key) if v.price is not None else None) \
+            or shop.tier_for_supply(v.icon, v.price)
+        assert v.tier == want, key
     # ...and it is genuinely decoupled: a dearer good is now freely allowed to
     # be commoner than a cheap one, which is the whole point
     by_tier = {t: [v.price for v in shop.CATALOG.values()
@@ -47,8 +51,9 @@ def test_the_bands_are_ordered_and_total_the_catalog():
     #  the supply monotonicity -- a scarcer good is never a commoner band.)
     rank = {t: i for i, t in enumerate(shop.TIER_ORDER)}
     supplied = sorted((shop.supply_score(v.icon), v.tier)
-                      for v in shop.CATALOG.values()
-                      if v.price and shop.supply_score(v.icon) is not None)
+                      for k, v in shop.CATALOG.items()
+                      if v.price and shop.supply_score(v.icon) is not None
+                      and k not in shop._TIER_OVERRIDE)
     for (_s1, t1), (_s2, t2) in zip(supplied, supplied[1:]):
         assert rank[t1] >= rank[t2], "a scarcer good landed in a commoner band"
 

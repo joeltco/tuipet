@@ -338,6 +338,8 @@ class BattleMixin:
         # body through the hit formula (Side._condition's energy term).
         if getattr(self, "tonic_lapse", 0.0) <= 0:      # Gold Pill: spends are free
             self._set_energy(max(0, self.energy - BATTLE_ENERGY_COST))
+        # the injury roll below still reads this bout's ward; the bout's
+        # time is billed after it (see the end of record_battle)
         # floored at the species BASE, not at 1 (weight floor law -- the
         # SAME ruling training got 2026-07-17 and the march drain always
         # had; battles were the one sink still grinding to a skeleton.
@@ -347,6 +349,7 @@ class BattleMixin:
         # and read as "still getting my ass handed to me")
         self._set_weight(max(self._base_weight(), self.weight - BATTLE_WEIGHT_COST))
         if online:
+            self.burn_wards(self.BOUT_WARD_MINUTES)   # a duel spends the wards too
             return ""
         # G-Cells (dmgz manual): a battle win +6, a loss -4 -- local bouts only,
         # like every other progression channel (LINES_SPEC §2).  An adventure
@@ -395,6 +398,7 @@ class BattleMixin:
                 # skips the wait, it is no longer the only cure
                 self.inj_length = random.randint(
                     MIN_INJ_LENGTH, MAX_INJ_LENGTH) * INJ_LAPSE_MIN  # noqa: F405
+        self.burn_wards(self.BOUT_WARD_MINUTES)   # the bout's time spends the wards
         if not won:
             return ""
         self.wins += 1

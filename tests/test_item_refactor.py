@@ -171,6 +171,7 @@ def test_vitamin_g_makes_the_injury_roll_impossible():
     random.seed(1)
     for _ in range(400):                           # the worst body there is
         p.injured = False
+        p.ward_lapse = 1440.0                      # (each bout now spends the ward)
         p.hunger, p.strength = 0, 0
         p._set_energy(0)
         p.record_battle(False)

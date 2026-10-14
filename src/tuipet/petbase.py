@@ -635,6 +635,7 @@ TEXTBOOK_OBEDIENCE = 20
 # shelf-mates (the 300b Dumbbell buys ~10 drills of an evolution gate; the
 # 500b Vitamin fills effort outright).
 GROW_CAPSULE_FRACTION = 0.25
+RELIC_STAGE_FRACTION = 0.5     # a relic needs half the stage lived (audit 2026-10-14)
 PILL_WEIGHT_GAIN = 5
 STOMACH_CAPACITY = 4                    # legacy fallback only -- see stomach_capacity()
 # canon stomach (food audit 2026-07-15): capacity is a PER-SPECIES field

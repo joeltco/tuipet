@@ -112,7 +112,9 @@ def test_tier_is_populated_by_derivation_not_by_hand():
     (DefaultStockChance x DefaultMaxStock) instead of the price.  Still
     derived, still nothing invented -- just the other column."""
     for key, v in shop.CATALOG.items():
-        assert v.tier == shop.tier_for_supply(v.icon, v.price), key
+        want = (shop._TIER_OVERRIDE.get(key) if v.price is not None else None) \
+            or shop.tier_for_supply(v.icon, v.price)
+        assert v.tier == want, key
 
 
 @pytest.mark.parametrize("key", sorted(shop.CATALOG))

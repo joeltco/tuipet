@@ -105,12 +105,40 @@ def test_a_spirit_refusal_keeps_the_item():
     assert p.inventory.get("human_dark_spirit") == 1
 
 
+def _ready_for_greymon(p):
+    """Greymon's own care gates (battles > 10, no mistakes, weight Over) and
+    half the stage lived -- what "if the body is ready" means since the
+    shop/loot audit 2026-10-14."""
+    from tuipet import evolution
+    p.battles, p.care_mistakes = 11, 0
+    p.stage_seconds = p.STAGE_DURATION[p.stage] * 0.6
+    p.weight = next(w for w in range(p._base_weight(), p._base_weight() + 99)
+                    if evolution.weight_category(w, p._base_weight()) == "Over")
+
+
+def test_a_relic_refuses_an_unready_body():
+    """Audit 2026-10-14: an Agumon with 19 care mistakes at 0 stage seconds
+    wore Grey Claws straight into Greymon."""
+    evs = data.load_evolutions()
+    _, by_num = data.load_sprites()
+    holder = next(n for n, ts in evs.items() if 93 in ts and n in by_num)
+    p = _pet(stage=by_num[holder]["stage"], num=holder)
+    _ready_for_greymon(p)
+    p.care_mistakes = 19
+    p.add_item("grey_claws")
+    assert isinstance(p.use_item("grey_claws"), _Refused) and p.num == holder
+    p.care_mistakes, p.stage_seconds = 0, 0.0           # gates met, too young
+    assert isinstance(p.use_item("grey_claws"), _Refused) and p.num == holder
+    assert p.inventory.get("grey_claws") == 1
+
+
 def test_a_direct_relic_evolves_only_a_graph_neighbour():
     # Grey Claws names Greymon (93): find a species adjacent to it
     evs = data.load_evolutions()
     _, by_num = data.load_sprites()
     holder = next(n for n, ts in evs.items() if 93 in ts and n in by_num)
     p = _pet(stage=by_num[holder]["stage"], num=holder)
+    _ready_for_greymon(p)
     p.add_item("grey_claws")
     assert not isinstance(p.use_item("grey_claws"), _Refused)
     assert p.num == 93
