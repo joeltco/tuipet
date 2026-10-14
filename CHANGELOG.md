@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.11 — MENU POLISH. Every menu now tells the truth (2026-10-14)
+
+MENU POLISH. Every menu now tells the truth: help text matches the rules, cards name the right keys, shop limits are shown before you buy, and long names and big numbers fit their boxes.
+
 ## 0.6.10 — DIGICORE POLISH. The core counts the right clock for every p (2026-10-14)
 
 DIGICORE POLISH. The core counts the right clock for every pet, the evolution list shows every possible form, partner-only roads say so, trophies count correctly, and hidden names stay hidden.
