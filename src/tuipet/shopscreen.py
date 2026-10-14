@@ -132,14 +132,23 @@ class ShopPanel:
                 and (self.frame_i // 40) % 2 == 1):
             return self.wave_hint
         if self.mode == "shop":
-            tabs = self._tabs()
-            act = "wear" if tabs[self.tab % len(tabs)] == "Honors" else "buy"
-            return menu.hints(("←→", "tab"), ("ENTER", act),
-                              ("TAB", "bag"), ("ESC", "out"))
+            rows = self._rows()
+            sel = rows[min(self.cursor, len(rows) - 1)] if rows else {}
+            act = ("remove" if sel.get("worn") else "wear" if sel.get("owned")
+                   else "buy")
+            _, buyable, _ = shop.menu_limits(self.pet, sel)
+            if sel.get("egg_idx") is not None:
+                taken = shop._town_taken(self.pet)
+                buyable = not sel.get("owned") and not taken.get(f"{shop.GLOBAL_SHOP_ID}:egg")
+            keys = [("←→", "tab")] + ([("ENTER", act)] if buyable else [])
+            return menu.hints(*(keys + [("TAB", "bag"), ("ESC", "out")]))
+        rows = self._rows()
+        sel = rows[min(self.cursor, len(rows) - 1)] if rows else {}
+        _, _, usable = shop.menu_limits(self.pet, sel, "bag")
+        use = [("ENTER", "use")] if usable else []
         if self.bag_only:
-            return menu.hints(("ENTER", "use"), ("R", "sell"), ("ESC", "out"))
-        return menu.hints(("ENTER", "use"), ("R", "sell"),
-                          ("TAB", "shop"), ("ESC", "out"))
+            return menu.hints(*(use + [("R", "sell"), ("ESC", "out")]))
+        return menu.hints(*(use + [("R", "sell"), ("TAB", "shop"), ("ESC", "out")]))
 
     # ---- data ----
     def _tabs(self):
@@ -574,7 +583,8 @@ class ShopPanel:
                 held = self.pet.inventory.get(e["key"], 0)
                 mark = ("x%d" % held) if held else ""
                 nm = ("▾" + e["name"][:17]) if e.get("deal") else e["name"][:18]
-                if self.town is not None and e.get("left", 1) <= 0:
+                # menus audit 2026-10-14: home rations sell out too.
+                if e.get("left", 1) <= 0:
                     return "%-18s %3s %6s" % (nm, mark, "out")
                 return dim_if_short(
                     "%-18s %3s %6db" % (nm, mark, e["price"]), e, i)

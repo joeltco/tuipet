@@ -235,7 +235,7 @@ def test_assist_card_prices_match_canon_and_toggle_names_a_helper():
     pan = AssistPanel(p)
     _render(pan)
     assert "400b/care" in pan.text().plain        # Champion rates on the card
-    assert "200b/hour" in pan.text().plain
+    assert "200b/game hour" in pan.text().plain
     pan.key("enter")                              # hire
     _render(pan)
     assert p.auto_care and p.assistant_num >= 0

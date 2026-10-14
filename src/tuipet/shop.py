@@ -1047,6 +1047,55 @@ def resell_price(e):
     return max(1, e.get("price", 0) // 2)
 
 
+def menu_limits(pet, e, mode="shop"):
+    """Read-only disclosures and available actions for an existing shelf row."""
+    # menus audit 2026-10-14: show the counter/use limits before confirmation.
+    key = e.get("key", "")
+    notes, buyable, usable = [], True, True
+    if mode == "shop":
+        left = e.get("left")
+        if left is not None:
+            scope = "profile/day" if key in GLOBAL_DAILY else "town/day"
+            if e.get("town_id") == HOME_SHOP_ID and e.get("deal"):
+                scope = "deal/profile/day"
+            notes.append(f"{left} left {scope}")
+            if left <= 0:
+                notes.append("sold out today")
+                buyable = False
+        if e.get("deal"):
+            notes.append(f"Deal was {e.get('base_price', e['price'])}b")
+            if e.get("town_id") != HOME_SHOP_ID:
+                taken = _town_taken(pet)
+                notes.append(f"{_deal_left(key, taken)} deal left/profile/day")
+        elif e.get("deal_spent"):
+            notes.append("deal gone; full price")
+        gain = CHIP_POWER.get(key)
+        if gain:
+            bought = getattr(pet, "bought_power", None)
+            bought = bought if isinstance(bought, dict) else {}
+            for attr, amount in gain.items():
+                have = bought.get(attr, 0)
+                have = have if isinstance(have, int) else 0
+                word = {"vaccine": "V", "data": "D", "virus": "Vi"}[attr]
+                notes.append(f"Bought {word}{have}/{BOUGHT_POWER_CAP} this gen")
+                if have + amount > BOUGHT_POWER_CAP:
+                    notes.append("purchase cap reached")
+                    buyable = False
+    if key in pet._ONCE_PER_LIFE:
+        notes.append("once per life")
+        if key in (getattr(pet, "once_used", None) or []):
+            notes.append("already used this life")
+            usable = False
+    if key == "grow_capsule":
+        notes.append("once per stage")
+        if getattr(pet, "grow_used", "") == f"{pet.num}:{pet.stage}":
+            notes.append("already used this stage")
+            usable = False
+    if key in RELICS:
+        notes += ["needs half stage lived", "and the form's care gates"]
+    return notes, buyable, usable
+
+
 def sell(pet, e):
     if pet.inventory.get(e["key"], 0) <= 0:
         return ("You don't have that.", "error")

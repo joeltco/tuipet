@@ -117,7 +117,7 @@ def test_assist_panel_toggles_and_shows_the_stage_prices():
     p = _pet(bits=1000)
     pan = AssistPanel(p)
     t = pan.text().plain
-    assert "AI ASSISTANT" in t and "400b/care" in t and "200b/hour" in t and "OFF" in t
+    assert "AI ASSISTANT" in t and "400b/care" in t and "200b/game hour" in t and "OFF" in t
     pan.key("enter")
     assert p.auto_care and "on duty" in pan.text().plain
     pan.key("enter")

@@ -161,7 +161,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("DIGICORE POLISH. The core counts the right clock for every pet, the evolution list shows every possible form, partner-only roads say so, trophies count correctly, and hidden names stay hidden.")
+    WHATS_NEW = ("MENU POLISH. Every menu now tells the truth: help text matches the rules, cards name the right keys, shop limits are shown before you buy, and long names and big numbers fit their boxes.")
 
 
     BINDINGS = [
@@ -1585,7 +1585,7 @@ class TuiPetApp(ActionsMixin, App):
         """HUD announcement for the pet's most urgent unmet care need (or '')."""
         name = p.name or "Your pet"
         if p.asleep and p.lights:               # lightsCall: the one asleep call
-            msg = f"{name} is trying to sleep — lights off! ([b]O[/])"
+            msg = f"{name} is sleeping — lights off! ([b]O[/])"
         # every call names its key (gameplay polish #19, 2026-07-22): lights
         # always said (S) while hungry/sick/cleaning -- the three commonest
         # calls -- left a new player hunting the 19-key bar mid-alarm
@@ -1599,7 +1599,7 @@ class TuiPetApp(ActionsMixin, App):
         # lesson these lines keep re-learning.
         elif p.is_injured():  msg = f"{name} is hurt! ([b]H[/] — patch it up)"
         elif p.hunger == 0:   msg = f"{name} is hungry! ([b]F[/])"
-        elif p.strength == 0: msg = f"{name}'s effort gauge is empty — train it! ([b]T[/])"
+        elif p.strength == 0: msg = f"{name}'s effort is empty — train it! ([b]T[/])"
         elif p.poop >= 3:     msg = f"{name} needs cleaning! ([b]C[/])"
         # ...and never nag a SLEEPER to rest (bug report 2026-07-26,
         # v0.5.280: "still getting exhausted! (S — rest) even when mon is
@@ -1611,11 +1611,16 @@ class TuiPetApp(ActionsMixin, App):
             msg = f"{name} is acting up! ([b]P[/] — scold it)"
         elif p.is_frail():
             left = max(0, 5 - p.care_mistakes)
-            msg = (f"{name} is getting frail — "
+            msg = (f"{name} frail — "
                    + (f"{left} more slip{'s' if left != 1 else ''} could be fatal!"
                       if left else "handle with perfect care!"))
         else:                 return ""
-        return f"[{theme.NEG}]\u26a0 {msg}[/]"
+        # menus audit 2026-10-14: only the name yields cells, never the remedy.
+        from rich.cells import cell_len
+        tail = msg[len(name):]
+        budget = HUD_W - cell_len("⚠ " + _hud_plain(tail))
+        name = _hud_esc(statusbox._fit_cells(name, budget))
+        return f"[{theme.NEG}]\u26a0 {name}{tail}[/]"
 
 
     # (the home battle + jogress actions were retired 2026-07-07 -- lobby-only

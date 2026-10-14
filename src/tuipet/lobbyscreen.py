@@ -27,6 +27,7 @@ from __future__ import annotations
 import random          # (hashlib left with the commit -- lobbybout owns it now)
 
 from rich.text import Text
+from rich.cells import cell_len, set_cell_size
 
 from . import data
 from . import grid
@@ -740,7 +741,12 @@ class LobbyPanel(BoutMixin, ChatMixin):
             # the server logs you in under the CANONICAL capitalisation; a
             # typed-case name missed its own row on an exact compare
             mine = bool(me) and str(who).lower() == me
-            t.append(f"  {'▸' if mine else ' '}{i:>2}. {str(who)[:16]:<16} {int(wins):>3}W\n",
+            # menus audit 2026-10-14: preserve the name column in terminal cells.
+            prefix = f"  {'▸' if mine else ' '}{i:>2}. "
+            tail = f" {int(wins):>3}W"
+            budget = max(0, min(16, COLS - cell_len(prefix + tail)))
+            name = set_cell_size(menu._clip(str(who), budget), budget)
+            t.append(prefix + name + tail + "\n",
                      style=INK_B if mine else INK)
         if you_rank:
             t.append(f"  you: rank {you_rank} · {you_wins} win{'s' if you_wins != 1 else ''}\n",

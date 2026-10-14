@@ -117,8 +117,12 @@ class TournamentPanel(menu.SubHost):
         if self.phase == "select":
             return menu.hints(("↑↓", "pick"), ("ENTER", "go"),
                               ("F", "feat."), ("A", "alarm"))
+        # menus audit 2026-10-14: exiting a live bracket records a loss.
+        if self.tourney is not None and self.tourney.over:
+            keys = ([("SPACE", "result")] if self.tree_view else [])
+            return menu.hints(*(keys + [("B", "bracket"), ("ESC", "leave")]))
         return menu.hints(("SPACE", "fight on"), ("B", "bracket"),
-                          ("ESC", "leave"))
+                          ("ESC", "forfeit"))
 
     def key(self, k):
         if self.sub is not None:

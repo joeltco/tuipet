@@ -25,6 +25,9 @@ def _clip(s, w):
     """Truncate to at most `w` CELLS.  Never pads -- callers that need a fixed
     field use set_cell_size; the header/footer ones append their own gap."""
     s = str(s)
+    # menus audit 2026-10-14: a full right field can leave no title cells.
+    if w <= 0:
+        return ""
     return s if cell_len(s) <= w else chop_cells(s, w)[0]
 
 
@@ -32,6 +35,7 @@ def header(title, right=""):
     """Title (left, bold) + optional right-aligned info, then a divider rule."""
     t = Text()
     if right:
+        right = _clip(right, W - 1)
         # the RIGHT field is the one that must survive (it carries the count /
         # page / cost).  Clipping the title to what's left of the budget keeps
         # the line at W; the old max(1, ...) floor let a full-width title push
@@ -53,6 +57,7 @@ def bar(title, right=""):
     for the scene-heavy activity screens that can't spare a line."""
     t = Text()
     if right:
+        right = _clip(right, W - 1)
         title = _clip(title, max(0, W - cell_len(right) - 1))   # as in header()
         gap = max(1, W - cell_len(title) - cell_len(right))
         t.append(title + " " * gap, style=INK_B)

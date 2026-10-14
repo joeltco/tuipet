@@ -18,7 +18,8 @@ HELP = [
     ("  free (a wound also mends with time)", 0),
     ("c clean poop", 1),
     ("o lights   v assistant - paid help:", 1),
-    ("  a fee per visit + an hourly wage", 0),
+    # menus audit 2026-10-14: billing and late-stage clocks use game time.
+    ("  a fee per visit + a game-hour wage", 0),
     ("  once it's Rookie or older", 0),
     ("ENTER accepts a found gift", 1),
     # the ✗ counter finally explained (gameplay polish #18, 2026-07-22):
@@ -29,7 +30,7 @@ HELP = [
     ("comes next and reset each stage.", 0),
     # ("elder" was the wrong axis here -- the 5-mistake death is 2 game-days
     # INTO an Ultimate/Mega stage, never the age-15 elder; audit 2026-07-25)
-    ("20 is fatal - and 2 days into an", 0),
+    ("20 is fatal - 2 game days into an", 0),
     ("Ultimate/Mega stage just 5 can be.", 0),
     # the energy dial explained (gameplay polish #6, 2026-07-22): no
     # passive decay BY DESIGN -- it is the ACTION meter, so the gauge only
@@ -46,7 +47,7 @@ HELP = [
     ("p discipline - praise & scold:", 1),
     ("  scold a tantrum (+manners), praise", 0),
     ("  a proud win; ignored tantrums", 0),
-    ("  cost a care mistake", 0),
+    ("  cost manners -5, no care mistake", 0),
     # the alarm legend (#8): the ring count is the message
     ("Alarms count the urgency: one beep", 0),
     ("routine, two a mess, three urgent.", 0),

@@ -132,6 +132,8 @@ def _fit_cells(text, budget):
     fit.  Cells, never len(): a 2-cell glyph passes a char budget and blows
     the render (THE CELL LAW, bug report #32)."""
     from rich.cells import cell_len
+    if budget <= 0:
+        return ""
     if cell_len(text) <= budget:
         return text
     out = ""
@@ -140,6 +142,26 @@ def _fit_cells(text, budget):
             break
         out += ch
     return out.rstrip() + "…"
+
+
+def compact_count(value, width=4):
+    """Bound an accumulated count; exact values remain in DigiCore."""
+    # menus audit 2026-10-14: formatting never caps the underlying ledger.
+    raw = str(value)
+    if cell_len_(raw) <= width:
+        return raw
+    if isinstance(value, int):
+        sign = "-" if value < 0 else ""
+        n = abs(value)
+        for scale, suffix in ((10 ** 12, "T"), (10 ** 9, "B"),
+                              (10 ** 6, "M"), (1000, "k")):
+            if n >= scale:
+                short = f"{sign}{n // scale}{suffix}"
+                if cell_len_(short) <= width:
+                    return short
+        digits = str(n)
+        raw = f"{sign}{digits[0]}e{len(digits) - 1}"
+    return _fit_cells(raw, width)
 
 
 def wrap(text, max_lines, width=CARD_W):
@@ -231,6 +253,15 @@ def home_lines(pet):
     xm = f" [b {T.ACCENT}]X[/]" if pet.x_antibody != "None" else ""
     lvl = _lines._pet_level(pet)
     fest = festival_line()
+    battle_row = f"Battle  {pet.wins}W/{pet.battles} Lv{lvl} ★{pet.trophies}"
+    if cell_len_(battle_row) > CARD_W:
+        battle_row = (f"Battle {compact_count(pet.wins)}W/{compact_count(pet.battles)}"
+                      f"[dim]Lv[/]{lvl}[{T.COIN}]★{compact_count(pet.trophies)}[/]")
+    else:
+        battle_row = f"Battle  {pet.wins}W/{pet.battles} [dim]Lv[/]{lvl} [{T.COIN}]★{pet.trophies}[/]"
+    bits = str(pet.bits)
+    if cell_len_(f"Weight  {pet.weight}g · {bits}b") > CARD_W:
+        bits = compact_count(pet.bits, 8)
     return [
         f"[b]{pet.name[:22]}[/]{xm}",
         f"[dim]{pet.stage}{(' · ' + pet.attribute) if pet.attribute else ''}[/]",
@@ -245,7 +276,7 @@ def home_lines(pet):
         # Level, once DigiCore-only, now ride the two battle rows below --
         # both were live progression the main card never showed, home-card
         # surfacing 2026-07-24 "evaluate what we can fit".)
-        f"Weight  {pet.weight}g · [{T.COIN}]{pet.bits}b[/]",
+        f"Weight  {pet.weight}g · [{T.COIN}]{bits}b[/]",
         # care mistakes decide the evolution road (every line's CM gates)
         # and 20 is lethal.  Stage-scoped: they reset on evolve.
         (f"Care    [{T.POS}]spotless[/]" if pet.care_mistakes == 0 else
@@ -261,9 +292,9 @@ def home_lines(pet):
         # audit 2026-07-28): the row shipped with D on ACCENT, and accent
         # IS the neg hex on mono and amber -- Data and Virus rendered as
         # literal twins there, near-twins on grey (both red-family).
-        f"Battle  {pet.wins}W/{pet.battles} [dim]Lv[/]{lvl} [{T.COIN}]★{pet.trophies}[/]",
-        f"Power   [{T.LIFE}]V{pet.vaccine}[/] [{T.POS}]D{pet.data_power}[/] "
-        f"[{T.NEG}]Vi{pet.virus}[/]",
+        battle_row,
+        f"Power   [{T.LIFE}]V{compact_count(pet.vaccine)}[/] [{T.POS}]D{compact_count(pet.data_power)}[/] "
+        f"[{T.NEG}]Vi{compact_count(pet.virus)}[/]",
         adventure_line(pet),
         # the @ line is WHERE THE MON STANDS (liveness law, Joel 2026-07-21
         # "shouldnt the @ say what zone the mon is in during adventure?"):
@@ -454,48 +485,63 @@ def eat(app):
 def shop(app):
     """SHOP/BAG: the selected entry's dossier."""
     from . import shop as shop_mod
-    T = theme
-    p, m = app.pet, app.mode
+    from rich.markup import escape
+    p, m, T = app.pet, app.mode, theme
     rows = m._rows()
+    ttl = "Shop" if m.mode == "shop" else "Bag"
     if not rows:
-        card(app, "Shop" if m.mode == "shop" else "Bag",
-             ["", "[dim]nothing here[/]", "",
-              f"Bits   [b]{p.bits}b[/]"])
+        card(app, ttl, ["", "[dim]nothing here[/]", "",
+                        f"Bits   [b]{compact_count(p.bits, 18)}b[/]"])
         return
     e = rows[min(m.cursor, len(rows) - 1)]
-    ttl = "Shop" if m.mode == "shop" else "Bag"
+    if "header" in e:
+        card(app, ttl, [escape(_fit_cells(e["header"], CARD_W))])
+        return
+    name = escape(_fit_cells(e["name"], CARD_W))
+    bits = f"Bits    [b]{compact_count(p.bits, 17)}b[/]"
+    # menus audit 2026-10-14: eggs, honors and consumables have different ledgers.
     if e.get("title_id") is not None:
         state = ("worn" if e.get("worn")
                  else "owned" if e.get("owned") else f"{e['price']}b")
-        lines = [f"[b]{e['name'][:24]}[/]", "[dim]a tamer honor[/]",
-                 f"Status  {state}", "",
-                 f"Bits    [b]{p.bits}b[/]", "",
-                 "[dim]ENTER buys, then wears[/]"]
+        action = "remove" if e.get("worn") else "wear" if e.get("owned") else "buy, then wear"
+        lines = [f"[b]{name}[/]", "[dim]a tamer honor[/]",
+                 f"Status  {state}", "", bits, "", f"[dim]ENTER {action}[/]"]
+    elif e.get("egg_idx") is not None:
+        owned = bool(e.get("owned"))
+        taken = shop_mod._town_taken(p)
+        spent = bool(taken.get(f"{shop_mod.GLOBAL_SHOP_ID}:egg"))
+        lines = [f"[b]{name}[/]", "[dim]a digitama[/]",
+                 "[dim]joins your hatch carousel[/]",
+                 "State   owned" if owned else "State   sold out today" if spent
+                 else "State   available"]
+        if not owned:
+            lines.append(f"Price   {e['price']}b")
+            if e['price'] > p.bits:
+                lines.append(f"Short   [{T.NEG}]{e['price'] - p.bits}b[/]")
+        lines += ["1 egg per profile/day", bits]
+        lines.append("[dim]already owned[/]" if owned else
+                     "[dim]egg bought today[/]" if spent else "[dim]ENTER buy[/]")
     else:
         have = p.inventory.get(e["key"], 0)
-        # word-wrap the effect blurb (card audit 2026-07-24): an effect_line
-        # runs to 51 chars ("ride! weight -2 · energy -1 — shred the living
-        # room") and a crest's answer list past 18 -- both were sliced flat.
         if str(e["key"]).startswith("egg_of_"):
-            # the crest egg's LIVE answer (the same evolution.check the
-            # item runs; shop polish 2026-07-17)
             names = shop_mod.crest_answer(p, e["key"])
-            eff = ([f"[{T.POS}]{ln}[/]" for ln in wrap("answers: " + " / ".join(names), 2)]
+            eff = ([f"[{T.POS}]{escape(ln)}[/]" for ln in wrap("answers: " + " / ".join(names), 2)]
                    if names else ["[dim]nothing answers it yet[/]"])
         else:
-            eff = [f"[dim]{ln}[/]" for ln in wrap(shop_mod.effect_line(e), 3)]
+            eff = [f"[dim]{escape(ln)}[/]" for ln in wrap(shop_mod.effect_line(e), 3)]
+        notes, buyable, usable = shop_mod.menu_limits(p, e, m.mode)
+        lines = [f"[b]{name}[/]", *eff]
         if m.mode == "shop":
-            short = e["price"] - p.bits
-            price = (f"Price   [{T.NEG}]{e['price']}b · short {short}[/]"
-                     if short > 0 else f"Price   {e['price']}b")
+            lines.append(f"Price   {e['price']}b")
+            if e['price'] > p.bits:
+                lines.append(f"Short   [{T.NEG}]{e['price'] - p.bits}b[/]")
+            hint = "ENTER buy" if buyable else "browse other stock"
         else:
-            price = f"Sells   {shop_mod.resell_price(e)}b"
-        lines = [f"[b]{e['name'][:24]}[/]", *eff, "",
-                 price,
-                 f"Owned   x{have}",
-                 f"Bits    [b]{p.bits}b[/]", "",
-                 ("[dim]ENTER buy[/]" if m.mode == "shop"
-                  else "[dim]ENTER use  R sell[/]")]
+            lines.append(f"Sells   {shop_mod.resell_price(e)}b")
+            hint = "ENTER use  R sell" if usable else "R sell"
+        lines += [f"Owned   x{compact_count(have, 17)}", bits]
+        lines += [f"[dim]{escape(ln)}[/]" for note in notes for ln in wrap(note, 2)]
+        lines.append(f"[dim]{hint}[/]")
     card(app, ttl, lines, subtitle=gen_subtitle(p))
 
 
@@ -546,7 +592,9 @@ def album(app):
         # form has none, and two blank rows in a row is wasted budget --
         # the all-cards audit's own trailing-blank finding)
         + ([""] + tail if tail else [])
-        + ["", "[dim]ENTER view  ↑↓ browse[/]"],
+        # menus audit 2026-10-14: Enter opens the book only from its list.
+        + ["", "[dim]←→ browse  ESC back[/]" if m.detail
+                 else "[dim]ENTER view  ↑↓ browse[/]"],
         subtitle=gen_subtitle(app.pet) if app.pet else "")
 
 
@@ -583,7 +631,8 @@ def hall(app):
     if r.get("dead"):
         cause = str(r.get("cause", "") or "old age")
         lines.append(f"[{T.NEG}]† {_fit_cells(cause, CARD_W - 2)}[/]")
-    lines += ["", "[dim]ENTER page  ↑↓ browse[/]"]
+    lines += ["", "[dim]←→ browse  ESC back[/]" if m.detail
+                  else "[dim]ENTER page  ↑↓ browse[/]"]
     card(app, "Hall", lines,
          subtitle=gen_subtitle(app.pet) if app.pet else "")
 
@@ -608,7 +657,8 @@ def eggguide(app):
     goal = wrap(live, 2) if live and state == "locked" else [""]
     card(app, "Digitama", [
         f"[dim]{m.i + 1} of {m.n}[/]", "",
-        f"Hatches  [b]{name[:16]}[/]",
+        # menus audit 2026-10-14: this is the egg's name, not its hatchling.
+        f"Egg      [b]{name[:16]}[/]",
         f"State    {state}",
         f"Keeps    {keeps}", ""]
         + [f"[b]{g}[/]" if g else "" for g in goal]
@@ -658,7 +708,11 @@ def raid(app):
                        - v.get("now", 0))))
     when = "%dd %dh" % (left // 86400, left % 86400 // 3600)
     top = v.get("top") or []
-    lead = (f"{str(top[0][0])[:10]} · {_fmt_dmg(top[0][1])}" if top else "—")
+    # menus audit 2026-10-14: reserve the damage before fitting a player name.
+    lead = "—"
+    if top:
+        damage = _fmt_dmg(top[0][1])
+        lead = _esc(_fit_cells(str(top[0][0]), CARD_W - 10 - cell_len_(damage))) + f" · {damage}"
     card(app, "Raid", [
         f"[b]{b.get('name', '?')[:18]}[/]",
         (f"Pool   {bar(pct, 11, theme.NEG)} {pct}%" if standing
@@ -853,7 +907,10 @@ def _lobby_ladder(app, m):
     rank, wins = (list(lad.get("you") or (0, 0)) + [0, 0])[:2]
     days = int(lad.get("days_left") or 0)
     top = list(lad.get("top") or [])
-    lead = f"{_fit_cells(str(top[0][0]), 12)} · {int(top[0][1])}W" if top else "—"
+    lead = "—"
+    if top:
+        wins = f"{compact_count(int(top[0][1]), 6)}W"
+        lead = f"{_fit_cells(str(top[0][0]), min(12, CARD_W - 10 - cell_len_(wins)))} · {wins}"
     card(app, "Ladder", [
         f"[b]season {_esc(str(lad.get('season', '?')))}[/]",
         "[dim]online wins only[/]", "",
@@ -945,6 +1002,7 @@ def help_(app):
 def options(app):
     from . import optionsscreen as _opts
     m = app.mode
+    pet = getattr(app, "pet", None)
     row = _opts._ROWS[min(m.cursor, len(_opts._ROWS) - 1)]
     desc = _opts._DESC.get(row, "")
     # word-wrap (card audit 2026-07-24): desc runs to 53 chars and the update
@@ -957,8 +1015,93 @@ def options(app):
     if m.msg:
         lines += wrap(m.msg, 4)
         lines.append("")
-    lines.append("[dim]ENTER toggles[/]")
+    # menus audit 2026-10-14: confirmations and doors do not toggle.
+    action = {"theme": "open", "sound": "open", "account": "open",
+              "cloud": "toggle", "update": "check", "keys": "open",
+              "new": "retire", "erase": "confirm"}[row]
+    if getattr(m, "confirm", False):
+        action = "erase (type YES)"
+    elif getattr(m, "confirm_restart", False):
+        action = "restart"
+    elif getattr(m, "confirm_new", False):
+        action = "retire"
+    elif row == "new" and pet is not None and (pet.dead or pet.stage == "Egg"):
+        action = "new egg"
+    elif row == "update":
+        hint = m.update_hint() if getattr(m, "update_hint", None) else ""
+        if getattr(m, "_updated", False) or "installed" in (hint or ""):
+            action = "restart"
+        elif getattr(m, "_upd", None) not in (None, "", "…"):
+            action = "install"
+    lines.append("[dim]updating…[/]" if getattr(m, "_installing", False)
+                 else f"[dim]ENTER {action}[/]")
     card(app, "Options", lines)
+
+
+def themes(app):
+    m = app.mode
+    card(app, "Themes", [f"[b]{m.names[m.cursor]}[/]", "",
+                         f"Saved   {m.original}", "", "[dim]↑↓ preview[/]",
+                         "[dim]ENTER keep  ESC revert[/]"])
+
+
+def sound(app):
+    from . import sound as snd
+    m = app.mode
+    enabled = bool(m.sound_get())
+    row = m._ROWS[m.cursor]
+    lines = [f"Sound   {'on' if enabled else 'off'}",
+             f"Volume  {snd.volume()}%" if snd.available() else "Volume  bell — n/a", ""]
+    if row == "volume" and snd.available():
+        lines += ["[dim]←→ volume[/]", "[dim]ENTER hear it[/]"]
+    else:
+        lines.append("[dim]ENTER toggle[/]" if row == "sound"
+                     else "[dim]bell has no volume[/]")
+    lines += ["", "[dim]↑↓ pick  ESC back[/]"]
+    card(app, "Sound", lines)
+
+
+def keys(app):
+    m = app.mode
+    n = len(m.rows)
+    card(app, "Keys", [f"Rows    {min(m.top + 1, n)}-{min(m.top + m.VISIBLE, n)}/{n}",
+                       "", "[dim]home-screen bindings[/]", "",
+                       "[dim]↑↓ scroll  ESC back[/]"])
+
+
+def account(app):
+    from rich.markup import escape
+    m = app.mode
+    # menus audit 2026-10-14: describe the active field without echoing secrets.
+    lines = [f"Name    {escape(_fit_cells(m.name_buf or '—', CARD_W - 8))}",
+             f"Field   {m.field}", ""]
+    lines += [escape(ln) for ln in wrap(m.note, 4)]
+    lines += ["", "[dim]TAB field  ENTER go[/]", "[dim]ESC back[/]"]
+    card(app, "Account", lines)
+
+
+def cloudwait(app):
+    from rich.markup import escape
+    card(app, "Account", [escape(_fit_cells(app.mode.name, CARD_W)), "",
+                          "[dim]checking the cloud…[/]", "",
+                          "[dim]waiting for sign-in[/]"])
+
+
+def town(app):
+    p = app.pet
+    card(app, "Town", [f"Bits    {compact_count(p.bits, 17)}b", "",
+                       "[dim]Shop, Eggs and Bag[/]", "",
+                       "[dim]↑↓ pick  ENTER go[/]", "[dim]ESC leave[/]"])
+
+
+def townegg(app):
+    from types import SimpleNamespace
+    from . import shop as shop_mod
+    m = app.mode
+    rows = shop_mod.town_egg_rows(m.town_id)
+    idx = m.stock[m.i] if m.n else None
+    selected = [e for e in rows if e["egg_idx"] == idx]
+    shop(_SubView(app, SimpleNamespace(mode="shop", cursor=0, _rows=lambda: selected)))
 
 
 def bug(app):
@@ -986,14 +1129,16 @@ def death(app):
 
 
 def assist(app):
-    from .pet import AUTO_CARE_VISIT_PRICE
+    from .pet import AUTO_CARE_VISIT_PRICE, AUTO_CARE_HOUR_PRICE
     p = app.pet
     on = getattr(p, "auto_care", False)
-    fee = AUTO_CARE_VISIT_PRICE.get(p.stage, 200)
+    fee = AUTO_CARE_VISIT_PRICE.get(p.stage, 0)
+    hour = AUTO_CARE_HOUR_PRICE.get(p.stage, 0)
     card(app, "Assistant", [
         f"Helper  [b]{'hired' if on else 'off'}[/]", "",
-        f"Visit   ~{fee}b",
-        f"Bits    [b]{p.bits}b[/]", "",
+        f"Visit   {fee}b",
+        f"Hour    {hour}b/game hour",
+        f"Bits    [b]{compact_count(p.bits, 17)}b[/]", "",
         "[dim]cleans and feeds while[/]",
         "[dim]you are away[/]", "",
         "[dim]ENTER hire/dismiss[/]"])
@@ -1042,7 +1187,9 @@ def zonepick(app):
     title = z["name"]
     lines = [
         f"[b]{_fit_cells(title, CARD_W)}[/]",
-        f"[dim]map {m.indices.index(zi) + 1} of {len(m.indices)} open · {z.get('tier', '')}[/]", DIV,
+        # menus audit 2026-10-14: the tier and open-count cannot share 26 cells.
+        f"[dim]map {m.indices.index(zi) + 1} of {len(m.indices)} open[/]",
+        f"[dim]{z.get('tier', '')}[/]", DIV,
         f"Gate    [{T.NEG}]{_fit_cells(boss.get('name', '?') if boss else 'no boss', CARD_W - 8)}[/]",
         f"Road    {z['steps']} legs",
         f"Rest    {towns} town" + ("s" if towns != 1 else ""),
@@ -1212,7 +1359,9 @@ def discipline(app):
              f"Moment   {moment}", DIV,
              "[dim]scold a tantrum: +25[/]",
              "[dim]praise a proud win: +10[/]",
-             "[dim]ignored tantrums cost ✗[/]"]
+             # menus audit 2026-10-14: tantrum timeout spends manners, not care.
+             "[dim]ignored tantrums:[/]",
+             "[dim]manners -5 (no care slip)[/]"]
     app.stats_w.update("\n".join(lines))
 
 
@@ -1296,6 +1445,8 @@ def battle(app):
         res = f"[{T.POS}]VICTORY![/]" if m.won else f"[{T.NEG}]DEFEAT[/]"
         lines += [res, f"[dim]{(b.reward if b else '') or ''}"[:30] + "[/]",
                   "", "[dim]SPACE  continue[/]"]
+    elif getattr(m, "phase", "") == "intro":
+        lines += ["", "[dim]ANY KEY skip[/]"]
     elif getattr(m, "phase", "") == "ready":
         # readiness_line is <=26, but the result-anim note ("a draw — counts
         # as a loss · record 12W/30", ~40) also rides hud_note -- wrap so it
@@ -1304,7 +1455,7 @@ def battle(app):
         lines += ["", "[dim]SPACE  lock the bar[/]"]
     else:
         lines += [f"[dim]{ln}[/]" for ln in wrap(m.hud_note or "", 2)]
-        lines += ["", "[dim]SPACE skip · ESC end it[/]"]
+        lines += ["", "[dim]SPACE hurry · ESC end it[/]"]
     app.stats_w.update("\n".join(lines))
 
 
@@ -1360,7 +1511,8 @@ def _registry():
                    deathscreen, digicorescreen, disciplinescreen, dnascreen,
                    eggguidescreen, eggselectscreen, feedscreen, helpscreen,
                    lobbyscreen, optionsscreen, raidscreen, shopscreen,
-                   titlescreen, tournamentscreen, training as training_mod)
+                   titlescreen, tournamentscreen, training as training_mod,
+                   themescreen, accountscreen, townscreen, towneggscreen)
     return (
         (titlescreen.TitlePanel, title),
         (disciplinescreen.DisciplinePanel, discipline),
@@ -1382,6 +1534,14 @@ def _registry():
         (lobbyscreen.LobbyPanel, lobby),
         (helpscreen.HelpPanel, help_),
         (optionsscreen.OptionsPanel, options),
+        # menus audit 2026-10-14: hosted settings/town cards own their context.
+        (themescreen.ThemePanel, themes),
+        (optionsscreen.SoundPanel, sound),
+        (optionsscreen.KeysPanel, keys),
+        (accountscreen.AccountPanel, account),
+        (accountscreen.CloudWaitPanel, cloudwait),
+        (townscreen.TownPanel, town),
+        (towneggscreen.TownEggPanel, townegg),
         (bugscreen.BugReportPanel, bug),
         (deathscreen.DeathPanel, death),
         (assistscreen.AssistPanel, assist),

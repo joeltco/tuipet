@@ -384,14 +384,15 @@ def test_the_shelf_fills_the_lcd_and_keys_left_the_footer():
         assert "ENTER" not in lines[-1]           # no key footer in the LCD
 
 
-def test_the_honors_tab_strip_says_wear():
+def test_the_honors_tab_strip_names_the_live_action():
     from tuipet.app import _hud_plain
     p = _pet()
     pan = ShopPanel(p)
     pan.msg_t = 0
     pan.tab = pan._tabs().index("Honors")
     s = _hud_plain(pan.strip())
-    assert "ENTER wear" in s and len(s) <= 40
+    # menus audit 2026-10-14: an unowned honor is bought before it can be worn.
+    assert "ENTER buy" in s and len(s) <= 40
 
 
 def test_refusals_and_shortfalls_sound_like_refusals():

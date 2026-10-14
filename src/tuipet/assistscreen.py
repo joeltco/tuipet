@@ -45,7 +45,8 @@ class AssistPanel:
         hour = AUTO_CARE_HOUR_PRICE.get(p.stage, 0)
         care = AUTO_CARE_VISIT_PRICE.get(p.stage, 0)
         if hour > 0:
-            out.append(f"  {hour}b/hour\n", style=INK)
+            # menus audit 2026-10-14: one game hour is one real minute.
+            out.append(f"  {hour}b/game hour\n", style=INK)
         out.append(f"  {care}b/care\n", style=INK)
         if p.auto_care:
             _, by_num = data.load_sprites()

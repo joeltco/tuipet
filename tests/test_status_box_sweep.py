@@ -69,7 +69,7 @@ def test_eggguide_card():
     from tuipet.eggguidescreen import EggGuidePanel
     app = _app()
     txt = _card(app, EggGuidePanel())
-    assert "Digitama" in txt and "Hatches" in txt
+    assert "Digitama" in txt and "Egg      " in txt
 
 
 def test_digicore_card():
@@ -389,12 +389,11 @@ def test_the_road_wears_its_own_card():
     gate_txt = _card(app, road)
     assert "Gate" in gate_txt and road.adv.boss_name[:8] in gate_txt
     road._at_gate = False
-    # a TOWN visit is still ON the run: the unregistered TownPanel must not
-    # drop the card back to bare vitals (painter_for walks .sub, then falls
-    # back to the host) -- but its SHOP tab still wins, two layers deep
+    # menus audit 2026-10-14: the town hub now owns its card; its shop still
+    # wins two layers deep, rather than leaving the hub on the road ledger.
     from tuipet.townscreen import TownPanel
     road.sub = TownPanel(app.pet, town_id=0)
-    assert "road" in _card(app, road)
+    assert "Town" in _card(app, road)
 
     # the box budget, worst case (26x16): longest name, 3-digit energy, a
     # 5-digit purse, 99s across the ledger and a held transport

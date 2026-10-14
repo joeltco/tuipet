@@ -2,6 +2,7 @@
 can read it and fix it (Joel 2026-07-09).  A one-shot submit that needs no lobby
 login; if the network's down the app stashes it and retries next launch."""
 from __future__ import annotations
+from rich.cells import cell_len
 from . import menu
 from .theme import INK, INK_B, DIM  # noqa: F401  (palette names bound for theme.apply propagation)
 
@@ -14,11 +15,13 @@ def wrap(s, w):
     """Word-wrap into <=w-wide lines, hard-splitting any over-long token."""
     out, line = [], ""
     for word in s.split(" "):
-        while len(word) > w:                       # a pasted URL etc.
+        # menus audit 2026-10-14: typed Unicode spends cells, not characters.
+        while cell_len(word) > w:
             if line:
                 out.append(line); line = ""
-            out.append(word[:w]); word = word[w:]
-        if line and len(line) + 1 + len(word) > w:
+            head = menu._clip(word, w)
+            out.append(head); word = word[len(head):]
+        if line and cell_len(line) + 1 + cell_len(word) > w:
             out.append(line); line = word
         else:
             line = (line + " " + word) if line else word
@@ -67,7 +70,10 @@ class BugReportPanel(menu.SubHost):
         out = menu.header("REPORT A BUG", "%d/%d" % (len(self.buf), MAXLEN))
         lines = wrap(self.buf, BODY_W) if self.buf else [""]
         caret = "_" if (self.frame_i // 5) % 2 == 0 else " "
-        lines[-1] = (lines[-1] + caret)[:BODY_W]
+        if cell_len(lines[-1]) + 1 > BODY_W:
+            lines.append(caret)     # keep the last typed character visible
+        else:
+            lines[-1] += caret
         view = lines[-VIEW_ROWS:]
         view = view + [""] * (VIEW_ROWS - len(view))    # pad to a steady box
         for ln in view:
