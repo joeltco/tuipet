@@ -54,6 +54,11 @@ def load_settings(path=None):
             d = json.load(open(candidate, encoding="utf-8"))
         except (OSError, ValueError):
             continue
+        # sync audit 2026-10-14: JSON validity alone cannot make a profile usable.
+        if not isinstance(d, dict) or any(
+                k in d and d[k] is not None and not isinstance(d[k], dict)
+                for k in ("progress", "account")):
+            continue
         if _migrate_v401_settings(d):        # .400/.401 egg indices -> .402 bank
             save_settings(d, path)
         return d
@@ -719,7 +724,11 @@ def merge_progress(incoming):
         v = incoming.get(k)
         if not isinstance(v, list) or not v:
             continue
-        merged = sorted(set(prog.get(k) or []) | set(v))
+        # sync audit 2026-10-14: junk in one earned set must not abort the pull.
+        try:
+            merged = sorted(set(prog.get(k) or []) | set(v))
+        except (TypeError, ValueError):
+            continue
         if merged != (prog.get(k) or []):
             prog[k] = merged
             changed = True
@@ -921,6 +930,10 @@ def erase_all():
              "volume.txt"]   # never in this list before the 2026-07-19 shape sweep
     names += [os.path.basename(p) for p in
               _glob.glob(os.path.join(SAVE_DIR, "save.corrupt.*.json"))]
+    # sync audit 2026-10-14: rescue copies and interrupted writes contain the pet too.
+    names += ["save.json.tmp", "settings.json.tmp", "pending_bugs.jsonl.tmp"]
+    names += [os.path.basename(p) for p in
+              _glob.glob(os.path.join(SAVE_DIR, "save.rescue.*.json"))]
     for fn in names:
         p = os.path.join(SAVE_DIR, fn)
         try:
@@ -983,7 +996,8 @@ def local_saved_at(path=None):
     path = path or SAVE_PATH
     try:
         return float(json.load(open(path, encoding="utf-8")).get("_saved_at") or 0.0)
-    except (ValueError, OSError, TypeError):
+    # sync audit 2026-10-14: a JSON array is unreadable save data, not a boot crash.
+    except (ValueError, OSError, TypeError, AttributeError):
         return 0.0
 
 

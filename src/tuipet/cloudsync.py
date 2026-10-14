@@ -156,7 +156,11 @@ def push_save(uri, name, pw, save, timeout=_TIMEOUT):
     st, cloud = probe(uri, name, pw, timeout)
     if st != "ok":
         return False                                 # unreadable cloud: no blind writes
-    if cloud and float(cloud.get("_saved_at") or 0) > float(save.get("_saved_at") or 0):
+    # sync audit 2026-10-14: malformed stamps cannot authorize a blind quit write.
+    try:
+        if cloud and float(cloud.get("_saved_at") or 0) > float(save.get("_saved_at") or 0):
+            return False
+    except (TypeError, ValueError, AttributeError):
         return False                                 # the cloud moved on without us
     try:
         with _connect(uri, timeout) as ws:

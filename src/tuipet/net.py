@@ -258,6 +258,13 @@ class SyncClient(_WsClient):
     def _handle(self, raw):
         m, t = parse_msg(raw)
         if t == "welcome":
+            # sync audit 2026-10-14: reconnect ownership is known before any push.
+            from . import persistence
+            holder = m.get("holder")
+            if holder and holder.get("device") != persistence.device_id():
+                self.not_holder = holder
+            else:
+                self.not_holder = None
             if self.on_pull is not None:
                 self.on_pull(m.get("save"))    # server's stored save (or None)
         elif t == "saved":
@@ -279,6 +286,10 @@ class SyncClient(_WsClient):
         elif t == "pm":
             # the sync ghost is the HOME-SCREEN alert channel: the app drains
             # this into the message box (presence 2026-07-05)
+            # sync audit 2026-10-14: mute applies to home alerts as well as lobby chat.
+            from . import persistence
+            if m.get("from_name", "?") in persistence.get_blocked():
+                return
             self.inbox.append((m.get("from_name", "?"), m.get("text", "")))
             del self.inbox[:-20]
         elif t == "announce":

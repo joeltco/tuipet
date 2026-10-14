@@ -54,6 +54,8 @@ def warm_data():
     import inspect
     from . import (adventure, data_core, data_meta, data_shop, data_world,
                    egg, lines)
+    # sync audit 2026-10-14: this lazy table uses a module cache, not lru_cache.
+    data_world._load_attacks()
     for mod in (data_core, data_world, data_meta, data_shop, lines, egg, adventure):
         for name, fn in list(vars(mod).items()):
             if not (name.startswith("load_") or name in ("_real_eggs", "_load_maps")):

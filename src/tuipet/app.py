@@ -162,7 +162,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("ADVENTURE POLISH. The gate shows which item you are about to use, festival maps say when the boss bounty is spent, slipping away from a fight breaks your win streak, and a sleeping traveller cannot be hurried.")
+    WHATS_NEW = ("SYNC POLISH. Signing in, switching accounts and taking your pet between devices are sturdier, a damaged profile falls back to its backup, and muted players stay muted everywhere.")
 
 
     BINDINGS = [
@@ -460,7 +460,7 @@ class TuiPetApp(ActionsMixin, App):
             self._open_first_signin("Can't reach the cloud. Try again, or ESC for a new pet.", name)
             return
         if save is not None:
-            probe, _ = persistence.pet_from_save(dict(save), strict=True)
+            probe, _ = persistence.pet_from_save(save, strict=True)
             if probe is None:
                 self.beep("error", bell=False)
                 self._open_first_signin("That cloud save is unreadable. ESC for a new pet.", name)
@@ -469,6 +469,10 @@ class TuiPetApp(ActionsMixin, App):
             if not ok:
                 self.beep("error", bell=False)
                 self._open_first_signin("Couldn't bring your pet over. Try again.", name)
+                return
+            # sync audit 2026-10-14: the pet may change between gate and take.
+            if persistence.pet_from_save(csave or save, strict=True)[0] is None:
+                self._open_first_signin("That cloud save is unreadable. ESC for a new pet.", name)
                 return
             persistence.set_account(name, pw)
             persistence.set_holder_cache(True)
@@ -483,6 +487,12 @@ class TuiPetApp(ActionsMixin, App):
             self._verdict(f"Signed in as {_hud_esc(name)} — {msg or 'welcome back!'}")
             self.repaint()
             return
+        # sync audit 2026-10-14: pruning can leave an empty but held cartridge.
+        if _holder and _holder.get("device") != persistence.device_id():
+            ok, csave = await _to_thread(cloudsync.take, uri, name, pw)
+            if not ok or csave is not None:
+                self._open_first_signin("Cloud changed — sign in again to bring your pet over.", name)
+                return
         persistence.set_account(name, pw)
         persistence.set_holder_cache(True)
         self._start_sync()
@@ -1002,14 +1012,17 @@ class TuiPetApp(ActionsMixin, App):
             # validate BEFORE committing to the switch: an unreadable cloud
             # blob must not cost the player their current login (the same
             # strict probe sync_down_at_startup runs)
-            pet_probe, _ = persistence.pet_from_save(dict(save),
-                                                     strict=True)
+            pet_probe, _ = persistence.pet_from_save(save, strict=True)
             if pet_probe is None:
                 self._verdict("That cloud save is unreadable — kept your account.")
                 self.beep("error", bell=False)
                 return
         persistence.save(self.pet)                   # park the pet with the OLD account
-        if old_name == name:
+        # sync audit 2026-10-14: server account identity is case-insensitive.
+        if old_name and old_name.lower() == name.lower():
+            persistence.set_account(name, pw)
+            self._stop_sync()
+            self._start_sync()
             # re-login to the SAME account: never park, never delete -- only
             # refresh from a STRICTLY newer cloud copy.  This path used to
             # skip the sync_down_at_startup timestamp guard, so a day-old
@@ -1056,9 +1069,16 @@ class TuiPetApp(ActionsMixin, App):
                 self.beep("error", bell=False)
                 return
             save = csave or save
+            # sync audit 2026-10-14: validate the take reply before changing accounts.
+            if persistence.pet_from_save(save, strict=True)[0] is None:
+                self._verdict("That cloud save is unreadable — kept your account.")
+                self.beep("error", bell=False)
+                return
         self._stop_sync()                            # the old pusher must stop first
         #                                              (cancelled, not just flagged)
         persistence.set_account(name, pw)
+        # sync audit 2026-10-14: the previous account's spectator cache cannot follow.
+        persistence.set_holder_cache(True)
         if save is not None:
             persistence.set_holder_cache(True)
             persistence.write_save_dict(save)
@@ -1757,6 +1777,8 @@ def main():
                         _lobby_uri(), name, pw, timeout=cloudsync.BOOT_TIMEOUT)
                 mine = persistence.device_id()
                 if st == "ok" and holder and holder.get("device") != mine:
+                    # sync audit 2026-10-14: retain this verdict even if take fails.
+                    persistence.set_holder_cache(False)
                     label = holder.get("label") or "another device"
                     print(f"Your pet is on {label}.")
                     try:
@@ -1766,13 +1788,15 @@ def main():
                     if ans in ("y", "yes"):
                         ok, csave = cloudsync.take(_lobby_uri(), name, pw)
                         if ok:
-                            persistence.set_holder_cache(True)
                             if csave:
                                 probe_pet, _ = persistence.pet_from_save(
-                                    dict(csave), strict=True)
+                                    csave, strict=True)
                                 if probe_pet is not None:
+                                    persistence.set_holder_cache(True)
                                     persistence.rescue_copy()   # this device's old
                                     persistence.write_save_dict(csave)  # copy stays
+                            else:
+                                persistence.set_holder_cache(True)
                         else:
                             print("Couldn't take the pet just now — playing "
                                   "this device's local copy, saves stay here.")

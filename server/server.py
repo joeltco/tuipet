@@ -66,7 +66,7 @@ def _admin_key():
     if k:
         return k.strip()
     try:
-        return open(ADMIN_KEY_PATH).read().strip()
+        return open(ADMIN_KEY_PATH, encoding="utf-8").read().strip()
     except OSError:
         return ""
 
@@ -83,7 +83,7 @@ _ids = itertools.count(1)
 # ---- accounts (name -> {name, salt, hash}, keyed by lowercased name) --------
 def _load_accounts():
     try:
-        return json.load(open(ACCOUNTS_PATH))
+        return json.load(open(ACCOUNTS_PATH, encoding="utf-8"))
     except (OSError, ValueError):
         return {}
 
@@ -93,7 +93,7 @@ ACCOUNTS = _load_accounts()
 
 def _save_accounts():
     tmp = ACCOUNTS_PATH + ".tmp"
-    with open(tmp, "w") as f:
+    with open(tmp, "w", encoding="utf-8") as f:
         json.dump(ACCOUNTS, f)
     os.replace(tmp, ACCOUNTS_PATH)
 
@@ -119,7 +119,7 @@ def _verify(pw, acc):
 # push to a held account -- they predate the question.
 def _load_holders():
     try:
-        return json.load(open(HOLDERS_PATH))
+        return json.load(open(HOLDERS_PATH, encoding="utf-8"))
     except (OSError, ValueError):
         return {}
 
@@ -130,7 +130,7 @@ HOLDERS = _load_holders()
 def _save_holders():
     try:
         tmp = HOLDERS_PATH + ".tmp"
-        with open(tmp, "w") as f:
+        with open(tmp, "w", encoding="utf-8") as f:
             json.dump(HOLDERS, f)
         os.replace(tmp, HOLDERS_PATH)
     except OSError:
@@ -152,7 +152,7 @@ def _holder_view(key):
 # ---- cloud saves (name.lower() -> full pet save dict incl. _saved_at) --------
 def _load_saves():
     try:
-        return json.load(open(SAVES_PATH))
+        return json.load(open(SAVES_PATH, encoding="utf-8"))
     except (OSError, ValueError):
         return {}
 
@@ -193,7 +193,7 @@ def _prune_saves(now=None):
     if changed:
         try:
             tmp = SAVES_PATH + ".tmp"
-            with open(tmp, "w") as f:
+            with open(tmp, "w", encoding="utf-8") as f:
                 json.dump(SAVES, f)
             os.replace(tmp, SAVES_PATH)
         except OSError:
@@ -216,7 +216,7 @@ MAX_PENDING_PER_ACCT = 50          # newest kept; a flooded queue sheds its olde
 
 def _load_pending():
     try:
-        return json.load(open(PENDING_PATH))
+        return json.load(open(PENDING_PATH, encoding="utf-8"))
     except (OSError, ValueError):
         return {}
 
@@ -228,7 +228,7 @@ _pending_lock = asyncio.Lock()
 async def _save_pending():
     async with _pending_lock:
         tmp = PENDING_PATH + ".tmp"
-        with open(tmp, "w") as f:
+        with open(tmp, "w", encoding="utf-8") as f:
             json.dump(PENDING, f)
         os.replace(tmp, PENDING_PATH)
 
@@ -280,9 +280,11 @@ def _valid_save(save):
     if not isinstance(save, dict):
         return False
     stage = save.get("stage")
-    if stage not in _STAGES:
+    if not isinstance(stage, str) or stage not in _STAGES:
         return False
-    if stage != "Egg" and not (save.get("name") or "").strip():
+    # sync audit 2026-10-14: hostile JSON types get a verdict, not a disconnect.
+    if stage != "Egg" and (not isinstance(save.get("name"), str)
+                           or not save["name"].strip()):
         return False
     return True
 
@@ -312,7 +314,7 @@ async def _store_save(key, save):
     SAVES[key] = save
     async with _saves_lock:
         tmp = SAVES_PATH + ".tmp"
-        with open(tmp, "w") as f:
+        with open(tmp, "w", encoding="utf-8") as f:
             json.dump(SAVES, f)
         os.replace(tmp, SAVES_PATH)               # atomic
     return True
@@ -321,11 +323,16 @@ async def _store_save(key, save):
 async def _wipe_account(key):
     """Clear an account's cloud save and free its cartridge (the client's
     Erase all data).  Returns whether a save existed."""
+    # sync audit 2026-10-14: connected uploaders must not resurrect a wiped save.
+    LEASES.pop(key, None)
+    for c in CLIENTS.values():
+        if c.name.lower() == key:
+            c.lease = None
     had = SAVES.pop(key, None) is not None
     if had:
         async with _saves_lock:
             tmp = SAVES_PATH + ".tmp"
-            with open(tmp, "w") as f:
+            with open(tmp, "w", encoding="utf-8") as f:
                 json.dump(SAVES, f)
             os.replace(tmp, SAVES_PATH)
     if HOLDERS.pop(key, None) is not None:
@@ -491,7 +498,7 @@ SMOKE_PREFIX = "smk"      # tools/pvp_smoke.py account tag -- test bouts are rea
 
 def _load_ladder():
     try:
-        d = json.load(open(LADDER_PATH))
+        d = json.load(open(LADDER_PATH, encoding="utf-8"))
         return {"seasons": dict(d.get("seasons", {})),
                 "claimed": dict(d.get("claimed", {}))}
     except (OSError, ValueError):
@@ -507,7 +514,7 @@ _ladder_pair_hour = {}    # (a, b, "YYYY-MM-DDTHH") -> credits this hour
 def _save_ladder():
     try:
         tmp = LADDER_PATH + ".tmp"
-        with open(tmp, "w") as f:
+        with open(tmp, "w", encoding="utf-8") as f:
             json.dump(LADDER, f)
         os.replace(tmp, LADDER_PATH)
     except OSError:
@@ -1106,9 +1113,19 @@ async def handler(ws):
                     if not pw:
                         await _send(client, {"t": "login_failed", "msg": "Pick a password to claim this name."})
                         return
-                    ACCOUNTS[key] = await asyncio.to_thread(_make_account, name, pw)
-                    _save_accounts()
-                    LOG.info("registered account %s", name)
+                    candidate = await asyncio.to_thread(_make_account, name, pw)
+                    # sync audit 2026-10-14: hashing yields; another login may claim first.
+                    acc = ACCOUNTS.get(key)
+                    if acc:
+                        if not await asyncio.to_thread(_verify, pw, acc):
+                            await _send(client, {"t": "login_failed",
+                                                 "msg": "Wrong password for that name."})
+                            return
+                        name = acc["name"]
+                    else:
+                        ACCOUNTS[key] = candidate
+                        _save_accounts()
+                        LOG.info("registered account %s", name)
                 # A sync_only connection just pulls/pushes the cloud save; it never
                 # joins the live roster, so it can coexist with a lobby login on the
                 # same account (and won't trip the live-session handling below).
@@ -1142,8 +1159,12 @@ async def handler(ws):
                 client.live = not sync_only
                 client.device = str(m.get("device") or "")[:64]
                 client.dlabel = str(m.get("dlabel") or "")[:24]
-                if sync_only:                     # the newest APP LAUNCH owns the saves
-                    _take_lease(client, key, boot)
+                client.boot = boot
+                if sync_only:                     # the newest HOLDER launch owns the saves
+                    # sync audit 2026-10-14: a spectator read cannot revoke the holder.
+                    hold = HOLDERS.get(key)
+                    if not hold or hold.get("device") == client.device:
+                        _take_lease(client, key, boot)
                     if client.device and key not in HOLDERS:
                         # migration: the first device that syncs an unheld
                         # account becomes its holder (cartridge 2026-07-29)
@@ -1183,6 +1204,12 @@ async def handler(ws):
                 key = client.name.lower()
                 if client.device:
                     _claim_holder(key, client.device, client.dlabel)
+                    # sync audit 2026-10-14: an explicit take outranks launch seniority.
+                    for c in CLIENTS.values():
+                        if c.name.lower() == key:
+                            c.lease = None
+                    LEASES.pop(key, None)
+                    _take_lease(client, key, client.boot)
                     await _send(client, {"t": "holder", "ok": True,
                                          "save": SAVES.get(key)})
                 else:
