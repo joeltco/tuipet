@@ -648,16 +648,16 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
         return data.load_requirements().get(self.num, {}).get("base_weight", 20)
 
     def _evolve_after(self):
-        """Seconds in this stage before the evolution check may run.  Mega
-        never auto-evolves (9e9) -- EXCEPT the Godzilla line's VI -> VI+ road
-        (Godzilla 1994 -> Burning Godzilla, dmgz chart): a Mega with a next
-        form on THAT chart gets the Stage VI window, the Ultimate's 2880 s
-        (the manual: Stage VI evolves within 48 hours).  Other lines'
-        Mega -> Mega rows are untouched."""
+        """Seconds before a timed chart check; terminal and door-only Megas
+        stay untimed. Declared VI -> VI+ care roads use the late window."""
         dur = self.STAGE_DURATION.get(self.stage, 9e9)
-        if self.stage == "Mega" and getattr(self, "line_id", "") == "godzilla":
-            line = lines_mod.load_lines().get("godzilla") or {}
-            if line.get("children", {}).get(self.num):
+        if self.stage == "Mega" and lines_mod.active(self):
+            # evolution audit 2026-10-14: DMX VI also has a 48-hour road
+            # (humulos.com/digimon/dmx/manual/); pure jogress stays a door.
+            line = lines_mod.load_lines()[self.line_id]
+            rows = line["children"].get(self.num, [])
+            if any(all(k != "jogress" for k, _, _ in alt)
+                   for row in rows for alt in row["rule"]):
                 return self.LATE_STAGE_WINDOW
         return dur
 
@@ -881,6 +881,12 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
                 self._set_anim("refuse", 1.0)             # Jeering
                 return None, "The mode is out of reach."
             self._swap_form(targets[0])
+        # evolution audit 2026-10-14: adopt a claimed mode landing, but
+        # retain the old chart through an off-chart mode so reversion
+        # keeps an existing save's road (active() still uses the corpus).
+        old_line = self.line_id
+        if not lines_mod.adopt_line(self, prev=old):
+            self.line_id = old_line
         self._set_energy(self.energy + MODE_CHANGE_ENERGY)
         self._set_anim("happy", 2.5)                      # State.Evolving
         return old, f"MODE CHANGE — {self.name}!"

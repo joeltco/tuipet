@@ -81,6 +81,8 @@ HELP = [
     ("Eggs hatch, then evolve by HOW you", 0),
     ("raise them - care, train, battles.", 0),
     ("Each egg has its own line to a Mega.", 0),
+    # evolution audit 2026-10-14: a chart's Mega route isn't every branch.
+    ("Some branches stop early.", 0),
     # "a clean hit saves your battle form" read backwards: EVERY grade
     # saves, only MEGA is worth anything, and home fights lock their own
     # bar -- the saved form is what LOBBY rivals face (audit 2026-07-25)

@@ -414,6 +414,10 @@ def straight_needed(pet, a, b):
 
 def _atom_row(pet, atom):
     kind, a, b = atom
+    if kind == "unknown":
+        # evolution audit 2026-10-14: updated data must be safe to read
+        # in the checklist too, until the running build understands it.
+        return False, f"unsupported rule: {a}"
     if kind == "win":
         now = sum(pet.battle_log[-b:])
         # "training isnt filling the evo requirements in my metal greymon,

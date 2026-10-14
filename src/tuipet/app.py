@@ -162,7 +162,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("CARE POLISH. Overfeeding no longer counts as a care mistake, a rescued pet no longer dies the next second, care progress survives a restart, and the home hints always name a fix you can actually do.")
+    WHATS_NEW = ("EVOLUTION POLISH. X3 Megas can reach their X forms again, mode changes stay on your line, and the evolution guide is more honest about branches that end early.")
 
 
     BINDINGS = [
