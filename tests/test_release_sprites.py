@@ -16,7 +16,7 @@ with gzip.open(_P, "rt", encoding="utf-8") as _f:
 
 HAPPY, ATTACK = 5, 6
 KNOWN_HAPPY_IS_ATTACK = {118, 168}        # Nanimon, BomberNanimon (DVPet data)
-KNOWN_SOLID_SHOT = {1648}                 # Mugendramon M (dark DSprite smoke)
+KNOWN_SOLID_SHOT = set()
 # legacy DVPet sprites whose attack frame repeats another slot (untouched art)
 KNOWN_ATTACK_REPEATS = {12, 16, 31, 33, 34, 36, 45, 56, 78, 79, 82, 88, 90, 91, 94, 97, 103, 104, 108, 109, 111, 112, 114, 115, 117, 118, 168, 179, 180, 186, 187, 197, 213, 262, 269, 295, 338, 358, 360, 430, 583, 689, 812, 1455, 1459, 1624}
 FIRST_OWN_SHOT_NUM = 1623                 # the Godzilla line on: every new species fires its own shot
