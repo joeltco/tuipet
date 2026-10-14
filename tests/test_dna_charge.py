@@ -173,3 +173,18 @@ def test_legacy_dud_dna_cashes_out_on_load():
     loaded, msg = persistence.pet_from_save(persistence.to_save_dict(p))
     assert loaded.bits == 130 and loaded.dna_owned["None"] == 0
     assert "dud DNA" in msg
+
+
+def test_a_charge_never_outruns_the_energy_that_pays_for_it():
+    """Joel 2026-10-15 (DNA call #5 = A): past empty energy the old bill kept
+    charging and drained obedience; now the charge stops at what energy pays."""
+    p = _pet()
+    off = next(f for f in p.dna_owned if f not in ("None", p.field))
+    p.dna_owned[off] = 99
+    p.energy, ob = 10, p.obedience
+    assert p.dna_affordable(off) == 5                       # 2 energy per off-Field unit
+    assert not p.apply_dna(off, 6)
+    assert p.dna_owned[off] == 99 and p.energy == 10
+    assert p.apply_dna(off, 5)
+    assert p.energy == 0 and p.obedience == ob
+    assert p.dna_affordable(off) == 0 and not p.apply_dna(off, 1)

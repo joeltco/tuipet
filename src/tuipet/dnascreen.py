@@ -174,9 +174,12 @@ class DNAPanel:
         elif k in ("right", "l"):
             self.amount = min(MAX_DNA_INVENTORY, self.amount + 1)
         elif k in ("enter", "space"):
-            amt = min(self.amount, p.dna_owned.get(f, 0))
-            if amt <= 0:
+            amt = min(self.amount, p.dna_owned.get(f, 0), p.dna_affordable(f))
+            if p.dna_owned.get(f, 0) <= 0:
                 self.last = "No banked %s yet." % data.pretty_field(f)
+                self.sfx = "error"
+            elif amt <= 0:                          # DNA call #5 = A (2026-10-15)
+                self.last = "Too tired — rest to charge."
                 self.sfx = "error"
             elif p.apply_dna(f, amt):
                 self.sfx = "compatible"
@@ -289,7 +292,9 @@ class DNAPanel:
 
     def _text_charge(self):
         p = self.pet
-        amt = min(self.amount, p.dna_owned.get(self.field, 0))
+        # the charge never outruns the energy that pays for it (DNA call #5 = A)
+        amt = min(self.amount, p.dna_owned.get(self.field, 0),
+                  p.dna_affordable(self.field))
         cost = amt * (1 if self.field == p.field else 2)
         out = menu.bar("DNA · CHARGE", "x%d/%d energy -%d" % (amt, self.amount, cost))
         # DNA audit 2026-10-14: costs and wipe law fit without a scrolling tail.

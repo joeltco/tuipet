@@ -106,6 +106,14 @@ class DnaMixin:
         self.bits += paid
         return paid
 
+    def dna_affordable(self, field):
+        """How many units of `field` the pet's energy can PAY for right now
+        (1/unit own Field, 2/unit otherwise).  A charge never runs energy
+        past empty (Joel 2026-10-15, DNA call #5 = A): the old bill kept
+        charging at the floor and took the deficit out of obedience."""
+        per = DNA_SAME_FIELD_ENERGY if field == self.field else DNA_DIFF_FIELD_ENERGY  # noqa: F405
+        return max(0, int(self.energy)) // per
+
     def apply_dna(self, field, amount):
         """Owned -> charged; energy costs 1/unit own Field, 2/unit otherwise.
 
@@ -113,8 +121,8 @@ class DnaMixin:
         rises to three hearts without lowering an already-full gauge.
         """
         owned = self.dna_owned.get(field, 0)
-        if amount <= 0 or owned < amount:
-            self._set_anim("refuse", 1.0)                   # Jeering: not enough DNA
+        if amount <= 0 or owned < amount or amount > self.dna_affordable(field):
+            self._set_anim("refuse", 1.0)                   # Jeering: not enough DNA/energy
             return False
         self.dna_owned[field] = owned - amount
         self.dna_applied[field] = self.dna_applied.get(field, 0) + amount
