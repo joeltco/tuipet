@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.2 — SHARPER SHOTS. Chibi Godzilla's fireball shows its hot core, (2026-10-14)
+
+SHARPER SHOTS. Chibi Godzilla's fireball shows its hot core, Mugendramon M fires a real burst instead of a black block, and Frozomon throws Frigimon's snowball instead of a blank square.
+
 ## 0.6.1 — ADVENTURE REBUILT. 30 maps, one per backdrop, each a single  (2026-10-14)
 
 ADVENTURE REBUILT. 30 maps, one per backdrop, each a single run: march, rest at the town halfway, then beat the boss to open the next map. Bosses pay a reward the first time, the road finds food that fits the land, and Godzilla's kaiju roam Monster Island. Road items are now Life Recovery, Shortcut and Rest Kit; your old transport tickets convert automatically.
