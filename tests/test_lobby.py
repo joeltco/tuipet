@@ -902,27 +902,37 @@ def test_the_podium_ceremony_holds_then_any_key_skips():
     ack now stages the ceremony: champion cheer under the pulsing light
     with the payout line pinned for PODIUM_T; any key skips (show idiom);
     the durable status line survives for after the show."""
+    from copy import deepcopy
+    from tuipet.lobbyscreen import PODIUM_T
+    # Animation audit 2026-10-14: 2s podium; dismissal cannot re-claim or type into chat.
+    assert PODIUM_T == 20
     s = LobbyState()
     pan = _panel(s)
     pan.client.ladder = {"award": {"season": "2026-06"}}
-    pan.client.ladder_claim = lambda season: None
+    claims = []
+    pan.client.ladder_claim = lambda season: claims.append(season)
     pan.client.ladder_reward = {"ok": True, "season": "2026-06",
                                 "rank": 1, "bits": 25000}
     pan.anim()
     assert pan.pshow is not None
     plain = pan.text().plain
     assert "PODIUM" in plain and "+25000b" in pan.pshow["line"]
-    for _ in range(30):
+    for _ in range(PODIUM_T // 2):
         pan.anim()
     assert pan.pshow is not None                   # mid-hold: still on stage
     assert "PODIUM" in pan.text().plain
+    before = deepcopy(pan.pet.__dict__), list(claims), pan.buf
     assert pan.key("z") is None and pan.pshow is None   # any key skips
     assert "PODIUM" not in pan.text().plain
     assert "claimed" in pan.status                 # the durable line remains
+    assert "+25000b" in pan.status
+    assert (pan.pet.__dict__, claims, pan.buf) == before
     # and left alone, the hold expires on its own
     pan.pshow = {"t": 0, "line": "x"}
-    for _ in range(121):
+    for _ in range(PODIUM_T - 1):
         pan.anim()
+    assert pan.pshow is not None
+    pan.anim()
     assert pan.pshow is None
 
 

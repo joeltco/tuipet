@@ -117,14 +117,8 @@ SCRIPTS = {
              "rows": {0: {"i": 1, "p": 1}, 6: {"i": 1, "p": 8, "iy": -6},
                       12: {"i": 1, "p": 1, "iy": 0}, 18: {"i": 1, "p": 8, "iy": -6},
                       24: {"i": 1, "p": 1, "iy": 0}}},
-    # bathing(): the tub sits at the pet's feet, the pet scrubs 9<->10;
-    # bathing (wash) on each scrub beat -- canon alternates frames 1<->2
-    # (the old 0/1 pair leaked the icon row: item-frame audit 2026-07-28)
-    "Bathe": {"steps": 37, "end": "cheer", "layout": "feet",
-              "snds": {6: "wash", 18: "wash", 30: "wash"},
-              "rows": {0: {"i": 1, "p": 9}, 6: {"i": 2, "p": 10},
-                       12: {"i": 1, "p": 9}, 18: {"i": 2, "p": 10},
-                       24: {"i": 1, "p": 9}, 30: {"i": 2, "p": 10}}},
+    # (Bathe -- bathing()'s tub script -- was CUT 2026-10-14 by the
+    #  animation audit: no catalog item ever routed to it)
     # showering(): the shower head beside the pet runs its frames while the
     # pet shivers under it (pose 9, a 1px jiggle); showerOn -> washes ->
     # showerEnd (error) with the shake-off pose

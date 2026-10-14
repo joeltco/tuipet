@@ -37,7 +37,7 @@ IDLE, TURN, ATTACK, CHEER_A, CHEER_B, WEARY = 0, 1, 6, 5, 7, 9
 # the SULK pair (Jeering's deserved 4/6, the same beats _fxk_jeer bounces):
 # the middle grade's tell -- the shot landed, the wall didn't break
 SULK_A, SULK_B = 4, 6
-VERDICT_T = 14
+VERDICT_T = 4          # the aftermath hold (animation audit 2026-10-14: was 14)
 
 # the 0.5 target wall (Wall_1 standing / Wall_2 crumbled), ported verbatim
 # from the clone's battle_fx rips (v0.4.12; row-string form)
@@ -124,12 +124,17 @@ class TrainingPanel:
                 self._lock()
             elif k in ("escape", "t"):          # t (the opening key) also closes
                 return ("done", None)
+        elif self.phase == "shoot" and self.i > 2 and k in ("space", "enter"):
+            # a fresh press skips the strike to its verdict (animation audit
+            # 2026-10-14); the grade was already locked, nothing changes
+            self.i = len(self.timeline) - 1
+            self._verdict = VERDICT_T - 1
         return None                    # the strike plays through; anim() closes us
 
     def strip(self):
         if self.phase == "bar":
             return menu.hints(("SPACE", "strike"), ("ESC", "out"))
-        return ""
+        return menu.hints(("SPACE", "skip"))
 
     # ---- rendering ----
     def _rows(self, pose):
@@ -180,7 +185,9 @@ class TrainingPanel:
             return menu.paint([], self.pet.background(), rows=ROWS, cols=COLS,
                               overlay=overlay, clip=grid.WINDOW)
         if m == "windup":
-            pose = (TURN, TURN, IDLE, IDLE, ATTACK, ATTACK)[min(fr.get("wu", 0), 5)]
+            # the windup is two ticks since the animation audit (2026-10-14):
+            # ready, then the charge -- the battle's own pair
+            pose = TURN if fr.get("wu", 0) == 0 else ATTACK
         elif m == "fire_out":
             pose = ATTACK
         elif m == "break":

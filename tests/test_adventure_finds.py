@@ -93,9 +93,11 @@ def test_the_discover_sequence_plays_out_and_resumes_the_march(monkeypatch):
     """The restored old-build investigateLeft playbook: ENTER on a glint walks
     the mon OUT to the left goal, digs under suspense dots, unseals the "Dug
     up X!" verdict (with the reward chime) at the reveal, carries the find
-    back, and puts the mon back on the road -- input locked throughout (no
-    skips: own-game law)."""
+    back, and puts the mon back on the road; after grading, a skip keeps the loot."""
+    from copy import deepcopy
     from tuipet.adventurescreen import (INV_WALK_T, INV_REVEAL_T, INV_END_T)
+    # Animation audit 2026-10-14: two-second fixed phases, with safe post-lock skips.
+    assert INV_END_T == 20
     monkeypatch.setattr(adventure, "ENCOUNTER_CHANCE", 0.0)
     monkeypatch.setattr(adventure, "HAZARD_CHANCE", 0.0)
     monkeypatch.setattr(adventure, "FIND_CHANCE", 1.0)
@@ -119,7 +121,6 @@ def test_the_discover_sequence_plays_out_and_resumes_the_march(monkeypatch):
         if pan._scene is None:
             break
         t = pan._scene["t"]
-        pan.key("escape")                              # locked: ESC must NOT go home
         assert pan._trans is None and pan._scene is not None
         if INV_WALK_T <= t < INV_REVEAL_T:
             saw_dots = saw_dots or "." in pan.strip()
@@ -128,6 +129,19 @@ def test_the_discover_sequence_plays_out_and_resumes_the_march(monkeypatch):
         chimed = chimed or pan.sfx == "reward"
     assert saw_dots and saw_reveal and chimed
     assert pan._scene is None and pan.travelling       # back on the road
+    skip, key = _at_the_meter(monkeypatch)
+    meter = skip._scene["meter"]
+    meter["bar"] = (meter["lo"] + meter["hi"]) // 2
+    skip.key("space")
+    scene = skip._scene
+    assert scene["grade"] == "mega"
+    before = deepcopy(skip.pet.__dict__), skip.adv.loc, skip.adv.finds
+    assert skip.key("escape") is None
+    assert skip._scene is None and skip._trans is None and skip.travelling
+    assert not skip._summary and skip.sub is None and scene["grade"] == "mega"
+    assert (skip.pet.__dict__, skip.adv.loc, skip.adv.finds) == before
+    assert skip.pet.inventory[key] >= 2 and skip._note == skip._find_msg
+    assert "Dug up" in skip.strip() and skip.text()
 
 
 def _at_the_meter(monkeypatch, p=None):

@@ -280,16 +280,45 @@ def _effect_overlay(pet, frame_i, cols, px_h, tick=0):
 
 
 
+# ---- the animation audit's pacing (2026-10-14, Joel: "fix all") ------------
+# The happy/sad tail chains onto most shows; at 3.1s it was half of them.
+CHEER_STEPS = 10
+JEER_STEPS = 8
+# Steps advanced per 10 Hz tick.  First sight plays at FX_RATE; every later
+# showing of the same show at FX_RATE_REPEAT (AUTO-SKIP ON REPEAT).
+FX_RATE = {"evolve": 2, "inherit": 2, "dna_charge": 3, "losing": 4, "gift": 5,
+           "clean": 3, "spit": 3, "poop": 2, "assist": 2, "play": 3, "item": 3}
+FX_RATE_REPEAT = {"eat": 3, "item": 6, "assist": 4, "play": 6}
+FX_UNSKIPPABLE = frozenset({"dying"})
+REPEAT_TAIL_STEPS = 5         # the cheer/jeer after an already-seen item show
+SKIP_DEBOUNCE_STEPS = 3
+
+
+def _fx_seen(key):
+    from . import persistence
+    return persistence.fx_seen(key)
+
+
+def _fx_mark_seen(key):
+    from . import persistence
+    persistence.mark_fx_seen(key)
+
+
 class FxMixin:
     """The fx half of the Screen widget (state contract: self.fx, self.update,
     self.roamer, self.frame_i -- arena.Screen composes this in)."""
 
     # ---- care-action animations (DVPet SpriteAnim eat/clean/cheer) -----------
     def start_fx(self, kind, icon=None, poop=0, old_num=None, pet=None, starving=False, good=True, script=None):
-        steps = {"eat": 35, "cheer": 31, "jeer": 31, "clean": 22, "spit": 25, "evolve": 41, "dying": 50, "dna_charge": 44, "play": 48, "poop": 25, "poopdance": 21, "yawn": 22, "losing": 50,
+        steps = {"eat": 35, "cheer": CHEER_STEPS, "jeer": JEER_STEPS, "clean": 22, "spit": 25, "evolve": 41, "dying": 50, "dna_charge": 44, "play": 48, "poop": 25, "poopdance": 21, "yawn": 22, "losing": 50,
                  "gift": GIFT_OUT + GIFT_BACK + GIFT_HOLD, "assist": 28, "inherit": 50}.get(kind, 12)
         self.fx = {"kind": kind, "step": 0, "steps": steps, "icon": icon, "poop": poop,
-                   "old_num": old_num, "good": good}
+                   "old_num": old_num, "good": good, "prev": 0}
+        seen_key = f"item:{script}" if kind == "item" else kind
+        repeat = _fx_seen(seen_key)
+        self.fx["rate"] = FX_RATE_REPEAT.get(kind, FX_RATE.get(kind, 1)) if repeat \
+            else FX_RATE.get(kind, 1)
+        self.fx["repeat"] = repeat
         if kind == "item":
             # a scripted item-use (itemfx: the per-AnimationType canon tables)
             from . import itemfx
@@ -391,24 +420,40 @@ class FxMixin:
         if not self.fx:
             return False
         self.frame_i += 1        # filth keeps animating through an fx (audit 2026-07)
-        self.fx["step"] += 1
+        self.fx["prev"] = self.fx["step"]
+        # a RATE > 1 plays the same beat table faster (animation audit
+        # 2026-10-14): no frame is redrawn, the painters read step ranges,
+        # and the sound drain walks every beat passed (app.py)
+        self.fx["step"] += self.fx.get("rate", 1)
         if self.fx["step"] < self.fx["steps"]:
             return True
+        self.fx["step"] = self.fx["steps"]
+        _fx_mark_seen(f"item:{self.fx['script']}" if self.fx["kind"] == "item"
+                      else self.fx["kind"])
         kind = self.fx["kind"]
         had_filth = self.fx.get("poop", 0) > 0
         chain_eat = self.fx.get("chain_eat")
         pet_ref = self.fx.get("pet_ref")
         item_end = self.fx.get("end")
+        repeat = self.fx.get("repeat", False)
         self.fx = None
         if kind == "item" and item_end:
             # canon: playing()/interact/study/... resolve into Cheering;
             # angrySurprise resolves into Jeering (itemfx script tables)
             self.start_fx(item_end, good=True)
+            if repeat:
+                # a show already seen ends on a short beat (AUTO-SKIP ON REPEAT)
+                self.fx["steps"] = min(self.fx["steps"], REPEAT_TAIL_STEPS)
         elif kind == "clean" and had_filth:
             # DVPet clean(): the cheer chains ONLY when filth was actually washed
             # (an empty-room wash just ends -- no celebration).
             self.start_fx("cheer")
-        elif kind in ("evolve", "gift", "play", "inherit"):
+        elif kind == "gift":
+            # the present opens the moment it arrives (animation audit
+            # 2026-10-14): the app's reveal lands next frame and starts the
+            # cheer holding what was inside -- no cheer before the reveal
+            pass
+        elif kind in ("evolve", "play", "inherit"):
             # every canon flow that resolves into State.Cheering: evolFinish(true),
             # giftEnd, jumping() frame 48, inheriting()'s strobe tail (branches
             # collapsed 2026-07-05; poopToilet left with the staple props,
@@ -423,6 +468,18 @@ class FxMixin:
                           starving=getattr(pet_ref, "_last_meal_starving", False))
             self.fx["step"] = 6
         return self.fx is not None
+
+    def skip_fx(self):
+        """A fresh key ends a passive home show (animation audit 2026-10-14,
+        Joel: "figure which ones can be skippable").  The dying beat is never
+        a show -- its taps are the rescue -- and a press in the first beats
+        is the mash of the key that started the show, not a skip."""
+        if not self.fx or self.fx["kind"] in FX_UNSKIPPABLE:
+            return False
+        if self.fx["step"] < SKIP_DEBOUNCE_STEPS:
+            return False
+        self.fx["step"] = self.fx["steps"] - self.fx.get("rate", 1)
+        return True
 
     def _pose_rows(self, pet, role, phase):
         if pet.num == -1:

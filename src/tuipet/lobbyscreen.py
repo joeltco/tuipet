@@ -39,7 +39,7 @@ from .net import CHAT_CAP
 from .render import render_scene
 from .theme import INK, INK_B, DIM, LCD_BG  # noqa: F401  (theme.apply propagation)
 
-PODIUM_T = 120          # the season-podium ceremony hold (~12s), raid-reveal length
+PODIUM_T = 20           # two seconds; Joel approved skips 2026-10-14
 # How long a duel waits for a rival's REVEAL before calling the bout off (0.1s
 # ticks -> 45 real seconds).  It must comfortably outlast the peer's own
 # DUEL_AUTOLOCK_T (300 ticks / 30s): a rival still staring at their bar is
@@ -352,7 +352,7 @@ class LobbyPanel(BoutMixin, ChatMixin):
             self.jshow.anim()                   # converge -> flash -> fused bounce
         if self.pshow is not None:
             self.pshow["t"] += 1
-            if self.pshow["t"] > PODIUM_T:
+            if self.pshow["t"] >= PODIUM_T:
                 self.pshow = None
         lad = getattr(self.client, "ladder", None) if self.client else None
         if lad and lad.get("award"):

@@ -36,19 +36,17 @@ from .petbase import (BATTLE_MIN_ENERGY, GCELL_ENCOUNTER_WIN, GCELL_ENCOUNTER_LO
 from . import adventure
 from . import shop
 from . import strikefx
+from .battlescreen import first_show
 from .adventure import Adventure, MAX_LIVES, ZONES
 from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, POS, NEG  # noqa: F401  (theme.apply propagation)
 
 COLS, ROWS = 40, 12           # the ONE locked LCD arena, like every other screen
 
-# the zone-change celebration (canon SpriteAnim.zoneChange, restored from the
-# old build): four zonePulse beats on the map light at interval*5/15/25/35,
-# resolution at interval*54 -- ported as backdrop pulses on the LCD (no map
-# screen on the 32-col arena).  A parade_msg boss chains the BossParade after
-# the pulse: the map's bosses march across, one at a time (the LCD's one-mon
-# rule serialises canon's three-abreast).
-PULSE_T = 54
-PULSE_ON = ((5, 10), (15, 20), (25, 30), (35, 54))
+# Joel approved skips 2026-10-14: keep four clear pulses, then the ending
+# parade when present. Each map keeps its own first-clear ceremony flag.
+PULSE_T = 20
+PULSE_REPEAT_T = 6
+PULSE_ON = ((2, 4), (6, 8), (10, 12), (14, 20))
 STRIP_W = 40                  # the message box's CELL budget (== app.HUD_W;
 #                               importing app here would be circular)
 # (HINT_BEAT retired 2026-07-30 on Joel's order -- "thin the strip to just the
@@ -57,16 +55,14 @@ STRIP_W = 40                  # the message box's CELL budget (== app.HUD_W;
 #  hearts and the chain were sharing this 40-cell line with the keys; the road
 #  card carries every one of those now, so all three labelled keys fit at once
 #  and the line holds still.)
-PARADE_T = 40                 # ticks for one boss to march across (edge to
-#                               edge since audit A10: ~48px at ~1.2px/tick)
+PARADE_T = 12                 # edge-to-edge crossing: three bosses in 3.6s
 
-# the investigateLeft playbook (canon SpriteAnim beats in 0.1s ticks, restored
-# from the old build): walk out to the LEFT goal, suspense dots, the reveal --
-# then the ReturnItem walk-back so the pet never teleports back to its spot
-INV_WALK_T = 12               # walk-left leg
-INV_REVEAL_T = 30             # dots done -> the reveal pose fires
-INV_HOLD_T = 42               # reveal held (the find shown beside the cheer)
-INV_END_T = 54                # walk-back (ReturnItem) complete
+# The investigateLeft playbook: shorten its passive legs, not the dig meter.
+# Walk left, suspense, reveal, then carry back instead of snapping home.
+INV_WALK_T = 4                # walk-left leg
+INV_REVEAL_T = 8              # brief suspense after the unchanged meter
+INV_HOLD_T = 14               # readable loot reveal
+INV_END_T = 20                # walk-back complete: 2s fixed choreography
 
 # the TIMED DIG (arcade arc, Joel 2026-07-21 "do the timed dig"): reaching
 # the dig spot runs the CANON timing bar -- the same sprite and the same
@@ -86,7 +82,7 @@ DIG_METER_T = 48              # one full 0..24..0 sweep, then the spade falls
 # art: roster frames for the pouncer, atlas "attention"/"hit" for the fx.
 HZ_TELE_T = 8                 # the "!" telegraph window
 HZ_LUNGE_T = 8                # the pounce crosses the right half
-HZ_END_T = 10                 # the verdict beat (the duck-under / the burst)
+HZ_END_T = 4                  # .4s verdict; reflex windows stay .8 + .8
 
 # CONDITION WALKS + TRAVEL REFUSALS (restored from the old build's audit
 # pass 3 / canTravel port, 2026-07-21): a SICK pet drags the idleUnwell
@@ -95,7 +91,7 @@ HZ_END_T = 10                 # the verdict beat (the duck-under / the burst)
 # rolls) as the roadside nap; and a pet pushed PAST EMPTY plants its feet
 # (petcare.check_stop_travel -- today's calibration, deliberately soft:
 # only negative energy refuses.  NEVER revert to chance-based refusals).
-REFUSE_T = 24                 # the refusal head-shake (the fx convention)
+REFUSE_T = 8                  # .8s head-shake before the recovery choice
 
 WALK_BEAT = 5                 # idleWalk pose-flip cadence while marching
 MARCH_PX = 0.5                # the march: px per 0.1s tick across the window
@@ -127,11 +123,10 @@ def _fit(name, budget):
 # 1:1 onto tuipet's 0.1s tick; sounds are the canon device mapping.  Ported
 # verbatim from adventurescreen @ ed22b64 (v0.5.7) -- Joel: "same teleport
 # animation."
-TELE_LEAVE_T = 50             # flashes 3..22, swallow 23, shrink 26..40 (the
-#                               sliver then HOLDS to 43 -- both dims floor
-#                               early), depart right 44..
-TELE_ARRIVE_T = 46            # sliver zips in from the LEFT 0..5, expand
-#                               6..22, appear flicker 23..46
+TELE_LEAVE_T = 10             # first entry: 1s depart + 1s arrive
+TELE_ARRIVE_T = 10
+TELE_REPEAT_T = 3             # repeat entry: .3s each phase
+TELE_HOME_T = 4               # homecoming: .4s each phase
 TELE_ON = ((3, 9), (15, 18), (21, 22))        # leave: curtain flash spans
 TELE_APPEAR_ON = ((1, 2), (5, 8), (14, 20))   # arrive: flicker spans (t-23)
 TELE_LEAVE_SNDS = {3: "strongHit", 15: "strongHit", 21: "strongHit",
@@ -201,9 +196,13 @@ class AdventurePanel(menu.SubHost):
         self._summary_shown = False   # ...so _go_home only defers to it once
         self._pulse = None            # a running zoneChange pulse celebration
         self._parade = None           # a running BossParade (map beaten)
+        self._ending_msg = None       # the final-road message survives a parade skip
         self._wx = float(grid.X0)     # the march x: the pet CROSSES the window
         # leaving home rides the canon teleport (dir "in" == INTO the adventure:
         # leave-phase plays over HOME, arrive-phase materialises on the road)
+        first = first_show("adventure_entry")
+        self._tele_leave_t = TELE_LEAVE_T if first else TELE_REPEAT_T
+        self._tele_arrive_t = TELE_ARRIVE_T if first else TELE_REPEAT_T
         self._trans = {"dir": "in", "phase": "leave", "t": 0}
 
     # -- clock ----------------------------------------------------------------
@@ -214,56 +213,34 @@ class AdventurePanel(menu.SubHost):
         if self._note_t > 0:              # the transient strip verdict decays
             self._note_t -= 1
         if self._trans is not None:
-            # the teleport owns the screen both ways -- canon's state machine
-            # holds every input until endAnim()
+            # Joel approved skips 2026-10-14; compress the existing curtain beats.
             tr = self._trans
+            before = self._tele_time(tr)
             tr["t"] += 1
             snds = TELE_LEAVE_SNDS if tr["phase"] == "leave" else TELE_ARRIVE_SNDS
-            snd = snds.get(tr["t"])
-            if snd:
-                self.sfx = snd
-            if tr["phase"] == "leave" and tr["t"] >= TELE_LEAVE_T:
+            for beat, snd in snds.items():
+                if before < beat <= self._tele_time(tr):
+                    self.sfx = snd
+            if tr["phase"] == "leave" and tr["t"] >= self._tele_leave_t:
                 # the sliver left the screen: the world swaps under the cut
                 # (canon teleportArrive frame 0 -- background changes, no anim)
                 tr["phase"], tr["t"] = "arrive", 0
-            elif tr["phase"] == "arrive" and tr["t"] >= TELE_ARRIVE_T:
-                self._trans = None
-                if tr["dir"] == "out":
-                    # home: the flag the body sim gates on (assistant billing,
-                    # filth, gift call -- canon _isHome) comes back down.  The
-                    # SETTER died with the old adventure and was never rewired
-                    # (found 2026-07-21 via Joel's @-line question);
-                    # _after_adventure is the one safety net (truthed
-                    # 2026-07-25: no app-side death path clears it).
-                    self.pet.away = False
-                    self.pet.away_where = ""
-                    self.auto_close = ("done", self._home_msg)   # home: close + verdict
-                else:
-                    self._landed = True                # on the road -- the march begins
-                    self.travelling = True
-                    self.pet.away = True               # canon: the teleport toggles it
-                    self.pet.away_where = self.adv.name   # the @-line's live zone
+            elif tr["phase"] == "arrive" and tr["t"] >= self._tele_arrive_t:
+                self._finish_teleport()
             return
         if self._pulse is not None:
             # zoneChange: four zonePulse beats, then home (or the parade)
             p = self._pulse
-            if any(p["t"] == on for on, _off in PULSE_ON):
+            if any(self._pulse_time(p) == on for on, _off in PULSE_ON):
                 self.sfx = "select"           # the zonePulse chirp
             p["t"] += 1
-            if p["t"] >= PULSE_T:
-                self._pulse = None
-                if p.get("parade"):
-                    self._parade = {"t": 0, "nums": p["parade"],
-                                    "msg": p.get("msg")}
-                    self.sfx = "win"          # bossParade cue
-                else:
-                    self._go_home()           # celebrated -- now the verdict
+            if p["t"] >= p.get("ticks", PULSE_T):
+                self._finish_pulse()
             return
         if self._parade is not None:
             self._parade["t"] += 1
             if self._parade["t"] >= PARADE_T * len(self._parade["nums"]):
-                self._parade = None
-                self._go_home()
+                self._finish_parade()
             return
         if (self.pet.dead and self._trans is None and not self._summary
                 and self.sub is None):
@@ -629,7 +606,9 @@ class AdventurePanel(menu.SubHost):
                 if unlocked and adventure.zone_index(self.adv.zone) == len(ZONES) - 1:
                     paraders = [z["bosses"][0]["num"] for z in ZONES[-3:] if z["bosses"]]
                     parade_msg = adventure.FINAL_PARADE_MSG
+                clear_key = "map_clear:%s" % adventure.zone_index(self.adv.zone)
                 self._pulse = {"t": 0, "parade": paraders,
+                               "ticks": PULSE_T if first_show(clear_key) else PULSE_REPEAT_T,
                                "msg": parade_msg,
                                "line": f"{self.adv.name} — cleared!"}
             elif out == "fled":
@@ -683,7 +662,48 @@ class AdventurePanel(menu.SubHost):
                               if zi is not None else False)
             self._summary = True              # results, then a key teleports
             return
+        self._tele_leave_t = self._tele_arrive_t = TELE_HOME_T
         self._trans = {"dir": "out", "phase": "leave", "t": 0}
+
+    def _tele_time(self, tr):
+        """Retain the carved curtain choreography on the shorter presentation clock."""
+        leave = tr["phase"] == "leave"
+        ticks = self._tele_leave_t if leave else self._tele_arrive_t
+        last = 49 if leave else 45
+        return min(last, round(tr["t"] * last / max(1, ticks - 1)))
+
+    def _finish_teleport(self):
+        tr, self._trans = self._trans, None
+        if tr is None:
+            return
+        if tr["dir"] == "out":
+            self.pet.away = False
+            self.pet.away_where = ""
+            self.auto_close = ("done", self._home_msg)
+        else:
+            self._landed = self.travelling = True
+            self.pet.away = True
+            self.pet.away_where = self.adv.name
+
+    def _pulse_time(self, pulse):
+        return min(PULSE_T - 1, pulse["t"] * PULSE_T // pulse.get("ticks", PULSE_T))
+
+    def _finish_pulse(self):
+        pulse, self._pulse = self._pulse, None
+        if pulse is None:
+            return
+        if pulse.get("parade"):
+            self._parade = {"t": 0, "nums": pulse["parade"], "msg": pulse.get("msg")}
+            self.sfx = "win"
+        else:
+            self._go_home()
+
+    def _finish_parade(self):
+        parade, self._parade = self._parade, None
+        if parade is None:
+            return
+        self._ending_msg = parade.get("msg")
+        self._go_home()
 
     def _outcome_word(self):
         if self.adv.done:
@@ -696,16 +716,27 @@ class AdventurePanel(menu.SubHost):
         if self.sub is not None:              # a fight or the town hub owns input
             self.sub_key(k, self._town_done if self._town_sub else self._battle_done)
             return None
-        if (self._trans is not None or self._scene is not None
-                or self._pulse is not None or self._parade is not None):
-            # the teleport / investigate / celebration beats own the screen
-            # (no skips: own-game law 2026-07-13 -- the beats play out).
-            # ONE exception: SPACE locks a LIVE timed-dig meter -- that's
-            # the arcade input, not a skip
+        # Joel approved skips 2026-10-14. Consume the press before the next screen.
+        if self._trans is not None:
+            self._finish_teleport()
+            return None
+        if self._pulse is not None:
+            self._finish_pulse()
+            return None
+        if self._parade is not None:
+            self._finish_parade()
+            return None
+        if self._scene is not None:
             s = self._scene
-            if (s is not None and s.get("meter") and s["grade"] is None
+            if (s.get("meter") and s["grade"] is None
                     and s["t"] >= INV_WALK_T and k in ("space", "enter")):
                 self._lock_dig()
+            elif s["grade"] is not None:
+                # The find and its bonus are already banked; skip only the show.
+                self._note, self._note_t = self._find_msg, NOTE_HOLD
+                if s["t"] < INV_REVEAL_T:
+                    self.sfx = "reward"
+                self._scene = None
             return None
         if self._heal_t > 0:
             # the rest / second-wind beat plays out -- keys used to fall
@@ -809,13 +840,13 @@ class AdventurePanel(menu.SubHost):
         if self.sub is not None:
             return self.sub.strip()            # the wild fight owns the line
         if self._trans is not None:
-            return ""                          # the teleport plays out wordless
+            return menu.hints(("ANY KEY", "skip"))
         if self._pulse is not None:
             line = self._pulse.get("line")     # the flash SAYS what it's for
-            return f"[b]★ {line}[/]" if line else ""
+            return f"[b]★ {_fit(line or 'Map clear!', 29)}[/] [dim]KEY skip[/]"
         if self._parade is not None:
             msg = self._parade.get("msg")      # the parade carries the victory line
-            return f"[b]★ {msg}[/]" if msg else ""
+            return f"[b]★ {_fit(msg or 'The road is complete!', 29)}[/] [dim]KEY skip[/]"
         if self._summary:
             return menu.hints(("any key", "home"))
         if self._at_gate:                      # knocked back before the boss
@@ -864,10 +895,10 @@ class AdventurePanel(menu.SubHost):
                 if s["grade"] is None and t >= INV_WALK_T:
                     return menu.hints(("SPACE", "dig!"))   # the meter is live
                 if t >= INV_REVEAL_T:         # the reveal, unsealed
-                    return f"[b]✦ {self._find_msg}[/]"
+                    return f"[b]✦ {_fit(self._find_msg, 29)}[/] [dim]KEY skip[/]"
                 if t >= INV_WALK_T:           # suspense: . .. ...
-                    dots = "." * min(3, 1 + (t - INV_WALK_T) // 6)
-                    return f"[dim]{dots}[/]"
+                    dots = "." * min(3, 1 + (t - INV_WALK_T))
+                    return f"[dim]{dots} · ANY KEY skip[/]"
                 return ""                     # the walk-out plays wordless
             if self._hazard is not None:
                 h = self._hazard
@@ -1187,7 +1218,7 @@ class AdventurePanel(menu.SubHost):
         world flashes bright on the canon beat spans (restored old build)."""
         rows = self._rows(0)
         bg = self._road_bg()
-        if bg and any(on <= self._pulse["t"] < off for on, off in PULSE_ON):
+        if bg and any(on <= self._pulse_time(self._pulse) < off for on, off in PULSE_ON):
             bg = _brighten(bg, 0.6)            # the zonePulse light, on the LCD
         return menu.paint([(rows, self._jx(rows), True)], bg, rows=ROWS,
                           cols=COLS, clip=grid.WINDOW)
@@ -1239,7 +1270,7 @@ class AdventurePanel(menu.SubHost):
         """One frame of the canon teleport, on the side of the wipe the beat
         script says the world is showing (verbatim port)."""
         tr = self._trans
-        t, ph = tr["t"], tr["phase"]
+        t, ph = self._tele_time(tr), tr["phase"]
         # which world is under the curtain: leaving-out and arriving-in show the
         # ROAD; leaving-in and arriving-out show HOME
         home_side = (tr["dir"] == "in") == (ph == "leave")
@@ -1295,7 +1326,7 @@ class AdventurePanel(menu.SubHost):
         """The run-results card, shown on the LCD before the homecoming teleport."""
         a = self.adv
         out = menu.header("ADVENTURE", "results")
-        out.append(a.name[:26] + "\n", style=INK_B)
+        out.append((self._ending_msg or a.name[:26]) + "\n", style=INK_B)
         word = self._outcome_word()
         out.append(word + "\n", style={"Conquered!": POS, "Defeated": NEG}.get(word, DIM))
         out.append(f"Bits    +{a.bits_earned}\n", style=INK)

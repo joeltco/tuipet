@@ -297,16 +297,25 @@ def test_mid_strobe_contracts():
             persistence.save(app.pet)                    # mid-strobe save
             pet2, msg = persistence.load()
             out["save"] = (pet2.num, msg)
-            opened = []
+            opened, skipped = [], []
             for key, action, _label in TuiPetApp.BINDINGS:
                 if action == "quit":
                     continue                              # q stays live
+                # a fresh show for every key: the lock must hold for each,
+                # and since the animation audit (2026-10-14) the press SKIPS
+                # the show instead -- it never also runs the key's action
+                app.screen_w.start_fx("evolve", old_num=4)
+                app.screen_w.fx["step"] = 10              # past the mash debounce
                 await pilot.press(key)
-                await pilot.pause(0.03)
                 if app.mode is not None:
                     opened.append(action)
                     app.mode = None
+                fx = app.screen_w.fx
+                if fx is None or fx["kind"] != "evolve" or fx["step"] >= fx["steps"] - fx["rate"]:
+                    skipped.append(action)
             out["opened"] = opened                       # canon lock: nothing opens
+            out["skipped"] = len(skipped) == len([b for b in TuiPetApp.BINDINGS if b[1] != "quit"])
+            app.screen_w.start_fx("evolve", old_num=4)
             for _ in range(90):
                 await pilot.pause(0.1)
                 fx = app.screen_w.fx
@@ -324,5 +333,6 @@ def test_mid_strobe_contracts():
     out = asyncio.run(go())
     assert out["save"] == (4, ""), out["save"]           # clean round-trip, no repair
     assert out["opened"] == [], f"menus escaped the anim lock: {out['opened']}"
+    assert out["skipped"], "every swallowed key skips the show"
     assert out["resolved"] == "cheer", out["resolved"]   # evolFinish -> the chained cheer
     assert out["death"] == "dying", out["death"]         # death outranks the ceremony

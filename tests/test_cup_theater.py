@@ -53,6 +53,9 @@ def _win_match(pan):
 
 
 def test_a_quarterfinal_win_parades_the_advancing_field():
+    from copy import deepcopy
+    # Animation audit 2026-10-14: .8s/NPC, and skips never forfeit or fight again.
+    assert NPC_T == 8
     pan = _in_bracket()
     _win_match(pan)
     assert pan._advance is not None
@@ -60,24 +63,34 @@ def test_a_quarterfinal_win_parades_the_advancing_field():
     assert nums == pan.tourney.results_nums and len(nums) == 3   # 3 other winners
     assert "advances" in pan.strip()
     for _ in range(NPC_T * len(nums) - 1):
-        pan.key("escape")                      # locked: no forfeit mid-show
         assert pan.tourney.over is False
         assert pan.text() is not None          # every crossing renders
         pan.anim()
     pan.anim()
     assert pan._advance is None and pan.tree_view   # the tree lands after
+    skip = _in_bracket()
+    _win_match(skip)
+    before = deepcopy(skip.pet.__dict__), deepcopy(skip.tourney.tree), skip.tourney.last
+    assert skip.key("escape") is None
+    assert skip._advance is None and skip.tree_view and skip.sub is None
+    assert not skip.tourney.over
+    assert (skip.pet.__dict__, skip.tourney.tree, skip.tourney.last) == before
+    assert "BRACKET" in skip.text().plain
 
 
 def test_the_crown_plays_the_ceremony_before_the_numbers():
+    from copy import deepcopy
+    # Animation audit 2026-10-14: 2s first podium; skips keep the awarded trophy/purse.
+    assert CEREMONY_T == 20
     pan = _in_bracket()
     for _ in range(3):                         # QF, semi, final
         while pan._advance is not None:        # let the parades play
             pan.anim()
         _win_match(pan)
     assert pan.tourney.champion and pan._ceremony is not None
+    ceremony = dict(pan._ceremony)
     assert "CHAMPION" in pan.strip()
     for _ in range(CEREMONY_T - 1):
-        pan.key("escape")                      # locked: the show plays out
         assert pan._ceremony is not None
         txt = pan.text().plain
         # REPOINTED (cup audit 2026-07-25): the podium page is PURE SCENE
@@ -90,6 +103,13 @@ def test_the_crown_plays_the_ceremony_before_the_numbers():
         pan.anim()
     pan.anim()
     assert pan._ceremony is None and pan.tree_view   # then the crowned tree
+    pan._ceremony = ceremony
+    before = deepcopy(pan.pet.__dict__), deepcopy(pan.tourney.tree), pan.tourney.last
+    assert pan.key("escape") is None
+    assert pan._ceremony is None and pan.tree_view and pan.sub is None
+    assert pan.tourney.over and pan.tourney.champion
+    assert (pan.pet.__dict__, pan.tourney.tree, pan.tourney.last) == before
+    assert "BRACKET" in pan.text().plain
 
 
 def test_an_elimination_skips_the_theater():
@@ -112,7 +132,8 @@ def test_the_parade_walks_real_advancing_species():
 def test_space_stages_the_introductions_then_the_bell():
     """MATCH INTRODUCTIONS: SPACE on the faceoff page walks the challenger
     in from the right, your mon in from the left, holds the stare-down --
-    input locked -- then the fight opens itself against that SAME opponent."""
+    then the fight opens itself against that SAME opponent; skips only open the bar."""
+    from copy import deepcopy
     from tuipet.battlescreen import BattlePanel
     from tuipet.tournamentscreen import INTRO_OPP_T, INTRO_PET_T, INTRO_HOLD_T
     pan = _in_bracket()
@@ -122,9 +143,10 @@ def test_space_stages_the_introductions_then_the_bell():
     assert pan._intro is not None and pan.sub is None   # the show, not the fight
     assert "introductions" in pan.strip()
     total = INTRO_OPP_T + INTRO_PET_T + INTRO_HOLD_T
+    # Animation audit 2026-10-14: 1.8s first entrance; a skip never locks or forfeits.
+    assert total == 18
     saw = set()
     for _ in range(total):
-        pan.key("escape")                      # locked: no forfeit mid-entrance
         assert pan.tourney.over is False
         txt = pan.text().plain
         assert len(txt.split("\n")) <= 12       # the entrance fits the box
@@ -143,6 +165,18 @@ def test_space_stages_the_introductions_then_the_bell():
     assert pan._intro is None
     assert isinstance(pan.sub, BattlePanel)    # the bell rang
     assert pan.sub._enemy is opp               # ...against the announced foe
+    skip = _in_bracket()
+    opp = skip.tourney.current_opponent()
+    skip.key("space")
+    assert sum(skip._intro["beats"]) == 6      # subsequent entrances last .6s
+    before = deepcopy(skip.pet.__dict__), deepcopy(skip.tourney.tree), skip.tourney.last
+    assert skip.key("escape") is None
+    assert skip._intro is None and isinstance(skip.sub, BattlePanel)
+    assert skip.sub._enemy is opp and skip.sub.phase == "ready"
+    assert skip.sub.locked is None and not skip.sub.ran_away
+    assert not skip.tree_view and not skip.tourney.over
+    assert (skip.pet.__dict__, skip.tourney.tree, skip.tourney.last) == before
+    assert skip.text() and "lock" in skip.sub.strip()
 
 
 def _finish_match(pan, won):

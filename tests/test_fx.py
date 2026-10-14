@@ -28,6 +28,14 @@ _FakeScreen.start_fx = Screen.start_fx
 _FakeScreen.advance_fx = Screen.advance_fx
 
 
+def _run_out(s):
+    """Play the current show to its end at its real pace (the animation
+    audit's rates make step counts != frame counts)."""
+    k = s.fx["kind"]
+    while s.fx and s.fx["kind"] == k:
+        s.advance_fx()
+
+
 def test_fx_runs_exactly_steps_then_ends():
     s = _FakeScreen()
     s.start_fx("cheer")
@@ -44,13 +52,11 @@ def test_clean_chains_into_cheer_only_when_filthy():
     # an empty-room wash just ends (no celebration).
     s = _FakeScreen()
     s.start_fx("clean", poop=2)
-    for _ in range(s.fx["steps"]):
-        s.advance_fx()
+    _run_out(s)
     assert s.fx is not None and s.fx["kind"] == "cheer", "a filthy wash ends in the sunshine cheer"
     s2 = _FakeScreen()
     s2.start_fx("clean")                 # nothing to wash
-    for _ in range(s2.fx["steps"]):
-        s2.advance_fx()
+    _run_out(s2)
     assert s2.fx is None, "an empty-room wash ends without a cheer"
 
 
@@ -58,8 +64,7 @@ def test_evolve_chains_into_cheer():
     # DVPet evolFinish(true): every evolution ends in cheer(true, _happy).
     s = _FakeScreen()
     s.start_fx("evolve", old_num=-1)
-    for _ in range(s.fx["steps"]):
-        s.advance_fx()
+    _run_out(s)
     assert s.fx is not None and s.fx["kind"] == "cheer", "evolution ends in the praise cheer"
 
 
@@ -124,13 +129,13 @@ def test_the_drills_three_verdicts_route_to_three_fx():
     assert shows["refuse"][0] == "spit"           # the refusal head-shake, unchanged
 
 
-def test_gift_fx_chains_into_cheer():
-    # ClockTic.giftEnd: the gifting amble always ends in State.Cheering
+def test_gift_fx_ends_for_the_reveal():
+    # the amble ends and the app's reveal starts the cheer holding the prize
+    # (animation audit 2026-10-14: the reveal came AFTER a 3s cheer before)
     s = _FakeScreen()
     s.start_fx("gift", icon="f:8")
-    for _ in range(s.fx["steps"]):
-        s.advance_fx()
-    assert s.fx is not None and s.fx["kind"] == "cheer"
+    _run_out(s)
+    assert s.fx is None
 
 
 def test_eat_fx_survives_a_blank_last_food_frame():
@@ -249,6 +254,7 @@ def test_play_hops_on_canon_beats_and_ends_in_cheer():
     from tuipet import app as app_mod
     s = _FakeScreen()
     s.start_fx("play", icon="i:0")
+    s.fx["rate"] = 1                     # the canon beats (the rate is pacing only)
     assert s.fx["steps"] == 48
     launches = []
     while s.fx and s.fx["kind"] == "play":
@@ -453,6 +459,7 @@ def test_the_present_rides_the_whole_return_leg():
 
     s = S()
     s.start_fx("gift", icon="f:5")
+    s.fx["rate"] = 1                     # walk the canon beats one by one
     mid_pixels = end_pixels = 0
     while s.fx and s.fx["kind"] == "gift":
         st = s.fx["step"]
@@ -463,7 +470,7 @@ def test_the_present_rides_the_whole_return_leg():
         if st == app_mod.GIFT_OUT + app_mod.GIFT_BACK + 2:
             end_pixels = n                    # the hold: pet + present
         s.advance_fx()
-    assert s.fx is not None and s.fx["kind"] == "cheer"   # giftEnd -> Cheering
+    assert s.fx is None                  # the app's reveal starts the cheer
     assert mid_pixels > 0 and end_pixels > 0
 
 

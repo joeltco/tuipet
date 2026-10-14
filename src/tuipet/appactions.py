@@ -465,6 +465,7 @@ class ActionsMixin:
             # the SURPRISE: hold the reveal until the present is opened at the
             # end of the amble (2026-07-24) -- a tease now, the contents then.
             self._pending_gift_reveal = msg
+            self._pending_gift_key = key
             self._do("A present! Let's see what it is…")
 
     def action_heal(self):

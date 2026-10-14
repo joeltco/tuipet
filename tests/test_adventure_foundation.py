@@ -37,8 +37,8 @@ def test_leaving_home_rides_the_teleport_and_lands_on_the_road():
     p = _champ()
     pan = AdventurePanel(p)
     assert pan._trans == {"dir": "in", "phase": "leave", "t": 0}
-    # the teleport owns the screen -- input is held until it lands
-    assert pan.key("escape") is None and pan._trans is not None
+    # Animation audit 2026-10-14: first entry is 2s; a skip only lands on the road.
+    assert TELE_LEAVE_T + TELE_ARRIVE_T == 20
     seen_leave = seen_arrive = False
     for _ in range(TELE_LEAVE_T + TELE_ARRIVE_T + 2):
         pan.anim()
@@ -52,6 +52,14 @@ def test_leaving_home_rides_the_teleport_and_lands_on_the_road():
     assert seen_leave and seen_arrive                   # both halves of the wipe played
     assert pan._trans is None and pan._landed is True   # standing on the road
     assert pan.auto_close is None                       # arriving does NOT close
+    skip = AdventurePanel(_champ())
+    before = skip.adv.loc, skip.pet.energy, skip.pet.bits, dict(skip.pet.inventory)
+    assert skip.key("escape") is None
+    assert skip._trans is None and skip._landed and skip.travelling
+    assert skip.auto_close is None and not skip._summary and skip.sub is None
+    assert skip.pet.away and skip.pet.away_where == skip.adv.name
+    assert (skip.adv.loc, skip.pet.energy, skip.pet.bits, skip.pet.inventory) == before
+    assert skip.text() and skip.strip()
 
 
 def test_esc_rides_the_same_teleport_home_and_auto_closes():

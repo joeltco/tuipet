@@ -398,7 +398,7 @@ class DNAPanel:
 
     def _text_result(self):
         field, wager, rate, banked, refund = self.won
-        show = (self.blink // 2) % 2 == 0            # DVPet unlockingDNA: the Field blinks in
+        show = self.blink >= 8 or (self.blink // 2) % 2 == 0  # reveal, then hold readable
         name = data.pretty_field(field)
         out = menu.bar("DNA · GENERATE", "rate %d" % rate)
         out.append_text(menu.blanks(1))

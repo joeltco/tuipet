@@ -268,6 +268,7 @@ def test_bracket_tree_records_every_round():
 
 
 def test_bracket_page_renders_and_toggles():
+    from copy import deepcopy
     from tuipet.tournamentscreen import TournamentPanel
     random.seed(4)
     p = _pet("Rookie")
@@ -277,14 +278,18 @@ def test_bracket_page_renders_and_toggles():
     pan.phase, pan.tree_view = "bracket", True
     txt = pan.text().plain
     assert "BRACKET" in txt and "Rookling" in txt   # the field of eight, you included
-    # SUPERSEDED FLOW (dead-stop fix 2026-07-25): space used to park on the
-    # empty faceoff until a second press; it now starts the walk-in at once,
-    # and the show plays out (no skips) -- B is locked until it ends.
+    # Animation audit 2026-10-14: B skips the walk-in, without also toggling the bracket.
     pan.key("space")
     assert not pan.tree_view and pan._intro is not None
-    pan.key("b")                                    # locked mid-show
+    before = deepcopy(p.__dict__), deepcopy(pan.tourney.tree), pan.tourney.last
+    assert pan.key("b") is None
     assert not pan.tree_view
-    pan._intro = None                               # show over (fallback state):
+    assert pan._intro is None and pan.sub is not None
+    assert pan.sub.phase == "ready" and pan.sub.locked is None
+    assert not pan.sub.ran_away and not pan.tourney.over
+    assert (p.__dict__, pan.tourney.tree, pan.tourney.last) == before
+    pan.key("escape")                              # a separate press backs out of the bar
+    assert pan.sub is None and not pan.tourney.over
     pan.key("b")                                    # ...B recalls the tree
     assert pan.tree_view
 
@@ -314,6 +319,7 @@ def test_mid_bracket_contracts():
     once (escape after `over` never double-records); same-hour re-entry is
     CANON (Tourney_Registration gates only checkTourneyClosed + isEligible --
     no entered flag; the hour window is the throttle)."""
+    from copy import deepcopy
     import random
     from tuipet import data
     from tuipet.tournamentscreen import TournamentPanel
@@ -361,11 +367,19 @@ def test_mid_bracket_contracts():
     pan3 = TournamentPanel(p3)
     pan3.cursor = slot
     pan3.key("enter")
-    pan3.key("space"); pan3.key("space")        # into the round-one bout
+    pan3.key("space")                         # start the round-one walk-in
     # the MATCH INTRODUCTIONS play first (cup theater 2026-07-21): the
     # walk-ins hold the stage, then the bell opens the fight itself
     from tuipet.tournamentscreen import INTRO_OPP_T, INTRO_PET_T, INTRO_HOLD_T
     assert pan3._intro is not None and pan3.sub is None
+    # Animation audit 2026-10-14: second Space skips the intro, never locks the bar.
+    assert INTRO_OPP_T + INTRO_PET_T + INTRO_HOLD_T == 18
+    before = deepcopy(p3.__dict__), deepcopy(pan3.tourney.tree), pan3.tourney.last
+    pan3.key("space")
+    assert pan3._intro is None and pan3.sub is not None
+    assert pan3.sub.phase == "ready" and pan3.sub.locked is None
+    assert not pan3.sub.ran_away and not pan3.tourney.over and not pan3.tree_view
+    assert (p3.__dict__, pan3.tourney.tree, pan3.tourney.last) == before
     for _ in range(INTRO_OPP_T + INTRO_PET_T + INTRO_HOLD_T + 1):
         pan3.anim()
     assert pan3.sub is not None
@@ -383,7 +397,14 @@ def test_mid_bracket_contracts():
     # out of the CUP remains the labeled forfeit on the bracket page's ESC.
     assert pan3.sub is None and not pan3.tourney.over
     assert "back out" in pan3.tourney.last      # the tree page says so
-    pan3.key("space"); pan3.key("space")        # the match still waits
+    pan3.key("space")                         # the match still waits
+    assert pan3._intro is not None and sum(pan3._intro["beats"]) == 6
+    before = deepcopy(p3.__dict__), deepcopy(pan3.tourney.tree), pan3.tourney.last
+    pan3.key("space")
+    assert pan3._intro is None and pan3.sub.phase == "ready"
+    assert pan3.sub.locked is None and not pan3.sub.ran_away
+    assert not pan3.tree_view and not pan3.tourney.over
+    assert (p3.__dict__, pan3.tourney.tree, pan3.tourney.last) == before
     for _ in range(INTRO_OPP_T + INTRO_PET_T + INTRO_HOLD_T + 1):
         pan3.anim()                             # the re-entry replays the intro
     assert pan3.sub is not None

@@ -490,6 +490,35 @@ def prev_gen_estate():
             "dna_owned": dict(last.get("dna_owned") or {})}
 
 
+_FX_SEEN = (None, None)          # (settings path, set) -- keyed by path so a
+#                                  redirected HOME never reads a stale cache
+
+
+def _fx_seen_set():
+    global _FX_SEEN
+    if _FX_SEEN[0] != SETTINGS_PATH:
+        _FX_SEEN = (SETTINGS_PATH,
+                    set((load_settings().get("progress") or {}).get("fx_seen") or []))
+    return _FX_SEEN[1]
+
+
+def fx_seen(key):
+    """Has this home show played to its end before (any life)?  The
+    animation audit's first-time/repeat split (2026-10-14).  Cached: it is
+    read at every show start."""
+    return key in _fx_seen_set()
+
+
+def mark_fx_seen(key):
+    seen = _fx_seen_set()
+    if key in seen:
+        return
+    seen.add(key)
+    d = load_settings()
+    d.setdefault("progress", {})["fx_seen"] = sorted(seen)
+    save_settings(d)
+
+
 def _note_put(key, value):
     """Park a one-slot value in the generational progress channel."""
     d = load_settings()

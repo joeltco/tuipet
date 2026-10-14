@@ -130,9 +130,12 @@ def test_a_boss_loss_stands_at_the_gate_and_space_re_engages(monkeypatch):
 def test_the_zone_pulse_flashes_the_world_and_locks_input(monkeypatch):
     """The zoneChange celebration (restored old build): felling a gate boss
     pulses the backdrop bright on the canon beat spans with the chirp on
-    each span start; input is locked until the show ends."""
+    each span start; a skip goes to the summary without changing the run."""
+    from copy import deepcopy
     from tuipet.adventurescreen import PULSE_ON, PULSE_T
     from tuipet import menu
+    # Animation audit 2026-10-14: a two-second pulse is skippable, never a flee.
+    assert PULSE_T == 20
     pan = _panel_at_boss(monkeypatch)
     pan.sub = None
     pan._battle_done(_Win())
@@ -145,7 +148,6 @@ def test_the_zone_pulse_flashes_the_world_and_locks_input(monkeypatch):
     for _ in range(PULSE_T + 1):
         if pan._pulse is None:
             break
-        pan.key("escape")                          # locked: must NOT cut the show
         assert pan._trans is None
         pan.text()
         if pan.sfx == "select":
@@ -155,6 +157,16 @@ def test_the_zone_pulse_flashes_the_world_and_locks_input(monkeypatch):
     assert 0 < flashed < len(bgs)                  # it PULSES: bright spans + rests
     assert chirps == len(PULSE_ON)                 # a chirp per zonePulse beat
     assert pan._summary                            # then the results card
+    skip = _panel_at_boss(monkeypatch)
+    skip.sub = None
+    skip._battle_done(_Win())
+    before = deepcopy(skip.pet.__dict__), skip.adv.loc, skip.adv.done, skip.adv.failed
+    assert skip._pulse is not None and not skip._pulse["parade"]
+    assert skip.key("escape") is None
+    assert skip._pulse is None and skip._summary and skip._trans is None
+    assert skip.sub is None
+    assert (skip.pet.__dict__, skip.adv.loc, skip.adv.done, skip.adv.failed) == before
+    assert skip.text() and "Conquered!" in skip.text().plain
 
 
 def test_the_map_final_boss_chains_the_boss_parade(monkeypatch):

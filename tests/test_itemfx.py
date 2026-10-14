@@ -106,12 +106,12 @@ def test_item_fx_plays_the_script_and_chains():
     s.start_fx("item", icon="i:0", script="Play")
     assert s.fx["steps"] == itemfx.SCRIPTS["Play"]["steps"]
     assert s.fx["snds"] == itemfx.SCRIPTS["Play"]["snds"]
-    for _ in range(s.fx["steps"]):
+    while s.fx and s.fx["kind"] == "item":
         s.advance_fx()
     assert s.fx is not None and s.fx["kind"] == "cheer"   # canon: resolves into cheer
     s2 = _FakeScreen()
     s2.start_fx("item", icon="i:0", script="AngrySurprise")
-    for _ in range(s2.fx["steps"]):
+    while s2.fx and s2.fx["kind"] == "item":
         s2.advance_fx()
     assert s2.fx is not None and s2.fx["kind"] == "jeer"
 

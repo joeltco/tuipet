@@ -161,7 +161,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("FAIR SHOPS. Grow Capsules are boss prizes now (maps 7 and 23), one per stage. Evolution relics need a ready body, deals are 25% off everyday goods, each town prices its own shelf, and the money loops are closed.")
+    WHATS_NEW = ("SNAPPIER. Battles run about three times faster, adventure, cup and raid ceremonies are short and any key skips them, home shows play quick and faster still once seen, and a key skips any of them.")
 
 
     BINDINGS = [
@@ -616,7 +616,10 @@ class TuiPetApp(ActionsMixin, App):
             # dying-fx revive mash is handled above this gate.
             # the swallowed key is ACKNOWLEDGED (QOL 2026-07-23): a silent
             # eat read as a frozen app and invited a mash -- same soft
-            # click the dying-fx taps get
+            # click the dying-fx taps get.  And since the animation audit
+            # (2026-10-14) a fresh key SKIPS the show to its end -- it never
+            # also runs the key's own action.
+            self.screen_w.skip_fx()
             self.beep("click", bell=False)
             event.stop()
             event.prevent_default()
@@ -1107,8 +1110,13 @@ class TuiPetApp(ActionsMixin, App):
             if sc.fx:
                 # beat-scripted fx sounds: eat's per-bite map + the generic snds map
                 # (refuse head-shakes, the evolve burst, the dnaWash entry, ...)
-                snd = (sc.fx.get("bite_snds", {}).get(sc.fx["step"])
-                       or sc.fx.get("snds", {}).get(sc.fx["step"]))
+                # a fast show (rate > 1) passes several beats a frame: walk
+                # every beat crossed so no cue is skipped (animation audit)
+                snd = None
+                for b in range(sc.fx.get("prev", sc.fx["step"] - 1) + 1, sc.fx["step"] + 1):
+                    snd = sc.fx.get("bite_snds", {}).get(b) or sc.fx.get("snds", {}).get(b)
+                    if snd:
+                        break
                 if snd:
                     self.beep(snd, bell=False)
                 if sc.fx["kind"] == "eat":     # live DVPet feeding readout (calorie + P/M/V)
@@ -1123,6 +1131,11 @@ class TuiPetApp(ActionsMixin, App):
                 # the present is opened: the surprise reveal lands now (2026-07-24)
                 reveal, self._pending_gift_reveal = self._pending_gift_reveal, None
                 self._do(reveal)
+                # the cheer comes AFTER the reveal and holds what was inside
+                icon = shop.ICON_KEYS.get(getattr(self, "_pending_gift_key", None) or "")
+                self._pending_gift_key = None
+                if self.screen_w.fx is None and not self.pet.dead:
+                    self.screen_w.start_fx("cheer", icon=icon)
             elif self._dying_fx:               # dying beat finished: saved, or the memorial
                 self._dying_fx = False
                 hits = getattr(self, "_revive_hits", 0)

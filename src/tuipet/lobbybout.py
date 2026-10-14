@@ -287,9 +287,13 @@ class BoutMixin:
             self.bshow = None               # presentation must never break the bout
     def _key_battle(self, k):
         """The duel's keys read like a battle's now: SPACE locks the bar, then
-        HURRIES each volley, then closes the result.  ESC is always the way
-        out (a free back-out before the fight is seeded, a forfeit after)."""
+        HURRIES each volley, then closes the result. During the passive intro
+        any key skips only; afterward ESC backs out before seeding or forfeits."""
         show = self.bshow
+        if show is not None and getattr(show, "phase", None) == "intro":
+            # Joel approved skips 2026-10-14: this press never locks or forfeits.
+            show.key(k)
+            return None
         if show is not None and self.bphase == "lock":
             if k in ("space", "enter"):
                 show.key(k)                      # the panel grades its own bar
