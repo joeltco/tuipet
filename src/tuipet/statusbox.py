@@ -909,12 +909,15 @@ def _lobby_ladder(app, m):
     top = list(lad.get("top") or [])
     lead = "—"
     if top:
-        wins = f"{compact_count(int(top[0][1]), 6)}W"
-        lead = f"{_fit_cells(str(top[0][0]), min(12, CARD_W - 10 - cell_len_(wins)))} · {wins}"
+        # the LEADER's count gets its own name -- reusing `wins` overwrote the
+        # player's own row below ("You #2 · 99WW"; cross-check 2026-10-14)
+        lead_w = f"{compact_count(int(top[0][1]), 6)}W"
+        lead = f"{_fit_cells(str(top[0][0]), min(12, CARD_W - 10 - cell_len_(lead_w)))} · {lead_w}"
     card(app, "Ladder", [
         f"[b]season {_esc(str(lad.get('season', '?')))}[/]",
         "[dim]online wins only[/]", "",
-        (f"You    #{rank} · {wins}W" if rank else "You    [dim]unranked[/]"),
+        (f"You    #{rank} · {compact_count(int(wins or 0), 6)}W" if rank
+         else "You    [dim]unranked[/]"),
         f"Top    {_esc(lead)}",
         f"Rungs  {len(top)} filled", "",
         ("[dim]resets today[/]" if days == 0

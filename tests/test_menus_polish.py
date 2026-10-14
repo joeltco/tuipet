@@ -405,3 +405,21 @@ def test_malformed_bank_is_rejected_without_a_renderer_crash(blob):
     saved["dna_owned"] = blob
     restored, _ = persistence.pet_from_save(saved)
     assert restored is None
+
+
+def test_ladder_card_keeps_the_players_own_wins():
+    """Cross-check 2026-10-14: the leader-width fix reused `wins` and the
+    player's row read the leader's count ('You #2 · 99WW')."""
+    from types import SimpleNamespace
+    seen = {}
+    m = SimpleNamespace(client=SimpleNamespace(ladder={
+        "season": 3, "you": [2, 7], "days_left": 4, "top": [["leader", 99], ["me", 7]]}))
+    app = SimpleNamespace()
+    orig = statusbox.card
+    statusbox.card = lambda a, title, lines: seen.setdefault("lines", lines)
+    try:
+        statusbox._lobby_ladder(app, m)
+    finally:
+        statusbox.card = orig
+    you = next(line for line in seen["lines"] if line.startswith("You"))
+    assert "#2" in you and "7W" in you and "99" not in you and "WW" not in you

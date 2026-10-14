@@ -162,7 +162,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("EGG POLISH. Retiring keeps your unused DigiMemory and today's egg limit, a G-Cell Fragment survives an egg re-pick, and every lifespan reads in real time again.")
+    WHATS_NEW = ("LADDER FIX. The season card shows your own online wins again instead of the leader's.")
 
 
     BINDINGS = [
