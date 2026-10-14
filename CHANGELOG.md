@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.4 — SNAPPIER. Battles run about three times faster, adventure, c (2026-10-14)
+
+SNAPPIER. Battles run about three times faster, adventure, cup and raid ceremonies are short and any key skips them, home shows play quick and faster still once seen, and a key skips any of them.
+
 ## 0.6.3 — FAIR SHOPS. Grow Capsules are boss prizes now (maps 7 and 23 (2026-10-14)
 
 FAIR SHOPS. Grow Capsules are boss prizes now (maps 7 and 23), one per stage. Evolution relics need a ready body, deals are 25% off everyday goods, each town prices its own shelf, and the money loops are closed.
