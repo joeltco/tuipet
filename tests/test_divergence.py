@@ -91,7 +91,10 @@ def test_dna_screen_surfaces_the_roads():
     assert "DeepSaver" in pan._roads and pan._armed() == ""
     pan.phase = "roads"
     txt = pan.text().plain
-    assert "Coelamon" in txt and "Charge" in txt         # the road + the arm hint
+    assert "Deep Saver" in txt and "Unique leader" in txt
+    pan.road_i = sorted(pan._roads).index("DeepSaver")
+    pan.key("enter")
+    assert "Coelamon" in pan.text().plain
     charge_rows = DNAPanel(p)
     charge_rows.phase = "charge"
     assert "▸" in charge_rows.text().plain               # road marks on the field list
@@ -99,7 +102,7 @@ def test_dna_screen_surfaces_the_roads():
     pan2 = DNAPanel(p)
     assert pan2._armed() == "DeepSaver"
     pan2.phase = "roads"
-    assert "Armed" in pan2.text().plain
+    assert "ARMED" in pan2.text().plain
     assert "ARMED" in pan2._home_tag("roads")
 
 

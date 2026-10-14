@@ -80,10 +80,8 @@ def load_foods():
                 continue
     return foods
 
-# DVPet DNA fields by name ("None" is Enum.Field ordinal 0 = a REAL bankable/chargeable
-# slot; only NA is excluded). Order here is tuipet's menu display order -- inventory and
-# evolution gates are keyed by NAME (digimon.csv {Field}Key/{Field}Value matched by name),
-# so this tuple's order is independent of Enum.Field ordinals.
+# DNA audit 2026-10-14: Fields live in data_core; None remains bankable for
+# dud samples/legacy saves, but the Charge menu offers only real Fields.
 FOOD_CATEGORIES = ("Meat", "Fish", "Veg", "Fruit", "Med", "Junk", "Grain", "Dairy")
 
 # ---------------------------------------------------------------------------

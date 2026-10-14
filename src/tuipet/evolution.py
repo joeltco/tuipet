@@ -77,9 +77,10 @@ def _win_rate(pet):
 
 
 def _dna_ok(pet, req):
-    """testDNA + hasDNARequirement: the form declares Field-DNA gates AND the pet's
-    charged-DNA distribution satisfies every one. This is DVPet's universal
-    evolution-requirement bypass (EnableDNAReqReplacement=TRUE)."""
+    """Whether all declared charged-share bonuses match; not a care-gate bypass.
+
+    DNA audit 2026-10-14: these conditions only add fulfilled-score bonuses.
+    """
     dna = req.get("dna")
     if not dna or not any(g[0] != "None" for g in dna.values()):
         return False                       # hasDNARequirement: no Field gate set
@@ -384,11 +385,8 @@ def select(pet):
 # that claims the target keeps the pet on lines; otherwise it rides this
 # corpus engine from then on -- a road it PAID for).
 #
-# Thresholds are the balance knob: the charge bill is ENERGY, 1/unit on
-# your own Field and 2/unit off-Field over the -24..24 meter (the old
-# spirit bill left with its system), so each figure below is still N charge
-# SESSIONS with recovery between, not one action -- plus the wager bits
-# that banked the DNA.
+# DNA audit 2026-10-14: all usable thresholds fit one charge from full
+# species energy, even off-Field. Fresh currently has no real-Field road.
 DIVERGE_NEED = {"Fresh": 2, "InTraining": 4, "Rookie": 8,
                 "Champion": 12, "Ultimate": 16}
 _STAGE_ORDER = ["Fresh", "InTraining", "Rookie", "Champion", "Ultimate", "Mega"]
@@ -464,6 +462,17 @@ def divergence_roads(pet):
     return roads
 
 
+def divergence_options(pet):
+    """Stable road destinations while armed; only evolution rolls the final pick."""
+    # DNA audit 2026-10-14: readouts must not spend the gameplay RNG.
+    field = pet.highest_dna()
+    need = DIVERGE_NEED.get(pet.stage)
+    if not field or field == "None" or need is None \
+            or pet.dna_applied.get(field, 0) < need:
+        return []
+    return sorted(set(divergence_roads(pet).get(field, [])))
+
+
 def is_mode_form(num):
     """This form IS a Mode (SpecialEvolution=Mode) -- mode change reverts it."""
     return data.load_requirements().get(num, {}).get("special") == "Mode"
@@ -510,7 +519,7 @@ def requirement_report(pet, num):
     """The data book's requirement checklist for one evolution target: a list of
     (met, text) rows, one per CONSTRAINED gate, mirroring check()'s reads exactly
     (unconstrained "None" gates are skipped).  met is True/False, or None for an
-    informational row (the probability line, the DNA-bypass note)."""
+    informational row (probability and DNA selection bonuses)."""
     req = data.load_requirements().get(num)
     if req is None:
         return [(False, "unknown form")]
@@ -572,9 +581,9 @@ def requirement_report(pet, num):
     dna = req.get("dna") or {}
     dna_gated = [(f, g) for f, g in dna.items() if g[0] != "None"]
     for f, (cond, val) in dna_gated:
-        rows.append((_cmp(cond, val, pet.dna_percent(f)),
-                     f"DNA {data.pretty_field(f)} {_SYM.get(cond, '?')}{val:g}%"
-                     f"  (now {pet.dna_percent(f):g}%)"))
+        # DNA audit 2026-10-14: informational bonuses are not unmet care gates.
+        rows.append((None, f"DNA bonus {data.pretty_field(f)} {_SYM.get(cond, '?')}{val:g}%"))
+        rows.append((None, f"charged share: {pet.dna_percent(f)}%"))
     prob, bound = req["prob"], req["probBound"]
     if prob < bound:
         boost = getattr(pet, "evol_bonus", 0) + int(_win_rate(pet) * WIN_RATE_PROB_COEF)
@@ -583,10 +592,11 @@ def requirement_report(pet, num):
 
 
 def candidates(pet):
-    """Debug helper: (num, name, passes, fulfilled) for each target."""
+    """Readout helper: (num, name, care gates pass, fulfilled) for each target."""
     _, by_num = data.load_sprites()
     out = []
     for t in data.load_evolutions().get(pet.num, []):
         if t in by_num and by_num[t]["stage"] != pet.stage:
-            out.append((t, by_num[t]["name"], check(pet, t), round(fulfilled(pet, t), 2)))
+            # DNA audit 2026-10-14: only the final selector rolls probabilities.
+            out.append((t, by_num[t]["name"], check(pet, t, roll=False), round(fulfilled(pet, t), 2)))
     return out

@@ -68,7 +68,7 @@ def test_the_charge_page_honors_the_dna_rulings():
     pan.bet = 250
     assert "NOTHING till 500" in pan.text().plain
     pan.bet = 99
-    assert "banks 99" in pan.text().plain
+    assert "banks up to 99" in pan.text().plain
     pan.bet = 2500
     assert "RESONANT" in pan.text().plain
 

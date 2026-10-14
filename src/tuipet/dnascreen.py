@@ -4,14 +4,14 @@ Home menu (DVPet DNA_Validation): Charge / Generate / Stats / Divergence.
 (The Requirements viewer left with the DNA slim -- gate-forgiveness died
 with it; this docstring lagged until the DNA review 2026-07-18.)
   * Charge   (DNA_Inventory + DNA_Detail): spend banked DNA into the pet, bending
-             evolution toward forms whose Field-DNA gates you meet.  The bill is
+             evolution toward a real Field's available road. The bill is
              ENERGY: 1/unit on your own Field, doubled off-Field (the old
              spirit/mood/illness costs left with their systems).  On commit
              the pet absorbs it (the DNA_Feeding "dnaWash" fx plays on the display).
   * Generate (DNA_GenerateValidate + DNA_Generate): wager bits, mash SPACE ~10s; a
-             faster mash earns a rarer Field (getDNARate bands), too slow/fast -> the
+             mash rate selects a Field, too slow/fast -> the
              dud None field. The won Field blinks in (the UnlockDNA reveal).
-  * Stats    (DNA_Stats): each Field's charged share -- the evolution gate %.
+  * Stats    (DNA_Stats): each Field's charged share -- a corpus selection bonus.
   * Divergence (tuipet, "ultimate v-pet" arc 2026-07-07): the wild-road map --
              where each Field's charge can steer the NEXT evolution off the
              chart (evolution.divergence_roads), the stage threshold, and the
@@ -19,10 +19,13 @@ with it; this docstring lagged until the DNA review 2026-07-18.)
 """
 from __future__ import annotations
 import math
-from . import data, grid, menu, evolution
+from . import data, grid, menu, evolution, persistence
+from rich.console import Console
+from rich.text import Text
 from .theme import LCD_ON, LCD_BG, SIL_SCENE  # noqa: F401  (palette names bound for theme.apply propagation)
 from .pet import (MAX_DNA_INVENTORY, MAX_DNA_WAGER, DNA_STABILIZER_BET,
-                  DNA_RESONANT_BET, DNA_RATE_BANDS, dna_field_for_rate)
+                  DNA_RESONANT_BET, DNA_RATE_BANDS,
+                  dna_award_field)
 
 MASH_TICKS = 100            # DVPet: 100 intervals x 0.1s = the 10s mini-game window
 MASH_KEYS = ("space",)      # the single "button" you mash
@@ -65,7 +68,8 @@ class DNAPanel:
         self.bet = 1
         self.hits = 0
         self.mash_f = 0
-        self.won = None             # (field, wager, rate) after a mini-game
+        self.won = None             # (field, wager, rate, banked, refund)
+        self.splashed = {}          # actual adjacent-bank deltas, including zero
         self.blink = 0              # UnlockDNA reveal blink counter
         # the loop in one line, help-GROW's own grammar (gameplay polish
         # #12, 2026-07-22): "Generate, then charge" never said WHY -- for a
@@ -74,23 +78,25 @@ class DNAPanel:
         self.sfx = None
         self._roads = evolution.divergence_roads(pet)   # field -> wild-road targets
         self.road_i = 0
+        self.target_i = 0
 
     def _armed(self):
         """The strict-max charged Field at/over the stage threshold WITH a
         road -- the next evolution will diverge (mirrors divergence_target's
         gate without picking the destination)."""
-        f = self.pet.highest_dna()
-        need = evolution.DIVERGE_NEED.get(self.pet.stage)
-        if (f and f != "None" and need is not None
-                and self.pet.dna_applied.get(f, 0) >= need and f in self._roads):
-            return f
-        return ""
+        return self.pet.highest_dna() if evolution.divergence_options(self.pet) else ""
 
     # (the Requirements viewer left with the DNA slim; BASIC VPET 2026-07-16)
 
     @property
     def field(self):
-        return self.fields[self.cursor]
+        # DNA audit 2026-10-14: card and commit share the phase's actual cursor.
+        if self.phase == "charge":
+            return self.charge_fields[self.cursor % len(self.charge_fields)]
+        if self.phase in ("roads", "road_detail") and self._roads:
+            fields = sorted(self._roads)
+            return fields[self.road_i % len(fields)]
+        return self.fields[self.cursor % len(self.fields)]
 
     # ---- mini-game math (DVPet drawDNAGenerateAnim) ----------------------
     def _rate(self):
@@ -115,6 +121,14 @@ class DNAPanel:
                 banked = self.pet.dna_owned.get(field, 0) - owned0.get(field, 0)
                 refund = self.pet.bits - bits0
                 self.won = (field, self.bet, rate, banked, refund)
+                self.splashed = {}
+                if self.bet >= DNA_RESONANT_BET and field != "None":
+                    fields = [f for _, f in DNA_RATE_BANDS if f != "None"]
+                    i = fields.index(field)
+                    for j in (i - 1, i + 1):
+                        if 0 <= j < len(fields):
+                            f = fields[j]
+                            self.splashed[f] = self.pet.dna_owned.get(f, 0) - owned0.get(f, 0)
                 self.phase = "result"
                 self.blink = 0
                 self.sfx = "mischief"    # soundConfig unlockDNA -> mischief.wav (banks even None -- never a jeer)
@@ -133,6 +147,8 @@ class DNAPanel:
             self.home_i = (self.home_i + 1) % len(_HOME)
         elif k in ("enter", "space", "right", "l"):
             self.phase = _HOME[self.home_i][0]
+            if self.phase == "charge":
+                self.cursor %= len(self.charge_fields)
             if self.phase == "generate":
                 self.phase = "bet"
                 self.bet = max(1, min(MAX_DNA_INVENTORY, self.amount))
@@ -169,8 +185,18 @@ class DNAPanel:
             self.cursor = (self.cursor - 1) % len(self.fields)
         elif k in ("down", "j"):
             self.cursor = (self.cursor + 1) % len(self.fields)
-        elif k in ("escape", "enter", "space"):    # SPACE = ENTER, app grammar
+        elif k in ("escape", "enter", "space"):
             self.phase = "home"
+        return None
+
+    def _key_road_detail(self, k):
+        n = len(set(self._roads[self.field]))
+        if k in ("up", "k"):
+            self.target_i = (self.target_i - 1) % n
+        elif k in ("down", "j"):
+            self.target_i = (self.target_i + 1) % n
+        elif k in ("escape", "enter", "space"):
+            self.phase = "roads"
         return None
 
 
@@ -180,7 +206,9 @@ class DNAPanel:
             self.road_i = (self.road_i - 1) % n
         elif k in ("down", "j"):
             self.road_i = (self.road_i + 1) % n
-        elif k in ("escape", "enter", "space"):    # SPACE = ENTER, app grammar
+        elif k == "enter" and self._roads:
+            self.phase, self.target_i = "road_detail", 0
+        elif k in ("escape", "enter", "space"):
             self.phase = "home"
         return None
 
@@ -250,23 +278,18 @@ class DNAPanel:
 
     def _text_charge(self):
         p = self.pet
-        out = menu.bar("DNA · CHARGE", "%db  x%d" % (p.bits, self.amount))
-        # the honest line (DNA ruling 2026-07-18): charge is the WILD-ROAD
-        # tool -- the ordinary line climb never reads it.  It alternates
-        # with the wipe law (gameplay polish #13, 2026-07-22): reset_dna
-        # clears charges at EVERY evolution, and the one place that said so
-        # was the Divergence page -- a 5/8 charge died silently at the
-        # stage timer with no warning where the spending happens.  Armed
-        # state outranks both (the shop sealed-tease cadence).
-        if self._armed():
-            note = "ARMED — the next evolution takes the road"
-        elif (self.frame_i // 40) % 2 == 0:
-            note = "arms the Divergence road — the line climb ignores it"
-        else:
-            note = "charges clear at every evolution — arm before the clock fills"
-        out.append_text(menu.note(note, tick=self.frame_i))
-        cur = self.cursor % len(self.charge_fields)
-        for i, f in enumerate(self.charge_fields):
+        amt = min(self.amount, p.dna_owned.get(self.field, 0))
+        cost = amt * (1 if self.field == p.field else 2)
+        out = menu.bar("DNA · CHARGE", "x%d/%d energy -%d" % (amt, self.amount, cost))
+        # DNA audit 2026-10-14: costs and wipe law fit without a scrolling tail.
+        need = evolution.DIVERGE_NEED.get(p.stage)
+        note = ("ARMED: next growth takes the road" if self._armed() else
+                "Divergence road: unique leader >=%d" % need if self._roads and need else
+                "No DNA road from this form.")
+        out.append_text(menu.note(note))
+        out.append_text(menu.note("Charges clear at every evolution"))
+
+        def fmt(f, i):
             own = p.dna_owned.get(f, 0)
             chg = p.dna_applied.get(f, 0)
             pct = p.dna_percent(f)
@@ -275,7 +298,10 @@ class DNAPanel:
             # 17-col name: "Nightmare Soldier" fits whole (the 14-col slice
             # printed "Nightmare Sold" -- menu audit 2026-07-21); row = 35
             label = "%s%-17s%s%3db %3dc %3d%%" % (tag, _field_word(f, 17), road, own, chg, pct)
-            out.append_text(menu.row(label, i == cur))
+            return label
+
+        self.cursor = menu.list_window(out, self.charge_fields, self.cursor, 6, fmt)
+        out.append_text(menu.note("* own Field  ▸ road  ties disarm"))
         out.append_text(menu.footer("↑↓fld ←→amt ENTER chg  ESC back"))
         return out
 
@@ -300,33 +326,50 @@ class DNAPanel:
             out.append_text(menu.blanks(1))
             out.append_text(menu.note("No wild roads from this form."))
             out.append_text(menu.blanks(1))
-            out.append_text(menu.row("Charge a Field to its threshold", False))
-            out.append_text(menu.row("to steer the next evolution.", False))
+            out.append_text(menu.row("Bank DNA for a later form.", False))
+            out.append_text(menu.row("Charging now cannot arm a road.", False))
             out.append_text(menu.footer("ESC back"))
             return out
-        _, by = data.load_sprites()
         armed = self._armed()
         flds = sorted(self._roads)
         self.road_i %= len(flds)
-        for i, f in enumerate(flds):
-            names = "/".join(by.get(t, {}).get("name", "?") for t in self._roads[f][:2])
-            if len(self._roads[f]) > 2:
-                names += "…"
+        out.append_text(menu.note("ARMED: next growth takes the road" if armed else
+                                  "Unique leader + road arms at %d" % need))
+        out.append_text(menu.note("Charges clear at every evolution"))
+
+        def fmt(f, i):
             chg = p.dna_applied.get(f, 0)
             mark = "▶" if f == armed else " "
-            label = "%s%-13s %2d/%-2d %s" % (mark, _field_word(f, 13),
-                                             chg, need, names[:15])
-            out.append_text(menu.row(label, i == self.road_i))
-        out.append_text(menu.note("Armed: next evolution takes the road."
-                                  if armed else
-                                  # the honest line's sibling (DNA audit
-                                  # 2026-07-22): evolve_to's reset_dna wipes
-                                  # charges at EVERY evolution -- an
-                                  # under-armed charge dies silently at the
-                                  # line climb unless the page says so
-                                  "Charge %d in ONE Field to arm — charges clear at every evolution." % need,
-                                  tick=self.frame_i))
-        out.append_text(menu.footer("↑↓ field   ESC back"))
+            return "%s%-17s %2d/%-2d %d forms" % (mark, _field_word(f, 17),
+                                                   chg, need, len(self._roads[f]))
+
+        self.road_i = menu.list_window(out, flds, self.road_i, 6, fmt)
+        out.append_text(menu.note("Ties disarm; ENTER lists all forms"))
+        out.append_text(menu.footer("↑↓ field  ENTER forms  ESC back"))
+        return out
+
+    def _target_name(self, num):
+        # DNA audit 2026-10-14: roads obey the same reveal rule as DigiCore.
+        if data.load_requirements().get(num, {}).get("hidden_evo") \
+                and not persistence.album_seen(num):
+            return "???"
+        return data.load_sprites()[1].get(num, {}).get("name", "?")
+
+    def _text_road_detail(self):
+        targets = sorted(set(self._roads[self.field]))
+        self.target_i %= len(targets)
+        out = menu.bar(data.pretty_field(self.field),
+                       "%d/%d forms" % (self.target_i + 1, len(targets)))
+        # The selected name wraps in full; no destination vanishes after two names.
+        name = Text(self._target_name(targets[self.target_i]))
+        wrapped = name.wrap(Console(width=menu.W), menu.W)
+        for line in wrapped:
+            out.append_text(line + Text("\n"))
+        out.append_text(menu.note("Road options; final pick at growth"))
+        self.target_i = menu.list_window(out, targets, self.target_i,
+                                        max(1, 8 - len(wrapped)),
+                                        lambda num, i: self._target_name(num))
+        out.append_text(menu.footer("↑↓ form   ESC back"))
         return out
 
     def _text_bet(self):
@@ -339,16 +382,16 @@ class DNAPanel:
         # what it actually buys -- the 100-499 band used to pay extra for
         # nothing, silently
         if self.bet >= DNA_RESONANT_BET:
-            tier = "RESONANT: banks 99 +%d splash" % (self.bet // 5)
+            tier = "RESONANT: up to 99/adjacent Field"
         elif self.bet >= DNA_STABILIZER_BET:
-            tier = "STABILIZED: banks 99, never None"
+            tier = "STABILIZED: up to 99, never None"
         elif self.bet > MAX_DNA_INVENTORY:
             tier = "extra past 99 buys NOTHING till 500"
         else:
-            tier = "banks %d" % self.bet
+            tier = "banks up to %d" % self.bet
         out.append_text(menu.row(tier[:38], False))
         out.append_text(menu.blanks(1))
-        out.append_text(menu.row("faster mash → rarer field", False))
+        out.append_text(menu.row("mash rate selects a Field", False))
         if self.bet >= DNA_STABILIZER_BET:
             out.append_text(menu.row("stabilized — it never rolls None", False))
         else:
@@ -381,9 +424,11 @@ class DNAPanel:
         if self.phase == "mash":
             rate = self._rate()
             left = max(0.0, (MASH_TICKS - self.mash_f) / 10.0)
-            fld = _field_word(dna_field_for_rate(rate), 9)
-            return ("%s r%-2d→[b]%-9s[/] %4.1fs SPACE!"
-                    % (self._meter(rate), rate, fld, left))
+            fld = _field_word(dna_award_field(self.bet, rate), 9)
+            # DNA audit 2026-10-14: even an extreme extrapolated rate fits 40 cells.
+            shown_rate = str(rate) if rate <= 999 else "999+"
+            return ("%s r%s→[b]%s[/] %.1fs SPACE"
+                    % (self._meter(rate), shown_rate, fld, left))
         if self.phase == "charge":
             return menu.hints(("↑↓", "field"), ("←→", "amount"),
                               ("ENTER", "charge"))
@@ -391,8 +436,10 @@ class DNAPanel:
             return menu.hints(("←→", "wager"), ("ENTER", "mash!"),
                               ("ESC", "back"))
         if self.phase == "result":
-            return menu.hints(("any key", "bank it"))
-        if self.phase in ("stats", "roads"):
+            return menu.hints(("any key", "continue"))
+        if self.phase == "roads":
+            return menu.hints(("↑↓", "field"), ("ENTER", "forms"), ("ESC", "back"))
+        if self.phase in ("stats", "road_detail"):
             return menu.hints(("↑↓", "browse"), ("ESC", "back"))
         return menu.hints(("↑↓", "pick"), ("ENTER", "open"), ("ESC", "out"))
 
@@ -403,20 +450,15 @@ class DNAPanel:
         out = menu.bar("DNA · GENERATE", "rate %d" % rate)
         out.append_text(menu.blanks(1))
         got = "✓ Got %d %s DNA" % (banked, name)
-        if refund > 0:
-            got += " · %db back" % refund            # the cap overflow, refunded
         out.append_text(menu.note(got if show else "✓"))
-        out.append_text(menu.blanks(1))
+        out.append_text(menu.note("Refund: %db" % refund))
         out.append_text(menu.row("rate %d → %s" % (rate, name if show else ""), True))
         if field == "None":
             out.append_text(menu.row("None = the dud field (banked)", False))
         elif wager >= DNA_RESONANT_BET:
-            # edge bands (DeepSaver/DarkArea) have ONE neighbor -- "both"
-            # was a lie on the ends (DNA audit 2026-07-22)
-            fields = [f for _, f in DNA_RATE_BANDS if f != "None"]
-            edge = field in (fields[0], fields[-1])
-            out.append_text(menu.row("resonance: +%d to %s" % (
-                wager // 5, "its one neighbor" if edge else "both neighbors"), False))
+            # DNA audit 2026-10-14: show actual landed deltas, not the uncapped splash.
+            for f, gained in self.splashed.items():
+                out.append_text(menu.row("+%d %s DNA" % (gained, data.pretty_field(f))))
         else:
             out.append_text(menu.row("banked — open Charge to use it", False))
         out.append_text(menu.footer("any key  →  DNA menu"))

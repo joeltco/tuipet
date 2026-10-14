@@ -133,4 +133,4 @@ def test_the_result_page_reports_what_actually_banked():
     assert field == "DragonsRoar" and wager == 99
     assert banked == 9 and refund == 90              # truth, not the wager
     page = pan.text().plain
-    assert "Got 9 Dragons Roar" in page and "90b back" in page
+    assert "Got 9 Dragons Roar" in page and "Refund: 90b" in page

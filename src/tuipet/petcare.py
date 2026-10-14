@@ -804,7 +804,8 @@ class CareMixin:
         if have >= MAX_DNA_INVENTORY:
             return _Refused("That Field's bank is full.")
         self.dna_owned[field] = min(MAX_DNA_INVENTORY, have + 10)
-        return f"+{self.dna_owned[field] - have} {field} DNA banked!"
+        # DNA audit 2026-10-14: show the same Field name as the DNA menu.
+        return f"+{self.dna_owned[field] - have} {data.pretty_field(field)} DNA banked!"
 
     def _toy(self, weight=0, energy=0, msg="Fun!", obedience=0, strength=0,
              dp=0):

@@ -71,10 +71,7 @@ class DnaMixin:
         RESONANT one (>=2500) splashes amount//5 DNA into the two adjacent
         Fields (capped, no refund)."""
         self.dna_wager_pending = 0            # the bet settles here, win or waste
-        field = dna_field_for_rate(rate)
-        if field == "None" and amount >= DNA_STABILIZER_BET:
-            rate = min(max(rate, DNA_RATE_BANDS[0][0] + 1), DNA_RATE_BANDS[-1][0])
-            field = dna_field_for_rate(rate)
+        field = dna_award_field(amount, rate)
         gained = min(amount, MAX_DNA_INVENTORY)
         total = self.dna_owned.get(field, 0) + gained
         if total > MAX_DNA_INVENTORY:
@@ -93,9 +90,11 @@ class DnaMixin:
         return field
 
     def apply_dna(self, field, amount):
-        """PhysicalState.applyDNA: owned -> charged.  The live bill is ENERGY
-        (1/unit own Field, x2 off) + the strength ceiling below; canon's
-        disturb/mood/spirit/sick costs left with their systems."""
+        """Owned -> charged; energy costs 1/unit own Field, 2/unit otherwise.
+
+        DNA audit 2026-10-14: negative energy also costs obedience; Effort
+        rises to three hearts without lowering an already-full gauge.
+        """
         owned = self.dna_owned.get(field, 0)
         if amount <= 0 or owned < amount:
             self._set_anim("refuse", 1.0)                   # Jeering: not enough DNA

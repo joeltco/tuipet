@@ -161,7 +161,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("ERASE MEANS ERASE. Erase all data now wipes your cloud save too, so signing back in starts fresh instead of bringing the old pet back.")
+    WHATS_NEW = ("DNA POLISH. The DNA screens now show real numbers and every road a charge can take, the preview no longer changes its mind, and a damaged DNA save can no longer crash the game.")
 
 
     BINDINGS = [
@@ -1576,10 +1576,10 @@ class TuiPetApp(ActionsMixin, App):
 
     def _armed_field(self, p):
         """The strict-max Field whose charge has ARMED a divergence, or None
-        -- the HUD's wrapper over evolution.divergence_target (cheap: the
-        corpus tables behind it are all lru_cached loads)."""
+        -- availability only; evolution owns the random destination."""
         from . import evolution
-        return p.highest_dna() if evolution.divergence_target(p) is not None else None
+        # DNA audit 2026-10-14: an idle HUD must not reroll the pet's future.
+        return p.highest_dna() if evolution.divergence_options(p) else None
 
     def _need_message(self, p):
         """HUD announcement for the pet's most urgent unmet care need (or '')."""

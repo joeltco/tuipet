@@ -42,8 +42,9 @@ def test_edge_band_resonance_splashes_one_neighbor_and_says_so():
     assert splashed == ["JungleTrooper"]                   # exactly one
     pan = DNAPanel(p)
     pan.phase, pan.won, pan.blink = "result", (f, DNA_RESONANT_BET, 10, 99, 0), 0
+    pan.splashed = {"JungleTrooper": 99}
     plain = pan.text().plain
-    assert "its one neighbor" in plain and "both" not in plain
+    assert "+99 Jungle Trooper DNA" in plain and "Wind Guardian" not in plain
 
 
 def test_interior_resonance_still_says_both():
@@ -56,7 +57,9 @@ def test_interior_resonance_still_says_both():
         == ["JungleTrooper", "WindGuardian"]
     pan = DNAPanel(p)
     pan.phase, pan.won, pan.blink = "result", (f, DNA_RESONANT_BET, 30, 99, 0), 0
-    assert "both neighbors" in pan.text().plain
+    pan.splashed = {"JungleTrooper": 99, "WindGuardian": 99}
+    assert "+99 Jungle Trooper DNA" in pan.text().plain
+    assert "+99 Wind Guardian DNA" in pan.text().plain
 
 
 def test_the_divergence_page_teaches_the_wipe_rule():
@@ -68,12 +71,8 @@ def test_the_divergence_page_teaches_the_wipe_rule():
     assert pan._roads, "fixture lost its roads -- rebase on test_divergence.mk"
     pan.phase = "roads"
     plain = pan.text().plain
-    assert "Charge 8 in ONE Field to arm" in plain      # the note's head renders
-    # the tail rides the marquee (notes scroll, they never clip) -- pin the
-    # SOURCE string, not one frozen phase (the round-two lesson)
-    import inspect
-    from tuipet import dnascreen
-    assert "charges clear at every evolution" in inspect.getsource(dnascreen)
+    assert "Unique leader + road arms at 8" in plain
+    assert "Charges clear at every evolution" in plain
 
 
 def test_evolution_wipes_charges_but_keeps_the_bank():
@@ -111,7 +110,7 @@ def test_the_charge_meter_and_award_share_one_band_map():
     from tuipet import dnascreen
     import inspect
     src = inspect.getsource(dnascreen)
-    assert "dna_field_for_rate(rate)" in src               # the strip preview
+    assert "dna_award_field(self.bet, rate)" in src       # includes stabilization
     assert "DNA_RATE_BANDS" in src                         # no private band copy
     for rate in (0, 9, 25, 47, 80, 99):
         p = _pet()
@@ -159,11 +158,8 @@ def test_the_mash_scene_and_result_blink_animate():
 
 # --- the teachings ride where the player IS (gameplay polish #12-14) ---------
 
-def test_the_charge_screen_alternates_both_truths():
-    """The wipe law lived only on the Divergence page while the SPENDING
-    happens on Charge -- a 5/8 charge died silently at the stage timer.
-    The note now alternates the two honest lines on the sealed-tease
-    cadence (40 ticks), armed state outranking both."""
+def test_the_charge_screen_shows_both_truths_without_a_marquee():
+    """DNA audit 2026-10-14: the road and wipe law are readable together."""
     from tuipet.dnascreen import DNAPanel
     from tuipet import evolution
     p = _pet(stage="Rookie")
@@ -175,14 +171,9 @@ def test_the_charge_screen_alternates_both_truths():
     for t in range(0, 160, 4):
         pan.frame_i = t
         frames.append(pan.text().plain)
-    union = "".join(frames)
-    assert "arms the Divergence road" in union       # truth A's head
-    assert "charges clear" in union                  # truth B scrolls through
-    assert len(set(frames)) > 1                      # it genuinely alternates
-    import inspect
-    from tuipet import dnascreen
-    src = inspect.getsource(dnascreen)
-    assert "charges clear at every evolution — arm before the clock fills" in src
+    assert all("Divergence road" in frame and "Charges clear at every evolution" in frame
+               for frame in frames)
+    assert len(set(frames)) == 1
     p.dna_applied["DeepSaver"] = evolution.DIVERGE_NEED["Rookie"]
     pan2 = DNAPanel(p)                              # _roads resolve at init
     pan2.phase = "charge"

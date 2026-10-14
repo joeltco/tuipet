@@ -1304,46 +1304,37 @@ def dna(app):
     f = m.field
     same = f == p.field
     own, chg = p.dna_owned.get(f, 0), p.dna_applied.get(f, 0)
-    # the charge bill, TRUTHFULLY (modularize audit 2026-07-17): the old
-    # line billed "spirit/mood" -- both systems are gone.  applyDNA's real
-    # cost is ENERGY: 1/unit on your own Field, doubled off-Field (and the
-    # off-field sickness risk left with the sickness rebuild).
+    # DNA audit 2026-10-14: show the actual transaction and road, not "unlocks".
     cost = "energy -1/ea (own Field)" if same else "energy -2/ea (off Field)"
     from . import evolution
-    reqs = data.load_requirements()
-    dna_t = [t for t in data.load_evolutions().get(p.num, [])
-             if reqs.get(t) and any(g[0] != "None" for g in reqs[t]["dna"].values())]
-    unlocked = sum(1 for t in dna_t if evolution._dna_ok(p, reqs[t]))
+    roads = evolution.divergence_roads(p)
+    armed = p.highest_dna() if evolution.divergence_options(p) else ""
+    need = evolution.DIVERGE_NEED.get(p.stage)
+    amt = min(m.amount, own)
+    bill = amt * (1 if same else 2)
+    road = ("Armed " + data.pretty_field(armed)) if armed else "DNA not armed"
+    progress = (f"Road {chg}/{need} · {len(roads[f])} forms" if f in roads and need
+                else "No road in this Field")
     screen = {"home": "menu", "charge": "charge", "stats": "stats",
-              "reqs": "requirements", "bet": "generate", "mash": "generate",
-              "result": "generate"}.get(m.phase, "menu")
-    import textwrap
+              "roads": "roads", "road_detail": "forms", "bet": "generate",
+              "mash": "generate", "result": "generate"}.get(m.phase, "menu")
     last_rows = [f"[dim]{s}[/]" for s in textwrap.wrap(m.last or "", 24)[:2]]
     last_rows += [""] * (2 - len(last_rows))
     lines = [
-        # dynamic fit (run-off sweep 2026-07-23: a 14-char name + 'DNA ·
-        # generate' ran 30 cols): the NAME gives way, the tail stays whole
-        f"[b]{p.name[:max(4, CARD_W - 9 - len(screen))]}[/]"
+        f"[b]{_fit_cells(p.name, max(4, CARD_W - 9 - len(screen)))}[/]"
         f" [dim]· DNA · {screen}[/]", DIV,
         f"Bits     [{T.COIN}]{p.bits}[/]",
-        # ⭐THE (own) MARKER WAS A THIRD COPY, AND IT CLIPPED (card audit
-        # 2026-08-04).  Measured: "Field    Virus Buster  (own)" is 28 cells
-        # against the 26-wide box, and 7 of the 10 DNA fields overflowed the
-        # same way whenever the card showed the pet's OWN field -- which is
-        # the commonest case there is.  Textual wrapped the tail onto the
-        # box's invisible next row (the CELL LAW, bug #32's family).
-        # It was also redundant: the cost row below already says "(own Field)"
-        # or "(off Field)", and the static hint says "own Field charges
-        # cheap".  A screen shows a fact ONCE -- so the marker goes, and the
-        # NAME is clipped to the budget so no future field can overflow here.
         f"Field    {_fit_cells(data.pretty_field(f), CARD_W - 9)}",
-        f"Banked   {own}     Charged {chg}",
-        f"Share    {p.dna_percent(f)}%    [dim]x{m.amount}[/]",
-        f"Unlocks  [b]{unlocked}[/]/{len(dna_t)} form(s)",
-        DIV,
+        _fit_cells(f"Banked {own}  Charged {chg}", CARD_W),
+        f"Share    {p.dna_percent(f)}%",
+        _fit_cells(road, CARD_W),
+        _fit_cells(progress, CARD_W),
         f"[dim]{cost}[/]",
+        f"Charge x{amt}/{m.amount}: energy -{bill}",
+        "[dim]Effort +1/ea, up to 3[/]",
+        "[dim]Below 0: obedience falls[/]",
         *last_rows,
-        "[dim]own Field charges cheap[/]",
+        "[dim]Ties disarm; need a road[/]",
         "[dim]ESC steps back out[/]",
     ]
     app.stats_w.update("\n".join(lines))

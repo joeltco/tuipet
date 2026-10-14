@@ -258,6 +258,9 @@ class DigiCorePanel:
             return "the core stirs…"
         if t < MON_T + EXPAND_T:
             return "the core opens…"
+        options = evolution.divergence_options(self.pet)
+        if len(options) > 1:
+            return f"One of {len(options)} DNA road forms may follow."
         return ("Nothing stirs — this is its final form."
                 if next_evolution(self.pet) is None
                 else "A shape looms in the core…")
@@ -267,7 +270,7 @@ class DigiCorePanel:
         met gates dim out of the way, the unmet ones are the raising guide."""
         from rich.text import Text
         num, name = self.detail
-        if num == evolution.divergence_target(self.pet):
+        if num in evolution.divergence_options(self.pet):
             # the steer's own sheet: lines.requirement_report would say
             # "not in this line" -- true, and exactly the point; what
             # fires this jump is the charge (gameplay audit B3)
@@ -301,14 +304,15 @@ class DigiCorePanel:
             out.append_text(menu.footer("←→ page    ESC out"))
             return out
 
-        div = evolution.divergence_target(self.pet)
+        options = evolution.divergence_options(self.pet)
 
         def fmt(r, j):
             num, name, ready, unmet = r
             cur = j == self.evo_sel
             # the armed DNA steer wears its own word: it isn't "gates met",
             # it's the charge overriding the chart (gameplay audit B3)
-            tag = (chr(0x2713) + " armed" if num == div
+            # DNA audit 2026-10-14: every option stays tagged; growth alone rolls.
+            tag = (chr(0x2713) + (" armed" if len(options) == 1 else " road") if num in options
                    else chr(0x2713) + " ready" if ready else f"{unmet} to go")
             t = Text()
             t.append(("▸" if cur else " ") + f" {name[:20]:<21}", style=INK_B if cur else INK)

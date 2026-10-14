@@ -164,12 +164,15 @@ forms are crest-exclusive, and the shop dossier names the form your pet
 would become *right now*.
 
 **DNA** (`x`) is the per-Field collectible layer: charge banked Field-DNA
-into the pet to bend evolution toward gated forms, generate more, and read
-any form's requirements. Charging one Field to its stage threshold **arms a
-divergence**: the next evolution leaves the egg's chart for the evolution
-graph's road in that Field — the door that makes the *entire* 1,500+ roster
-raisable. The DNA screen's Divergence page maps where each Field can take
-you; the DigiCore counts your album toward the full collection. **Jogress** (two-player DNA fusion) happens in the
+into the pet, or generate more with a 10-second SPACE exercise. A unique
+leading Field at its stage threshold **arms a divergence** when that form
+has a road in the Field; ties disarm it. The next growth uses that road
+instead of the egg chart. Divergence lists every road destination; the final
+choice uses care scores and chance. Charges clear at every evolution;
+banked DNA stays. Charging costs energy (double off-Field), adds Effort up
+to three hearts, and costs obedience if energy goes negative. Charged-share
+conditions are selection bonuses for off-chart forms, not unlock gates.
+DigiCore shows evolution requirements and your collection. **Jogress** (two-player DNA fusion) happens in the
 lobby with a real partner — the partner's attribute picks the fusion via the
 game's `attributeJogress` matrix.
 

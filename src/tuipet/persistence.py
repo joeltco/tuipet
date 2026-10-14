@@ -19,7 +19,7 @@ from dataclasses import MISSING, asdict, fields
 
 from .pet import Pet
 from .petbase import (FRESH_OBEDIENCE, IN_TRAINING_OBEDIENCE,
-                      ROOKIE_OBED_DEFAULT)
+                      ROOKIE_OBED_DEFAULT, MAX_DNA_INVENTORY, MAX_DNA_WAGER)
 
 # the IO plumbing + the egg-bank migration live in their own modules
 # (tier-4 split 2026-07-17); the old names keep resolving from here
@@ -467,6 +467,44 @@ def _heal_bag(inv):
             inv[new] = inv.get(new, 0) + n
     return inv
 
+def _dna_counts(value, bank=False):
+    """Normalize legacy missing slots; reject malformed counts without truncation."""
+    from . import data
+    if value is None:
+        value = {}
+    if not isinstance(value, dict):
+        raise ValueError("invalid DNA dictionary")
+    out = {f: 0 for f in data.DNA_FIELDS}
+    for field, count in value.items():
+        # DNA audit 2026-10-14: shape checks alone let poisoned banks reach UI/cloud.
+        if (field not in out or isinstance(count, bool)
+                or not isinstance(count, (int, float)) or count < 0
+                or (bank and count > MAX_DNA_INVENTORY)):
+            raise ValueError("invalid DNA count")
+        try:
+            whole = int(count)
+        except (ValueError, OverflowError):
+            raise ValueError("invalid DNA count") from None
+        if whole != count:
+            raise ValueError("invalid DNA count")
+        out[field] = whole
+    return out
+
+
+def _dna_save_fields(value):
+    """Validate the DNA portion independently of the rest of a save."""
+    out = {key: _dna_counts(value.get(key), bank=key == "dna_owned")
+           for key in ("dna_owned", "dna_applied")}
+    pending = value.get("dna_wager_pending")
+    if pending is None:
+        pending = 0
+    if (isinstance(pending, bool) or not isinstance(pending, (int, float))
+            or not 0 <= pending <= MAX_DNA_WAGER or int(pending) != pending):
+        raise ValueError("invalid DNA wager")
+    out["dna_wager_pending"] = int(pending)
+    return out
+
+
 def prev_gen_estate():
     """The device-lifetime estate the next generation inherits (bits, the bag,
     the trophy room -- canon resetToEgg preserves them all)."""
@@ -483,11 +521,25 @@ def prev_gen_estate():
     # fades with its finder.  Carrying the item without its payload would
     # deal the heir a dud -- the very thing the no-traps rule forbids.
     inv.pop("digimemory", None)
+    try:
+        bank = _dna_counts(last.get("dna_owned"), bank=True)
+    except ValueError:
+        # DNA audit 2026-10-14: archive the malformed estate, keep every valid slot.
+        quarantine_save(SETTINGS_PATH)
+        bank = _dna_counts(None)
+        raw = last.get("dna_owned")
+        if isinstance(raw, dict):
+            for field, count in raw.items():
+                try:
+                    slot = _dna_counts({field: count}, bank=True)
+                except ValueError:
+                    continue
+                bank[field] = slot[field]
     return {"bits": int(last.get("bits", 0)),
             "inventory": inv,
             "trophies": int(last.get("trophies", 0)),
             "trophies_won": tw,
-            "dna_owned": dict(last.get("dna_owned") or {})}
+            "dna_owned": bank}
 
 
 _FX_SEEN = (None, None)          # (settings path, set) -- keyed by path so a
@@ -954,6 +1006,10 @@ def pet_from_save(data, strict=False):
     if not isinstance(data, dict):
         return None, ""
     data = dict(data)                            # don't mutate the caller's dict
+    try:
+        data.update(_dna_save_fields(data))
+    except (ValueError, OverflowError):
+        return None, ""
     _migrate_v401_save(data)                     # egg-bank reorder + ver6 cut
     # egg_type must be an INT: the 2026-07-18 'guide' incident wrote the
     # carousel's sentinel string into a save (the crash handler then saved
@@ -1103,6 +1159,7 @@ def load(path=None):
     (professionalism sweep 2026-07-14)."""
     path = path or SAVE_PATH
     broken = None                    # first candidate that existed but wouldn't load
+    broken_dna = False
     for candidate in (path, path + ".bak"):
         if not os.path.exists(candidate):
             continue
@@ -1120,9 +1177,17 @@ def load(path=None):
             # .bak -> quarantine chain, not crash the boot in app.py
             pet, msg = None, ""
         if pet is None:
+            if broken is None and isinstance(data, dict):
+                try:
+                    _dna_save_fields(data)
+                except (ValueError, OverflowError):
+                    broken_dna = True
             broken = broken or candidate
             continue
         if candidate != path:
+            # DNA audit 2026-10-14: keep the poisoned original even if backup recovers.
+            if broken_dna:
+                quarantine_save(broken)
             msg = (msg + "  " if msg else "") + "(recovered from the backup save)"
         return pet, msg
     if broken is None:
