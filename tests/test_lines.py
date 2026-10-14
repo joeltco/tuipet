@@ -38,10 +38,12 @@ def test_rule_grammar_parses_every_atom():
 
 
 def test_rule_grammar_rejects_junk():
+    # an UNKNOWN atom kind is a closed door, not a crash (bug report
+    # 2026-10-14: a running old build read the next release's chart);
+    # test_update_data_skew pins that the shipped chart has none
+    assert lines.parse_rule("XY 3+") == [[("unknown", "XY", None)]]
     with pytest.raises(ValueError):
-        lines.parse_rule("XY 3+")
-    with pytest.raises(ValueError):
-        lines.parse_rule("AREA")
+        lines.parse_rule("AREA")             # a known atom, malformed: still an error
 
 
 def test_ver1_loads_shaped_like_the_spec():
