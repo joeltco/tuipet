@@ -107,7 +107,7 @@ def test_the_device_bank_is_complete_and_in_band():
     roster = {"".join(c for c in r["Name"].lower() if c.isalnum())
               for r in _csv.DictReader(open(os.path.join(ddir, "digimon.csv")))}
     rows = list(_csv.DictReader(open(os.path.join(ddir, "deviceAttacks.csv"))))
-    assert len(rows) == 103
+    assert len(rows) == 104      # + Frozomon borrowing Frigimon's snowball (shared key)
     for r in rows:
         nm = "".join(c for c in r["Name"].lower() if c.isalnum())
         assert nm in roster, f"{r['Name']} not in roster"
