@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.0.post2 — THE GODZILLA LINE IS HERE. 28 new kaiju from the Digimon COL (2026-10-13)
+
+THE GODZILLA LINE IS HERE. 28 new kaiju from the Digimon COLOR Godzilla 70th Edition, each with its own battle shot. Reach Mega with any Digimon to earn the Godzilla Egg. A new G-Cell meter, filled by battles and training and drained by losses and care mistakes, decides which kaiju your pet becomes, and a G-Cell Fragment left where a kaiju falls is the road to Burning Godzilla, which Godzilla 1994 now really reaches.
+
 ## 0.6.0.post1 — THE GODZILLA LINE HAS LANDED, COMPLETE. The full Digital Mon (2026-10-13)
 
 THE GODZILLA LINE HAS LANDED, COMPLETE. The full Digital Monster COLOR Godzilla 70th Edition chart is in tuipet: 28 new kaiju, from Botamon G and Baby Godzilla up through SpaceGodzilla, Kiryu, Destoroyah and Godzilla 1994, plus the G-Erosion forms of MetalGreymon, SkullGreymon and WarGreymon, each firing its own shot in battle. Raise any Digimon to Mega to earn the Godzilla Egg. Godzilla-line pets carry the device's G-Cell meter: battle wins, wild encounters on the road and clean training strikes fill it, while losses, care mistakes and pills drain it, and it decides which kaiju your pet becomes. Check it on the data book's status page. And when a fallen G-Erosion kaiju leaves a G-Cell Fragment where its grave should be, the next Godzilla Egg hatches carrying it, which is the only road to Burning Godzilla.

@@ -625,6 +625,20 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
     def _base_weight(self):
         return data.load_requirements().get(self.num, {}).get("base_weight", 20)
 
+    def _evolve_after(self):
+        """Seconds in this stage before the evolution check may run.  Mega
+        never auto-evolves (9e9) -- EXCEPT the Godzilla line's VI -> VI+ road
+        (Godzilla 1994 -> Burning Godzilla, dmgz chart): a Mega with a next
+        form on THAT chart gets the Stage VI window, the Ultimate's 2880 s
+        (the manual: Stage VI evolves within 48 hours).  Other lines'
+        Mega -> Mega rows are untouched."""
+        dur = self.STAGE_DURATION.get(self.stage, 9e9)
+        if self.stage == "Mega" and getattr(self, "line_id", "") == "godzilla":
+            line = lines_mod.load_lines().get("godzilla") or {}
+            if line.get("children", {}).get(self.num):
+                return self.LATE_STAGE_WINDOW
+        return dur
+
     def _maybe_evolve(self):
         if getattr(self, "evo_blocked", False):
             return                    # the anti-evo chip (DSprite item)
@@ -632,7 +646,7 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
             return
         if getattr(self, "fx_hold", False):
             return          # an animation owns the screen; evolve on a quiet tick
-        if self.stage_seconds < self.STAGE_DURATION.get(self.stage, 9e9):
+        if self.stage_seconds < self._evolve_after():
             return
         # the armed DNA steer beats any chart (divergence: the wild road,
         # 2026-07-07) -- charging a Field to its stage threshold IS the

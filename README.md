@@ -9,7 +9,7 @@ A terminal virtual pet — Digimon V-Pet style — rendered with halfblock Unico
 sprites and animated in the terminal. It builds on the work of the Digimon V-Pet
 fan community — see [Credits & acknowledgments](#credits--acknowledgments).
 
-![tuipet demo — hatch, feed, train, and raise your pet in the terminal](demo.gif)
+![tuipet 0.6 trailer — the Godzilla line: 28 new kaiju, the G-Cell meter, and real gameplay](https://raw.githubusercontent.com/joeltco/tuipet/main/demo.gif)
 
 **Status: live and actively developed** — see the
 [changelog](CHANGELOG.md) for what each release brought. tuipet is its own game: the core
@@ -19,7 +19,15 @@ community references. Regular updates ship as the game grows.
 
 ## What's inside
 
-- **1,548 creatures**, 11 animation frames each, extracted from the game's
+- **NEW in 0.6 — the Godzilla line.** The full Digital Monster COLOR Godzilla
+  70th Edition chart: 28 new kaiju, from Botamon G and Baby Godzilla up
+  through SpaceGodzilla, Kiryu, Destoroyah and Godzilla 1994 to Burning
+  Godzilla, plus the G-Erosion forms of MetalGreymon, SkullGreymon and
+  WarGreymon, each firing its own shot in battle. Reach Mega with any
+  Digimon to earn the Godzilla Egg; the device's **G-Cell meter** decides
+  which kaiju your pet becomes, and a **G-Cell Fragment** left where a kaiju
+  falls is the only road to Burning Godzilla.
+- **1,576 creatures**, 11 animation frames each, extracted from the game's
   sprite atlases as 1-bit bitmaps (`src/tuipet/data/sprites.json.gz`).
 - A **basic V-Pet done properly**, every surviving system faithful to the
   real devices: care (hunger, effort, filth, sleep, lights), training

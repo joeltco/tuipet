@@ -205,3 +205,32 @@ def test_every_godzilla_form_fires_its_own_dsprite_shot():
         assert shot in [v[0] for k, v in dev.items() if k.startswith("gz_")], num
     assert data.attack_orb(1644, "Data", 300) == data.attack_orb(1650, "Vaccine", 0)   # 1994 == Burning (#17)
     assert data.attack_orb(1640, "Data", 0) != data.attack_orb(1644, "Data", 0)        # Kiryu has its own
+
+
+def test_godzilla_1994_really_reaches_burning_godzilla():
+    """Mega never auto-evolves in tuipet -- 0.6.0.post1 shipped the VI -> VI+
+    row unreachable.  The Godzilla line's Mega with a chart child now gets
+    the Stage VI window (2880 s), like the device's 48-hour Stage VI."""
+    p = _godzilla_pet()
+    for n in (1624, 1625, 1629, 1635, 1644):
+        p.evolve_to(n)
+    p.gcell_fragment = True
+    p.care_mistakes = 0
+    p.stage_battles, p.battle_log = 15, [1] * 15
+    p.stage_seconds = p.LATE_STAGE_WINDOW - 1
+    p._maybe_evolve()
+    assert p.num == 1644                      # not yet: the window isn't open
+    p.stage_seconds = p.LATE_STAGE_WINDOW
+    p._maybe_evolve()
+    assert p.num == 1650                      # Burning Godzilla
+    # Burning itself has no next form: it stays put forever
+    p.stage_seconds = 9e8
+    p._maybe_evolve()
+    assert p.num == 1650
+
+
+def test_other_megas_still_never_auto_evolve():
+    p = _godzilla_pet()
+    for n in (1624, 1625, 1628, 1635, 1646):  # Destoroyah: a Mega with no next form
+        p.evolve_to(n)
+    assert p._evolve_after() == 9e9
