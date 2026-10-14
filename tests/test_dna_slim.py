@@ -63,10 +63,12 @@ def test_the_charge_page_honors_the_dna_rulings():
         pan.key("down")
         f = pan.charge_fields[pan.cursor % len(pan.charge_fields)]
         assert f != "None"
-    # the bet strip: the dead band names itself
+    # the bet strip: the dead bands are gone -- the picker never lands in
+    # 100-499 (DNA call #3 = A, 2026-10-15), and the footer names the tiers
     pan.phase = "bet"
-    pan.bet = 250
-    assert "NOTHING till 500" in pan.text().plain
+    pan.bet = 99
+    pan.key("right")
+    assert pan.bet == 500 and "↑↓ tier" in pan.text().plain
     pan.bet = 99
     assert "banks up to 99" in pan.text().plain
     pan.bet = 2500

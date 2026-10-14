@@ -98,20 +98,38 @@ def test_resonant_wager_splashes_the_neighbors():
     assert q.dna_owned["JungleTrooper"] == min(splash, MAX_DNA_INVENTORY)
 
 
-def test_bet_screen_pages_and_caps_at_the_wager_limit():
-    from tuipet.pet import MAX_DNA_WAGER
+def test_bet_screen_walks_only_the_wagers_that_buy_something():
+    """Joel 2026-10-15 (DNA call #3 = A): 100-499 all paid 99 DNA, 501-2499
+    the same as 500, 2501+ the same as 2500 -- the picker offers 1..99, 500
+    and 2500 only."""
     from tuipet.dnascreen import DNAPanel
     p = _pet()
     p.bits = 50_000
     pan = DNAPanel(p)
     pan.phase, pan.bet = "bet", 1
-    pan.key("up")
-    assert pan.bet == 101                                    # ↑ pages +100
+    seen = {1}
     for _ in range(200):
-        pan.key("up")
-    assert pan.bet == MAX_DNA_WAGER                          # hard cap
+        pan.key("right")
+        seen.add(pan.bet)
+    assert seen == set(range(1, 100)) | {500, 2500}
+    assert pan.bet == 2500                                   # the top tier caps
+    pan.key("left")
+    assert pan.bet == 500
+    pan.key("left")
+    assert pan.bet == 99
+    pan.bet = 1
+    pan.key("up")
+    assert pan.bet == 99                                     # ↑ jumps tier to tier
+    pan.key("up")
+    assert pan.bet == 500
+    pan.key("up")
+    pan.key("up")
+    assert pan.bet == 2500
     pan.key("down")
-    assert pan.bet == MAX_DNA_WAGER - 100
+    assert pan.bet == 500
+    pan.key("down")
+    pan.key("down")
+    assert pan.bet == 1
 
 
 def test_the_result_page_reports_what_actually_banked():

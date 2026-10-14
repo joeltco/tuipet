@@ -23,9 +23,13 @@ from . import data, grid, menu, evolution, persistence
 from rich.console import Console
 from rich.text import Text
 from .theme import LCD_ON, LCD_BG, SIL_SCENE  # noqa: F401  (palette names bound for theme.apply propagation)
-from .pet import (MAX_DNA_INVENTORY, MAX_DNA_WAGER, DNA_STABILIZER_BET,
+from .pet import (MAX_DNA_INVENTORY, DNA_STABILIZER_BET,
                   DNA_RESONANT_BET, DNA_RATE_BANDS,
                   dna_award_field)
+
+# every wager that buys something: 1..99 bank 1:1, then the two lab tiers
+WAGER_TIERS = (MAX_DNA_INVENTORY, DNA_STABILIZER_BET, DNA_RESONANT_BET)
+WAGER_LADDER = tuple(range(1, MAX_DNA_INVENTORY + 1)) + WAGER_TIERS[1:]
 
 MASH_TICKS = 100            # DVPet: 100 intervals x 0.1s = the 10s mini-game window
 MASH_KEYS = ("space",)      # the single "button" you mash
@@ -214,14 +218,20 @@ class DNAPanel:
 
     def _key_bet(self, k):
         p = self.pet
+        # the wager walks ONLY the amounts that buy something (Joel 2026-10-15,
+        # DNA call #3 = A): 1..99 bank 1:1, then the 500 STABILIZED and the
+        # 2500 RESONANT tiers -- 100-499, 501-2499 and 2501+ bought nothing extra
+        ladder = WAGER_LADDER
+        i = ladder.index(self.bet) if self.bet in ladder else \
+            max(j for j, v in enumerate(ladder) if v <= max(1, self.bet))
         if k in ("left", "h"):
-            self.bet = max(1, self.bet - 1)
+            self.bet = ladder[max(0, i - 1)]
         elif k in ("right", "l"):
-            self.bet = min(MAX_DNA_WAGER, self.bet + 1)
+            self.bet = ladder[min(len(ladder) - 1, i + 1)]
         elif k in ("up", "k"):
-            self.bet = min(MAX_DNA_WAGER, self.bet + 100)
+            self.bet = next((v for v in WAGER_TIERS if v > self.bet), ladder[-1])
         elif k in ("down", "j"):
-            self.bet = max(1, self.bet - 100)
+            self.bet = next((v for v in reversed((1,) + WAGER_TIERS) if v < self.bet), 1)
         elif k in ("enter", "space"):
             if p.dna_bet(self.bet):
                 self.phase, self.hits, self.mash_f = "mash", 0, 0
@@ -385,8 +395,6 @@ class DNAPanel:
             tier = "RESONANT: up to 99/adjacent Field"
         elif self.bet >= DNA_STABILIZER_BET:
             tier = "STABILIZED: up to 99, never None"
-        elif self.bet > MAX_DNA_INVENTORY:
-            tier = "extra past 99 buys NOTHING till 500"
         else:
             tier = "banks up to %d" % self.bet
         out.append_text(menu.row(tier[:38], False))
@@ -396,7 +404,7 @@ class DNAPanel:
             out.append_text(menu.row("stabilized — it never rolls None", False))
         else:
             out.append_text(menu.row("too slow / too fast → None", False))
-        out.append_text(menu.footer("←→ ±1  ↑↓ ±100  ENTER mash!  ESC back"))
+        out.append_text(menu.footer("←→ ±1  ↑↓ tier  ENTER mash!  ESC back"))
         return out
 
     def _text_mash(self):
