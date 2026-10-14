@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.19 — NO WASTED ITEMS. An item that would do nothing now refuses a (2026-10-14)
+
+NO WASTED ITEMS. An item that would do nothing now refuses and stays in your bag, the Grow Capsule works on the Godzilla Mega, and the help explains the G-Cell meter.
+
 ## 0.6.18 — LADDER FIX. The season card shows your own online wins again (2026-10-14)
 
 LADDER FIX. The season card shows your own online wins again instead of the leader's.
