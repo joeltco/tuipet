@@ -161,7 +161,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("SNAPPIER. Battles run about three times faster, adventure, cup and raid ceremonies are short and any key skips them, home shows play quick and faster still once seen, and a key skips any of them.")
+    WHATS_NEW = ("SIGN IN FIRST. A fresh install now asks for your account before the egg carousel, so your cloud pet comes straight to the new device, and signing in later from Options brings your pet over properly too.")
 
 
     BINDINGS = [
@@ -413,10 +413,80 @@ class TuiPetApp(ActionsMixin, App):
 
     def _post_title(self):
         if self._new_game:
+            if not persistence.get_account()[0] and persistence.sync_enabled():
+                # A FRESH INSTALL asks first (Joel 2026-10-14: "theyre forced
+                # to choose an egg without signing in. Then that creates a
+                # shit load of problems") -- a player with a pet in the cloud
+                # signs in and gets it, ESC starts a new pet like before
+                self._open_first_signin()
+                return
             self._open_mode(eggselectscreen.EggSelectPanel(self.pet), self._after_egg_pick)
         else:
             self._hud(self._welcome)
             self.repaint()
+
+    def _open_first_signin(self, note=None, name=""):
+        from .accountscreen import AccountPanel, FIRST_RUN_NOTE
+        self._open_mode(AccountPanel(name=name, note=note or FIRST_RUN_NOTE),
+                        self._after_first_signin)
+
+    def _after_first_signin(self, result):
+        if not result:                      # ESC: a new pet, the old flow
+            self._open_mode(eggselectscreen.EggSelectPanel(self.pet), self._after_egg_pick)
+            return
+        name, pw = result
+        from .accountscreen import CloudWaitPanel
+        self._open_mode(CloudWaitPanel(name))
+        self.run_worker(self._first_signin(name, pw), name="first-signin",
+                        exclusive=False)
+
+    async def _first_signin(self, name, pw):
+        """The fresh install's sign-in.  A cloud pet comes onto THIS device
+        the same way the boot gate's take does -- the cartridge moves here,
+        so this device's saves are the ones the cloud keeps (signing in
+        without the take left them dropped as a non-holder).  No cloud pet:
+        the account is set and the egg carousel opens."""
+        uri = _lobby_uri()
+        st, save, _holder = await _to_thread(
+            cloudsync.gate, uri, name, pw, cloudsync.BOOT_TIMEOUT)
+        self.mode = None                    # close the wait card (no callback)
+        if st == "badpw":
+            self.beep("error", bell=False)
+            self._open_first_signin("Wrong password for that name.", name)
+            return
+        if st != "ok":
+            self.beep("error", bell=False)
+            self._open_first_signin("Can't reach the cloud. Try again, or ESC for a new pet.", name)
+            return
+        if save is not None:
+            probe, _ = persistence.pet_from_save(dict(save), strict=True)
+            if probe is None:
+                self.beep("error", bell=False)
+                self._open_first_signin("That cloud save is unreadable. ESC for a new pet.", name)
+                return
+            ok, csave = await _to_thread(cloudsync.take, uri, name, pw)
+            if not ok:
+                self.beep("error", bell=False)
+                self._open_first_signin("Couldn't bring your pet over. Try again.", name)
+                return
+            persistence.set_account(name, pw)
+            persistence.set_holder_cache(True)
+            persistence.write_save_dict(csave or save)
+            loaded, msg = persistence.load()
+            if loaded is None:
+                self._open_first_signin("That cloud save is unreadable. ESC for a new pet.", name)
+                return
+            self.pet = loaded
+            self._new_game = False
+            self._start_sync()
+            self._verdict(f"Signed in as {_hud_esc(name)} — {msg or 'welcome back!'}")
+            self.repaint()
+            return
+        persistence.set_account(name, pw)
+        persistence.set_holder_cache(True)
+        self._start_sync()
+        self._verdict(f"Signed in as {_hud_esc(name)} — pick your first egg.")
+        self._open_mode(eggselectscreen.EggSelectPanel(self.pet), self._after_egg_pick)
 
     def _death_ceremony(self, hold=0):
         """The ONE banking ceremony for a death, wherever it's noticed --
@@ -975,10 +1045,21 @@ class TuiPetApp(ActionsMixin, App):
                               " — kept your account.")
                 self.beep("error", bell=False)
                 return
+        if save is not None:
+            # the account's pet comes onto THIS device: take the cartridge,
+            # or every save made here is dropped as a non-holder's
+            # (2026-10-14).  A failed take keeps the old account.
+            took, csave = await _to_thread(cloudsync.take, _lobby_uri(), name, pw)
+            if not took:
+                self._verdict("Couldn't bring that pet here — kept your account.")
+                self.beep("error", bell=False)
+                return
+            save = csave or save
         self._stop_sync()                            # the old pusher must stop first
         #                                              (cancelled, not just flagged)
         persistence.set_account(name, pw)
         if save is not None:
+            persistence.set_holder_cache(True)
             persistence.write_save_dict(save)
             loaded, msg = persistence.load()
             self.pet = loaded or Pet.new_egg()

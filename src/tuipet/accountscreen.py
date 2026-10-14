@@ -99,3 +99,33 @@ class AccountPanel:
         # [:38] clip ate the actionable tail of long server rejections)
         t.append_text(menu.footer_note("  " + self.note, tick=self.frame_i))
         return t
+
+
+FIRST_RUN_NOTE = "Have an account? Sign in to bring your pet. ESC: new pet."
+
+
+class CloudWaitPanel:
+    """The few seconds the first-run sign-in spends asking the cloud: a card
+    that holds the screen (no pet ticks underneath, no second Enter fires a
+    second sign-in) until the app closes it with the verdict."""
+
+    def __init__(self, name):
+        self.name = name
+        self.sfx = None
+        self.frame_i = 0
+
+    def anim(self):
+        self.frame_i += 1
+
+    def strip(self):
+        return "[dim]checking the cloud…[/]"
+
+    def key(self, k):
+        return None
+
+    def text(self):
+        t = Text()
+        t.append("  TUIPET ACCOUNT\n\n", style=INK_B)
+        t.append("  " + _tail(self.name, _FIELD_W) + "\n\n", style=INK)
+        t.append("  checking the cloud" + "." * (1 + (self.frame_i // 4) % 3), style=DIM)
+        return t

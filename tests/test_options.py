@@ -343,11 +343,17 @@ def test_erase_flows_into_the_egg_carousel_not_an_auto_egg():
             seen["title"] = isinstance(app.mode, titlescreen.TitlePanel)
             await pilot.press("enter")                  # past the title
             await pilot.pause()
+            # an erase IS a fresh install: the sign-in card asks first
+            # (2026-10-14), ESC = a new pet
+            seen["card"] = type(app.mode).__name__ == "AccountPanel"
+            await pilot.press("escape")
+            await pilot.pause()
             seen["carousel"] = isinstance(app.mode, eggselectscreen.EggSelectPanel)
         return seen
 
     seen = asyncio.run(go())
     assert seen["title"], "erase must return to the title"
+    assert seen["card"], "a fresh start offers the sign-in first"
     assert seen["carousel"], "a fresh start must open the egg carousel, never auto-pick"
 
 
@@ -371,6 +377,8 @@ def test_switch_account_app_flow(monkeypatch):
     pushes = []
     monkeypatch.setattr(cloudsync, "push_save",
                         lambda uri, n, pw, save: pushes.append((n, save)) or True)
+    # the switch takes the cartridge for a cloud pet (2026-10-14)
+    monkeypatch.setattr(cloudsync, "take", lambda uri, n, pw, timeout=None: (True, None))
 
     async def go():
         p = Pet(num=100, name="Champ", stage="Champion", attribute="Vaccine")

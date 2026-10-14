@@ -98,6 +98,8 @@ def test_quarantine_notice_survives_the_new_game_flow(tmp_path, monkeypatch):
             await pilot.pause(0.3)
             await pilot.press("enter")            # dismiss the title
             await pilot.pause(0.3)
+            await pilot.press("escape")           # first-run sign-in card: new pet
+            await pilot.pause(0.3)                # (2026-10-14)
             await pilot.press("enter")            # pick the first egg
             await pilot.pause(0.3)
             hud = str(app.msg_w.render())
