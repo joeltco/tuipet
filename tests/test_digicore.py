@@ -379,7 +379,8 @@ def test_egg_data_pages_leak_no_sentinels_and_labels_never_collide():
     t = pan.text().plain
     assert "Digitama" in t and "—" in t
     pan.i = next(i for i, (t2, _r) in enumerate(pan.pages) if t2 == "TROPHIES")
-    assert "This pet  none yet" in pan.text().plain or "This pet none yet" in pan.text().plain
+    # DigiCore audit 2026-10-14: trophies are inherited, even by an egg.
+    assert "Wins     0 across generations" in pan.text().plain
 
 
 def test_hidden_evolutions_mask_until_first_reached():
@@ -642,7 +643,8 @@ def test_the_core_number_wears_its_own_unit():
     and an age-count on a final form — the value now says which."""
     p = _pet(stage_seconds=0.0)                    # growing: a countdown
     pan = DigiCorePanel(p)
-    assert "to evolve" in pan.text().plain
+    # DigiCore audit 2026-10-14: the clock promises a window, not a form.
+    assert "until evolution" in pan.text().plain
     p2 = _pet()                                    # past growth: the age count
     p2.stage_seconds = p2.STAGE_DURATION["Rookie"] + 1
     p2.age_seconds = 5 * 86400.0

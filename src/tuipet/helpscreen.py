@@ -98,6 +98,10 @@ HELP = [
     ("  below zero also costs obedience", 0),
     ("  Effort rises up to three hearts", 0),
     ("d digicore - the pet's data book", 1),
+    # DigiCore audit 2026-10-14: SPACE changes meaning after the cover.
+    ("  SPACE on CORE: gaze; elsewhere page", 0),
+    ("  EVOLVES: ENTER for requirements", 0),
+    ("  ↑↓ scroll long rows / requirements", 0),
     ("  ENTER on its trophy page opens the", 0),
     ("  ALBUM - every species, in dex order", 0),
     # the lineage's own book (Joel 2026-07-26: "build the hall of memory")

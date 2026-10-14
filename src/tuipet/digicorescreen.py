@@ -1,6 +1,6 @@
-"""DigiCore — DVPet's EvolutionState page + tuipet's paged data book.
+"""DigiCore — tuipet's core readout and paged data book.
 
-The CORE page is the canon Digicore (SpriteAnim setupDigicore): the field-
+The CORE page uses the imported field-
 flavoured core backdrop (ViewUtil.getDigicoreBackground picks it by the pet's
 HIGHEST DNA field, falling back to its own), the core badge (a special core
 from digicoreMenuConfig.csv, else the X-antibody state badge), and the core
@@ -8,10 +8,13 @@ NUMBER — with a pending evolution it counts DOWN from DigicoreBaseRate 14 as
 the growth period elapses; past growth (or a final form) it counts UP through
 the days toward the elder line (age-based since the DSprite mortality port
 2026-07-22).  Pressing the core plays the silhouette teaser
-(EvolSilhouetteTransition): the next natural evolution as a blacked-out shape.
+(EvolSilhouetteTransition): a potential evolution as a blacked-out shape.
 The data-book pages after it are tuipet's own readout (kept adaptation).
 """
 from __future__ import annotations
+from rich.console import Console
+from rich.text import Text
+from rich.cells import cell_len, set_cell_size
 from . import data
 from . import digicore as core
 from . import grid, evolution, lines  # noqa: F401  (the gaze + checklists read them)
@@ -27,6 +30,23 @@ EXPAND_T = 8                       # digicoreExpand: the badge zooms in (canon b
 MON_T = 10                         # the gaze opens ON the current mon before the core turns
 BACK_T = 6                         # evolSilhouetteBack: the dark blink on the way out
 DET_VIS = 8                        # requirement-checklist rows shown at once
+_WRAP = Console()
+
+
+def _wrapped(txt, width):
+    # DigiCore audit 2026-10-14: wrap terminal cells, never discard a tail.
+    return Text(str(txt)).wrap(_WRAP, width, overflow="fold", no_wrap=False)
+
+
+def _data_lines(rows):
+    out = []
+    for label, val in rows:
+        gutter = max(10, min(menu.W - 2, cell_len(label) + 2))
+        for i, part in enumerate(_wrapped(val, menu.W - gutter)):
+            text = Text(set_cell_size(" " + label if i == 0 else "", gutter), style=DIM)
+            text.append(part.plain + "\n", style=INK_B)
+            out.append(text)
+    return out
 
 # the data model lives in digicore.py (modularized 2026-07-17); the old
 # names stay importable for callers and the test suite
@@ -59,6 +79,7 @@ class DigiCorePanel:
         self.evo_sel = 0          # EVOLVES page: the highlighted candidate
         self.detail = None        # (num, name): the open requirement checklist
         self.det_off = 0          # ...and its scroll offset
+        self.row_off = 0          # wrapped data rows share the book's scroll keys
 
     def anim(self):
         self.frame_i += 1
@@ -89,6 +110,8 @@ class DigiCorePanel:
             if old_num is not None:
                 return ("done", ("evolve", old_num, msg))
             self.note = msg
+            # DigiCore audit 2026-10-14: refusals can spend manners/disturb.
+            self.pages = [("CORE", None)] + build_pages(self.pet)
             self.sfx = "error"
             return None
         if self.detail is not None:                    # the requirement checklist
@@ -126,10 +149,18 @@ class DigiCorePanel:
             # the headstones' room (Joel 2026-07-26): ENTER opens the HALL
             # OF MEMORY — the TROPHIES→ALBUM door's exact grammar
             return ("done", ("hall",))
+        if k in ("up", "k", "pageup"):
+            self.row_off = max(0, self.row_off - (7 if k == "pageup" else 1))
+            return None
+        if k in ("down", "j", "pagedown"):
+            self.row_off += 7 if k == "pagedown" else 1
+            return None
         if k in ("right", "l") or (k == "space" and self.i > 0):
             self.i = (self.i + 1) % len(self.pages)
+            self.row_off = 0
         elif k in ("left", "h"):
             self.i = (self.i - 1) % len(self.pages)
+            self.row_off = 0
         elif k in ("escape", "d"):
             return ("done", None)
         return None
@@ -167,44 +198,55 @@ class DigiCorePanel:
         gaze, where the visuals live."""
         p = self.pet
         n = core_number(p)
-        growth = p.STAGE_DURATION.get(p.stage)
-        # ONE predicate for the whole page (digicore audit 2026-07-18):
-        # the Meter row and core_number must never disagree again
-        pending = (growth is not None and p.stage_seconds < growth
-                   and core.has_next(p))
+        # DigiCore audit 2026-10-14: number and label use the game's clock.
+        pending = core.growth_pending(p)
         x = getattr(p, "x_antibody", "None")
         # the number wears its own meaning (gameplay polish #16, 2026-07-22):
         # a bare "◆ 7" was a countdown-to-evolve on a growing pet and an
         # age-count on a final form -- same glyph, opposite directions,
         # with only the Meter row to disambiguate
         if pending:
-            core_val = f"{chr(0x25C6)} {n} to evolve"
+            core_val = f"{chr(0x25C6)} {n} until {'hatching' if p.num == -1 else 'evolution'}"
         elif p.is_geriatric:
             core_val = f"{chr(0x25C6)} {n} — elder"
         else:
             core_val = f"{chr(0x25C6)} {n} of {DIGICORE_BASE_RATE} to elder"
+        meter = "hatches at 1" if p.num == -1 else "can evolve at 1"
+        if p.num == -1 and p.stage_seconds >= p.EGG_DURATION:
+            meter = "incubation complete"
+        if not pending:
+            meter = "counts the days"
+        if p.num != -1:
+            if p.dead:
+                meter = "growth ended"
+            elif p.is_geriatric:
+                meter = "growth held: elder"
+            elif getattr(p, "evo_blocked", False):
+                meter = "growth held: anti-evo"
+            elif p.asleep:
+                meter = "growth waits for waking"
         rows = [
             ("Core", core_val),
-            ("Meter", "evolution nears at 1" if pending else "counts the days"),
+            ("Meter", meter),
             ("Field", data.pretty_field(getattr(p, "field", "") or "None")),
             ("X-State", "none" if x == "None" else x.lower()),
-            ("Mode", ("ready — press M" if p.can_mode_change() else chr(0x2014))),
+            ("Mode", ("press M" if p.can_mode_change() else chr(0x2014))),
         ]
         out = menu.header("DIGICORE  CORE", self._dots())
-        for label, val in rows:
-            out.append(f" {label:<9}", style=DIM)
-            out.append(f"{val}\n", style=INK_B)
-        out.append_text(menu.blanks(9 - len(rows) - 3))
-        out.append(" gaze into the core to glimpse\n", style=DIM)
-        out.append(" what stirs within…\n", style=DIM)
+        rendered = _data_lines(rows)
+        rendered += [Text("\n"), Text(" gaze into the core to glimpse\n", style=DIM),
+                     Text(" what stirs within…\n", style=DIM)]
         # the door wears its key in BOLD (menu polish 2026-07-21: the gaze
         # was easy to look over in dim prose) -- the EVOLVES "ENTER: what it
         # takes" / TROPHIES "ENTER: the album" teaching line, gaze verdicts
         # still take the slot when one is pending
-        out.append_text(menu.note(self.note if self.note != "the core stirs…"
-                                  else "SPACE: gaze into the core",
-                                  tick=self.frame_i))
-        out.append_text(menu.footer("SPACE gaze  ←→ page  ESC out"))
+        # DigiCore audit 2026-10-14: mode verdict tails must not need a marquee.
+        note = self.note if self.note != "the core stirs…" else "SPACE: gaze into the core"
+        rendered += [Text(part.plain + "\n", style=INK_B) for part in _wrapped(note, menu.W)]
+        self.row_off = menu.scroll_window(out, rendered, self.row_off, 9,
+                                          lambda text, i: text)
+        out.append_text(menu.footer("↑↓ scroll SPACE gaze ←→ ESC out" if len(rendered) > 9
+                                    else "SPACE gaze  ←→ page  ESC out"))
         return out
 
     def _teaser_scene(self):
@@ -250,8 +292,10 @@ class DigiCorePanel:
     def strip(self):
         """Narration only -- the gaze speaks through the message box; every
         other digicore state leaves it alone."""
+        if self.detail is not None and not self.teaser:
+            return menu.hints(("↑↓", "scroll"), ("ESC", "back"))
         if not self.teaser:
-            return menu.hints(("SPACE", "gaze"), ("\u2190\u2192", "page"),
+            return menu.hints(("SPACE", "gaze" if self.i == 0 else "page"), ("\u2190\u2192", "page"),
                               ("ESC", "out"))
         t = self.teaser_t
         if t < MON_T:
@@ -270,7 +314,9 @@ class DigiCorePanel:
         met gates dim out of the way, the unmet ones are the raising guide."""
         from rich.text import Text
         num, name = self.detail
-        if num in evolution.divergence_options(self.pet):
+        if self.pet.num == -1:
+            report = core.hatch_report(self.pet)
+        elif num in evolution.divergence_options(self.pet):
             # the steer's own sheet: lines.requirement_report would say
             # "not in this line" -- true, and exactly the point; what
             # fires this jump is the charge (gameplay audit B3)
@@ -280,6 +326,9 @@ class DigiCorePanel:
                       else evolution.requirement_report(self.pet, num))
         vis = DET_VIS
         out = menu.header(f"DIGICORE  {name[:16].upper()}", "req")
+        # DigiCore audit 2026-10-14: scroll every wrapped checklist fragment.
+        report = [(met, part.plain) for met, txt in report
+                  for part in _wrapped(txt, menu.W - 3)]
 
         def fmt(r, i):
             met, txt = r
@@ -287,7 +336,7 @@ class DigiCorePanel:
                     None: "   "}[met]
             t = Text()
             t.append(mark, style=DIM if met else INK_B)
-            t.append(txt[:35] + "\n", style=DIM if met is not False else INK_B)
+            t.append(txt + "\n", style=DIM if met is not False else INK_B)
             return t
 
         self.det_off = menu.scroll_window(out, report, self.det_off, vis, fmt)
@@ -313,9 +362,10 @@ class DigiCorePanel:
             # it's the charge overriding the chart (gameplay audit B3)
             # DNA audit 2026-10-14: every option stays tagged; growth alone rolls.
             tag = (chr(0x2713) + (" armed" if len(options) == 1 else " road") if num in options
-                   else chr(0x2713) + " ready" if ready else f"{unmet} to go")
+                   else core.route_tag(self.pet, num)
+                   or (chr(0x2713) + " ready" if ready else f"{unmet} to go"))
             t = Text()
-            t.append(("▸" if cur else " ") + f" {name[:20]:<21}", style=INK_B if cur else INK)
+            t.append(("▸" if cur else " ") + " " + set_cell_size(name, 21), style=INK_B if cur else INK)
             t.append(f"{tag:>10}\n", style=INK_B if ready else DIM)
             return t
 
@@ -338,21 +388,22 @@ class DigiCorePanel:
         if title == "EVOLVES":
             return self._evolves_scene(rows, dots)
         out = menu.header(f"DIGICORE  {title}", dots)
-        for label, val in rows:
-            out.append(f" {label:<9}", style=DIM)
-            out.append(f"{val}\n", style=INK_B)
+        rendered = _data_lines(rows)
+        vis = 8 if title in ("TROPHIES", "LEGACY") else 9
+        self.row_off = menu.scroll_window(out, rendered, self.row_off, vis,
+                                          lambda text, i: text)
+        scroll = "↑↓ scroll  " if len(rendered) > vis else ""
         if title == "TROPHIES":
             # the Album row fronts a browsable book (2026-07-21): teach the
             # door the way EVOLVES teaches its checklist
-            out.append_text(menu.blanks(9 - len(rows) - 1))
             out.append_text(menu.note("ENTER: the album"))
-            out.append_text(menu.footer("ENTER album  ←→ page  ESC out"))
+            out.append_text(menu.footer("↑↓ scroll ENTER album ←→ ESC out" if scroll
+                                        else "ENTER album  ←→ page  ESC out"))
         elif title == "LEGACY":
             # the headstones front their room now too (2026-07-26)
-            out.append_text(menu.blanks(9 - len(rows) - 1))
             out.append_text(menu.note("ENTER: the hall of memory"))
-            out.append_text(menu.footer("ENTER hall  ←→ page  ESC out"))
+            out.append_text(menu.footer("↑↓ scroll ENTER hall ←→ ESC out" if scroll
+                                        else "ENTER hall  ←→ page  ESC out"))
         else:
-            out.append_text(menu.blanks(9 - len(rows)))
-            out.append_text(menu.footer("←→ page    ESC out"))
+            out.append_text(menu.footer(scroll + "←→ page    ESC out"))
         return out

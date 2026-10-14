@@ -617,15 +617,25 @@ def eggguide(app):
 
 def digicore(app):
     """DIGICORE: which data page is up, and whose core it is."""
+    from rich.cells import set_cell_size
+    from rich.markup import escape
+    from .digicorescreen import _wrapped
     p, m = app.pet, app.mode
     page = m.pages[min(m.i, len(m.pages) - 1)][0]
+    # DigiCore audit 2026-10-14: the card teaches the active subview's keys.
+    if getattr(m, "teaser", False):
+        page, hints = "GAZE", "SPACE / ESC back"
+    elif getattr(m, "detail", None) is not None:
+        page, hints = "REQUIREMENTS", "↑↓ scroll  ESC back"
+    else:
+        hints = "←→ pages  SPACE " + ("gaze" if m.i == 0 else "page")
     dc_lines = [
-        f"[b]{p.name[:16]}[/]",
+        f"[b]{escape(set_cell_size(p.name, CARD_W).rstrip())}[/]",
         f"[dim]{p.stage} · {p.attribute}[/]", "",
         f"Page   [b]{page[:18]}[/]",
         f"[dim]{m.i + 1} of {len(m.pages)}[/]", ""]
-    dc_lines += wrap(m.note or "", 2)          # note carries mode-change lines
-    dc_lines.append("[dim]←→ pages  SPACE core[/]")
+    dc_lines += [escape(part.plain) for part in _wrapped(m.note or "", CARD_W)][:6]
+    dc_lines.append(f"[dim]{hints}[/]")
     card(app, "DigiCore", dc_lines, subtitle=gen_subtitle(p))
 
 

@@ -176,9 +176,13 @@ DigiCore shows evolution requirements and your collection. **Jogress** (two-play
 lobby with a real partner — the partner's attribute picks the fusion via the
 game's `attributeJogress` matrix.
 
-**DigiCore** (`d`) is the canon EvolutionState page: the field-flavoured core,
-the countdown to the next growth, and the blacked-out silhouette teaser of
-what's coming — plus tuipet's own data-book pages.
+**DigiCore** (`d`) is tuipet's data book: the field-flavoured core counts down
+toward the hatch/growth window, then counts age toward elderhood. Growth
+still needs its gates and an awake, unblocked pet. SPACE on CORE shows a
+silhouette of a potential next form; other pages use SPACE to advance.
+EVOLVES lists every chart route: ENTER opens its requirements, including
+incubation and lobby partners. TROPHIES keeps inherited wins and distinct
+career cups; ENTER opens the album, or the hall of memory on LEGACY.
 
 ## Raids & cups
 

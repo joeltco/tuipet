@@ -3,9 +3,8 @@
 
 digicorescreen.py renders and routes keys; THIS module decides what the
 core says.  The statusbox law applies here too: a row may only show LIVE
-data -- the move purged the dead "Spirit" label (the disposition trait
-wears its own name now) and the Ailing row's injury fragment (the injury
-system left 2026-07-16; is_injured() is hard False).
+data. Disposition wears its own name, and Ailing reads live sickness/injury
+(DigiCore audit 2026-10-14).
 """
 from __future__ import annotations
 from . import data
@@ -35,20 +34,33 @@ def has_next(pet):
     return bool(data.load_evolutions().get(pet.num))
 
 
+def growth_clock(pet):
+    """The existing hatch/growth window, or None for an untimed final form."""
+    # DigiCore audit 2026-10-14: Godzilla has a finite Mega window; other
+    # Megas' sentinel is not a timer. Read the game's clock, never change it.
+    if pet.num == -1:
+        return pet.EGG_DURATION
+    growth = pet._evolve_after()
+    onward = has_next(pet) or bool(evolution.divergence_options(pet))
+    return growth if growth < 9e8 and onward else None
+
+
+def growth_pending(pet):
+    # DigiCore audit 2026-10-14: cracking is still a hatch, not elderhood.
+    if pet.num == -1:
+        return True
+    growth = growth_clock(pet)
+    return growth is not None and pet.stage_seconds < growth
+
+
 def core_number(pet):
     """setupDigicore's meter: an evolution countdown while a normal evolution is
     pending, otherwise an AGE meter counting up toward the elder line (the
     lifespan denominator left with the clock -- DSprite mortality 2026-07-22:
     age is what kills now, so age is what the core counts).  Floors at 1."""
     base = DIGICORE_BASE_RATE
-    growth = pet.STAGE_DURATION.get(pet.stage)
-    # Mega's 9e9 is the "never auto-evolves" sentinel, not a growth clock:
-    # counting it as pending froze the meter at its top for any Mega with
-    # onward (jogress/X) rows -- the count-up this docstring promises a
-    # final form never appeared (gameplay audit 2026-07-19)
-    pending = (growth is not None and growth < 9e8
-               and pet.stage_seconds < growth and has_next(pet))
-    if pending:
+    growth = growth_clock(pet)
+    if growth_pending(pet):
         denom = round(growth / base) or 1
         n = int(base - pet.stage_seconds / denom)
     else:
@@ -56,6 +68,34 @@ def core_number(pet):
         denom = round(GERIATRIC_AGE_DAYS * AGE_DAY / base) or 1
         n = int(pet.age_seconds / denom)
     return max(1, n)
+
+
+def evolution_name(num, name):
+    """Use the album's existing reveal rule for every book route."""
+    from . import persistence
+    # DigiCore audit 2026-10-14: line rows must conceal the same hidden forms.
+    if data.load_requirements().get(num, {}).get("hidden_evo") and not persistence.album_seen(num):
+        return "???"
+    return name
+
+
+def route_tag(pet, num):
+    """External doors are not zero unmet care gates."""
+    # DigiCore audit 2026-10-14: retain the routes, describe their trigger.
+    if pet.num == -1:
+        return "hatch"
+    if lines.active(pet):
+        line = lines.load_lines()[pet.line_id]
+        row = next((r for r in line["children"].get(pet.num, []) if r["num"] == num), None)
+        if row and row["jogress"] is not None:
+            return "lobby"
+    return None
+
+
+def hatch_report(pet):
+    left = max(0, pet.EGG_DURATION - pet.stage_seconds)
+    return [(None, f"incubation: {_mins(left)} remaining"),
+            (None, "hatches when incubation ends")]
 
 
 def core_badge_key(pet):
@@ -232,7 +272,8 @@ def _evo_rows(pet):
     if lines.active(pet):
         # line pets: the line's own chart rows, in first-match order (the order
         # IS the information -- earlier rows win ties), with live unmet counts
-        rows = lines.evo_rows(pet)
+        rows = [(n, evolution_name(n, name), ready, unmet)
+                for n, name, ready, unmet in lines.evo_rows(pet)]
         if armed:
             # the steer tops the chart; the line rows stay below -- they
             # come BACK if another Field catches up and breaks the strict max
@@ -250,7 +291,8 @@ def _evo_rows(pet):
     rows = []
     from tuipet import persistence as _p
     reqs = data.load_requirements()
-    for num, name, ready, dev in cands[:8]:
+    # DigiCore audit 2026-10-14: the renderer windows eight, not the data.
+    for num, name, ready, dev in cands:
         unmet = sum(1 for met, _ in evolution.requirement_report(pet, num) if met is False)
         # HiddenEvolution (digicore audit 2026-07-06): canon's tree conceals
         # 130 flagged forms until FIRST reached -- the cross-generation album
@@ -265,18 +307,16 @@ def _evo_rows(pet):
 
 
 def _trophy_rows(pet):
-    """The trophy room: this life's cups (label + the day they fell) topped
-    by the career totals -- lifetime cups persist across generations."""
+    """Inherited championships and distinct career cups, with their win days."""
     from tuipet import tournament as _t
     from tuipet import persistence as _p
-    # "This life" is exactly the 9-char label column -- it rendered flush
-    # against its value ("This lifenone yet"; egg-stage audit 2026-07-05)
-    rows = [("This pet", "\u2605" * min(pet.trophies, 12) or "none yet")]
+    # DigiCore audit 2026-10-14: wins are inherited; twelve stars hid totals.
+    rows = [("Wins", f"{pet.trophies} across generations")]
     try:
         career = len(_p.get_progress().get("tourneys", ()) or ())
     except Exception:
         career = 0
-    rows.append(("Career", f"{career} cup(s), all generations"))
+    rows.append(("Career", f"{career} distinct cups"))
     # the collection long game ("ultimate v-pet" arc 2026-07-07): every raised
     # form lands in the cross-generation album; divergence/jogress/eggs are
     # the roads to the rest of the corpus
@@ -294,8 +334,7 @@ def _trophy_rows(pet):
     # screen's pages (the book this count fronts for).
     total = len(data.album_roster())
     rows.append(("Album", f"{seen}/{total} discovered"))
-    # the Maps row became the Raids row (BASIC VPET 2026-07-16): adventure
-    # left, and felled community bosses gate the old MapComplete eggs now
+    # DigiCore audit 2026-10-14: raids share map gates with live adventure.
     try:
         felled = int(_p.get_progress().get("raids", 0) or 0)
     except Exception:
@@ -364,7 +403,8 @@ def build_pages(pet):
     # #17 2026-07-22): the Va/D/Vi attribute powers stopped gating growth
     # when those checks left evolution.check() -- lines never read them
     # either.  What still feeds evolution here is Level (LV gates), KO6 and
-    # Effort; the attribute trio, Form and Training feed the FIGHT
+    # Effort; the attribute trio also ranks corpus candidates (DigiCore
+    # audit 2026-10-14), while Form and Training feed the FIGHT
     # (hit_chance / roll_damage).  The weight/bits/battles bookkeeping
     # moved beside its kin (weight -> CONDITION; battles/bits -> STATUS;
     # trophies have their own page).

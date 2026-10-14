@@ -161,7 +161,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("DNA POLISH. The DNA screens now show real numbers and every road a charge can take, the preview no longer changes its mind, and a damaged DNA save can no longer crash the game.")
+    WHATS_NEW = ("DIGICORE POLISH. The core counts the right clock for every pet, the evolution list shows every possible form, partner-only roads say so, trophies count correctly, and hidden names stay hidden.")
 
 
     BINDINGS = [
