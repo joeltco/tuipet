@@ -161,7 +161,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("STEADIER UPDATES. The game loads all its data at launch, so a background update can no longer crash the session you are playing.")
+    WHATS_NEW = ("ERASE MEANS ERASE. Erase all data now wipes your cloud save too, so signing back in starts fresh instead of bringing the old pet back.")
 
 
     BINDINGS = [

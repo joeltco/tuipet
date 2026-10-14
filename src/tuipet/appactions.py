@@ -156,17 +156,38 @@ class ActionsMixin:
                             name="switch", exclusive=False)
             return
         if result and result[0] == "erase":
-            self._stop_sync()                       # the pusher must not re-seed the cloud
-            persistence.erase_all()
-            self.pet = Pet.new_egg()                # placeholder until the carousel picks
-            # a fresh start IS a new game: without this flag the post-title flow
-            # skipped the egg-select carousel and kept the placeholder egg
-            # (Joel 2026-07-05: "automatically selected an egg for me??")
-            self._new_game = True
-            self._open_mode(titlescreen.TitlePanel(), self._after_title)
-            self.flash("All data erased — a fresh start.")
+            self.run_worker(self._erase_everything(), name="erase", exclusive=False)
             return
         self.repaint()
+
+    async def _erase_everything(self):
+        """Erase all data -- the cloud copy FIRST (Joel 2026-10-14: "erasing
+        my data didnt reset my monster": the server kept the pet and the
+        first-run sign-in brought it straight back), then this device."""
+        from . import cloudsync
+        from .app import _to_thread
+        from .appboot import _lobby_uri
+        self._stop_sync()                           # the pusher must not re-seed the cloud
+        name, pw = persistence.get_account()
+        done = "All data erased — a fresh start."
+        if name and persistence.sync_enabled():
+            self._verdict("Erasing your cloud save…")
+            ok = await _to_thread(cloudsync.wipe, _lobby_uri(), name, pw)
+            if not ok:
+                # fits the 40-cell box whole: a marquee'd tail went unread
+                done = "Erased here; cloud still has your pet."
+        persistence.erase_all()
+        self.pet = Pet.new_egg()                    # placeholder until the carousel picks
+        # a fresh start IS a new game: without this flag the post-title flow
+        # skipped the egg-select carousel and kept the placeholder egg
+        # (Joel 2026-07-05: "automatically selected an egg for me??")
+        self._new_game = True
+        self._open_mode(titlescreen.TitlePanel(), self._after_title)
+        self.flash(done)
+        if "cloud still" in done:
+            # the title's strip owns the box next frame: carry the warning to
+            # the post-pick note, where the quarantine notice already rides
+            self._boot_notice = done
 
     def _do(self, result):
         self.flash(result)

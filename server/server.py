@@ -318,6 +318,21 @@ async def _store_save(key, save):
     return True
 
 
+async def _wipe_account(key):
+    """Clear an account's cloud save and free its cartridge (the client's
+    Erase all data).  Returns whether a save existed."""
+    had = SAVES.pop(key, None) is not None
+    if had:
+        async with _saves_lock:
+            tmp = SAVES_PATH + ".tmp"
+            with open(tmp, "w") as f:
+                json.dump(SAVES, f)
+            os.replace(tmp, SAVES_PATH)
+    if HOLDERS.pop(key, None) is not None:
+        _save_holders()
+    return had
+
+
 # ---- session leases (the two-device fork, 2026-07-04; boot-stamped 2026-07-05) --
 # A phone left RUNNING keeps autosave-pushing its own fork of the pet with ever
 # NEWER wall-clock stamps, so a fresh desktop session loses every quit to the
@@ -1167,6 +1182,16 @@ async def handler(ws):
                                          "save": SAVES.get(key)})
                 else:
                     await _send(client, {"t": "holder", "ok": False})
+
+            elif t == "wipe":
+                # OPTIONS -> Erase all data, "for keeps" (Joel 2026-10-14:
+                # "erasing my data didnt reset my monster" -- the cloud copy
+                # survived the local wipe and the sign-in card brought it
+                # back).  The logged-in account (password proven) clears its
+                # own cloud save and frees the cartridge.
+                had = await _wipe_account(client.name.lower())
+                LOG.info("wipe: %s (had save: %s)", client.name, had)
+                await _send(client, {"t": "wiped", "ok": True})
 
             elif t == "save":
                 key = client.name.lower()
