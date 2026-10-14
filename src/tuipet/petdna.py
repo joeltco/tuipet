@@ -72,6 +72,11 @@ class DnaMixin:
         Fields (capped, no refund)."""
         self.dna_wager_pending = 0            # the bet settles here, win or waste
         field = dna_award_field(amount, rate)
+        if field == "None":
+            # a spoiled mash refunds HALF the wager instead of banking dud DNA
+            # nothing can ever spend (Joel 2026-10-15, DNA call #4 = A)
+            self.bits += amount // 2
+            return field
         gained = min(amount, MAX_DNA_INVENTORY)
         total = self.dna_owned.get(field, 0) + gained
         if total > MAX_DNA_INVENTORY:
@@ -88,6 +93,18 @@ class DnaMixin:
                     self.dna_owned[nb] = min(self.dna_owned.get(nb, 0) + splash,
                                              MAX_DNA_INVENTORY)
         return field
+
+    def settle_dud_dna(self):
+        """Legacy "None" DNA (banked by spoiled mashes before 2026-10-15) pays
+        out at the spoiled-mash rate -- half a bit per unit -- and the slot
+        empties (it stays in the bank's shape at 0).  Returns the bits paid."""
+        bank = self.dna_owned if self.dna_owned is not None else {}
+        n = int(bank.get("None", 0) or 0)
+        if "None" in bank:
+            bank["None"] = 0
+        paid = max(0, n) // 2
+        self.bits += paid
+        return paid
 
     def apply_dna(self, field, amount):
         """Owned -> charged; energy costs 1/unit own Field, 2/unit otherwise.

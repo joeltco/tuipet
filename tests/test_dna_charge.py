@@ -152,3 +152,24 @@ def test_the_result_page_reports_what_actually_banked():
     assert banked == 9 and refund == 90              # truth, not the wager
     page = pan.text().plain
     assert "Got 9 Dragons Roar" in page and "Refund: 90b" in page
+
+
+def test_a_spoiled_mash_refunds_half_and_banks_no_dud_dna():
+    """Joel 2026-10-15 (DNA call #4 = A): None DNA could never be spent."""
+    p = _pet()
+    p.bits = 1000
+    dud = p.dna_owned.get("None", 0)
+    assert p.dna_bet(80)
+    assert p.dna_minigame_award(80, 0) == "None"
+    assert p.bits == 1000 - 80 + 40
+    assert p.dna_owned.get("None", 0) == dud
+
+
+def test_legacy_dud_dna_cashes_out_on_load():
+    from tuipet import persistence
+    p = _pet()
+    p.bits = 100
+    p.dna_owned["None"] = 60
+    loaded, msg = persistence.pet_from_save(persistence.to_save_dict(p))
+    assert loaded.bits == 130 and loaded.dna_owned["None"] == 0
+    assert "dud DNA" in msg

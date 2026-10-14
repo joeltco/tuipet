@@ -95,7 +95,9 @@ def test_interrupted_wager_settles_as_a_spoiled_mash(isolate_save=None):
     save = persistence.to_save_dict(p)
     q, msg = persistence.pet_from_save(save)
     assert q.dna_wager_pending == 0
-    assert "settled" in msg and q.dna_owned.get("None", 0) == 50   # the dud bin banks
+    # DNA call #4 = A (2026-10-15): the spoiled stake refunds half, no dud DNA
+    assert "settled" in msg and q.dna_owned.get("None", 0) == 0
+    assert q.bits == p.bits + 25
     r = _pet()
     r.dna_bet(DNA_STABILIZER_BET)
     save = persistence.to_save_dict(r)

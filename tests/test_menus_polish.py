@@ -394,7 +394,7 @@ def test_menu_readouts_preserve_a_legitimate_legacy_bank_and_growth_clocks():
     assert restored is not None
     assert restored.dna_owned["NatureSpirit"] == 99
     assert restored.dna_owned["DragonsRoar"] == 32
-    assert restored.dna_owned["None"] == 13
+    assert restored.dna_owned["None"] == 0           # legacy dud DNA cashed in (2026-10-15)
     assert restored.dna_applied["NatureSpirit"] == 123456
     assert restored.stage_seconds == p.stage_seconds and restored.age_seconds == p.age_seconds
 

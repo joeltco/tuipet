@@ -106,7 +106,7 @@ def test_legacy_integral_counts_keep_all_bank_and_uncapped_charge():
     blob["dna_applied"] = {"DeepSaver": 1000.0}
     p, _ = persistence.pet_from_save(blob)
     assert p.dna_owned["DeepSaver"] == 87 and type(p.dna_owned["DeepSaver"]) is int
-    assert p.dna_owned["None"] == 99
+    assert p.dna_owned["None"] == 0                  # legacy dud DNA cashed in (2026-10-15)
     assert p.dna_applied["DeepSaver"] == 1000
     assert set(p.dna_owned) == set(data.DNA_FIELDS)
 

@@ -10,7 +10,8 @@ with it; this docstring lagged until the DNA review 2026-07-18.)
              the pet absorbs it (the DNA_Feeding "dnaWash" fx plays on the display).
   * Generate (DNA_GenerateValidate + DNA_Generate): wager bits, mash SPACE ~10s; a
              mash rate selects a Field, too slow/fast -> the
-             dud None field. The won Field blinks in (the UnlockDNA reveal).
+             None: a spoiled mash, half the wager back (2026-10-15). The won
+             Field blinks in (the UnlockDNA reveal).
   * Stats    (DNA_Stats): each Field's charged share -- a corpus selection bonus.
   * Divergence (tuipet, "ultimate v-pet" arc 2026-07-07): the wild-road map --
              where each Field's charge can steer the NEXT evolution off the
@@ -135,7 +136,7 @@ class DNAPanel:
                             self.splashed[f] = self.pet.dna_owned.get(f, 0) - owned0.get(f, 0)
                 self.phase = "result"
                 self.blink = 0
-                self.sfx = "mischief"    # soundConfig unlockDNA -> mischief.wav (banks even None -- never a jeer)
+                self.sfx = "mischief"    # soundConfig unlockDNA -> mischief.wav (a spoiled mash refunds half -- never a jeer)
         elif self.phase == "result":
             self.blink += 1              # drive the won-Field blink reveal
 
@@ -403,7 +404,7 @@ class DNAPanel:
         if self.bet >= DNA_STABILIZER_BET:
             out.append_text(menu.row("stabilized — it never rolls None", False))
         else:
-            out.append_text(menu.row("too slow / too fast → None", False))
+            out.append_text(menu.row("too slow / fast → half back", False))
         out.append_text(menu.footer("←→ ±1  ↑↓ tier  ENTER mash!  ESC back"))
         return out
 
@@ -457,12 +458,13 @@ class DNAPanel:
         name = data.pretty_field(field)
         out = menu.bar("DNA · GENERATE", "rate %d" % rate)
         out.append_text(menu.blanks(1))
-        got = "✓ Got %d %s DNA" % (banked, name)
+        got = ("✗ Spoiled mash" if field == "None"
+               else "✓ Got %d %s DNA" % (banked, name))
         out.append_text(menu.note(got if show else "✓"))
         out.append_text(menu.note("Refund: %db" % refund))
         out.append_text(menu.row("rate %d → %s" % (rate, name if show else ""), True))
         if field == "None":
-            out.append_text(menu.row("None = the dud field (banked)", False))
+            out.append_text(menu.row("spoiled — half the wager back", False))
         elif wager >= DNA_RESONANT_BET:
             # DNA audit 2026-10-14: show actual landed deltas, not the uncapped splash.
             for f, gained in self.splashed.items():

@@ -1148,6 +1148,9 @@ def pet_from_save(data, strict=False):
             # forms keep '' as before)
             from . import lines as _lines
             _lines.adopt_line(pet)
+    if (getattr(pet, "dna_owned", None) or {}).get("None"):
+        paid = pet.settle_dud_dna()           # DNA call #4 = A (2026-10-15)
+        msg = (msg + f"  (old dud DNA cashed in: +{paid}b)").strip()
     if getattr(pet, "dna_wager_pending", 0) > 0 and not pet.dead:
         # a paid mash was in flight at quit/crash: SETTLE it as the spoiled
         # mash it was (rate 0 -- the stabilizer band still honors a >=500
@@ -1157,7 +1160,8 @@ def pet_from_save(data, strict=False):
         amt = int(pet.dna_wager_pending)
         field = pet.dna_minigame_award(amt, 0)
         note = (f"(the interrupted DNA wager settled: {amt} on a spoiled mash"
-                + (f" → {field} banked" if field != "None" else "") + ")")
+                + (f" → {field} banked" if field != "None"
+                   else f" → {amt // 2}b back") + ")")
         msg = (msg + "  " + note).strip()
     return pet, msg
 

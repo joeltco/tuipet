@@ -347,6 +347,7 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
             bank = {f: int(v) for f, v in (est.get("dna_owned") or {}).items()}
             if bank:                                 # the DNA bank rides the estate
                 pet.dna_owned = {f: bank.get(f, 0) for f in data.DNA_FIELDS}
+                pet.settle_dud_dna()                 # legacy dud DNA -> bits
         # a fresh game dawns at 8:00 -- world_seconds 0 is MIDNIGHT, inside every
         # bedtime window, and a hatchling born asleep is a rotten first minute
         pet.world_seconds = 8 * 60.0
