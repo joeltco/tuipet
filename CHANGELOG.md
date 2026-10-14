@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.16 — SYNC POLISH. Signing in, switching accounts and taking your  (2026-10-14)
+
+SYNC POLISH. Signing in, switching accounts and taking your pet between devices are sturdier, a damaged profile falls back to its backup, and muted players stay muted everywhere.
+
 ## 0.6.15 — ADVENTURE POLISH. The gate shows which item you are about to (2026-10-14)
 
 ADVENTURE POLISH. The gate shows which item you are about to use, festival maps say when the boss bounty is spent, slipping away from a fight breaks your win streak, and a sleeping traveller cannot be hurried.
