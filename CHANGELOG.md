@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.14 — BATTLE POLISH. A zero-damage raid throw no longer earns raid (2026-10-14)
+
+BATTLE POLISH. A zero-damage raid throw no longer earns raid rewards, every throw reports, cup purses preview what you will really win, and the help text matches how battles actually work.
+
 ## 0.6.13 — EVOLUTION POLISH. X3 Megas can reach their X forms again, mo (2026-10-14)
 
 EVOLUTION POLISH. X3 Megas can reach their X forms again, mode changes stay on your line, and the evolution guide is more honest about branches that end early.
