@@ -18,7 +18,7 @@ from . import statusbox
 from .appactions import ActionsMixin
 from .appboot import (  # noqa: F401  (re-export: tuipet.app.X keeps resolving)
     MIN_COLS, MIN_ROWS, _load_sound, _lobby_uri, _preflight, _save_sound,
-    _sound_path, host_platform)
+    _sound_path, host_platform, warm_data)
 from . import data
 from . import menu
 from . import eggselectscreen
@@ -161,7 +161,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("BACK TO NORMAL SPEED. Battles, adventure, cups and the home animations play at their original pace again, and any key still skips a show when you want to move on.")
+    WHATS_NEW = ("STEADIER UPDATES. The game loads all its data at launch, so a background update can no longer crash the session you are playing.")
 
 
     BINDINGS = [
@@ -1705,6 +1705,7 @@ class TuiPetApp(ActionsMixin, App):
 
 def main():
     _preflight()
+    warm_data()                     # pin THIS build's data before the updater runs
     other = persistence.acquire_instance_lock()
     if other and not _os.environ.get("TUIPET_FORCE"):
         print(f"tuipet is already running (pid {other}) — two copies would fight "

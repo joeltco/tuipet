@@ -44,6 +44,31 @@ def _lobby_uri():
     return os.environ.get("TUIPET_LOBBY_URL", "wss://ff3mmo.com/tuipet/")  # live lobby (TLS); override for local dev
 
 
+def warm_data():
+    """Load every bundled data table NOW, at launch (bug report 2026-10-14).
+    The self-updater installs the next release over the package files while
+    this one keeps running; anything this process reads lazily afterwards
+    comes from the NEW release -- 0.5.350 parsed 0.6's evolution chart and
+    crashed on a rule it had never heard of.  Each loader is lru-cached, so
+    one call here pins this build's own data for the whole session."""
+    import inspect
+    from . import (adventure, data_core, data_meta, data_shop, data_world,
+                   egg, lines)
+    for mod in (data_core, data_world, data_meta, data_shop, lines, egg, adventure):
+        for name, fn in list(vars(mod).items()):
+            if not (name.startswith("load_") or name in ("_real_eggs", "_load_maps")):
+                continue
+            if not hasattr(fn, "cache_info"):
+                continue
+            try:
+                if any(p.default is inspect.Parameter.empty
+                       for p in inspect.signature(fn).parameters.values()):
+                    continue
+                fn()
+            except Exception:
+                pass              # a broken table surfaces where it's used
+
+
 def _preflight():
     """Fail loud and in plain words BEFORE the UI takes the terminal over
     (sweep 2026-07-14): damaged assets exit with the fix; a cramped window or

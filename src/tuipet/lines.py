@@ -86,7 +86,12 @@ def parse_rule(text):
                 lo, hi = _bracket(arg)
                 atoms.append((kind.lower(), lo, hi))
             else:
-                raise ValueError(f"unknown rule atom: {part!r}")
+                # an atom this build doesn't know is a row it can't reach --
+                # never a crash.  A running game reads lines.csv lazily, and
+                # the self-updater installs the NEXT release's data underneath
+                # it: 0.5.350 crashed on 0.6's FRAG (bug report 2026-10-14).
+                # tests/test_line_curation pins that the shipped chart has none.
+                atoms.append(("unknown", kind, None))
         alts.append(atoms)
     return alts
 
@@ -236,6 +241,8 @@ def _atom_met(pet, atom):
     kind, a, b = atom
     if kind == "jogress":
         return False       # a door, not a timer rule: only the lobby fusion opens it
+    if kind == "unknown":
+        return False       # a newer build's rule: never met here
     if kind == "win":
         return sum(pet.battle_log[-b:]) >= a
     if kind == "frag":
