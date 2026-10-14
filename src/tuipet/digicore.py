@@ -363,10 +363,8 @@ def _legacy_rows():
     rows = []
     for r in reversed(elders[-8:]):                 # 8 headstones + the more row = 9
         # _mins: the book's own REAL-time formatter, same unit as the STATUS
-        # Age row and the memorial epitaph.  (The old //1440 mis-cited the
-        # clock law -- 1440 is game-MINUTES per game-day, not seconds -- and
-        # inflated every headstone 60x: a 4.5-day life read "270d";
-        # digicore audit 2026-07-19.)
+        # Age row and the memorial epitaph (age_seconds is real seconds;
+        # petbase.AGE_DAY).  A 1440-based reading inflates every headstone 60x.
         age = _mins(float(r.get("age", 0)))
         fate = "†" if r.get("dead") else ""         # fell vs retired to the next egg
         val = f"{str(r.get('name', '?'))[:12]} {r.get('stage', '?')} {age}{fate}"

@@ -121,10 +121,12 @@ def test_unset_praise_is_not_a_proud_moment_at_world_zero():
     assert p.obedience == before and result[1][1] is None
 
 
-@pytest.mark.parametrize("minutes,shown", [(1440, '1d 0h'), (1500, '1d 1h'),
-                                           (90, '1h 30m'), (59, '59m')])
-def test_memorial_uses_game_minutes(minutes, shown):
-    assert _age_str(minutes) == shown
+@pytest.mark.parametrize("secs,shown", [(388800, '4d 12h'), (90000, '1d 1h'),
+                                        (5400, '1h 30m'), (59 * 60, '59m')])
+def test_memorial_reads_real_time(secs, shown):
+    # age_seconds is REAL seconds (petbase.AGE_DAY = 86400): the 0.6.12
+    # "game minutes" reading showed lifespans 60x too long -- reverted
+    assert _age_str(secs) == shown
 
 
 def test_evolution_does_not_orphan_the_existing_wounds_healing_clock():

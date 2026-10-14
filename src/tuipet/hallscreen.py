@@ -94,7 +94,7 @@ class HallPanel:
     def _epitaph(self, r):
         """One elder's line: lifespan, then its fate — a fallen elder names
         what took it (when the record knows), a retired one walked on."""
-        age = _mins(float(r.get("age", 0.0)))
+        age = _mins(float(r.get("age", 0.0)))   # real seconds, like STATUS Age
         if r.get("dead"):
             cause = str(r.get("cause", "") or "")
             fate = f"fell of {cause}" if cause else "fell"

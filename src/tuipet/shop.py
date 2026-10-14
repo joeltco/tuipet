@@ -1400,6 +1400,9 @@ def town_egg_buy(pet, idx):
     THE single buy path — the town egg panel and the shop's Eggs tab both
     call here (single-source law)."""
     from . import data, egg as egg_mod, persistence
+    # egg audit 2026-10-14: renderer coercion must never sell a nonexistent key.
+    if type(idx) is not int or not 0 <= idx < egg_mod.count():
+        return ("That egg is not available.", "error")
     rule = data.load_egg_unlock().get(idx)
     if rule is not None and not rule["can_perm"]:
         # the single buy path guards what the shelf filter promises: a

@@ -143,12 +143,18 @@ HELP = [
     ("already banked, E takes the new one,", 0),
     ("K keeps the elder's.", 0),
     ("n starts the next egg.", 1),
+    # egg audit 2026-10-14: explain the existing estate and re-pick rules.
+    ("Bits, inventory, trophies and", 0),
+    ("banked DNA carry; body and applied", 0),
+    ("DNA reset. Unused data carries too.", 0),
+    ("Unhatched re-picks keep the gen.", 0),
     ("", 0),
     ("TIPS", 2),
     ("Feed when hungry, clean the poop,", 0),
     ("and let it sleep at night. Win cups,", 0),
     ("fell raids, link with tamers, play a", 0),
-    ("festival - every egg is earned.", 0),
+    ("festival for free egg unlocks; towns", 0),
+    ("also sell permanent egg shortcuts.", 0),
 ]
 # (the full item catalog was tried in the guide 2026-07-24 and REVERTED:
 # it doubled the guide's length and only mirrored what the shop dossier

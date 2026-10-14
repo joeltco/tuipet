@@ -420,6 +420,8 @@ def snapshot_prev_gen(pet):
         # distribution (dna_applied) is the pet's own biology and dies
         # with it, exactly as before.
         "dna_owned": dict(getattr(pet, "dna_owned", {}) or {}),
+        # egg audit 2026-10-14: profile daily purchases outlive a partner.
+        "town_bought": dict(getattr(pet, "town_bought", {}) or {}),
     }
     # the LEGACY roll (sweep 2026-07-14): every retired generation used to
     # vanish -- only this gate snapshot survived, and it was never SHOWN.
@@ -544,6 +546,8 @@ def prev_gen_estate():
             "inventory": inv,
             "trophies": int(last.get("trophies", 0)),
             "trophies_won": tw,
+            # egg audit 2026-10-14: old estates without a ledger stay compatible.
+            "town_bought": dict(last.get("town_bought") or {}),
             "dna_owned": bank}
 
 

@@ -342,6 +342,8 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
             pet.inventory = est["inventory"]
             pet.trophies = est["trophies"]
             pet.trophies_won = est["trophies_won"]   # beaten qualifiers persist (seasonBeat)
+            # egg audit 2026-10-14: retirement cannot refill today's egg ration.
+            pet.town_bought = est["town_bought"]
             bank = {f: int(v) for f, v in (est.get("dna_owned") or {}).items()}
             if bank:                                 # the DNA bank rides the estate
                 pet.dna_owned = {f: bank.get(f, 0) for f in data.DNA_FIELDS}

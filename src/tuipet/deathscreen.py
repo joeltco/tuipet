@@ -21,9 +21,12 @@ def marker(pet, tick=0):
 def _age_str(secs):
     """Readable lifespan for the memorial (was raw minutes)."""
     secs = int(max(0, secs))
-    # care audit 2026-10-14: age_seconds stores game MINUTES.
-    d, rem = divmod(secs, 1440)
-    h, m = divmod(rem, 60)
+    # age_seconds counts REAL seconds (petbase.AGE_DAY = 86400; the STATUS Age
+    # row reads the same).  The care audit's 1440 "game minutes" reading
+    # (0.6.12) inflated every memorial 60x -- reverted 2026-10-14.
+    d, rem = divmod(secs, 86400)
+    h, rem = divmod(rem, 3600)
+    m = rem // 60
     if d:
         return f"{d}d {h}h"
     if h:

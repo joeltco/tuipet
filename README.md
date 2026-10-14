@@ -112,6 +112,21 @@ tuipet           # or: PYTHONPATH=src python -m tuipet.app
 
 Start from an **egg** — real dot-matrix egg designs; it wobbles, cracks, and hatches.
 
+<!-- egg audit 2026-10-14: document the existing generation handoff. -->
+The egg guide shows unlock goals; the carousel shows only eggs you can hatch.
+Earned permanent eggs stay available, while lineage eggs last only while their
+previous-generation condition holds. Towns also sell permanent egg shortcuts
+for 10,000 bits, limited to one purchase per real day across towns.
+
+Death or retirement starts the next generation. Bits, inventory, trophies,
+qualifier records and banked DNA carry over; body stats, injuries, fight records
+and applied DNA reset. Unused DigiMemory carries as one payload and one chip.
+At death, etching spends the care bonus; declining carries the adjusted bonus.
+Re-picking an unhatched egg keeps its generation and inheritance. An unhatched
+Godzilla egg's fragment waits again if you choose another egg, until you pick
+Godzilla Egg. The album remembers species; the Hall remembers the latest 30
+departed or retired partners.
+
 ## Keys
 
 The action bar reads in the in-game Help screen's order — care, then

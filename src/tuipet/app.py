@@ -162,7 +162,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("SYNC POLISH. Signing in, switching accounts and taking your pet between devices are sturdier, a damaged profile falls back to its backup, and muted players stay muted everywhere.")
+    WHATS_NEW = ("EGG POLISH. Retiring keeps your unused DigiMemory and today's egg limit, a G-Cell Fragment survives an egg re-pick, and every lifespan reads in real time again.")
 
 
     BINDINGS = [
@@ -1703,6 +1703,12 @@ class TuiPetApp(ActionsMixin, App):
             # offers the etch -- the FULL adjusted bonus carries to the heir
             # (digimemory audit 2026-07-06; this seed used to be lost)
             persistence.bank_bonus_seed(self.pet.final_care_grade())
+            # egg audit 2026-10-14: unused data survives a live retirement too.
+            if self.pet.digimemory:
+                persistence.bank_digimemory(dict(self.pet.digimemory))
+        # egg audit 2026-10-14: a re-pick must not spend an unhatched fragment.
+        if repick and self.pet.gcell_fragment:
+            persistence._note_put("gcell_frag", 1)
         persistence.snapshot_prev_gen(self.pet)   # previous-generation egg gates
         old = self.pet
         self.pet = Pet.new_egg(generation=gen, egg_type=egg_type)
