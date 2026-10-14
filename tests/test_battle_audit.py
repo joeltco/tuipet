@@ -316,12 +316,12 @@ def test_a_refused_gate_is_never_a_dead_end():
     """ESC home always works, and a held transport still warps -- the same
     honest outs the planted-on-the-road refusal offers."""
     p = _pet(injured=True)
-    p.add_item("town_transport")
+    p.add_item("shortcut")
     pan = _road(p)
     pan._start_boss(pan.adv.boss)
-    assert "ESC home" in pan.strip() and "T warp" in pan.strip()
+    assert "ESC home" in pan.strip() and "T item" in pan.strip()
     pan.key("t")
-    assert pan._transport == ["town_transport"]
+    assert pan._transport == ["shortcut"]
 
 
 class _GateClient:

@@ -81,16 +81,10 @@ def test_pvp_megas_are_not_farmable():
 
 def test_mega_foes_demand_real_map_progress():
     """The whole point of the fix: a Mega is not an early random encounter."""
-    es = data.load_enemies()
-    mega = [e for e in es if e["stage"] == "Mega"]
-    assert mega, "no Mega foes in the roster?"
-
-    # Stage V must NOT be lumped in -- that was the bug.
-    assert len(mega) < len([e for e in es if e["stage"] == "Ultimate"])
-
-    first_random = min((e for e in mega if not e["boss"]),
-                       key=lambda e: (e["map"], e["zone"]))
-    assert (first_random["map"], first_random["zone"]) >= (1, 4), (
+    from tuipet import adventure
+    first = min(i for i, m in enumerate(adventure.MAPS)
+                if any(e["stage"] == "Mega" for e in m["randoms"]))
+    assert adventure.MAPS[first]["tier"] == "Mega" and first >= 23, (
         "a random Mega this early makes the Mega-class eggs trivial again")
 
 

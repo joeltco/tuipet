@@ -198,45 +198,6 @@ def test_chocolate_egg_eats_and_grants_a_common_toy():
 
 # ---- the battle drops --------------------------------------------------------
 
-def test_the_authored_drop_tables_load_and_bound_at_100():
-    lt = data.load_loot_tables()
-    assert len(lt) == 41
-    for tid, rows in lt.items():
-        assert sum(r for _i, r in rows) <= 100, tid
-    assert lt[0] == [("i:15", 100)]              # the courage boss table
-
-
-def test_a_unique_boss_drops_its_digimental():
-    p = _pet()
-    run = adv.Adventure(p, zone=adv.ZONES[0])
-    key = run.award_drop({"loot_table": 0, "boss": True})
-    assert key == "egg_of_courage"
-    assert p.inventory.get("egg_of_courage") == 1
-    assert run.drops == 1
-
-
-def test_replay_boss_drops_ride_the_bounty_ration():
-    p = _pet()
-    run = adv.Adventure(p, zone=adv.ZONES[0])
-    run.replay, run.bounty_spent = True, True
-    assert run.award_drop({"loot_table": 0, "boss": True}) is None
-    # wilds stay live on a veteran road
-    random.seed(1)
-    hits = sum(1 for _ in range(400)
-               if run.award_drop({"loot_table": 11, "boss": False}))
-    assert hits > 0
-
-
-def test_wild_drop_rates_match_the_authored_numbers():
-    p = _pet()
-    run = adv.Adventure(p, zone=adv.ZONES[0])
-    random.seed(9)
-    n = 4000
-    hits = sum(1 for _ in range(n)
-               if run.award_drop({"loot_table": 13, "boss": False}))
-    assert 0.05 <= hits / n <= 0.09              # authored 7%
-
-
 # ---- the cup prizes ----------------------------------------------------------
 
 def test_the_authored_prize_ids_all_resolve():
@@ -287,52 +248,8 @@ def test_futon_doze_rides_the_save():
 
 # ---- the road tools ----------------------------------------------------------
 
-def test_the_safe_lift_moves_ten_legs_and_no_ambush():
-    p = _pet()
-    p.add_item("zone_transport")
-    run = adv.Adventure(p, zone=adv.ZONES[0])
-    run.loc = 5
-    assert run.use_transport("zone_transport") == "skip-lift"
-    assert run.loc == 15
-    assert p.inventory.get("zone_transport", 0) == 0
-
-
-def test_the_camp_rests_to_half_and_hides_when_pointless():
-    p = _pet()
-    p.energy = 0
-    p.add_item("continent_transport")
-    run = adv.Adventure(p, zone=adv.ZONES[0])
-    assert "continent_transport" in run.held_transports()
-    assert run.use_transport("continent_transport") == "camp-rest"
-    assert p.energy == p.max_energy // 2
-    p.add_item("continent_transport")
-    assert "continent_transport" not in run.held_transports()   # nothing to rest
-
 
 # ---- the spread itself -------------------------------------------------------
-
-def test_the_deep_roads_hide_the_ten_human_spirits():
-    placed = [(zi, k) for zi, z in enumerate(adv.ZONES)
-              for k in z["find_keys"] if k.startswith("human_")]
-    assert len(placed) == 10
-    assert len({k for _zi, k in placed}) == 10   # one each, no twins
-    deep = set(adv.PROGRESSION[-10:])
-    assert {zi for zi, _k in placed} == deep     # only the hardest roads
-    for k in ("human_fire_spirit", "human_dark_spirit"):
-        assert shop.tier_weight(k) == shop.TIER_WEIGHT["legendary"]
-
-
-def test_the_pranks_and_the_boxes_reach_the_road_on_festivals():
-    a = adv.Adventure(_pet(), zone=adv.ZONES[0])
-    a.holiday = "Christmas Festival"
-    random.seed(2)
-    seen = set()
-    for _ in range(600):
-        a.loc = 3                                # stay mid-road
-        f = a._roll_find()
-        if f and f[1]:
-            seen.add(f[0])
-    assert seen and seen <= set(adv._FESTIVAL_CAPSULES)
 
 # ---- the anti-printer ration -------------------------------------------------
 
@@ -432,3 +349,17 @@ def test_the_openers_park_their_prize_for_the_cheer():
     q.add_item("capsule_a")
     q.use_item("capsule_a")
     assert q.pending_prize and q.pending_prize in q.inventory
+
+
+def test_the_pranks_and_the_boxes_reach_the_road_on_festivals():
+    a = adv.Adventure(_pet(), zone=adv.ZONES[0])
+    a.holiday = "Christmas Festival"
+    random.seed(2)
+    seen = set()
+    for _ in range(600):
+        a.loc = 3                                # stay mid-road
+        f = a._roll_find()
+        if f and f[1]:
+            seen.add(f[0])
+    assert seen and seen <= set(adv._FESTIVAL_CAPSULES)
+    assert {"prank_capsule_a", "prank_capsule_b"} & seen

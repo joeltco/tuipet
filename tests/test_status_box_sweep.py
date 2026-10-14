@@ -330,7 +330,6 @@ def test_every_embedded_fight_shows_the_battle_card():
     from tuipet import adventure
     from tuipet.adventurescreen import AdventurePanel
     from tuipet.battlescreen import BattlePanel
-    from tuipet.townscreen import TownPanel
     app = _app()
 
     road = AdventurePanel(app.pet, zone=adventure.ZONES[0])
@@ -340,13 +339,6 @@ def test_every_embedded_fight_shows_the_battle_card():
     txt = _card(app, road)
     assert "battle" in txt and "You " in txt and "Foe " in txt
 
-    town = TownPanel(app.pet, town_id=0)
-    town.cursor = 3                              # Town Cup
-    town.key("enter")                            # mounts the TournamentPanel
-    if town.sub is not None:                     # (affordability permitting)
-        town.sub.sub = BattlePanel(app.pet, {"num": 100})
-        txt = _card(app, town)
-        assert "battle" in txt and "You " in txt   # two layers deep, same card
 
 
 def test_the_shop_eggs_tab_buys_through_the_single_source():
@@ -408,7 +400,7 @@ def test_the_road_wears_its_own_card():
     # 5-digit purse, 99s across the ledger and a held transport
     app.pet.name = "Wwwwwwwwwwwwwwww"
     app.pet.energy = 125
-    app.pet.inventory["town_transport"] = 1
+    app.pet.inventory["shortcut"] = 1
     wide = AdventurePanel(app.pet, zone=adventure.ZONES[-1])
     wide._trans, wide.travelling = None, True
     wide.adv.loc, wide.adv.bits_earned = 39, 99999
@@ -420,7 +412,7 @@ def test_the_road_wears_its_own_card():
         for r in rows:
             plain = re.sub(r"\[/?[^\[\]]*\]", "", r)
             assert cell_len(plain) <= 26, f"gate={gate}: {plain!r}"
-    assert "T warp" in _card(app, wide)          # the out only shows when held
+    assert "road item" in _card(app, wide)          # the out only shows when held
 
 
 def test_the_road_card_names_the_wound_line_and_the_gate_verdict():

@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.1 — ADVENTURE REBUILT. 30 maps, one per backdrop, each a single  (2026-10-14)
+
+ADVENTURE REBUILT. 30 maps, one per backdrop, each a single run: march, rest at the town halfway, then beat the boss to open the next map. Bosses pay a reward the first time, the road finds food that fits the land, and Godzilla's kaiju roam Monster Island. Road items are now Life Recovery, Shortcut and Rest Kit; your old transport tickets convert automatically.
+
 ## 0.6.0.post3 — GODZILLA LINE POLISH. Botamon G now attacks with its real ro (2026-10-14)
 
 GODZILLA LINE POLISH. Botamon G now attacks with its real roaring pose and Koromon G stands on the ground instead of hovering; both eat with the right frames. Every Godzilla-line shot is drawn with its true outline and detail instead of a solid blob, and Botamon G's bubble finally looks like a bubble.

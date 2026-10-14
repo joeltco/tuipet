@@ -92,7 +92,7 @@ def test_care_shelf_matches_its_blurbs():
     assert p.manners_lapse > 0
     # (the bubble bath retired 2026-07-27: strictly less than the free C
     # key, which also pays obedience -- its dossier leg retired with it)
-    for key in ("town_transport", "disaster_transport", "life_recovery"):
+    for key in ("shortcut", "rest_kit", "life_recovery"):
         p = _pet()
         out = _use(p, key)
         assert "road" in out                                  # home bag refuses

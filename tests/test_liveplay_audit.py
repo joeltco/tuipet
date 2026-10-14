@@ -207,35 +207,6 @@ def _cup_pet(hour=10):
     return p
 
 
-def test_the_town_cup_honors_the_shared_cup_hour():
-    import tuipet.townscreen as ts
-    p = _cup_pet()
-    t1 = ts.TownPanel(p, town_id=0)
-    t1._start_cup()
-    assert t1.sub is not None, t1.msg               # the hour's cup runs
-    t2 = ts.TownPanel(p, town_id=3)                 # a fresh visit, same hour
-    t2._start_cup()
-    assert t2.sub is None, "the same game-hour ran a second town cup"
-    assert "hour" in t2.msg
-    p.world_seconds = 11 * 60.0                     # the next main-view hour
-    t3 = ts.TownPanel(p, town_id=3)
-    t3._start_cup()
-    assert t3.sub is not None, t3.msg               # cadence, not a shut door
-
-
-def test_a_town_cup_entry_spends_the_home_boards_hour_too():
-    """The other direction of the same slot, now symmetric: burned AND
-    checked on both boards."""
-    from tuipet import tournament
-    import tuipet.townscreen as ts
-    p = _cup_pet()
-    t1 = ts.TownPanel(p, town_id=0)
-    t1._start_cup()
-    assert t1.sub is not None
-    home = tournament.trophy_by_id(tournament.schedule(p)[10])
-    assert "run" in (tournament.eligibility(p, home) or "")
-
-
 # ---- L5: the rationed counter buys the LIVE row (the grinder's note) -----
 
 def _rich_town_pet():

@@ -32,7 +32,7 @@ community references. Regular updates ship as the game grows.
 - A **basic V-Pet done properly**, every surviving system faithful to the
   real devices: care (hunger, effort, filth, sleep, lights), training
   drills, evolution (care-quality gates + DNA divergence + armor
-  Digimentals + jogress), a rebuilt **Adventure** mode (26 real zones,
+  Digimentals + jogress), an **Adventure** mode (30 maps,
   bosses, towns), raid bosses, cups on a real-calendar schedule
   (seasons, weekends, holidays), a shop with the classic four-tab
   storefront, digitama earned by play (and bought outright in each town's
@@ -241,7 +241,7 @@ half with R. Birthdays hand out treats you can actually eat. The Honors
 board sells cosmetic tamer titles for the truly rich.
 
 **Digitama are earned by playing** — reaching stages, felling raid bosses,
-winning cups, clearing adventure zones, celebrating festivals, growing your
+winning cups, clearing adventure maps, celebrating festivals, growing your
 album — exactly like the real devices; the carousel shows only what you can
 hatch and teases the one you're closest to earning, and a newly earned
 digitama announces itself by name when you get home (**e** opens the guide). **On the road, each

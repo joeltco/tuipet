@@ -83,7 +83,8 @@ def test_egg_gate_cross_references_exist():
     trophy/map/Digimon/field that does not exist."""
     rules = data.load_egg_unlock()
     tourneys = {t["id"] for t in data.load_tournies()}
-    nmaps = len(data.load_maps())
+    from tuipet import adventure
+    nmaps = len(adventure.MAPS) // adventure.MAPS_PER_AREA   # the 5 AREAS the gates name
     _, by = data.load_sprites()
     fields = {r.get("field") for r in by.values()}
     attrs = {r.get("attribute") for r in by.values()}

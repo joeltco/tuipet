@@ -99,97 +99,8 @@ def test_stock_never_exceeds_the_tier_ceiling_in_any_town():
 
 # ---- D3: exclusives, both sides ---------------------------------------------
 
-def test_every_town_has_a_unique_guest_good():
-    deal = shop._guest_deal()
-    assert len(deal) == 26
-    assert len(set(deal.values())) == 26, "two towns share a signature good"
-
-
-def test_every_zone_has_a_unique_signature_find():
-    sig = adv.ZONE_SIGNATURE
-    assert len(sig) == len(adv.ZONES) == 26
-    assert len(set(sig.values())) == 26, "two zones share a signature"
-
-
-def test_towns_are_curated_but_home_sells_everything():
-    """SUPERSEDED IN PART (item expansion 2026-07-26): with ~120 sellable
-    goods, full town coverage stopped being possible (26 guest slots) --
-    towns are CURATED now and the guarantee moves up a level: the HOME
-    shelf lists every priced good (nothing is unbuyable), every town's
-    guest good is still unique game-wide, and the coverage-first draw
-    still hands guest slots to goods no base sells before doubling up."""
-    home = {e["key"] for e in shop.catalog()}
-    for k, v in shop.CATALOG.items():
-        if v.price is not None and v.category != "Road":
-            assert k in home, f"{k} is priced but unbuyable at home"
-    guests = shop._guest_deal()
-    assert len(set(guests.values())) == len(guests)   # unique game-wide
-    base_anywhere = set()
-    for tid in shop._town_maps():
-        base_anywhere.update(k for _sid, k, _o, _p in shop._base_rows(tid))
-    # coverage-first: while un-based goods outnumber slots, no slot may be
-    # wasted on a good some base already sells
-    unbased_guests = sum(1 for g in guests.values() if g not in base_anywhere)
-    assert unbased_guests == len(guests), "a guest slot doubled up while goods are dark"
-
-
-def test_a_signature_actually_rides_its_zones_pool():
-    for zi, key in adv.ZONE_SIGNATURE.items():
-        assert key in adv.ZONES[zi]["find_keys"], (zi, key)
-
-
-def test_a_signature_is_exclusive_to_its_zone():
-    """The point of the word: no other zone digs it."""
-    owner = {k: zi for zi, k in adv.ZONE_SIGNATURE.items()}
-    for zi, z in enumerate(adv.ZONES):
-        for key in z["find_keys"]:
-            if key in owner and owner[key] != zi:
-                raise AssertionError(
-                    f"{key} is {owner[key]}'s signature but zone {zi} digs it")
-
-
-def test_signatures_deepen_with_the_run():
-    """An opening stop signs a common good; the last stops sign legendary
-    ones.  Depth must never run backwards."""
-    rank = {t: i for i, t in enumerate(shop.TIER_ORDER)}
-    seen = [rank[shop.CATALOG[adv.ZONE_SIGNATURE[zi]].tier]
-            for zi in adv.PROGRESSION if zi in adv.ZONE_SIGNATURE]
-    assert seen == sorted(seen), "signature tiers zig-zag with depth"
-
-
-def test_grant_only_goods_are_never_a_signature():
-    """The birthday treats and the Digimemory are deliberately unbuyable
-    gifts; road loot would quietly undo that."""
-    for key in adv.ZONE_SIGNATURE.values():
-        assert shop.CATALOG[key].price is not None, key
-    assert "digimemory" not in adv.ZONE_SIGNATURE.values()
-
-
-def test_the_road_trio_is_never_a_signature():
-    """They ride EVERY pool already -- exclusive is meaningless for them."""
-    for key in adv._ROAD_KEYS:
-        assert key not in adv.ZONE_SIGNATURE.values(), key
-
-
-def test_signatures_are_permanent_across_reruns():
-    """The guest-good law: a place's character must not reshuffle."""
-    again = adv._assign_signatures()
-    assert again == adv.ZONE_SIGNATURE
-
 
 # ---- D4: the eight factorynight zones ---------------------------------------
-
-def test_the_shared_scene_zones_no_longer_dig_alike():
-    fn = [zi for zi, z in enumerate(adv.ZONES) if z["scene"] == "factorynight"]
-    assert len(fn) == 8, "the scene split changed; re-check this ruling"
-    pools = [tuple(sorted(adv.ZONES[zi]["find_keys"])) for zi in fn]
-    assert len(set(pools)) == 8, "two factorynight zones still dig identically"
-
-
-def test_no_two_zones_anywhere_have_identical_loot():
-    pools = [tuple(sorted(z["find_keys"])) for z in adv.ZONES]
-    assert len(set(pools)) == len(adv.ZONES)
-
 
 # ---- coverage ---------------------------------------------------------------
 
@@ -203,19 +114,16 @@ def test_every_item_is_obtainable_through_some_channel():
     from tuipet import data as _data, tournament as _t
     from tuipet.pet import Pet
     obtainable = {k for k, v in shop.CATALOG.items() if v.price is not None}
-    for z in adv.ZONES:
+    for z in adv.MAPS:                                   # road finds + boss rewards
         obtainable.update(z["find_keys"])
+        obtainable.update(z["reward"])
     cap = shop.TIER_ORDER.index("rare")                  # festival gifts
     obtainable.update(k for k, v in shop.CATALOG.items()
                       if k not in Pet._GIFT_BANNED and v.where == "home"
                       and shop.TIER_ORDER.index(v.tier or "common") <= cap)
     obtainable.update(Pet._PRANK_POOL)
-    obtainable.update(adv._FESTIVAL_CAPSULES)
-    for table in _data.load_loot_tables().values():      # authored drops
-        for icon, _rate in table:
-            k = shop.key_for_icon(icon)
-            if k:
-                obtainable.add(k)
+    obtainable.add("digimemory")                         # the death inheritance
+    obtainable.update(adv._FESTIVAL_CAPSULES)            # festival road presents
     for t in _data.load_tournies():                      # authored cup prizes
         if t["item"] >= 0:
             obtainable.add(_t._prize_key("i", t["item"]))
@@ -238,71 +146,10 @@ def test_the_grant_only_treats_are_findable_like_candy():
         assert k in found, k                       # ...but findable
 
 
-def test_a_found_digimemory_is_no_longer_a_dud():
-    """This pin used to assert digimemory STAYED unfindable because a wild
-    chip did nothing.  Joel then ruled "make wild chips carry a random
-    payload" -- so a found chip now holds a stranger's trace and is real
-    loot.  Full lifecycle lives in test_wild_memory.py; this guards the
-    reversal so the old dud behaviour can't creep back."""
-    found = set()
-    for z in adv.ZONES:
-        found.update(z["find_keys"])
-    assert "digimemory" in found
-
-
 # ---- D6: P6's town placement, RATIFIED 2026-07-24 ---------------------------
-
-def test_the_chips_town_placement_is_ratified_not_accidental():
-    """D6 (Joel: "ratify it").  Adding the seven chips in P6 un-dropped ten
-    canon shopConsumable overrides, so the attribute chips now stock on
-    many town shelves.  That was a SIDE EFFECT at first; Joel ratified it,
-    so it is now a decision on the record -- and the exact spread is
-    DVPet's own (shopConsumable.csv), not hand-placed by us.
-
-    Pinned so that if a future override edit silently drops these again,
-    this fails and the ratified placement is defended rather than lost.
-    """
-    import collections
-    town = collections.Counter()
-    for t in range(26):
-        for _sid, k, _o, _p in shop._town_rows(t):
-            town[k] += 1
-    # the base chips reach most towns; the golden/omni tier fewer, exactly
-    # as the canon override table deals them
-    assert town["vaccine_chip"] >= 12, town["vaccine_chip"]
-    assert town["virus_chip"] >= 12, town["virus_chip"]
-    assert town["data_chip"] >= 12, town["data_chip"]
-    assert town["omni_chip_g"] >= 8, town["omni_chip_g"]
-    # ...and rarity still bites: a rare chip is one-per-town-per-day
-    for t in range(26):
-        for e in shop.town_stock(t, pet=None):
-            if e["key"].endswith("chip") or e["key"].endswith("chip_g"):
-                assert e["left"] <= shop.tier_stock(e["key"]) <= 2, (t, e["key"])
 
 
 # ---- D7: the still-dropped town overrides STAY dropped (2026-07-24) ----------
-
-def test_every_authored_town_override_is_live():
-    """SUPERSEDED (item expansion 2026-07-26, Joel: "bring in all 99"):
-    D7's ten dropped overrides all resolve now -- every one of the 22
-    authored shopConsumable.csv town rows names a real catalog key, so
-    the authored town economy is finally whole.  A row going dark again
-    means a catalog key was lost -- fail loudly."""
-    import csv
-    dropped = []
-    with open("src/tuipet/data/shopConsumable.csv") as fh:
-        for r in csv.DictReader(fh):
-            isfood = str(r.get("IsFood", "")).strip().lower() in ("true", "1")
-            cid = r.get("ConsumableID")
-            if cid is None:
-                continue
-            icon = ("f:" if isfood else "i:") + str(int(cid))
-            if shop.key_for_icon(icon) is None:
-                dropped.append(icon)
-    # (the Bandage's cut costs nothing here: shopConsumable.csv never
-    # authored an i:80 row -- no town ever sold the wrap)
-    assert dropped == [], f"authored town rows went dark: {dropped}"
-
 
 def test_the_free_buttons_own_the_cures_outright():
     """⭐SUPERSEDED AGAIN by the ITEM REFACTOR (2026-08-02, "MAKING ALL ITEMS

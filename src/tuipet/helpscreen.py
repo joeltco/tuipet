@@ -63,14 +63,10 @@ HELP = [
     ("  answers - the feud's score lives", 0),
     ("  on the digicore PERSON page", 0),
     ("a adventure - head out on the road", 1),
-    # eggs were never a road FIND -- they are bought at town vendors or
-    # unlocked by clearing a map (audit 2026-07-25)
-    ("  cross a zone, fell its boss, then", 0),
-    ("  rest in towns, find loot; towns", 0),
-    ("  sell eggs, map clears unlock them", 0),
-    # the item expansion (2026-07-26): the authored drop tables are live
-    ("  beaten foes can DROP their goods -", 0),
-    ("  bosses guard the rarest relics", 0),
+    # the 2026-10-14 world: 30 maps, one run each
+    ("  cross a map, fell its boss to open", 0),
+    ("  the next. Towns sell eggs and", 0),
+    ("  map clears unlock more of them", 0),
     ("r raid - the community boss: fight", 1),
     ("  10-round volleys, break the shared", 0),
     ("  pool together, claim the purse", 0),

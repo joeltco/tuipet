@@ -363,8 +363,9 @@ def test_battle_panel_across_varied_foes():
     random.seed(12)
     p = _pet()
     enemies = battle_mod.pick_enemy(p) and None  # warm the table
-    from tuipet import data
-    pool = [e for e in data.load_enemies() if e.get("stage") == "Champion"][:10]
+    from tuipet import adventure
+    pool = [e for m in adventure.MAPS if m["tier"] == "Champion"
+            for e in m["randoms"]][:10]
     for e in pool:
         pan = BattlePanel(_pet(), enemy=dict(e))
         guard = 0

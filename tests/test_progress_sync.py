@@ -166,7 +166,7 @@ def test_the_one_slot_live_values_stay_device_local(two_devices):
 @pytest.mark.parametrize("junk", [None, {}, [], "progress", 7,
                                   {"eggs_owned": "nope"},
                                   {"wins": "lots"},
-                                  {"zone_bests": {"1": "high"}}])
+                                  {"map_bests": {"1": "high"}}])
 def test_a_malformed_progress_block_never_costs_the_profile_its_history(
         two_devices, junk):
     two_devices("laptop")

@@ -20,7 +20,7 @@ class _Win:
 
 
 def test_the_road_items_are_real_catalog_entries():
-    for k in ("town_transport", "disaster_transport", "life_recovery"):
+    for k in ("shortcut", "rest_kit", "life_recovery"):
         e = shop.entry(k)
         assert e and e["category"] == "Road" and e["price"] > 0  # Adventure -> Road, 2026-07-27
         # and they're usable from the bag (kept until spent on the road)
@@ -31,16 +31,16 @@ def test_the_road_items_are_real_catalog_entries():
 
 
 def test_the_road_shelf_gates_on_maps_cleared():
-    assert not shop.adventure_open("town_transport", {"maps": set()})
-    assert shop.adventure_open("town_transport", {"maps": {0}})
+    assert not shop.adventure_open("shortcut", {"maps": set()})
+    assert shop.adventure_open("shortcut", {"maps": {0}})
     assert not shop.adventure_open("life_recovery", {"maps": {0}})     # needs 2
     assert shop.adventure_open("life_recovery", {"maps": {0, 1}})
     # sealed items are OFF the shelf entirely at zero progress
     names = {e["name"] for e in shop.catalog()}   # uses live profile progress
     # (can't assume live progress; just prove the gate function drives it)
-    locked = [k for k in ("town_transport", "life_recovery")
+    locked = [k for k in ("shortcut", "life_recovery")
               if not shop.adventure_open(k, {"maps": set()})]
-    assert locked == ["town_transport", "life_recovery"]
+    assert locked == ["shortcut", "life_recovery"]
 
 
 def test_a_map_is_cleared_when_its_last_zone_falls():
@@ -124,43 +124,9 @@ def test_the_unlocked_road_shelf_renders_on_the_items_tab(monkeypatch):
     pan = ShopPanel(_pet())
     pan.tab = pan._tabs().index("Items")
     keys = {e["key"] for e in pan._rows() if not e.get("header")}
-    assert {"town_transport", "disaster_transport", "life_recovery"} <= keys
+    assert {"shortcut", "rest_kit", "life_recovery"} <= keys
     txt = pan.text().plain                     # the smoke walk renders too
     assert "Items" in txt
-
-
-def test_the_town_counter_sells_its_authored_transports(monkeypatch):
-    """SUPERSEDED-IN-PLACE (item sweep 2026-07-24): this used to pass with
-    NO progress patched, which is exactly the leak it now guards against --
-    town 0 sits on map 1's first leg and sold both warps to a tamer who had
-    cleared nothing.  The counter still carries them; it carries them once
-    they are EARNED."""
-    from tuipet import persistence
-    from tuipet.shopscreen import ShopPanel
-    monkeypatch.setattr(persistence, "get_progress", lambda: {"maps": {0, 1}})
-    pan = ShopPanel(_pet(), town_id=0)         # authored SID1/SID2 = the warps
-    pan.tab = pan._tabs().index("Items")
-    keys = {e["key"] for e in pan._rows() if not e.get("header")}
-    assert {"town_transport", "disaster_transport"} <= keys
-    pan.text()                                 # render walk
-
-
-def test_a_town_counter_honours_the_map_clear_gate(monkeypatch):
-    """THE GATE HELD IN EXACTLY ONE SHOP.  `catalog()` has hidden a locked
-    road item since v0.5.114, but no town shelf ever asked -- so the
-    earned-access rule could be walked around at the first town on the
-    road."""
-    from tuipet import persistence, shop as shop_mod
-    monkeypatch.setattr(persistence, "get_progress", lambda: {"maps": set()})
-    locked = {e["key"] for e in shop_mod.town_stock(0)}
-    assert not ({"town_transport", "disaster_transport", "life_recovery"}
-                & locked)
-    monkeypatch.setattr(persistence, "get_progress", lambda: {"maps": {0}})
-    one = {e["key"] for e in shop_mod.town_stock(0)}
-    assert {"town_transport", "disaster_transport"} <= one   # 1 map: the warps
-    assert "life_recovery" not in one                        # still needs 2
-    monkeypatch.setattr(persistence, "get_progress", lambda: {"maps": {0, 1}})
-    assert "life_recovery" in {e["key"] for e in shop_mod.town_stock(0)}
 
 
 def test_the_daily_deal_never_lands_on_a_locked_row(monkeypatch):
@@ -169,7 +135,7 @@ def test_the_daily_deal_never_lands_on_a_locked_row(monkeypatch):
     dealt over the OPEN ones."""
     from tuipet import persistence, shop as shop_mod
     monkeypatch.setattr(persistence, "get_progress", lambda: {"maps": set()})
-    for tid in sorted(shop_mod._town_maps()):
+    for tid in sorted(range(30)):
         sid = shop_mod.town_deal_sid(tid)
         shown = {e["key"] for e in shop_mod.town_stock(tid) if e["deal"]}
         on_shelf = {k for s, k, _o, _p in shop_mod._open_rows(tid) if s == sid}
@@ -185,8 +151,8 @@ def test_every_town_carries_the_whole_road_shelf_once_earned(monkeypatch):
     the road carries all three."""
     from tuipet import persistence, shop as shop_mod
     monkeypatch.setattr(persistence, "get_progress", lambda: {"maps": {0, 1}})
-    road = {k for k, v in shop_mod.CATALOG.items() if v.category == "Adventure"}
-    for tid in sorted(shop_mod._town_maps()):
+    road = {k for k, v in shop_mod.CATALOG.items() if v.category == "Road"}
+    for tid in sorted(range(30)):
         keys = {e["key"] for e in shop_mod.town_stock(tid)}
         assert road <= keys, f"town {tid} is missing {sorted(road - keys)}"
 
@@ -194,10 +160,10 @@ def test_every_town_carries_the_whole_road_shelf_once_earned(monkeypatch):
 def test_a_held_road_item_shows_in_the_bag():
     from tuipet.shopscreen import ShopPanel
     p = _pet()
-    p.add_item("town_transport")
+    p.add_item("shortcut")
     pan = ShopPanel(p, start_mode="bag", bag_only=True)
     seen = set()
     for i in range(len(pan._tabs())):
         pan.tab = i
         seen |= {e["key"] for e in pan._rows() if not e.get("header")}
-    assert "town_transport" in seen
+    assert "shortcut" in seen

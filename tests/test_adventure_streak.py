@@ -59,12 +59,6 @@ def test_any_town_rest_breaks_the_chain(monkeypatch):
     a.loc = z["town_legs"][0][0] - 1                   # one leg shy of the town
     assert a.travel() == "town"                        # step in: the rest fires
     assert a.streak == 0                               # ...and the chain is gone
-    p = _pet()
-    p.add_item("town_transport")                       # the warp rest breaks it too
-    b = Adventure(p, zone=z)
-    b.chain(True), b.chain(True)
-    assert b.use_transport("town_transport") == "town-warp"
-    assert b.streak == 0
 
 
 def test_the_panel_chains_fights_and_wears_the_marker(monkeypatch):

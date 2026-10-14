@@ -27,7 +27,7 @@ import dataclasses
 
 import pytest
 
-from tuipet import shop, persistence
+from tuipet import shop
 from tuipet.pet import Pet
 from tuipet.petbase import _Refused
 
@@ -120,14 +120,14 @@ def test_no_deal_price_undercuts_what_a_town_pays_on_demand():
         if v.price is None or v.category == "Adventure":
             continue
         pay = max(1, v.price // shop.HOME_DEAL_FACTOR)
-        best = max(shop.town_sell_price(key, t) for t in shop._town_maps())
+        best = max(shop.town_sell_price(key, t) for t in range(30))
         if best > pay:                       # a profitable flip exists...
             assert shop.tier_stock(key) <= shop.TOWN_DAILY_CAP   # ...but bounded
     # and the FULL-price shelf is never a profitable flip anywhere
     for key, v in shop.CATALOG.items():
         if v.price is None:
             continue
-        best = max(shop.town_sell_price(key, t) for t in shop._town_maps())
+        best = max(shop.town_sell_price(key, t) for t in range(30))
         assert best <= v.price, key
 
 
@@ -188,14 +188,6 @@ def test_the_caffeine_pill_refuses_a_dose_that_would_do_nothing():
 
 
 # ---- 2 + 3. the road shelf -------------------------------------------------
-
-def test_the_gate_that_holds_at_home_holds_on_the_road(monkeypatch):
-    monkeypatch.setattr(persistence, "get_progress", lambda: {"maps": set()})
-    home = {e["key"] for e in shop.catalog()}
-    for tid in sorted(shop._town_maps()):
-        town = {e["key"] for e in shop.town_stock(tid)}
-        gated = {k for k in shop.ADVENTURE_GATES}
-        assert not (town & gated - home), f"town {tid} sells around the gate"
 
 
 # ---- 1. the prize line -----------------------------------------------------

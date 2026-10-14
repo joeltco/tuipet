@@ -216,7 +216,7 @@ def test_every_road_strip_state_fits_the_box_in_cells(no_encounters):
         return plain
 
     # the walking line: the WHOLE key set, no rotation (Joel 2026-07-30)
-    assert _check("travelling") == "SPACE hurry \u00b7 T warp \u00b7 ESC home"
+    assert _check("travelling") == "SPACE hurry \u00b7 T item \u00b7 ESC home"
     states = [
         ("town prompt", lambda: setattr(pan, "_town_prompt", True)),
         ("rested",      lambda: (setattr(pan, "_town_prompt", False),
@@ -227,7 +227,7 @@ def test_every_road_strip_state_fits_the_box_in_cells(no_encounters):
         ("refused",     lambda: (setattr(pan, "_note_t", 0),
                                  setattr(pan, "_refused", True))),
         ("transport",   lambda: (setattr(pan, "_refused", False),
-                                 setattr(pan, "_transport", ["town_transport"]))),
+                                 setattr(pan, "_transport", ["shortcut"]))),
         ("find",        lambda: (setattr(pan, "_transport", None),
                                  setattr(pan, "_find", "energy_drink"))),
         ("hazard tele", lambda: (setattr(pan, "_find", None),

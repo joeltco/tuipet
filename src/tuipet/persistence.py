@@ -346,7 +346,7 @@ def zone_best_set(zone_index, score):
     summary card's brag."""
     d = load_settings()
     prog = d.setdefault("progress", {})
-    bests = prog.setdefault("zone_bests", {})
+    bests = prog.setdefault("map_bests", {})   # per MAP (the 2026-10-14 world; old zone bests retired)
     k = str(int(zone_index))
     if int(score) > int(bests.get(k, 0)):
         bests[k] = int(score)
@@ -358,7 +358,7 @@ def zone_best_set(zone_index, score):
 def zone_bests():
     """zone_index -> best run score (str-keyed in storage, int-keyed here)."""
     return {int(k): int(v)
-            for k, v in (_prog().get("zone_bests", {}) or {}).items()}
+            for k, v in (_prog().get("map_bests", {}) or {}).items()}
 
 
 def raid_add():
@@ -619,9 +619,9 @@ def progress_for_sync():
             out[k] = v
     if prog.get("xanti_ever"):
         out["xanti_ever"] = True
-    bests = prog.get("zone_bests") or {}
+    bests = prog.get("map_bests") or {}
     if isinstance(bests, dict) and bests:
-        out["zone_bests"] = dict(bests)
+        out["map_bests"] = dict(bests)
     return out
 
 
@@ -657,9 +657,11 @@ def merge_progress(incoming):
     if incoming.get("xanti_ever") and not prog.get("xanti_ever"):
         prog["xanti_ever"] = True
         changed = True
-    bests = incoming.get("zone_bests")
+    # map_bests: the 2026-10-14 world's per-MAP scores (an old cloud's
+    # zone_bests named the retired 26 zones and is ignored)
+    bests = incoming.get("map_bests")
     if isinstance(bests, dict):
-        cur = prog.setdefault("zone_bests", {})
+        cur = prog.setdefault("map_bests", {})
         for zk, zv in bests.items():
             try:
                 zv = int(zv)

@@ -185,7 +185,9 @@ def test_the_catalog_holds_the_whole_authored_corpus():
     # 131 -> 114 (refactor 2026-07-27): 18 keys retired by named order --
     # every one converts to its heir via shop.RETIRED, no authored channel
     # goes dark (key_for_icon successor fallback), and cold_compress joined
-    assert len(shop.CATALOG) == 114
+    # 114 -> 112 (adventure rebuild 2026-10-14): the four transports retire
+    # into two road items (shortcut, rest_kit), converting via shop.RETIRED
+    assert len(shop.CATALOG) == 112
     # Evolution split on the axis it serves: the DOORS stay Evolve, the
     # stat chips are POWER (they move battle meters, not destinations)
     assert sum(1 for v in shop.CATALOG.values() if v.category == "Evolve") == 34

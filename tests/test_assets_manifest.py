@@ -142,6 +142,6 @@ def test_the_files_that_ambushed_us_are_required():
     """Named on purpose: tournies.csv is eddy's, and the other lazy loaders
     sit behind the same kind of key -- a menu the player may not press for
     hours. Demoting one of these to OPTIONAL puts the ambush back."""
-    for name in ("tournies.csv", "towns.csv", "zones.csv", "enemies.csv",
+    for name in ("tournies.csv", "adventure_maps.json",
                  "titles.csv", "items.csv", "foods.csv"):
         assert name in REQUIRED_DATA, f"{name} is reached from a menu, late"

@@ -161,7 +161,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("GODZILLA LINE POLISH. Botamon G now attacks with its real roaring pose and Koromon G stands on the ground instead of hovering; both eat with the right frames. Every Godzilla-line shot is drawn with its true outline and detail instead of a solid blob, and Botamon G's bubble finally looks like a bubble.")
+    WHATS_NEW = ("ADVENTURE REBUILT. 30 maps, one per backdrop, each a single run: march, rest at the town halfway, then beat the boss to open the next map. Bosses pay a reward the first time, the road finds food that fits the land, and Godzilla's kaiju roam Monster Island. Road items are now Life Recovery, Shortcut and Rest Kit; your old transport tickets convert automatically.")
 
 
     BINDINGS = [

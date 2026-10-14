@@ -1,35 +1,22 @@
-"""Adventure — the MARCH engine (rebuild phase 2, 2026-07-20).
+"""Adventure — the MARCH engine, rebuilt 2026-10-14 as tuipet's own world.
 
-⛔ OWN-GAME LAW (Joel 2026-07-13, carried forward): DVPet is NOT canon for
-adventures.  One biome per run, start to the goal, no mid-run scenery swap.
+⛔ OWN-GAME LAW: DVPet is NOT canon for adventures.
 
-Built: the MARCH (cross a zone in ~INTERACTIVE_STEPS travel actions, the journey
-on a ribbon, arrival ends the run); WILD ENCOUNTERS (a per-leg roll from the
-zone's own enemy table, lives, win/flee/loss/fail); and the real 26-ZONE
-GEOGRAPHY -- the zones come from data/zones.csv + enemies.csv (data.load_maps),
-each wearing ONE biome (its gate boss's terrain, no mid-zone span-hopping) with
-its own wild pool; the zone BOSS FIGHT -- reaching the end opens the gate boss
-(resolve_boss), and FELLING it is the real victory (a loss costs a life, 0 lives
-fails, a survivable loss lets the pet face it again); TRAVEL DRAIN -- each
-marched leg tires (energy), burns the calorie buffer (weight trims toward base)
-and tops the effort gauge, so a run comes home spent; TOWNS -- a mid-zone
-waypoint refills lives, rests energy to at least half the tank and suppresses
-encounters; and PROGRESSION --
-pet.adv_progress tracks zones conquered (the frontier index); felling a zone's
-boss unlocks the next, and the ZonePickPanel lets the player embark on any
-unlocked zone; and FINDS -- a marched step may spot loot from the zone's own
-table (rand_items/rand_foods) to dig up or pass; the home STATUS CARD (statusbox.adventure_line: Quest
-N/26 on the home screen); and TRANSPORT items -- a town warp (Birdra) jumps to
-the town and rests, a danger warp (Garuda) dashes toward the boss and gets
-ambushed.
+30 maps (data/adventure_maps.json, one per scene background), ONE MAP = ONE
+RUN: the MARCH (~INTERACTIVE_STEPS travel legs) with WILD ENCOUNTERS from the
+map's own pool (its tier, its terrain's fields), hazards and FINDS (food and
+care items for the terrain); a TOWN halfway (rest, shop, eggs, bag); and the
+BOSS at the end -- felling it clears the map, pays its reward the first time,
+and opens the next map (pet.adv_progress = maps cleared).  Lives, the travel
+drain, win streaks, veteran replays and the run score ride on top.  Road
+items: Life Recovery, Shortcut, Rest Kit.
 """
 from __future__ import annotations
-import math
 import random
 from functools import lru_cache
 
 from . import data
-from . import backgrounds
+
 
 INTERACTIVE_STEPS = 40    # a zone is crossed in ~40 travel actions (the compression
 #                           knob the old engine used -- kept as the pacing unit)
@@ -41,7 +28,6 @@ ENCOUNTER_CHANCE = 0.20   # per leg -- ~8 wild fights over a 40-leg zone (the ol
 FIND_CHANCE = 0.12        # per marched step -- a chance to spot loot on the road
 #                           (Zone.checkItem), ~3-4 finds over a zone; the player
 #                           digs it up (into the bag) or walks on
-SKIP_LEGS = 10            # the Zone Transport's safe lift (expansion 2026-07-26)
 HAZARD_CHANCE = 0.06      # per marched step -- an ambush pounce on the road
 #                           (arcade arc, Joel 2026-07-21 "do the hazard dodges"):
 #                           a zone wild telegraphs and lunges; SPACE ducks it,
@@ -88,9 +74,14 @@ STREAK_CAP = 2.0          # ...capped at DOUBLE (the festival double's scale).
 HOLIDAY_BITS_MULT = 2     # festival purse: bounties pay double on a holiday
 HOLIDAY_FIND_MULT = 2     # more loot spills on the road during a festival
 FESTIVAL_PRESENT_CHANCE = 0.34   # ...and a third of festival finds are a
-#                                  wrapped SURPRISE from the gift pool, not the
-#                                  zone's loot -- home gifts are home-only, so
-#                                  this is how the road celebrates (2026-07-24)
+#                                  wrapped SURPRISE capsule, not the map's
+#                                  loot -- how the road celebrates (kept in
+#                                  the 2026-10-14 rebuild, Joel: "3")
+# the road's festival present pool: the ten authored capsule boxes -- eight
+# honest, two AngrySurprise pranks, identical until opened (that IS the box)
+_FESTIVAL_CAPSULES = ("capsule_a", "capsule_b", "capsule_c", "capsule_d",
+                      "capsule_e", "capsule_f", "capsule_g", "capsule_h",
+                      "prank_capsule_a", "prank_capsule_b")
 POST_FIGHT_GRACE = 1      # legs of encounter immunity after ANY fight (canon
 #                           getBattleImmunity on a win, widened so the pet always
 #                           takes a clear step between fights -- no same-spot re-jump)
@@ -107,172 +98,87 @@ TOWN_REST_ENERGY = 6      # a town rest's top-up when already above half a tank;
 #                           the rest itself reaches AT LEAST max_energy // 2
 #                           (D1 ruling 2026-07-23 -- see _rest_up)
 
-# the 26 real zones (5 maps: 7/7/3/2/7) are built from data/zones.csv +
-# enemies.csv (data.load_maps).  Each run wears ONE biome (own-game law): the
-# terrain its GATE BOSS stands in, NOT the mid-zone BackgroundsAndRange scenery
-# the device span-hopped through.  habitats.csv habitat id -> a backgrounds.py
-# scene key (the old habitat system left with BASIC VPET, so we re-map here):
-HABITAT_SCENE = {
-    0: "datatunnel",    # Hard Disk -- the net
-    1: "mountains",     # Sky -- warm & high; no sky scene, so open mountains
-    2: "greenhills",    # Plains
-    3: "mountains",     # Canyon -- rugged rock
-    4: "forestgate",    # Forest -- the tree path
-    5: "frozenpeak",    # Tundra
-    6: "islandsea",     # Ocean -- the coast
-    7: "lakeside",      # Lake
-    8: "underwater",    # Underwater -- the seafloor
-    9: "factorynight",  # Evil Castle -- dark iron
-    10: "flowerfield",  # Field
-    11: "city",         # City
-    12: "islandsea",    # Cliffside -- rock over open sea
-    13: "greenhills",   # Town (unused as a zone biome, kept for completeness)
-    14: "volcano",      # Volcano
-    15: "desert",       # Desert
-}
+# ---------------------------------------------------------------------------
+# THE WORLD (rebuild 2026-10-14, Joel: "it was built with an older llm ...
+# needs to be built from scratch").  The DVPet frame -- 5 maps x 26 zones off
+# zones.csv/enemies.csv/towns.csv, auto-named "<boss>'s <biome>" zones, crc32
+# signature loot, TVs dug out of the road, warp tickets, town cups -- is gone.
+# tuipet's own world is data/adventure_maps.json (built by
+# tools/build_adventure_maps.py): 30 maps, ONE PER SCENE BACKGROUND, and ONE
+# MAP = ONE RUN -- the march, a town halfway, the boss at the end.  The road
+# is the list order; felling a map's boss opens the next.
+# ---------------------------------------------------------------------------
 DEFAULT_SCENE = "greenhills"
+TIERS = ("Rookie", "Champion", "Ultimate", "Mega")
+# bounties per enemy STAGE -- the medians of the retired enemies.csv purses,
+# so the economy stays where it was
+WILD_BITS = {"Rookie": (12, 25), "Champion": (41, 82), "Ultimate": (45, 91),
+             "Mega": (50, 93)}
+BOSS_BITS = {"Champion": (200, 200), "Ultimate": (750, 750), "Mega": (1500, 1500)}
+FINAL_BOSS_BITS = (3000, 3000)        # the last map's gate
+FINAL_PARADE_MSG = "You saved the Digital World!"
+TOWN_LEG = INTERACTIVE_STEPS // 2 - 1   # the town sits halfway (legs 19-21)
+ROAD_ITEMS = ("life_recovery", "shortcut", "rest_kit")
+MAPS_PER_AREA = 6   # the profile `maps` signal (eggs, AREA atoms, the road
+#                     shelf) speaks 5 areas: area n = the first 6(n+1) maps
 
 
-def _boss_biome_hid(zone):
-    """The zone's ONE biome habitat id: the terrain its gate boss STANDS in --
-    the bgs span holding the boss's Location (bosses gate the zone's end).  No
-    boss -> the terrain the pet spends the most steps in (dominant span)."""
-    spans = sorted(zone.get("bgs", ()))
-    if not spans:
-        return None
-    bosses = zone.get("bosses", ())
-    if bosses:
-        # the GATE boss (bosses[0] -- the one Adventure.boss actually
-        # fights), NOT max(location): zone 6 carries a second, unreachable
-        # boss (Apocalymon) whose span sat past Piedmon's, so the run wore
-        # a biome its own gate boss never stands in (audit 2026-07-25)
-        bl = bosses[0].get("location", 0)
-        for lo, hi, hid in spans:
-            if lo <= bl <= hi:
-                return hid
-        return spans[-1][2]                 # past the last span: the gate terrain
-    cover = {}
-    for lo, hi, hid in spans:
-        cover[hid] = cover.get(hid, 0) + max(0, hi - lo)
-    return max(cover, key=lambda h: (cover[h], -h))
-
-
-def _town_legs(z):
-    """The zone's town step-spans mapped onto the ~40 interactive legs:
-    [(leg_lo, leg_hi, town_id)] -- a mid-zone rest waypoint / visitable hub."""
-    ts = max(1, z.get("total_steps", 1))
-    out = []
-    for lo, hi, tid in z.get("towns", ()):
-        a = int(lo / ts * INTERACTIVE_STEPS)
-        b = max(a, math.ceil(hi / ts * INTERACTIVE_STEPS))
-        out.append((a, min(INTERACTIVE_STEPS - 1, b), tid))
-    return out
-
-
-# THE BIOME LOOT TABLE (item diversity audit 2026-07-23, Joel: "do it
-# all").  The authored DVPet tables were per-SLOT -- 1-1 == 2-1 == 5-1,
-# so Andromon's Desert, Kimeramon's Seafloor and Etemon's Mountains all
-# dug the same Television -- and the catalog filter dropped 2/3 of their
-# entries anyway (552 authored -> 182 usable).  Pools now key on the
-# zone's BIOME (its scene), dealt from the EXISTING catalog only: no new
-# items, no new systems, and the road finally FEEDS you (fish by the
-# water, steak in the mountains).  The 3 road items ride every pool --
-# they're the run tools.  The FINAL zone of each map digs the RARE TIER
-# instead: the endgame used to dig exactly one item (the chip).
-_ROAD_KEYS = ("town_transport", "disaster_transport", "life_recovery")
-# D5 (2026-07-24, Joel "make them findable"): cookie + cupcake join the
-# gentle biomes alongside candy, the third grant-only treat -- which has
-# ALWAYS been a road find here, so this only brings its two siblings in
-# line.  (digimemory joined the data biomes the SAME day: the later wild-
-# payload ruling gave a found chip a real 5-15 point payload
-# (petcare.stash_wild_memory), so the old "a wild chip is a silent dud"
-# objection died with it -- it sits in datatunnel/factorynight below,
-# truthed 2026-07-25.)
-BIOME_FINDS = {
-    # the expansion rows (2026-07-26) join their fitting biomes: farmland
-    # eggs and meat, forest nuts, mountain cheeses, a pepper by the lava --
-    # the road FEEDS you in that biome's own voice, and two of the shy
-    # capsules hide out where treasure hunters go.
-    "greenhills":   ("fish", "vegetable", "ball", "candy", "cupcake",
-                     "meat"),
-    "flowerfield":  ("vegetable", "candy", "music_player", "ball", "cookie",
-                     "honey", "fruit"),
-    "forestgate":   ("poison_mushroom", "vegetable", "candy", "music_player"),
-    "mountains":    ("dumbbell", "steak", "grow_capsule",
-                     "cheese", "bread", "red_pepper"),
-    "frozenpeak":   ("caffeine_pill", "steak", "vitamin"),
-    "islandsea":    ("tuna", "fish", "skateboard", "ball", "cupcake",
-                     "orange"),
-    "lakeside":     ("fish", "tuna", "vegetable", "cookie"),
-    "underwater":   ("fish", "tuna", "slim_drink", "capsule_b"),
-    "city":         ("video_game", "television", "energy_drink",
-                     "cheese_burger", "skateboard", "computer_game", "capsule_c"),
-    "datatunnel":   ("energy_drink", "anti_evo_chip", "video_game",
-                     "caffeine_pill", "digimemory", "computer_game",
-                     "capsule_c"),
-    "factorynight": ("anti_evo_chip", "dumbbell", "energy_drink",
-                     "sleeping_pill", "digimemory", "capsule_d",
-                     "supplement"),
-    "volcano":      ("steak", "energy_drink", "dumbbell",
-                     "red_pepper"),
-    "desert":       ("tuna", "energy_drink", "vitamin", "slim_drink",
-                     "yellow_pepper", "orange"),
-}
-FINAL_ZONE_FINDS = ("anti_evo_chip", "x_antibody", "textbook",
-                    "dna_crystal", "steak", "hp_chip")
-
-# the road's festival present pool: the ten authored capsule boxes -- eight
-# honest, two AngrySurprise pranks, identical until opened (that IS the box)
-_FESTIVAL_CAPSULES = ("capsule_a", "capsule_b", "capsule_c", "capsule_d",
-                      "capsule_e", "capsule_f", "capsule_g", "capsule_h",
-                      "prank_capsule_a", "prank_capsule_b")
-
-
-def _find_keys(scene, is_final):
-    """The zone's discoverable loot as CATALOG keys: its biome's pool (or
-    the rare tier for a map's final zone), with the road items riding
-    along.  (The per-slot authored tables retired 2026-07-23 -- see
-    BIOME_FINDS above; dormant rand_items/rand_foods stay in the data.)"""
-    pool = (FINAL_ZONE_FINDS if is_final
-            else BIOME_FINDS.get(scene) or BIOME_FINDS[DEFAULT_SCENE])
-    return list(_ROAD_KEYS) + list(pool)
+def _enemy(num, boss=False, final=False):
+    """One road foe as the engine reads it -- a plain species card; the
+    battle builds its Side from the dex (Side.wild)."""
+    _, by = data.load_sprites()
+    rec = by[num]
+    stage = rec["stage"]
+    if boss:
+        bits = FINAL_BOSS_BITS if final else BOSS_BITS.get(stage, BOSS_BITS["Mega"])
+    else:
+        bits = WILD_BITS.get(stage, WILD_BITS["Rookie"])
+    return {"num": num, "name": rec["name"], "stage": stage,
+            "attribute": rec["attribute"], "boss": boss, "bits": bits,
+            "chance": 100, "loot_table": -1,
+            "parade_msg": FINAL_PARADE_MSG if final else ""}
 
 
 @lru_cache(maxsize=1)
-def _real_zones():
-    """The 26 zones as run-zones: name (its biome + the gate boss that guards
-    it), the one biome scene, a uniform ~40-leg crossing, the zone's OWN wild
-    pool (its randoms), its town waypoints (leg-ranges that rest + suppress
-    encounters), and its discoverable loot pool (find_keys)."""
+def _load_maps():
+    import json
+    import os
+    path = os.path.join(os.path.dirname(__file__), "data", "adventure_maps.json")
+    with open(path, encoding="utf-8") as f:
+        rows = json.load(f)
+    _, by = data.load_sprites()
     out = []
-    for mp in data.load_maps():
-        last = max(z["zone"] for z in mp["zones"])
-        for z in mp["zones"]:
-            hid = _boss_biome_hid(z)
-            scene = HABITAT_SCENE.get(hid, DEFAULT_SCENE)
-            label = backgrounds.name(scene)
-            bosses = z.get("bosses", [])
-            name = f"{bosses[0]['name']}'s {label}" if bosses \
-                else f"{label} {z['map']}-{z['zone']}"
-            out.append({
-                "name": name,
-                "scene": scene,
-                "steps": INTERACTIVE_STEPS,
-                "randoms": z.get("randoms", []),
-                "bosses": bosses,
-                "town_legs": _town_legs(z),
-                "find_keys": _find_keys(scene, z["zone"] == last),
-                "map": z["map"], "zone": z["zone"],
-            })
+    for i, m in enumerate(rows):
+        final = i == len(rows) - 1
+        out.append({
+            "index": i,
+            "id": m["id"],
+            "name": m["name"],
+            "scene": m["scene"],
+            "tier": m["tier"],
+            "steps": INTERACTIVE_STEPS,
+            "randoms": [_enemy(n) for n in m["wilds"] if n in by],
+            "bosses": [_enemy(m["boss"], boss=True, final=final)],
+            "town_legs": [(TOWN_LEG, TOWN_LEG + 2, i)],
+            "find_keys": list(m["finds"]),
+            "reward": list(m["reward"]),
+            "map": i // MAPS_PER_AREA + 1,     # its AREA (1-based)
+        })
     return out
 
 
-# a safe fallback if the world data is missing (pre-setup): one plain zone so
-# the panel never crashes on an empty roster.
-_FALLBACK_ZONE = {"name": "Green Hills", "scene": DEFAULT_SCENE,
+_FALLBACK_ZONE = {"index": 0, "id": DEFAULT_SCENE, "name": "Green Hills",
+                  "scene": DEFAULT_SCENE, "tier": "Rookie",
                   "steps": INTERACTIVE_STEPS, "randoms": [], "bosses": [],
-                  "town_legs": [], "find_keys": []}
-ZONES = tuple(_real_zones()) or (_FALLBACK_ZONE,)
+                  "town_legs": [], "find_keys": [], "reward": [], "map": 1}
+MAPS = tuple(_load_maps()) or (_FALLBACK_ZONE,)
+ZONES = MAPS          # the engine's older name for the same list
+PROGRESSION = tuple(range(len(MAPS)))   # the road IS the list order
+
+
+def map_tier(i):
+    """The tier of map index i (a road town's id IS its map index)."""
+    return MAPS[max(0, min(int(i), len(MAPS) - 1))]["tier"]
 
 
 def active_holiday(today=None):
@@ -283,172 +189,47 @@ def active_holiday(today=None):
 
 
 def pick_zone(pet):
-    """A zone when none is chosen (tests, or a default embark): the pet's
-    frontier zone -- the newest one it has unlocked.  The zone-pick UI lets the
-    player choose any UNLOCKED zone instead (progression phase)."""
-    idx = unlocked_indices(pet)
-    return ZONES[idx[-1]] if idx else ZONES[0]
+    """The pet's frontier map -- the newest one unlocked (a default embark;
+    the picker lets the player choose any unlocked map)."""
+    return MAPS[frontier(pet)]
 
 
-# -- progression --------------------------------------------------------------
-# pet.adv_progress = zones CONQUERED (a count).  The road runs in DIFFICULTY
-# ORDER (balance audit 2026-07-21, Joel's option b): the Monte-Carlo sweep
-# over the real Battle engine showed zones.csv order was non-monotonic --
-# Mega wilds in map 1's zone 3, an 11% boss at zone 2, the endgame map 5
-# EASIER than map 1's back half, the all-Mega zone 16 cliff mid-game.  Win
-# rate tracks the rosters' stage ranks, so PROGRESSION sorts by that key --
-# self-documenting, roster-untouched, and it re-derives if the data changes.
-# Zone IDENTITY (list index) is untouched: score bests, names, and the map
-# field all stay keyed as before; only the ORDER you meet them changed.
-
-
-def _difficulty(z):
-    """The zone's deterministic difficulty key: mean wild stage rank + gate
-    boss rank (the measured win-rate driver)."""
-    from .battle import _RANK
-    wilds = [e for e in z.get("randoms", ()) if not e.get("boss")]
-    wr = (sum(_RANK.get(e.get("stage"), 3) for e in wilds) / len(wilds)
-          if wilds else 3.0)
-    bs = z.get("bosses") or []
-    br = _RANK.get(bs[0].get("stage"), 3) if bs else 3
-    return wr + br
-
-
-PROGRESSION = sorted(range(len(ZONES)),
-                     key=lambda i: (_difficulty(ZONES[i]), i))
-_ORDER_POS = {zi: pos for pos, zi in enumerate(PROGRESSION)}
-
-
-# ---------------------------------------------------------------------------
-# ZONE SIGNATURES (distribution arc, 2026-07-24 -- Joel ruled D3 "both" and
-# D4 "give them distinct loot").
-#
-# One item that ONLY this zone drops, appended to its biome pool.  A single
-# mechanism answers both rulings: it makes every zone's loot unique, which
-# is exactly what the eight factorynight zones needed -- they shared one
-# scene and therefore dug identical loot, a third of the map reading the
-# same.  Signatures are per-ZONE, so the shared scene stops mattering.
-#
-# The item is matched to the zone's DEPTH: the run's opening stops sign
-# common goods, the last stops sign legendary ones, using the same tier
-# ladder the shelves read (shop.tier_for_price).  Within a band, items that
-# are currently found NOWHERE are handed out first -- so the signature pass
-# also closes the "never a find" gap instead of needing its own mechanism.
-#
-# Deterministic: crc32 over the key, so a zone's signature is PERMANENT (the
-# guest-good law -- a place's character must not reshuffle between runs).
-# 8 + 8 + 5 + 5 = the 26 zones.  The rare band is exactly 5 because the five
-# FINAL_ZONE_FINDS are held back from signing (see _assign_signatures): a
-# signature is STRIPPED from every other pool, and signing x_antibody would
-# have quietly robbed every map's final zone of the rare tier it exists to
-# hand out.  The endgame table outranks the signature pass.
-_SIG_BANDS = (("common", 8), ("uncommon", 8), ("rare", 5), ("legendary", 5))
-
-
-def _assign_signatures():
-    """Give every zone its own exclusive find.  Returns {zone_index: key}."""
-    import zlib
-    from . import shop
-    # Read the BASE tables, never the live ZONES: this pass APPENDS to
-    # find_keys, so reading the zones back would make the "unfound first"
-    # sort depend on whether the pass had already run -- and a second call
-    # would deal a different hand.  Signatures must be permanent.
-    already = set(_ROAD_KEYS) | set(FINAL_ZONE_FINDS)
-    for _pool in BIOME_FINDS.values():
-        already.update(_pool)
-    # never a signature: the road trio (they ride EVERY pool already), and
-    # every GRANT-ONLY good -- the birthday treats and the Digimemory are
-    # deliberately unbuyable gifts (item diversity audit 2026-07-23, "by
-    # design"), and making them road loot would quietly undo that.
-    # ...and never the endgame table: a signature is exclusive, so signing
-    # one of these would strip it from every map's final zone.
-    banned = set(_ROAD_KEYS) | set(FINAL_ZONE_FINDS)
-    by_tier = {}
-    for key, v in shop.CATALOG.items():
-        if key in banned or v.price is None:
-            continue
-        by_tier.setdefault(v.tier or "common", []).append(key)
-    for tier, keys in by_tier.items():
-        # unfound first, then a stable crc32 shuffle
-        keys.sort(key=lambda k: (k in already, zlib.crc32(f"sig:{k}".encode())))
-    out, pos = {}, 0
-    for tier, count in _SIG_BANDS:
-        pool = by_tier.get(tier) or []
-        for i in range(count):
-            if pos >= len(PROGRESSION):
-                break
-            if not pool:
-                pos += 1
-                continue
-            out[PROGRESSION[pos]] = pool[i % len(pool)]
-            pos += 1
-    return out
-
-
-ZONE_SIGNATURE = _assign_signatures()
-_SIGNED = set(ZONE_SIGNATURE.values())
-for _zi, _z in enumerate(ZONES):
-    _mine = ZONE_SIGNATURE.get(_zi)
-    # EXCLUSIVE means exclusive: a signature is stripped from every OTHER
-    # zone's pool.  Most signatures are drawn from items no biome carried,
-    # but the deeper bands run out of those, and a "signature" the zone
-    # next door also digs is just a label.
-    _z["find_keys"] = [_k for _k in _z["find_keys"]
-                       if _k not in _SIGNED or _k == _mine]
-    if _mine and _mine not in _z["find_keys"]:
-        _z["find_keys"].append(_mine)
-    _z["signature"] = _mine
-
-# THE HUMAN SPIRITS WAIT ON THE DEEP ROADS (item expansion 2026-07-26):
-# the ten hardest zones by PROGRESSION each hide ONE Human spirit in their
-# dig pool -- never sold, legendary-weighted (shop's override), element
-# order matched to depth so the Dark spirit guards the very last road.
-# Their Beast halves are CUP prizes (tournament.py): roads give Human,
-# cups give Beast.
-_HUMAN_SPIRITS = ("human_fire_spirit", "human_light_spirit",
-                  "human_ice_spirit", "human_wind_spirit",
-                  "human_thunder_spirit", "human_earth_spirit",
-                  "human_water_spirit", "human_wood_spirit",
-                  "human_metal_spirit", "human_dark_spirit")
-for _pos, _zi in enumerate(PROGRESSION[-len(_HUMAN_SPIRITS):]):
-    if _HUMAN_SPIRITS[_pos] not in ZONES[_zi]["find_keys"]:
-        ZONES[_zi]["find_keys"].append(_HUMAN_SPIRITS[_pos])
 def zone_index(zone):
-    """The index of a zone dict in the ordered ZONES, or None (a test zone)."""
+    """The index of a map dict, or None (a test zone)."""
+    i = zone.get("index") if isinstance(zone, dict) else None
+    if isinstance(i, int) and 0 <= i < len(MAPS) and MAPS[i] is zone:
+        return i
     try:
-        return ZONES.index(zone)
+        return MAPS.index(zone)
     except ValueError:
         return None
 
 
+def _progress(pet):
+    return max(0, int(getattr(pet, "adv_progress", 0) or 0))
+
+
 def frontier(pet):
-    """The ZONES index of the pet's current frontier zone: the next stop on
-    the difficulty road (clamped to the last stop)."""
-    prog = max(0, min(int(getattr(pet, "adv_progress", 0) or 0),
-                      len(PROGRESSION) - 1))
-    return PROGRESSION[prog]
+    """The pet's frontier map: the first one not yet cleared (clamped to the
+    last)."""
+    return min(_progress(pet), len(MAPS) - 1)
 
 
 def unlocked_indices(pet):
-    """The zone indices the pet may embark on, in ROAD order: everything up
-    to and including the frontier."""
-    prog = max(0, min(int(getattr(pet, "adv_progress", 0) or 0),
-                      len(PROGRESSION) - 1))
-    return PROGRESSION[:prog + 1]
+    """The map indices the pet may embark on, in road order."""
+    return tuple(range(frontier(pet) + 1))
 
 
 def is_conquered(pet, zi):
-    """Has the pet already felled this zone's boss (its road position sits
-    below the conquered count)?"""
-    pos = _ORDER_POS.get(zi)
-    return pos is not None and pos < int(getattr(pet, "adv_progress", 0) or 0)
+    """Has the pet already felled this map's boss?"""
+    return zi is not None and 0 <= zi < _progress(pet)
 
 
 def _veteran(enemy):
-    """A conquered zone's foe, replayed: the SAME species carrying a
+    """A conquered map's foe, replayed: the SAME species carrying a
     trained veteran's Side -- the real hit-formula terms (trainings, a
     winning record), which Battle consumes via enemy['side'].  Returns a
-    scaled COPY: zone dicts are shared and cached, never mutated."""
+    scaled COPY: map dicts are shared and cached, never mutated."""
     from .battle import Side
     e = dict(enemy)
     s = Side.wild(e.get("num", 0), boss=bool(e.get("boss")))
@@ -459,26 +240,23 @@ def _veteran(enemy):
     return e
 
 
-def is_map_cleared(pet, map_num):
-    """Are ALL of a map's zones conquered (every one below the frontier)?  This
-    is the profile `maps` signal that unlocks the road shop shelf + eggs."""
-    idxs = [i for i, z in enumerate(ZONES) if z["map"] == map_num]
-    # road-order aware (option b, 2026-07-21): a map is cleared when every
-    # one of ITS zones is conquered, wherever they now sit on the road
-    return bool(idxs) and all(is_conquered(pet, i) for i in idxs)
+def is_map_cleared(pet, area):
+    """Is AREA `area` (1-based, MAPS_PER_AREA maps each) fully cleared?  The
+    profile `maps` signal that unlocks eggs, AREA atoms and the road shelf."""
+    return area >= 1 and _progress(pet) >= min(len(MAPS), area * MAPS_PER_AREA)
 
 
 def record_win(pet, zone):
-    """A boss felled: if it was the FRONTIER, the next stop on the road
-    unlocks.  Replaying an already-conquered zone advances nothing.
-    Returns True if a zone unlocked."""
+    """A boss felled: if it was the FRONTIER map, the next one unlocks.
+    Replaying a cleared map advances nothing.  Returns True if a map
+    unlocked."""
     zi = zone_index(zone)
-    prog = int(getattr(pet, "adv_progress", 0) or 0)
-    if (zi is not None and prog < len(PROGRESSION)
-            and _ORDER_POS.get(zi) == prog):
+    prog = _progress(pet)
+    if zi is not None and zi == prog and prog < len(MAPS):
         pet.adv_progress = prog + 1
         return True
     return False
+
 
 
 class Adventure:
@@ -554,13 +332,8 @@ class Adventure:
 
     # -- wild encounters ------------------------------------------------------
     def _wild_pool(self):
-        """The road's wild mons: THIS zone's own random-encounter table
-        (enemies.csv, filtered to its map/zone by data.load_maps).  Falls back
-        to stage-matched roster enemies only if a zone ships no randoms."""
-        pool = [e for e in self.zone.get("randoms", ()) if not e.get("boss")]
-        if pool:
-            return pool
-        return [e for e in data.enemies_for_stage(self.pet.stage) if not e.get("boss")]
+        """The road's wild mons: THIS map's own pool."""
+        return [e for e in self.zone.get("randoms", ()) if not e.get("boss")]
 
     def _in_town(self, loc):
         """Is this leg inside a town waypoint span (rest + no encounters)?"""
@@ -599,133 +372,52 @@ class Adventure:
         e = random.choices(pool, weights=weights, k=1)[0]
         return _veteran(e) if self.replay else e
 
-    # -- transport (in-run warp items) ----------------------------------------
+    # -- road items (rebuild 2026-10-14) ----------------------------------------
+    # Three tickets, one job each: Life Recovery refills the hearts, the
+    # Shortcut jumps to the boss gate (no ambush -- the old Disaster/Zone
+    # transports' job), the Rest Kit rests energy to half a tank where you
+    # stand (the old Town/Continent transports' job).
     def _transport_kind(self, key):
-        """'town' (Birdra), 'danger' (Garuda), 'life' (Life Recovery),
-        'skip' (Zone Transport: a safe lift up the road) or 'camp'
-        (Continent Transport: the Whamon rest) -- the CATALOG road items
-        that mean something WITHIN a run -- else None.  (The expansion
-        2026-07-26 gave the two worldmap warps run-jobs: the zone picker
-        replaced map warping long ago, so their tickets buy road comfort
-        instead -- a lift without an ambush, a rest without a town.)"""
-        return {"town_transport": "town", "disaster_transport": "danger",
-                "life_recovery": "life", "zone_transport": "skip",
-                "continent_transport": "camp"}.get(key)
+        return {"life_recovery": "life", "shortcut": "shortcut",
+                "rest_kit": "rest"}.get(key)
 
     def held_transports(self):
-        """The run-usable road-item keys the pet is carrying, in bag order.
-        Each row lists only when it BUYS something (the dead-menu-row rule,
-        audit 2026-07-25): Life Recovery hides at full hearts, the Town
-        Transport hides on town ground (the rest is already yours), and
-        the Danger Warp hides within dash range of the gate (a dash that
-        moves nothing).  The town warp reaches the NEAREST span in either
-        direction, so late, drained and past the town -- exactly when a
-        tamer reaches for it -- the ticket still buys a real town."""
+        """The road items the pet carries that would DO something right now
+        (a menu row that buys nothing is never listed)."""
         inv = getattr(self.pet, "inventory", {}) or {}
-        return [k for k, n in inv.items() if n > 0 and self._transport_kind(k)
-                and not (self._transport_kind(k) == "life"
-                         and self.lives >= MAX_LIVES)
-                # the ticket buys a TOWN: hidden only when you already
-                # stand on town ground (audit 2026-07-25 -- the old
-                # forward-only filter hid it at the gate in 26/26 zones,
-                # so the gate refusal's promised warp-out never existed;
-                # the road CAN double back for a rest)
-                and not (self._transport_kind(k) == "town"
-                         and (self._in_town(self.loc)
-                              or not self.zone.get("town_legs")))
-                # the dash buys DISTANCE: at the gate it moved nothing,
-                # ate the ticket and forced a fight on a body the gate may
-                # have just refused (audit 2026-07-25)
-                and not (self._transport_kind(k) == "danger"
-                         and self.loc >= self.total - 3)
-                # the lift buys legs too: hidden at the gate (2026-07-26)
-                and not (self._transport_kind(k) == "skip"
-                         and self.loc >= self.total - 1)
-                # the camp buys REST: hidden when the tank is already at
-                # the half it restores to (the dead-menu-row rule)
-                and not (self._transport_kind(k) == "camp"
-                         and self.pet.energy >= self.pet.max_energy // 2)]
+        out = []
+        for k, n in inv.items():
+            kind = self._transport_kind(k)
+            if n <= 0 or kind is None:
+                continue
+            if kind == "life" and self.lives >= MAX_LIVES:
+                continue
+            if kind == "shortcut" and (self.loc >= self.total or self.boss is None):
+                continue
+            if kind == "rest" and self.pet.energy >= self.pet.max_energy // 2:
+                continue
+            out.append(k)
+        return out
 
     def use_transport(self, key):
-        """Spend a road item.  Town warp -> jump to the town and rest
-        (lives + energy; the PANEL then offers the hub doors like any
-        walked-in arrival).  Danger warp -> dash toward the boss and get
-        ambushed on arrival.  Life Recovery -> hearts back to full where
-        you stand.  Returns 'town-warp', ('encounter', enemy),
-        'danger-warp', 'life-recovery', or None (not a run item / not
-        held / hearts already full)."""
-        kind = self._transport_kind(key)
-        inv = getattr(self.pet, "inventory", {}) or {}
-        if kind is None or inv.get(key, 0) <= 0 or self.done or self.failed:
+        """Spend a road item.  Returns 'life-recovery', ('boss', boss) for the
+        Shortcut (the gate opens at once), 'rest', or None (not usable)."""
+        if key not in self.held_transports() or self.done or self.failed:
             return None
+        kind = self._transport_kind(key)
+        self.pet.take_item(key)
         if kind == "life":
-            if self.lives >= MAX_LIVES:        # defensive: menu already hides it
-                return None
-            self.pet.take_item(key)
             self.lives = MAX_LIVES
             self.last = "A second wind — lives restored!"
             return "life-recovery"
-        if kind == "town" and (self._in_town(self.loc)
-                               or not self.zone.get("town_legs")):
-            # defensive, like the life warp's full-hearts guard: the menu
-            # already hides it, and a ticket must never buy a rest you
-            # already have (adventure audit 2026-07-25)
-            return None
-        if kind == "danger" and self.loc >= self.total - 3:
-            # defensive: a dash that moves nothing is not for sale
-            return None
-        if kind == "skip" and self.loc >= self.total - 1:
-            return None                        # defensive: nothing to skip
-        if kind == "camp" and self.pet.energy >= self.pet.max_energy // 2:
-            return None                        # defensive: nothing to rest
-        if kind == "skip":
-            # the SAFE lift (expansion 2026-07-26): ten legs forward, no
-            # ambush, stopping shy of the gate -- the middle ticket between
-            # walking and the danger dash
-            self.pet.take_item(key)
-            self.loc = min(self.total - 1, self.loc + SKIP_LEGS)
-            self.last = "A Birdramon lift — the road slides by below."
-            return "skip-lift"
-        if kind == "camp":
-            # the Whamon CAMP: a rest without a town -- energy to half the
-            # tank where you stand.  Lives stay Life Recovery's job; the
-            # win streak survives (that is this ticket's premium)
-            self.pet.take_item(key)
-            half = self.pet.max_energy // 2
-            if self.pet.energy < half:
-                self.pet._set_energy(half)
-            self.last = "Camp pitched — rested where you stand."
-            return "camp-rest"
-        self.pet.take_item(key)
-        if kind == "town":
-            # the NEAREST town span, behind included: every zone's span
-            # ends mid-road, so a forward-only jump left the whole back
-            # half (and the gate) with a ticket that bought nothing.
-            # Doubling back re-walks real legs -- the ticket's price on
-            # top of its price (audit 2026-07-25).
-            legs = list(self.zone.get("town_legs") or ())
-            tgt = min(legs, key=lambda lg: min(abs(self.loc - lg[0]),
-                                               abs(self.loc - lg[1])))
-            self.loc = tgt[0]
-            self._rest_up()
-            self._resting = True
-            self.last = "Warped to a town — rested up."
-            return "town-warp"
-        # danger: dash to just shy of the boss gate, then an ambush
-        self.loc = max(self.loc, max(0, self.total - 3))
-        pool = self._wild_pool()
-        if pool:
-            weights = [max(1, e.get("chance", 100)) for e in pool]
-            enemy = random.choices(pool, weights=weights, k=1)[0]
-            if self.replay:
-                # the warp's ambusher is a VETERAN like every other wild on
-                # a conquered road -- the raw entry slipped the wrap while
-                # award_bits still paid the trained bounty (audit 2026-07-25)
-                enemy = _veteran(enemy)
-            self.last = f"Warped ahead — ambushed by {enemy['name']}!"
-            return ("encounter", enemy)
-        self.last = "Warped ahead."
-        return "danger-warp"
+        if kind == "rest":
+            self.pet._set_energy(self.pet.max_energy // 2)
+            self.last = "A short rest by the road."
+            return "rest"
+        self.loc = self.total
+        self._resting = False
+        self.last = f"A shortcut — {self.boss_name} guards the gate!"
+        return ("boss", self.boss)
 
     def _roll_find(self):
         """A loot key spotted on the road this step, or None (no finds in a
@@ -736,12 +428,8 @@ class Adventure:
         chance = FIND_CHANCE * (HOLIDAY_FIND_MULT if self.holiday else 1)
         if random.random() >= chance:
             return None
-        # a FESTIVAL road present IS A CAPSULE now (item expansion
-        # 2026-07-26, Joel: "rewire christmas presents to basically be
-        # holiday versions of these"): the wrapped box lands in the bag and
-        # is OPENED for its roll -- opened on the festival day, the roll
-        # reaches a tier higher (petcare._capsule); two of the ten boxes
-        # are the authored AngrySurprise pranks.  Home gifts stay home.
+        # a FESTIVAL road present is a capsule: the wrapped box lands in the
+        # bag and is opened for its roll (petcare._capsule)
         if self.holiday and random.random() < FESTIVAL_PRESENT_CHANCE:
             return (random.choice(_FESTIVAL_CAPSULES), True)
         # TIERED FIND RARITY (D1, 2026-07-24): the pool used to be a flat
@@ -864,38 +552,19 @@ class Adventure:
         return amt
 
     def award_drop(self, enemy):
-        """THE BATTLE DROP (item expansion 2026-07-26, Joel: "i even want
-        battle drops in adventure") -- and it was AUTHORED all along:
-        every enemies.csv row carries a LootTableID into dropRate.csv.
-        Wilds shed attribute chips at 2-7%, elites shed the X-Program at
-        100%, and each map's unique story boss drops its DIGIMENTAL.
-
-        Rationing rides the bounty's own rules: a REPLAY boss whose daily
-        veteran purse is spent drops nothing either (the road_bounty
-        ledger, anti-printer) -- wilds stay live, a first conquest is
-        untouched.  Returns the granted CATALOG key, or None."""
-        if enemy.get("boss") and self.replay and self.bounty_spent:
-            return None
-        table = data.load_loot_tables().get(enemy.get("loot_table", -1))
-        if not table:
-            return None
-        from . import shop
-        from .pet import Pet
-        roll, cum = random.random() * 100, 0
-        for icon, rate in table:
-            cum += rate
-            if roll < cum:
-                # a Digimental drop speaks the crest shelf's own key; all
-                # else resolves through the one icon->key door
-                iid = int(icon[2:]) if icon.startswith("i:") else -1
-                crest = {v: k for k, v in Pet._CREST_IDS.items()}.get(iid)
-                key = crest or shop.key_for_icon(icon)
-                if key is None:
-                    return None              # an unshipped row stays dormant
-                self.pet.add_item(key)
-                self.drops += 1
-                return key
-        return None
+        """THE BOSS REWARD (rebuild 2026-10-14): a map's boss hands over the
+        map's reward items -- once, on the FIRST conquest (a replayed map
+        pays bits only, so the deep maps' spirits and chips can't be
+        farmed).  Wilds drop nothing; the road's loot is its finds.
+        Returns the granted catalog keys (possibly empty)."""
+        if not enemy.get("boss") or self.replay:
+            return []
+        got = []
+        for key in self.zone.get("reward") or ():
+            self.pet.add_item(key)
+            self.drops += 1
+            got.append(key)
+        return got
 
     def resolve(self, won, fled=False):
         """Settle a wild fight.  Every fight grants a grace leg so the next

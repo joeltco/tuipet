@@ -47,7 +47,7 @@ from tuipet.shopscreen import ShopPanel
 
 D = datetime.date(2026, 3, 3)          # an ordinary day
 FEST = datetime.date(2026, 1, 1)       # a festival
-TOWNS = sorted(shop._town_maps())
+TOWNS = sorted(range(30))
 BLANK = {"album": {}, "mega_kills": 0, "max_stage": 0, "xanti_ever": False,
          "maps": set(), "wins": 0, "raids": 0, "max_gen": 1, "armor_evos": 0}
 
@@ -109,34 +109,6 @@ def test_the_wave_tease_is_the_same_in_every_process():
         assert out.returncode == 0, out.stderr
         seen.add(out.stdout.strip())
     assert len(seen) == 1, f"the tease varied by hash seed: {seen}"
-
-
-def test_the_whole_shop_reads_the_same_in_every_process():
-    """S1's bug class, swept: a town's deal, its standing guest good, its
-    egg band and the home deal all promise to be STABLE.  They are
-    crc32-ordered rather than set-ordered — pin it, because the tease
-    proved how easy that is to lose."""
-    code = (
-        "import datetime, hashlib\n"
-        "from tuipet import shop\n"
-        "D = datetime.date(2026, 3, 3)\n"
-        "towns = sorted(shop._town_maps())\n"
-        "out = ([shop.town_deal_sid(t, D) for t in towns],\n"
-        "       sorted(shop._guest_deal().items()),\n"
-        "       [tuple(shop.town_egg_stock(t)) for t in towns],\n"
-        "       [shop.home_deal_key(D + datetime.timedelta(days=i))\n"
-        "        for i in range(10)])\n"
-        "print(hashlib.md5(repr(out).encode()).hexdigest())\n"
-    )
-    seen = set()
-    for seed in ("0", "7", "999"):
-        env = dict(os.environ, PYTHONHASHSEED=seed,
-                   PYTHONPATH=os.pathsep.join(sys.path))
-        out = subprocess.run([sys.executable, "-c", code], env=env,
-                             capture_output=True, text=True, timeout=180)
-        assert out.returncode == 0, out.stderr
-        seen.add(out.stdout.strip())
-    assert len(seen) == 1, "a shop's character shifted between launches"
 
 
 def test_a_tie_breaks_toward_the_nearest_goal():
@@ -249,21 +221,14 @@ def test_the_bag_retarget_guard_survives_a_mashed_sell():
 # ---- the gates ----------------------------------------------------------
 
 @pytest.mark.parametrize("maps,expected", [
-    (0, set()),
-    # the expansion road tools (2026-07-26): the safe lift opens with the
-    # first cleared map, the camp with the second, like their kin
-    (1, {"town_transport", "disaster_transport", "zone_transport"}),
-    (2, {"town_transport", "disaster_transport", "life_recovery",
-         "zone_transport", "continent_transport"}),
+    (0, set()), (1, {"shortcut"}),
+    (2, {"shortcut", "rest_kit", "life_recovery"}),
 ])
 def test_the_adventure_gate_opens_exactly_on_its_threshold(monkeypatch, maps,
                                                            expected):
     monkeypatch.setattr(persistence, "get_progress",
                         lambda: dict(BLANK, maps=set(range(maps))))
-    on = set()
-    for tid in TOWNS:
-        on |= {r["key"] for r in shop.town_stock(tid, D, pet=_buyer())}
-    on |= {r["key"] for r in shop.home_stock(today=D, pet=_buyer())}
+    on = {r["key"] for r in shop.home_stock(today=D, pet=_buyer())}
     assert on & set(shop.ADVENTURE_GATES) == expected
 
 
@@ -295,7 +260,6 @@ def test_every_priced_good_is_sold_somewhere(monkeypatch):
 def test_every_authored_key_resolves():
     """A table naming a key the catalog lost is a row that silently
     vanishes from a shelf."""
-    assert not set(shop._MAP_SPECIALTY.values()) - set(shop.CATALOG)
     assert not set(shop._ROAD_ONLY) - set(shop.CATALOG)
     assert not set(shop.ADVENTURE_GATES) - set(shop.CATALOG)
     assert not set(shop._OWN_FLOW) - set(shop.CATALOG)

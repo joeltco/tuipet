@@ -50,8 +50,9 @@ def _damaged(name):
 REQUIRED_DATA = (
     "sprites.json.gz", "orbs.json.gz",              # atlases (_load_bundled)
     "digimon.csv", "evolutions.csv", "lines.csv",   # who a Digimon is
-    "enemies.csv", "tournies.csv", "towns.csv", "zones.csv",
-    "foods.csv", "items.csv", "vitems.json", "dropRate.csv", "lootTable.csv",
+    "tournies.csv",
+    "adventure_maps.json",                          # the adventure world (2026-10-14)
+    "foods.csv", "items.csv", "vitems.json",
     "titles.csv", "eggUnlock.csv",
     # opened at IMPORT time, so a missing one dies before main() ever calls
     # the preflight -- listed because they ARE required, not because this
@@ -63,7 +64,7 @@ REQUIRED_DATA = (
 OPTIONAL_DATA = (
     "battle_fx.json.gz", "backgrounds.json.gz", "effects.json.gz",
     "icons.json.gz", "eggs.json.gz", "jogress_overlays.json",
-    "digicoreMenuConfig.csv", "shopConsumable.csv", "deviceAttacks.csv",
+    "digicoreMenuConfig.csv", "deviceAttacks.csv",
 )
 
 

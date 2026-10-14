@@ -9,20 +9,14 @@ leaving home and returning both ride the same striped-curtain wipe.
 adventures.  One biome per run, cross a zone in ~40 interactive travel actions,
 victory teleport home.
 
-Built so far: the teleport (verbatim); the MARCH -- the pet walks the run's one
-backdrop while the journey rides a ribbon (adventure.Adventure), arrival
-teleports it home with the verdict, ESC turns back; and WILD ENCOUNTERS -- a
-per-leg roll pulls a real roster enemy that fights through BattlePanel (a
-SubHost child), a loss costs an adventure life, and 0 lives fails the run home;
-the real 26-ZONE GEOGRAPHY (adventure.ZONES from data.load_maps -- each zone its
-own biome + wild table); the zone BOSS FIGHT -- the end opens the gate boss,
-felling it is the win, a survivable loss stands the pet at the gate to try again
-(SPACE) or turn back (ESC); TRAVEL DRAIN -- marching tires the pet, burns weight
-and tops effort; TOWNS -- a mid-zone rest that refills
-lives + energy; and PROGRESSION -- the ZonePickPanel picks an unlocked zone,
-felling a boss unlocks the next (pet.adv_progress); and FINDS -- spot loot on
-the road, ENTER digs it into the bag; the home STATUS CARD; and TRANSPORT -- press T
-mid-march to spend a town/danger warp item (skip ahead, rest or get ambushed).
+Built: the teleport (verbatim); the MARCH across one of the 30 maps
+(adventure.MAPS, one per scene background -- one map, one run); WILD
+ENCOUNTERS through BattlePanel (a loss costs a life, 0 lives fails the run);
+the TOWN halfway (rest, shop, eggs, bag); the BOSS at the end -- felling it
+clears the map and opens the next, a survivable loss stands the pet at the
+gate (SPACE again / ESC back); TRAVEL DRAIN; FINDS -- ENTER digs them into the
+bag; the home STATUS CARD; and ROAD ITEMS -- T spends Life Recovery, a
+Shortcut (straight to the boss) or a Rest Kit.
 Nothing here is faked.
 
 ⭐WHERE THE RUN'S NUMBERS LIVE (v0.5.327-328, Joel's orders): the ROAD CARD
@@ -187,7 +181,6 @@ class AdventurePanel(menu.SubHost):
         self._at_gate = False         # knocked back: standing before the boss
         self._gate_refusal = None      # ...or standing because the body said no
         #                                (the device's battle gate, 2026-07-25)
-        self._rest_t = 0              # ticks left resting (transport town-warp beat)
         self._heal_t = 0              # ticks left on the Life Recovery second-wind beat
         self._note = ""               # a transient strip verdict (heal / bare warp)
         self._note_t = 0
@@ -306,16 +299,6 @@ class AdventurePanel(menu.SubHost):
                 return
             if self._town_prompt:         # standing at a town: visit or walk on
                 return
-            if self._rest_t > 0:          # a transport town-warp rest beat
-                self._rest_t -= 1
-                if self._rest_t == 0 and self.adv._in_town(self.adv.loc):
-                    # the warp landed ON town ground -- open the same
-                    # visit-or-walk-on door a walked-in arrival gets (Joel
-                    # 2026-07-23: "shoukdnt town transports allow us to go
-                    # to the shop, etc?").  A warp from PAST the span
-                    # rested in place, so there is no town to enter.
-                    self._town_prompt = True
-                return
             if self._heal_t > 0:          # the Life Recovery second wind
                 self._heal_t -= 1
                 return
@@ -357,7 +340,7 @@ class AdventurePanel(menu.SubHost):
         self._spent_seen = spent
         if not spent:                     # a rest lifted it back over the line
             return
-        if self._note_t > 0 or self._rest_t > 0 or self._heal_t > 0:
+        if self._note_t > 0 or self._heal_t > 0:
             return                        # a verdict is already speaking: don't talk over it
         # 28 plain: the note branch appends 3 hearts, and the 36-char first
         # draft measured 40/40 -- zero margin against the CELL LAW
@@ -418,35 +401,15 @@ class AdventurePanel(menu.SubHost):
             self._go_home()
 
     def _use_transport(self, key):
-        """Spend the chosen road item: a town warp rests (and opens the
-        town's doors once the beat ends -- see anim), a danger warp
-        ambushes, a life recovery refills the hearts in place."""
+        """Spend the chosen road item: Life Recovery and the Rest Kit play
+        the heal beat; the Shortcut opens the boss gate at once."""
         r = self.adv.use_transport(key)
         self._transport = None
-        if r == "town-warp":
-            self._rest_t = TOWN_HOLD          # the warp-in rest beat
-            self._refused = False             # rested = willing to walk again
-        elif isinstance(r, tuple) and r[0] == "encounter":
-            self._start_battle(r[1])          # the danger-warp ambush
-        elif r == "life-recovery":
-            # the second wind is VISIBLE now (anim audit A3, 2026-07-22):
-            # the v0.5.164 heal was nothing but the heart glyphs ticking --
-            # a happy beat + the verdict on the strip, the rest-beat grammar
-            self._heal_t = TOWN_HOLD
+        if isinstance(r, tuple) and r[0] == "boss":
             self._note, self._note_t = "⚡ " + self.adv.last, NOTE_HOLD
-            self.sfx = "confirm"
-        elif r == "danger-warp":
-            # empty wild pool: the dash still happened -- say so instead of
-            # silently eating the ticket (anim audit A12)
-            self._note, self._note_t = "⚡ " + self.adv.last, NOTE_HOLD
-        elif r == "skip-lift":
-            # the safe Birdramon lift (expansion 2026-07-26): the road
-            # slides by -- the verdict on the strip, the march resumes
-            self._note, self._note_t = "⚡ " + self.adv.last, NOTE_HOLD
-            self._refused = False             # lifted = willing to walk on
-            self.sfx = "confirm"
-        elif r == "camp-rest":
-            # the Whamon camp: the heal beat, like the life recovery
+            self._refused = False
+            self._start_boss(r[1])
+        elif r in ("life-recovery", "rest"):
             self._heal_t = TOWN_HOLD
             self._note, self._note_t = "⚡ " + self.adv.last, NOTE_HOLD
             self._refused = False             # rested = willing to walk on
@@ -634,59 +597,41 @@ class AdventurePanel(menu.SubHost):
                                    else (GCELL_ENCOUNTER_LOSE - GCELL_BATTLE_LOSE))
         self.adv.chain(won)                   # the streak: BEFORE the bounty, so
         #                                       this win's own chain pays it
-        drop = None
+        drop = []
         if won and enemy is not None:
             self.adv.award_bits(enemy)        # the bounty into the purse + run tally
-            drop = self.adv.award_drop(enemy)  # the AUTHORED battle drop (2026-07-26)
+            drop = self.adv.award_drop(enemy)  # a boss's map reward (first clear)
         if self._fighting_boss:
             self._fighting_boss = False
             out = self.adv.resolve_boss(won, fled=fled)
             if out == "won":
                 unlocked = adventure.record_win(self.pet, self.adv.zone)   # progression
                 from . import persistence              # profile signals: unlocks
-                m = self.adv.zone.get("map")
-                map_done = (m is not None
-                            and adventure.is_map_cleared(self.pet, m))
-                if map_done:
-                    persistence.map_complete_add(m - 1)  # shop shelf + eggs (0-based)
+                area = self.adv.zone.get("map")
+                area_done = (unlocked and area is not None
+                             and adventure.is_map_cleared(self.pet, area))
+                if area_done:
+                    persistence.map_complete_add(area - 1)  # shop shelf + eggs (0-based)
                 if self.adv.holiday:                   # conquered on a festival day
                     persistence.festival_add(self.adv.holiday)  # gates the festival egg
-                tail = " New ground opens!" if unlocked else ""
+                last_map = adventure.zone_index(self.adv.zone) == len(ZONES) - 1
+                tail = (" The road is complete!" if unlocked and last_map
+                        else " A new map opens!" if unlocked else "")
                 if drop:
-                    e = shop.entry(drop) or {}
-                    tail = f" It drops {e.get('name', 'something')}!{tail}"
+                    names = " and ".join((shop.entry(k) or {}).get("name", k) for k in drop)
+                    tail = f" Reward: {names}!{tail}"
                 self._home_msg = (f"{self.adv.boss_name} felled — "
-                                  f"{self.adv.name} conquered!{self._bits_tail()}{tail}")
-                # the zoneChange CELEBRATION plays before the homecoming
-                # (restored from the old build): the pulse first; the map-
-                # conquered BossParade -- canon shows three.  ⚠ Keyed to the
-                # map ACTUALLY completing, the same test that files the
-                # unlock note above (theme-of-truth fix 2026-07-28): the
-                # road is difficulty-ordered, and map 1's authored
-                # parade_msg boss sits at road 19 while a map-1 zone waits
-                # at 21 -- the old parade_msg key celebrated "map conquered"
-                # two zones before the shop shelf and the egg gate agreed.
-                paraders = []
-                parade_msg = None
-                if map_done:
-                    paraders = [b["num"] for z in ZONES if z.get("map") == m
-                                for b in z["bosses"]][:3]
-                    # the victory line rides the map's AUTHORED parade boss,
-                    # whichever zone actually finished the map
-                    parade_msg = next((b.get("parade_msg")
-                                       for z in ZONES if z.get("map") == m
-                                       for b in (z.get("bosses") or [])
-                                       if b.get("parade_msg")), None)
+                                  f"{self.adv.name} cleared!{self._bits_tail()}{tail}")
+                # the CELEBRATION plays before the homecoming; the very last
+                # map's win adds the BossParade (its bosses march past with
+                # the victory line)
+                paraders, parade_msg = [], None
+                if unlocked and adventure.zone_index(self.adv.zone) == len(ZONES) - 1:
+                    paraders = [z["bosses"][0]["num"] for z in ZONES[-3:] if z["bosses"]]
+                    parade_msg = adventure.FINAL_PARADE_MSG
                 self._pulse = {"t": 0, "parade": paraders,
                                "msg": parade_msg,
-                               # the flash must SAY what it celebrates
-                               # (Joel 2026-07-25 "flashing for what?") --
-                               # and FIT while saying it: the old line named
-                               # the boss twice (the zone embeds it) and ran
-                               # to 71 cells, cut mid-scroll on the biggest
-                               # wins (audit 2026-07-25).  The homecoming
-                               # verdict keeps the full sentence.
-                               "line": f"{self.adv.boss_name} — conquered!"}
+                               "line": f"{self.adv.name} — cleared!"}
             elif out == "fled":
                 self._home_msg = f"Turned back from {self.adv.boss_name}.{self._bits_tail()}"
                 self._go_home()
@@ -762,7 +707,7 @@ class AdventurePanel(menu.SubHost):
                     and s["t"] >= INV_WALK_T and k in ("space", "enter")):
                 self._lock_dig()
             return None
-        if self._rest_t > 0 or self._heal_t > 0:
+        if self._heal_t > 0:
             # the rest / second-wind beat plays out -- keys used to fall
             # through to the march and SPACE walked 5 silent legs behind a
             # motionless rested pet (audit 2026-07-25)
@@ -880,7 +825,7 @@ class AdventurePanel(menu.SubHost):
             if self._gate_refusal:             # the body said no: SAY WHICH
                 # single spacing: the hungriest clause + a held warp ran 41
                 # cells and put the outs on the marquee (audit 2026-07-25)
-                out = "T warp · " if self.adv.held_transports() else ""
+                out = "T item · " if self.adv.held_transports() else ""
                 return f"[b]{self._gate_refusal}[/] [dim]· {out}ESC home[/]"
             # CELL BUDGET (audit 2026-07-25: ten boss names ran 41-45 cells
             # and scrolled the required keys off the box): the hints + hearts
@@ -912,7 +857,7 @@ class AdventurePanel(menu.SubHost):
                 # invites a dead mash (QOL sweep 2026-07-23).  HONEST outs
                 # only (energy audit 2026-07-23): energy cannot rise on the
                 # road itself -- a town's rest or home are the ways out.
-                out = ("T warp · " if self.adv.held_transports() else "")
+                out = ("T item · " if self.adv.held_transports() else "")
                 return f"[b]Refuses — spent![/]  [dim]{out}ESC home[/]"
             if self._scene is not None:
                 s, t = self._scene, self._scene["t"]
@@ -942,8 +887,6 @@ class AdventurePanel(menu.SubHost):
             if self._find is not None:
                 # <= 40 plain (budget sweep 2026-07-21: the long line ran 45)
                 return "[b]✦ A glint![/]  [dim]ENTER dig · SPACE pass[/]"
-            if self._rest_t > 0:
-                return f"[b]⌂ Town — rested up[/]  ⚡{self.pet.energy} {hearts}"
             if self._heal_t > 0 or self._note_t > 0:
                 # the road-item / balk verdict (A3/A12; the ⚡ moved into the
                 # transport notes -- a balk's verdict is not an energy event)
@@ -965,7 +908,7 @@ class AdventurePanel(menu.SubHost):
             # has only ever hurried the next leg, and never stopped anything.
             # Name what the key does (KEYS SPELL THEMSELVES).
             keys = ([("SPACE", "hurry")]
-                    + ([("T", "warp")] if self.adv.held_transports() else [])
+                    + ([("T", "item")] if self.adv.held_transports() else [])
                     + [("ESC", "home")])
             return menu.hints(*keys)
         return menu.hints(("ESC", "home"))
@@ -1400,8 +1343,7 @@ class AdventurePanel(menu.SubHost):
                 return self._glint_frame()     # the attention bounce at the spot
             if self._heal_t > 0:
                 return self._heal_frame()      # the second-wind celebration
-            if (self._transport is not None or self._rest_t > 0
-                    or self._town_prompt):
+            if (self._transport is not None or self._town_prompt):
                 return self._standing_frame()  # menu / rest / town: stand still
             return self._march_frame()
         return self._standing_frame()
@@ -1433,7 +1375,7 @@ class ZonePickPanel:
             self.cursor = (self.cursor - 1) % n
         elif k in ("down", "j"):
             self.cursor = (self.cursor + 1) % n
-        elif k in ("pageup", "pagedown"):       # up to 26 zones unlock
+        elif k in ("pageup", "pagedown"):       # up to 30 maps unlock
             self.cursor = menu.page_step(self.cursor, n, self.VIS, k)
         elif k in ("enter", "space"):
             return ("done", ZONES[self.indices[self.cursor]])   # embark

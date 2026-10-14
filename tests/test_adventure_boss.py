@@ -170,11 +170,8 @@ def test_the_map_final_boss_chains_the_boss_parade(monkeypatch):
     from tuipet.adventurescreen import PULSE_T, PARADE_T
     from tuipet import menu
     pet = _champ()
-    m = next(z["map"] for z in ZONES
-             if z["bosses"] and z["bosses"][0].get("parade_msg"))
-    idxs = [zi for zi, z in enumerate(ZONES) if z["map"] == m]
-    last = max(idxs, key=lambda zi: adventure._ORDER_POS[zi])   # the map's road tail
-    pet.adv_progress = adventure._ORDER_POS[last]  # frontier = the finisher: THIS win flips the map
+    last = len(ZONES) - 1                          # the last map: its boss carries the line
+    pet.adv_progress = last                        # frontier = the finisher: THIS win ends the road
     z = ZONES[last]
     pan = _panel_at_boss(monkeypatch, zone=z)
     pan.pet = pet
@@ -259,7 +256,7 @@ def test_the_pulse_flash_says_what_it_celebrates(monkeypatch):
     s = pan.strip()
     # ...and FITS while saying it (audit 2026-07-25: naming the boss twice
     # ran to 71 cells and was cut mid-scroll on the biggest wins)
-    assert "conquered" in s and pan.adv.boss_name in s
+    assert "cleared" in s and pan.adv.name in s
     from rich.cells import cell_len
     import re
     assert cell_len(re.sub(r"\[[^]]*]", "", s)) <= 40

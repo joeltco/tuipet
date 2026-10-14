@@ -101,58 +101,6 @@ def attack_info(num, attribute):
     the digimon.csv Name:Effect:Condition(s) cell (AttackEffectProcess input)."""
     return (_load_attacks().get(num) or {}).get(attribute) or {"name": "", "effect": "None", "conditions": []}
 
-@lru_cache(maxsize=1)
-def load_enemies():
-    _, by_num = load_sprites()
-    path = os.path.join(_DATA, "enemies.csv")
-    enemies = []
-    for r in csv.DictReader(_open_data(path)):
-        try:
-            dnum = int(r["Name"])
-        except (KeyError, ValueError):
-            continue
-        rec = by_num.get(dnum)
-        if not rec:
-            continue  # enemy has no usable sprite (placeholder) -> skip
-        vac = int(r.get("VaccinePower") or 0)
-        dat = int(r.get("DataPower") or 0)
-        vir = int(r.get("VirusPower") or 0)
-        attr = rec["attribute"]
-        if attr not in ("Vaccine", "Data", "Virus"):
-            attr = max((("Vaccine", vac), ("Data", dat), ("Virus", vir)), key=lambda t: t[1])[0]
-        # the real header is the essay-length "BitsWon (range of random bits -
-        # ...)" -- a bare .get("BitsWon") never matched, so every enemy paid the
-        # 1..5 fallback instead of its real purse (bosses pay 100..2000!):
-        # boss-battle audit 2026-07.  Same trap as "MedicineHours (number...)".
-        raw = next((v for k, v in r.items() if k and k.startswith("BitsWon")), "")
-        bits = (raw or "1t5").split("t")
-        try:
-            blo, bhi = int(bits[0]), int(bits[-1])
-        except ValueError:
-            blo, bhi = 1, 5
-        enemies.append({
-            "num": dnum, "name": rec["name"], "stage": rec["stage"],
-            "hp": max(2, int(r.get("Health") or 5)),
-            "vaccine": vac, "data_power": dat, "virus": vir, "attribute": attr,
-            "boss": (r.get("IsZoneBoss") or "FALSE").strip().upper() == "TRUE",
-            "map": int(r.get("Map") or 1), "zone": int(r.get("Zone") or 1),
-            "bits": (blo, bhi),
-            "location": int(r.get("Location") or 0),
-            "penalty": int(r.get("Penalty") or 0),
-            "chance": int(r.get("AppearanceChance/100") or 100),
-            "loot_table": int(r.get("LootTableID") or -1),
-            # only the last boss carries one ("You saved<br>the Digital<br>World!"):
-            # it cues the canon victory parade after the final ZoneChange
-            "parade_msg": ((r.get("BossParadeMessage") or "").replace("<br>", " ").strip()
-                           if (r.get("BossParadeMessage") or "null") != "null" else ""),
-        })
-    return enemies
-
-def enemies_for_stage(stage):
-    """Enemies whose Digimon are at the given stage (fallback: all)."""
-    pool = [e for e in load_enemies() if e["stage"] == stage]
-    return pool or load_enemies()
-
 # ---------------------------------------------------------------------------
 # Adventure maps: ordered maps -> ordered zones, each with its random-encounter
 # enemies and zone boss(es), parsed from zones.csv + enemies.csv.
@@ -215,65 +163,6 @@ def load_tournies():
             "enemy_field": na(r.get("OverrideEnemyField")),
         })
     return out
-
-def _town_ranges():
-    """towns.csv TownRange ("4201t4300") per TownID -- the REAL step spans."""
-    out = {}
-    for t in csv.DictReader(_open_data(os.path.join(_DATA, "towns.csv"))):
-        try:
-            lo, hi = (t.get("TownRange") or "0t0").split("t")
-            out[int(t["TownID"])] = (int(lo), int(hi))
-        except (KeyError, ValueError):
-            continue
-    return out
-
-def _zone_bgs(spec):
-    """'0t600:12;601t1300:6;...' -> [(lo, hi, habitat_id)] step spans."""
-    out = []
-    for part in spec.split(";"):
-        part = part.strip()
-        if not part or ":" not in part or "t" not in part:
-            continue
-        span, _, hid = part.partition(":")
-        lo, _, hi = span.partition("t")
-        try:
-            out.append((int(lo), int(hi), int(hid)))
-        except ValueError:
-            continue
-    return out
-
-@lru_cache(maxsize=1)
-def load_maps():
-    from collections import defaultdict
-    enemies = load_enemies()
-    by_mz = defaultdict(lambda: {"randoms": [], "bosses": []})
-    for e in enemies:
-        slot = "bosses" if e["boss"] else "randoms"
-        by_mz[(e["map"], e["zone"])][slot].append(e)
-    towns = _town_ranges()
-    zmap = defaultdict(list)
-    for z in csv.DictReader(_open_data(os.path.join(_DATA, "zones.csv"))):
-        try:
-            m, zn = int(z["MapNum"]), int(z["ZoneNum"])
-        except (KeyError, ValueError):
-            continue
-        ent = by_mz.get((m, zn), {"randoms": [], "bosses": []})
-        tids = [int(x) for x in (z.get("TownID;") or "").split(";") if x.strip().isdigit()]
-        zmap[m].append({
-            "map": m, "zone": zn,
-            "total_steps": int(z.get("TotalSteps") or 10000),
-            "randoms": ent["randoms"], "bosses": ent["bosses"],
-            # the zone's REAL town step-spans (WorldMap towns; rest + no encounters)
-            "towns": sorted((*towns[t], t) for t in tids if t in towns),
-            # the zone's discoverable loot pools (Zone.checkItem draws uniformly)
-            "rand_items": [int(x) for x in (z.get("RandomItems") or "").split(":") if x.strip().isdigit()],
-            "rand_foods": [int(x) for x in (z.get("RandomFood") or "").split(":") if x.strip().isdigit()],
-            # BackgroundsAndRange: the journey's SCENERY -- "lo t hi : habitat_id"
-            # spans; the backdrop changes as the pet walks the zone (DVPet canon)
-            "bgs": _zone_bgs(z.get("BackgroundsAndRange") or ""),
-        })
-    return [{"map": m, "zones": sorted(zmap[m], key=lambda z: z["zone"])}
-            for m in sorted(zmap)]
 
 @lru_cache(maxsize=1)
 def load_backgrounds():

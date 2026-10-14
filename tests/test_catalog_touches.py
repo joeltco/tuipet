@@ -71,9 +71,7 @@ def test_no_item_claims_a_no_op_meter():
 
 def test_only_road_items_are_road_scoped():
     road = {k for k, v in shop.CATALOG.items() if v.where == "road"}
-    assert road == {"town_transport", "disaster_transport", "life_recovery",
-                    # the expansion (2026-07-26): the safe lift + the camp
-                    "zone_transport", "continent_transport"}
+    assert road == {"shortcut", "rest_kit", "life_recovery"}
     for key, v in shop.CATALOG.items():
         assert v.where in ("home", "road"), key
 

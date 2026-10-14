@@ -173,8 +173,8 @@ def test_own_door_items_are_never_hijacked():
     canon type is Play, but it is used on a DEAD pet and the bag is
     unreachable at the grave, so that show could only ever be wrong."""
     from tuipet import shop
-    for k in ("digimemory", "revive_floppy", "town_transport",
-              "disaster_transport", "life_recovery"):
+    for k in ("digimemory", "revive_floppy", "shortcut",
+              "rest_kit", "life_recovery"):
         assert shop.item_script(k) is None, k
 
 

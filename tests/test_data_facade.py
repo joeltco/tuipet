@@ -16,7 +16,7 @@ def test_facade_is_thin_and_complete():
         data_shop: ("load_foods", "load_vitems", "consumable_by_key",
                     "home_shop_pool", "item_is_functional"),
         data_world: ("load_backgrounds", "load_effects", "load_icons",
-                     "load_battle_fx", "load_enemies", "load_tournies",
+                     "load_battle_fx", "load_tournies",
                      "attack_orb", "load_orbs"),
         data_meta: ("load_egg_unlock", "load_titles",
                     "load_digicore_config", "title_name"),

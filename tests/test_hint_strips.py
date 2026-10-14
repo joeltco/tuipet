@@ -214,6 +214,6 @@ def test_the_march_hint_is_never_a_bare_keyset():
         marched += 1
         # every key on it wears its word, and the line never rotates
         assert re.fullmatch(
-            r"SPACE hurry( \u00b7 T warp)? \u00b7 ESC home", s), \
+            r"SPACE hurry( \u00b7 T item)? \u00b7 ESC home", s), \
             f"unlabelled march hint: {s!r}"
     assert marched > 10, "the walk never reached the marching strip"

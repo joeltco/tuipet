@@ -49,7 +49,8 @@ def test_the_at_line_names_the_zone_biome_while_away(monkeypatch):
     the Quest line's objective).  Off the road the home scene returns."""
     pan = _land(monkeypatch)
     p = pan.pet
-    boss, biome = pan.adv.name.split("'s ", 1)
+    biome = pan.adv.name                               # a map IS a place
+    boss = pan.adv.boss_name
 
     def at_line(pet):
         return next(l for l in statusbox.home_lines(pet) if l.startswith("@"))
@@ -57,7 +58,9 @@ def test_the_at_line_names_the_zone_biome_while_away(monkeypatch):
     assert at_line(p).startswith("@" + biome)          # the habitat, a place
     assert boss not in at_line(p)                       # NOT the boss name
     p.away, p.away_where = False, ""                    # home again
-    assert not at_line(p).startswith("@" + biome)       # the adventure biome is gone
+    from tuipet import backgrounds
+    home = backgrounds.name(p.bg_pick or backgrounds.scene_for_egg(p.egg_type))
+    assert at_line(p).startswith("@" + home[:16])      # the home scene is back
     #      (the Quest line may still name the frontier boss -- that's the objective)
 
 
@@ -89,11 +92,11 @@ def test_the_road_strip_is_the_whole_key_set_holding_still(monkeypatch):
     from rich.cells import cell_len
     pan = _land(monkeypatch)
     p = pan.pet
-    p.inventory = {"town_transport": 1}                # holding a warp -> T shows
+    p.inventory = {"shortcut": 1}                # holding a warp -> T shows
     p.energy = 125                                      # 3 digits: no longer on the line
     pan.adv.streak = 12                                 # a fat chain: likewise gone
     plain = re.sub(r"\[/?[^\[\]]*\]", "", pan.strip())
-    assert plain == "SPACE hurry \u00b7 T warp \u00b7 ESC home"
+    assert plain == "SPACE hurry \u00b7 T item \u00b7 ESC home"
     assert cell_len(plain) <= 40
     # ...and it HOLDS: every frame of what used to be a full rotation is
     # byte-identical, so nothing on the road strip changes under the player

@@ -19,7 +19,8 @@ def _pet():
 
 def _bossless():
     return {"name": "Testfield", "scene": "greenhills",
-            "steps": INTERACTIVE_STEPS, "randoms": [], "bosses": []}
+            "steps": INTERACTIVE_STEPS,
+            "randoms": list(adventure.MAPS[0]["randoms"]), "bosses": []}
 
 
 def test_marching_tires_the_pet(monkeypatch):

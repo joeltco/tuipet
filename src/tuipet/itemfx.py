@@ -218,7 +218,7 @@ _SCRIPT_OVERRIDE = {"dna_crystal": "Study", "x_antibody": "Study",
                     "music_player": "MusicBox"}
 
 # AnimationTypes that deliberately have NO item fx: Idling (canon plays
-# nothing), plus every system with its own door (transports / ItemEvol /
+# nothing), plus every system with its own door (road tools / ItemEvol /
 # Inherit / Recover ride their existing flows).  Jump keeps the ported
 # jumping() hop.  (The Futon/toilet mentions left with the staple props:
 # strict-DSprite items, 2026-07-17.)  BANDAGING was listed here as

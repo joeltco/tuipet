@@ -244,10 +244,6 @@ def test_a_held_cup_is_a_title_defense():
     fee_held = tournament.entry_fee(p, trophy)
     p2 = _pet()
     assert fee_held == tournament.entry_fee(p2, trophy)     # the stake is unchanged
-    # a held TOWN cup defends too
-    p.trophies_won[tournament.TOWN_TROPHY_BASE + 4] = "day 2"
-    tc = tournament.Tournament(p, tournament.town_cup(p, 4))
-    assert tc.defending
 
 
 def test_the_board_crowns_the_cups_you_hold():

@@ -19,7 +19,7 @@ from tuipet.pet import Pet
 from tuipet.petbase import GIFT_FESTIVAL_MULT
 
 BANNED = {"poison_mushroom", "digimemory", "revive_floppy",
-          "town_transport", "disaster_transport", "life_recovery"}
+          "shortcut", "rest_kit", "life_recovery"}
 
 
 def _pet(**kw):

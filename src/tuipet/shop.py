@@ -135,8 +135,8 @@ _AUTHORED = {
     "video_game":      ("Video Game",      "i:65", 600,  "Rest", "couch time · DP +1 · weight +1", "one more level…"),
     "television":      ("Television",      "i:10", 1000, "Rest", "deep couch · DP +2 · weight +1", "glued to the screen"),
     # ---- ADVENTURE (the road's own shelf -- cleared maps open it) -----------
-    "town_transport":     ("Town Transport",   "i:29", 500,  "Road", "on the road: T-warp to a town + rest", "a Birdramon ride"),
-    "disaster_transport": ("Disaster Transp.", "i:30", 250,  "Road", "on the road: T-dash to the boss + ambush", "a Garudamon ride"),
+    "shortcut": ("Shortcut", "i:30", 750, "Road", "on the road: jump to the boss", "the short way"),
+    "rest_kit": ("Rest Kit", "i:31", 500, "Road", "on the road: rest to half tank", "a bedroll and a breather"),
     "life_recovery":      ("Life Recovery",    "i:27", 1000, "Road", "restore adventure lives on the road", "a second wind"),
     # ======================= THE EXPANSION (2026-07-26) =====================
     # Joel: "bring in all 99 unused items ... spread out ... your call".
@@ -182,8 +182,6 @@ _AUTHORED = {
     "computer_game":   ("Computer Game",       "i:8",  2000,  "Power", "Virus power -15 · Data power +15", "logic tames chaos"),
     "trampoline":      ("Trampoline",          "i:13", 2500,  "Drill", "bounce! effort +1 · weight -1", "gravity, negotiable"),
     "x_program":       ("X-Program Sample",    "i:14", None,  "Evolve", "belly + effort emptied · the X takes hold", "survive it, transcend"),
-    "zone_transport":  ("Zone Transport",      "i:28", 750,   "Road", "on the road: a safe T-lift up the road", "a Birdramon lift"),
-    "continent_transport":("Continent Transport", "i:31", 1000,  "Road", "on the road: rest to half tank, anywhere", "a Whamon camp"),
     "digitron":        ("Digitron",            "i:33", 6000,  "Evolve", "a dark evolution, if one answers", "a mysterious dark fluid"),
     "horn_helmet":     ("Horn Helmet",         "i:34", 3000,  "Evolve", "evolve: Kabuterimon, if the body is ready", "the beetle's crown"),
     "grey_claws":      ("Grey Claws",          "i:36", 3000,  "Evolve", "evolve: Greymon, if the body is ready", "the tyrant's grip"),
@@ -296,8 +294,8 @@ _TOUCHES = {
     # real work is adventure-run state (the march's location, its lives),
     # which is not Pet state and does not belong in this namespace.
     # `where="road"` is what carries that meaning.
-    "town_transport": (),
-    "disaster_transport": (),
+    "shortcut": (),
+    "rest_kit": (),
     "life_recovery": (),
     # ---- THE EXPANSION (2026-07-26): read out of the new handlers ----------
     "meat": ('hunger', 'weight'),
@@ -329,8 +327,6 @@ _TOUCHES = {
     "computer_game": ('virus', 'data_power'),
     "trampoline": ('strength', 'weight'),
     "x_program": ('hunger', 'strength', 'energy', 'x_antibody'),
-    "zone_transport": (),
-    "continent_transport": (),
     "digitron": ('num',),
     "horn_helmet": ('num',),
     "grey_claws": ('num',),
@@ -518,11 +514,7 @@ def tier_stock(key):
     return TIER_STOCK.get((v.tier if v else None) or "common", 1)
 
 
-_ROAD_ONLY = frozenset({"town_transport", "disaster_transport",
-                        "life_recovery",
-                        # the expansion (2026-07-26): the escape rope and
-                        # the portable camp are road tools like their kin
-                        "zone_transport", "continent_transport"})
+_ROAD_ONLY = frozenset({"life_recovery", "shortcut", "rest_kit"})
 
 # THE catalog: the authored table, field-named.  Everything downstream
 # reads this, never `_AUTHORED`.
@@ -535,14 +527,9 @@ CATALOG = {
 }
 
 # the road's shelf unlocks by CLEARING MAPS (the profile `maps` set): once a
-# tamer has beaten a continent, the transports/recovery it needs go on sale.
+# tamer clears maps, the road tools go on sale at home.
 # key -> how many maps must be cleared.  Same earned-access rule as the eggs.
-ADVENTURE_GATES = {
-    "town_transport": 1, "disaster_transport": 1, "life_recovery": 2,
-    # the expansion (2026-07-26): the escape rope opens with the first
-    # cleared map; the portable camp is the deepest tool (matches its kin)
-    "zone_transport": 1, "continent_transport": 2,
-}
+ADVENTURE_GATES = {"shortcut": 1, "rest_kit": 2, "life_recovery": 2}
 
 
 def adventure_open(key, prog=None):
@@ -632,12 +619,12 @@ FLAVORS = {k: v.flavor for k, v in CATALOG.items()}   # the dossier taglines
 # the Revive Floppy -- its canon type is Play, but it is used on a DEAD
 # pet and the bag is unreachable at the grave, so that show could only
 # ever be wrong or unplayable (item-show audit 2026-07-23).
-_OWN_FLOW = frozenset({"digimemory", "town_transport", "disaster_transport",
+_OWN_FLOW = frozenset({"digimemory", "shortcut", "rest_kit",
                        "life_recovery", "revive_floppy",
                        # the expansion (2026-07-26): evolution keys play the
                        # evolution itself; the road tools and the futon run
                        # their own doors
-                       "zone_transport", "continent_transport", "futon",
+                       "futon",
                        "digitron", "horn_helmet", "grey_claws",
                        "water_bottle", "torn_tatter", "white_wings",
                        "black_wings", "metal_armor", "flaming_wings",
@@ -703,6 +690,8 @@ def item_script(key):
 # purpose: the rows are gone from CATALOG, so nothing can derive these; the
 # test suite pins that every entry here names a live heir)
 _RETIRED_ICONS = {
+    "i:29": "town_transport", "i:30": "disaster_transport",
+    "i:28": "zone_transport", "i:31": "continent_transport",
     "f:45": "nuts", "f:46": "oats", "f:48": "egg", "f:50": "guava",
     "f:47": "milk", "f:40": "chicken_soup", "f:29": "rice", "f:53": "salmon",
     "f:52": "beans", "f:39": "ice_cream", "f:9": "banana",
@@ -714,6 +703,8 @@ _RETIRED_ICONS = {
 }
 
 RETIRED = {
+    "disaster_transport": "shortcut", "zone_transport": "shortcut",
+    "town_transport": "rest_kit", "continent_transport": "rest_kit",
     "balloon": "ball",
     "banana": "cake",
     "beans": "broccoli",
@@ -736,6 +727,8 @@ RETIRED = {
 }
 
 LEGACY_KEYS = {
+    "i:28": "shortcut", "i:30": "shortcut",
+    "i:29": "rest_kit", "i:31": "rest_kit",
     "best_fruit": "tuna", "normal_fruit": "fish", "worst_fruit": "vegetable",
     "deadly_fruit": "poison_mushroom", "junk_food": "cheese_burger",
     "premium_meat": "steak", "super_carrot": "slim_drink",
@@ -1016,35 +1009,9 @@ def sell(pet, e):
     return (f"Sold {e['name']} for {resell_price(e)}b.", "confirm")
 
 
-# (the OLD town storefront chain -- home_shop_open / town_shop_open /
-# town_shop_hours / roll_town_shop / slot_label / slot_info / sell_info /
-# purchase_price + Pet.buy_slot -- CUT 2026-07-19, Joel: "cut the town
-# chain".  The hours/rolled-slot machine stays dead.  What follows is the
-# NEW town economy Joel ordered 2026-07-21 ("shops, town shops, deals"):
-# deterministic, no rolls, no opening hours -- the authored data driving
-# tuipet-idiom systems.)
-
-# -- the town economy (shops arc, 2026-07-21) --------------------------------
-# towns.csv override lists -> shopConsumable.csv econ rows -> CATALOG
-# identities.  The 26 towns split into TWO authored stock families (a shared
-# items shelf + two food families) -- that split IS the trade map: a town
-# pays DEMAND rates for goods it doesn't stock.
-TOWN_DEMAND_NUM, TOWN_DEMAND_DEN = 7, 10   # unstocked goods: towns pay 70%
-#                                            (home pays 50%; canon towns pay
-#                                            price//ResellFactor for their
-#                                            OWN stock -- they have plenty)
-TOWN_DAILY_CAP = 3        # tuipet's own per-(town,item,day) purchase bound.
-#                           DVPet's 25-50-steak crates served ITS economy;
-#                           against tuipet's catalog even ratio-scaled deal
-#                           margins would compound into a printer at 50/day.
-
-# PRICE LAW: a town price is the AUTHORED RATIO scaled to tuipet's catalog --
-# catalog_price * row_price / DefaultPrice (the Default* cols are DVPet's own
-# home economy, so the ratio IS the authored "towns discount steak 25%, halve
-# chips, sell furniture at par" structure).  Raw row prices against tuipet's
-# repriced catalog were money printers (375b steak vs 2000b catalog: +625
-# per home flip); the ratio keeps every flip at-or-below water and makes
-# DEALS the only trade window -- by design.
+# Towns pay more for goods outside their tier shelf.
+TOWN_DEMAND_NUM, TOWN_DEMAND_DEN = 7, 10
+TOWN_DAILY_CAP = 3        # per town, item and day
 
 
 def _today_ordinal(today=None):
@@ -1053,172 +1020,29 @@ def _today_ordinal(today=None):
     return d.toordinal()
 
 
-@lru_cache(maxsize=1)
-def _town_maps():
-    """town_id -> the MAP whose zone hosts the town (the road's own
-    geography; item diversity audit 2026-07-23)."""
-    from . import data
-    out = {}
-    for mp in data.load_maps():
-        for z in mp["zones"]:
-            for _lo, _hi, tid in z.get("towns", ()):
-                out[tid] = z["map"]
-    return out
-
-
-# P4 (item diversity audit 2026-07-23, Joel: "do it all"): each MAP's
-# towns carry ONE regional specialty beyond the authored base, so the
-# five maps read differently before the guest good even lands.  REDEALT
-# from the grown catalog (Joel 2026-07-26: "yeah redeal the specialties
-# too") -- same depth logic, new faces: the starter map sells the toy
-# surprise, the mid maps comfort and cunning, and the deep maps keep the
-# premium-tier slots (the old map-4 Revive Floppy rule): map 4 deals the
-# dark fluid, map 5 the gilded pill.
-_MAP_SPECIALTY = {1: "chocolate_egg", 2: "futon", 3: "board_game",
-                  4: "digitron", 5: "gold_pill"}
-
-
-def _econ_stub(key):
-    """A synthetic econ row for non-authored shelf rows (guest/regional):
-    catalog price, standard factors, capped stock -- no money printer."""
-    v = CATALOG[key]
-    return {"price": v.price, "sale_factor": 2, "resell_factor": 2,
-            "max_stock": 2, "is_food": v.category == "Feed",
-            "consumable_id": -1}
-
-
-def _base_rows(town_id):
-    """The town's authored shelf + its map's regional specialty:
-    [(sid, catalog_key, econ_row, local_price)] in list order (items shelf
-    first, then the food family).  local_price is the PRICE-LAW ratio (see
-    above); rows whose consumable has no living CATALOG identity are
-    dropped -- their systems (chips, furniture) aren't in tuipet, and
-    dormant data stays dormant."""
-    from . import data
-    t = data.load_towns().get(town_id)
-    if not t:
-        return []
-    ov = data.load_shop_overrides()
-    foods, items = data._load_consumables()
-    rows = []
-    for sid in t["items_override"] + t["foods_override"]:
-        o = ov.get(sid)
-        if not o or o["price"] <= 0:
-            continue
-        icon = ("f:" if o["is_food"] else "i:") + str(o["consumable_id"])
-        k = key_for_icon(icon)
-        if not k:
-            continue
-        e = entry(k)
-        default = ((foods if o["is_food"] else items).get(o["consumable_id"])
-                   or {}).get("price", 0)
-        if e and default > 0:
-            local = max(1, round(e["price"] * o["price"] / default))
-        else:
-            local = o["price"]
-        if any(k == have for _s, have, _o, _l in rows):
-            # RETIRED resolution can land two authored rows on one heir (a
-            # town that stocked both the toilet and the port-potty now has
-            # two port-potty lines): the shelf keeps the FIRST, because a
-            # duplicate row breaks the one-key-one-row grammar everything
-            # downstream (deal dedup included) assumes (refactor 2026-07-27)
-            continue
-        rows.append((sid, k, o, local))
-    sk = _MAP_SPECIALTY.get(_town_maps().get(town_id))
-    if sk and sk not in {k for _sid, k, _o, _p in rows}:
-        rows.append((f"regional:{town_id}", sk, _econ_stub(sk),
-                     CATALOG[sk].price))
-    return rows
-
-
-@lru_cache(maxsize=1)
-def _guest_deal():
-    """town_id -> its standing guest good, dealt WITHOUT replacement
-    across ALL towns (item diversity audit 2026-07-23: the old per-town
-    crc32 pick birthday-collided -- 8 items served 2-3 towns each, and
-    towns 11+12 were byte-identical shops).  The pool is the UNGATED
-    priced catalog minus Adventure (its map-clear gate must hold) and
-    minus the Poison Mushroom (a town's one signature good is never a
-    trap -- the raid-pool rule).  26 towns, 36 candidates: every town's
-    guest is unique game-wide.  crc32-ordered, so the deal is STABLE --
-    a town's character stays permanent (the guest-good law); the daily
-    deal already rotates.
-
-    COVERAGE FIRST (2026-07-24, Joel "pull them into town rotation"): the
-    guest slot exists for VARIETY, so it fills gaps before it spends a slot
-    on a good already sold in some town's authored base.  15 goods live in a
-    base somewhere; the other 21 need a guest slot to appear anywhere, and 21
-    fits in 26 slots with room to spare -- yet the old pure-crc32 order let a
-    few slots land on base-covered goods, stranding tuna, cheese_burger and
-    the ball in NO town at all.  Sorting the not-in-any-base goods to the
-    FRONT covers every one of the 21 (still crc32 WITHIN each band, so the
-    deal stays stable), and the leftover slots go to base-covered goods."""
-    import zlib
-    pool = [k for k, v in CATALOG.items()
-            if v.price is not None and v.category != "Road"
-            and k != "poison_mushroom"]
-    base_anywhere = set()
-    for tid in _town_maps():
-        base_anywhere.update(k for _sid, k, _o, _p in _base_rows(tid))
-    pool.sort(key=lambda k: (k in base_anywhere,
-                             zlib.crc32(f"guest2:{k}".encode())))
-    taken, out = set(), {}
-    for tid in sorted(_town_maps()):
-        stocked = {k for _sid, k, _o, _p in _base_rows(tid)}
-        pick = (next((k for k in pool
-                      if k not in taken and k not in stocked), None)
-                or next((k for k in pool if k not in stocked), None))
-        if pick:
-            taken.add(pick)
-            out[tid] = pick
-    return out
+_TOWN_BANDS = {"Rookie": 0, "Champion": 1, "Ultimate": 2, "Mega": 3}
+_SHOP_BANDS = {"common": 0, "uncommon": 1, "rare": 2, "legendary": 3}
 
 
 def _town_rows(town_id):
-    """The full town shelf: authored base + regional specialty + the
-    standing guest good (gameplay polish #24; re-dealt collision-free in
-    the item diversity audit 2026-07-23) + THE ROAD SHELF.
-
-    The road shelf (item sweep 2026-07-24): a town counter carries every
-    Adventure item, not just the two the authored overrides happen to
-    name.  `shopConsumable.csv` stocks i:29/i:30 (the two transports) in
-    all 26 towns and has no row for i:27, so Life Recovery -- the road
-    tool you most need WHILE ON THE ROAD -- was the one buyable good no
-    counter in the world sold.  The guest slot could never fix it: its
-    pool excludes Adventure precisely because the map-clear gate has to
-    hold, and a guest row is ungated.
-
-    These rows are the shelf's IDENTITY, gate or no gate.  What a tamer
-    may actually buy today is `_open_rows`."""
-    rows = _base_rows(town_id)
-    gk = _guest_deal().get(town_id)
-    if gk:
-        rows.append((f"guest:{town_id}", gk, _econ_stub(gk),
-                     CATALOG[gk].price))
-    have = {k for _sid, k, _o, _p in rows}
-    for k, v in CATALOG.items():
-        if v.category == "Road" and k not in have:
-            rows.append((f"road:{town_id}:{k}", k, _econ_stub(k), v.price))
+    """Every priced good up to this map's tier, plus all road tools."""
+    from . import adventure
+    band = _TOWN_BANDS[adventure.map_tier(town_id)]
+    rows = []
+    for key, item in CATALOG.items():
+        if item.price is None or item.price <= 0:
+            continue
+        if key not in _ROAD_ONLY and _SHOP_BANDS[item.tier] > band:
+            continue
+        econ = {"price": item.price, "sale_factor": 2, "resell_factor": 2,
+                "max_stock": TOWN_DAILY_CAP}
+        rows.append((f"town:{town_id}:{key}", key, econ, item.price))
     return rows
 
 
 def _open_rows(town_id, prog=None):
-    """The town shelf a tamer can actually SHOP today: `_town_rows` minus
-    anything whose earned-access gate is still shut.
-
-    THE GATE HELD IN EXACTLY ONE SHOP (item sweep 2026-07-24).  The road
-    shelf unlocks by CLEARING MAPS -- `catalog()` has honoured that since
-    v0.5.114, so the home shop hides a locked transport.  Town counters
-    never asked: town 0 sits on map 1's FIRST leg, and it sold Town
-    Transport and Disaster Transport to a tamer who had cleared nothing.
-    An earned-access rule that any starting town sells around is not a
-    rule.  (Read fresh each call rather than cached: `_guest_deal`'s
-    lru_cache reads `_base_rows`, which stays progress-free, so no cache
-    can freeze a tamer's progress into a town's shelf.)"""
-    if prog is None:
-        from . import persistence
-        prog = persistence.get_progress()
-    return [r for r in _town_rows(town_id) if adventure_open(r[1], prog)]
+    # Arrival grants the town shelf; home keeps its own earned-access gates.
+    return _town_rows(town_id)
 
 
 def _deal_index(seed, count, today=None):
@@ -1411,13 +1235,7 @@ def _town_taken(pet, today=None):
 
 
 def town_stock(town_id, today=None, pet=None):
-    """The town shop's shelves as ready entries [{key,name,price,category,
-    base_price,deal,left,town_id}].  The day's rotating deal (and, on a
-    FESTIVAL, every row -- the festival market) sells at the canon
-    checkSale price: price // SaleFactor.  `left` is the authored maxStock
-    minus the day's take (the anti-pump: town prices are DVPet's own,
-    far under the catalog -- the daily cap is what makes the demand
-    resale a treat instead of a printer)."""
+    """Tier shelf with daily deals, festival discounts and purchase rations."""
     from . import adventure, persistence
     prog = persistence.get_progress()
     deal = town_deal_sid(town_id, today, prog)
@@ -1430,11 +1248,7 @@ def town_stock(town_id, today=None, pet=None):
             continue
         on = fest or sid == deal
         price = local // max(1, o["sale_factor"]) if on else local
-        # TIERED STOCK (D1, 2026-07-24): rarity now limits how many a town
-        # will part with in a day, on the same ladder the road rolls -- a
-        # legendary good is one-per-town-per-day, a common one three.  The
-        # authored maxStock and the global daily cap still bound it.
-        # the authored maxStock and the global cap still bound the shared ration
+        # Rarity and the daily cap both bound each town's ration.
         left = min(_ration_left(town_id, k, taken),
                    max(0, min(o["max_stock"], TOWN_DAILY_CAP)
                        - int(taken.get(f"{town_id}:{k}", 0))))
@@ -1478,7 +1292,7 @@ def town_egg_buy(pet, idx):
 
 
 def town_buy(pet, e, today=None):
-    """A town counter purchase: blocked once the day's authored stock is
+    """A town counter purchase: blocked once the day's ration is
     gone, recorded in the pet's daily ledger otherwise.
 
     THE LIVE ROW, never the caller's copy (live-play audit 2026-07-25):
@@ -1510,11 +1324,7 @@ def town_buy(pet, e, today=None):
 
 
 def town_sell_price(key, town_id):
-    """Buy-low/sell-high: a good this town STOCKS resells at the canon
-    local_price // ResellFactor (it has plenty); one it DOESN'T stock is
-    in DEMAND -- 70% of catalog price, better than home's half.  The
-    trade window: buy a family's exclusive ON DEAL, carry it to the
-    OTHER family's towns."""
+    """Stocked goods pay local resale; absent goods pay 70% of catalog."""
     hit = _stocked(town_id, key)
     if hit is not None:
         o, local = hit

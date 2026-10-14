@@ -74,21 +74,6 @@ def test_every_text_open_names_utf8():
         "locale codepage, not utf-8:\n  " + "\n  ".join(offenders))
 
 
-def test_towns_csv_still_holds_the_byte_that_broke_it():
-    """Not a curiosity: it's the fixture.  If this dash ever leaves the file
-    the utf-8 sweep above stops being load-bearing, so keep a real non-ascii
-    byte in the corpus (any file will do) and know why it's there."""
-    raw = open(os.path.join(_DATA, "towns.csv"), "rb").read()
-    assert any(b > 127 for b in raw), "no non-ascii left in towns.csv"
-    raw.decode("utf-8")                              # utf-8 is the truth
-    try:
-        raw.decode("cp950")
-    except UnicodeDecodeError:
-        pass                                         # exactly the player's crash
-    else:
-        raise AssertionError("towns.csv now decodes as cp950 -- fixture is stale")
-
-
 def test_data_loads_with_locale_defaults_treated_as_errors():
     """The runtime half: -X warn_default_encoding makes every encoding-less
     text open emit EncodingWarning, and -W error turns it into a traceback.

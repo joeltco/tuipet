@@ -25,7 +25,7 @@ def test_a_fresh_pet_starts_at_the_first_zone():
     p = _champ()
     assert p.adv_progress == 0
     first = A.PROGRESSION[0]                        # the road's easiest stop
-    assert unlocked_indices(p) == [first] and frontier(p) == first
+    assert unlocked_indices(p) == (first,) and frontier(p) == first
     assert pick_zone(p) is ZONES[first]             # the frontier is the default embark
 
 
@@ -86,7 +86,7 @@ def test_a_panel_boss_win_records_progression(monkeypatch):
     pan.sub = None
     pan._battle_done(_Win())
     assert p.adv_progress == 1
-    assert "New ground opens" in pan._home_msg
+    assert "A new map opens" in pan._home_msg
 
 
 def test_adv_progress_survives_a_save_round_trip():
@@ -132,19 +132,3 @@ def test_the_home_card_shows_live_quest_progress():
         vis = len(Text.from_markup(statusbox.adventure_line(p)).plain)
         assert vis <= 26, (prog, statusbox.adventure_line(p))
 
-
-def test_the_road_runs_in_difficulty_order():
-    """Option b (balance audit 2026-07-21): the unlock ROAD is sorted by the
-    rosters' measured difficulty key -- every zone exactly once, the key
-    never decreasing, the all-Mega den (Dexmon) dead last -- while zone
-    IDENTITY (indices, bests, maps) stays untouched."""
-    road = A.PROGRESSION
-    assert sorted(road) == list(range(len(ZONES)))   # a permutation, nothing lost
-    keys = [A._difficulty(ZONES[i]) for i in road]
-    assert keys == sorted(keys)                      # monotonic: no cliffs mid-road
-    assert ZONES[road[-1]]["name"].startswith("Dexmon")   # the Mega den caps it
-    # the old zones.csv order had Mega wilds at its 4th stop; the road's first
-    # QUARTER now carries no Mega wilds at all
-    for zi in road[:len(road) // 4]:
-        stages = {e.get("stage") for e in ZONES[zi]["randoms"]}
-        assert "Mega" not in stages, ZONES[zi]["name"]

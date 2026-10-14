@@ -169,42 +169,30 @@ def card(app, title, lines, subtitle=""):
 # ---- the HOME vitals (the Stats widget delegates here) ---------------------
 
 def _zone_display(name, avail):
-    """A zone's display name shortened to `avail` visible cols: the full
-    name when it fits, else its gate BOSS (zone names are "{Boss}'s
-    {biome}", and the boss IS the destination), else a plain clip."""
-    if len(name) <= avail:
-        return name
-    return name.split("'s ", 1)[0][:avail]
+    """A map's name clipped to `avail` visible cols (map names are places,
+    19 cols at most)."""
+    return name[:avail]
 
 
 def _frontier_name(pet, avail):
-    """The frontier zone's display name (the stats column is 26 wide,
-    zone names run to 32)."""
+    """The frontier map's display name."""
     from . import adventure
     return _zone_display(adventure.ZONES[adventure.frontier(pet)]["name"], avail)
 
 
 def _where(pet):
-    """The @ line's PLACE, <=16 cols: on the road it's the current zone's
-    BIOME, the home scene otherwise -- both read as a place the pet stands.
-
-    Zone names are "{Boss}'s {biome}"; the @ line shows the biome half, NOT
-    the boss (@-habitat fix 2026-07-24, Joel "does it display the correct
-    habitat name while in adventure?").  The boss is the Quest line's
-    OBJECTIVE -- clipping the @ to it made the road read "@WarGreymon", a
-    monster's name where a place belongs, and stacked two bosses on adjacent
-    rows.  The biome (<=13 cols) is the habitat, and matches the home scene
-    the @ shows off the road."""
+    """The @ line's PLACE, <=16 cols: on the road it's the map the pet is
+    walking (a map IS a place since the 2026-10-14 world), the home scene
+    otherwise."""
     if getattr(pet, "away", False):
-        zone = getattr(pet, "away_where", "") or "?"
-        return zone.split("'s ", 1)[-1][:16]        # the biome half, not the boss
+        return (getattr(pet, "away_where", "") or "?")[:16]
     return backgrounds.name(pet.bg_pick
                             or backgrounds.scene_for_egg(pet.egg_type))[:16]
 
 
 def adventure_line(pet):
-    """The home card's quest readout -- LIVE from pet.adv_progress (zones
-    conquered of the 26), plus the FRONTIER zone's name (Joel 2026-07-21:
+    """The home card's quest readout -- LIVE from pet.adv_progress (maps
+    cleared of the 30), plus the FRONTIER zone's name (Joel 2026-07-21:
     "show the frontier zone name on the card") -- the road the pet walks
     next.  8-col label + 18 content cols; '★ all cleared' at the end.
     Single source for the adventure readout (status-box liveness rule)."""
@@ -1041,17 +1029,10 @@ def zonepick(app):
     conquered = adventure.is_conquered(p, zi)
     best = m.bests.get(zi)
     towns = len(z.get("town_legs") or ())
-    # the title, WITHOUT restating the Gate row: `_zone_display` shortens a
-    # long zone name to its BOSS ("MasterTyrannomon's Factory Night" ->
-    # "MasterTyrannomon"), which is right on the home card and wrong here --
-    # the boss already has its own row two lines down.  Keep the BIOME half
-    # instead; it is the part the Gate row cannot tell you.
     title = z["name"]
-    if cell_len_(title) > CARD_W:
-        title = title.split("'s ", 1)[-1] if "'s " in title else title
     lines = [
         f"[b]{_fit_cells(title, CARD_W)}[/]",
-        f"[dim]zone {m.indices.index(zi) + 1} of {len(m.indices)} open[/]", DIV,
+        f"[dim]map {m.indices.index(zi) + 1} of {len(m.indices)} open · {z.get('tier', '')}[/]", DIV,
         f"Gate    [{T.NEG}]{_fit_cells(boss.get('name', '?') if boss else 'no boss', CARD_W - 8)}[/]",
         f"Road    {z['steps']} legs",
         f"Rest    {towns} town" + ("s" if towns != 1 else ""),
@@ -1116,7 +1097,7 @@ def road(app):
         flex = f"[{T.COIN}]★ {wrap(a.holiday, 1, CARD_W - 2)[0]}[/]"
     elif a.replay:
         flex = "[dim]veteran road[/]"
-    warp = "[dim]T warp — a road item[/]" if a.held_transports() else ""
+    warp = "[dim]T — use a road item[/]" if a.held_transports() else ""
     # ⭐THE WOUND LINE, ON SCREEN (road item audit 2026-07-31, Joel: "do 1 and
     # 3").  `record_battle` calls a body "bad" under BATTLE_MIN_ENERGY and
     # rolls the injury table at bad_nv instead of good_nv -- 10% a bout
