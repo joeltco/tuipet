@@ -409,7 +409,8 @@ def build_pages(pet):
         # an egg has no dex number yet -- "#-1" leaked the internal sentinel
         # (egg-stage audit 2026-07-05)
         ("No.", "—" if pet.num < 0 else f"#{pet.num}"), ("Stage", pet.stage),
-        ("Attrib", pet.attribute), ("Field", data.pretty_field(pet.field) or "—"),
+        # an untyped Digimon is "Free", the franchise's word (call #8 = A)
+        ("Attrib", "Free" if pet.attribute in ("", "None") else pet.attribute), ("Field", data.pretty_field(pet.field) or "—"),
         ("Gen", str(pet.generation)),
         # (the "Life Xd left" row left with the lifespan clock -- DSprite
         # mortality 2026-07-22: nothing counts down anymore, Age counts up)
@@ -421,7 +422,8 @@ def build_pages(pet):
         # -- blue 14, yellow 10, red 20 -- the units the evolution routes
         # count in.  Only this line reads it, so only this line shows it.
         b, y, r = _petbase.gcell_cells(getattr(pet, "gcell", 0))
-        status.append(("G-Cell", f"B{b}/14 Y{y}/10 R{r}/20"
+        # + the raw points the cells fold from (DigiCore call #8 = A, 2026-10-15)
+        status.append(("G-Cell", f"B{b}/14 Y{y}/10 R{r}/20 {int(getattr(pet, 'gcell', 0) or 0)}pt"
                                  + (" · frag" if getattr(pet, "gcell_fragment", False) else "")))
     # the POWER page is the BATTLE ledger (framing fixed, gameplay polish
     # #17 2026-07-22): the Va/D/Vi attribute powers stopped gating growth
@@ -435,8 +437,11 @@ def build_pages(pet):
     power = [
         ("Vaccine", str(pet.vaccine)), ("Data", str(pet.data_power)),
         ("Virus", str(pet.virus)), ("Effort", f"{pet.strength}/4"),
-        ("Form", getattr(pet, "saved_hit_type", "normal")),
-        ("Level", f"{lines._pet_level(pet)} ({getattr(pet, 'exp', 0)} exp)"),
+        # labels say what they mean (DigiCore call #8 = A, 2026-10-15): the
+        # hit FORM is the attack style; Level shows the cap this stage allows
+        ("Attack", getattr(pet, "saved_hit_type", "normal") + " form"),
+        ("Level", f"{lines._pet_level(pet)}/{lines.DMX_LEVEL_CAP.get(pet.stage, 10)}"
+                  f" ({getattr(pet, 'exp', 0)} exp)"),
         # both training terms of the hit formula on one row (Joel
         # 2026-07-23 "is there a stat somewhere i can see that shows
         # this?"): lifetime (the +20% term, never resets) · this stage
@@ -473,7 +478,7 @@ def build_pages(pet):
         ("STATUS", status),
         ("POWER", power),
         ("CONDITION", [
-            ("Hunger", f"{pet.hunger}/4"), ("Energy", f"{int(pet.energy)}/{pet.max_energy}"),
+            ("Fullness", f"{pet.hunger}/4"), ("Energy", f"{int(pet.energy)}/{pet.max_energy}"),
             ("Weight", f"{pet.weight}g"),
             # two ailments, two words: INJURY returned with the canon
             # restoration (2026-07-23) but this row kept the removal-era
@@ -485,7 +490,7 @@ def build_pages(pet):
             # its fields are frozen starter values; cards only show LIVE data)
             ("Poop", str(pet.poop)),
             ("Care", f"{pet.care_mistakes} this stage"),
-            ("Disturb", str(pet.disturb)),
+            ("Disturb", f"{pet.disturb} this stage"),
         ]),
         ("HOME", [
             # the household page (data-page polish 2026-07-17): the scene

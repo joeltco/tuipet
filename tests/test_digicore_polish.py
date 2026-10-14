@@ -177,8 +177,8 @@ def test_a6_failed_mode_attempt_refreshes_real_disturb_and_preserves_navigation(
     assert pan.key("m") is None
     assert p.disturb == 1 and pan.i == 0 and pan.evo_sel == 1
     pan.i = next(i for i, (title, _) in enumerate(pan.pages) if title == "CONDITION")
-    assert dict(pan.pages[pan.i][1])["Disturb"] == "1"
-    assert "Disturb  1" in fits(pan) or "Disturb   1" in fits(pan)
+    assert dict(pan.pages[pan.i][1])["Disturb"] == "1 this stage"
+    assert "Disturb  1 this stage" in fits(pan)
 
 
 @pytest.mark.parametrize("source,lid,target", [(396, "ver4", 393), (297, "ver1", 399), (139, "vbu", 221)])
@@ -319,3 +319,17 @@ def test_item_and_mode_only_forms_show_no_growth_countdown(num):
     p = Pet(num=num, name=rec["name"], stage=rec["stage"], attribute="Vaccine")
     assert not digicore.has_timed_next(p)
     assert digicore.growth_clock(p) is None and not digicore.growth_pending(p)
+
+
+def test_call_8_readout_labels():
+    """Joel 2026-10-15 (DigiCore call #8 = A): six readout labels."""
+    from tuipet import digicore
+    from tuipet.pet import Pet
+    p = Pet(num=29, name="Agumon", stage="Rookie", attribute="None")
+    pages = dict(digicore.build_pages(p))
+    status, power, cond = dict(pages["STATUS"]), dict(pages["POWER"]), dict(pages["CONDITION"])
+    assert status["Attrib"] == "Free"
+    assert power["Attack"].endswith(" form") and power["Level"].split()[0].endswith("/4")
+    assert "Fullness" in cond and cond["Disturb"].endswith("this stage")
+    p.line_id, p.gcell = "godzilla", 351
+    assert dict(dict(digicore.build_pages(p))["STATUS"])["G-Cell"].split()[3] == "351pt"

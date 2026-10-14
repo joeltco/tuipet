@@ -465,7 +465,7 @@ def test_the_data_model_is_modular_and_live():
     assert "Helper" in labels
     assert not {"Toilet", "Potty", "Futon", "Trained"} & labels
     # the power page carries the live gate-drivers
-    assert {"Form", "Level", "KO6"} <= labels
+    assert {"Attack", "Level", "KO6"} <= labels
 
 
 def test_the_meter_and_the_core_page_agree_on_line_pets():
