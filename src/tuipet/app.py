@@ -161,7 +161,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("ADVENTURE REBUILT. 30 maps, one per backdrop, each a single run: march, rest at the town halfway, then beat the boss to open the next map. Bosses pay a reward the first time, the road finds food that fits the land, and Godzilla's kaiju roam Monster Island. Road items are now Life Recovery, Shortcut and Rest Kit; your old transport tickets convert automatically.")
+    WHATS_NEW = ("SHARPER SHOTS. Chibi Godzilla's fireball shows its hot core, Mugendramon M fires a real burst instead of a black block, and Frozomon throws Frigimon's snowball instead of a blank square.")
 
 
     BINDINGS = [
