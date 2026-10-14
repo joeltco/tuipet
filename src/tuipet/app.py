@@ -161,7 +161,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THE GODZILLA LINE IS HERE. 28 new kaiju from the Digimon COLOR Godzilla 70th Edition, each with its own battle shot. Reach Mega with any Digimon to earn the Godzilla Egg. A new G-Cell meter, filled by battles and training and drained by losses and care mistakes, decides which kaiju your pet becomes, and a G-Cell Fragment left where a kaiju falls is the road to Burning Godzilla, which Godzilla 1994 now really reaches.")
+    WHATS_NEW = ("GODZILLA LINE POLISH. Botamon G now attacks with its real roaring pose and Koromon G stands on the ground instead of hovering; both eat with the right frames. Every Godzilla-line shot is drawn with its true outline and detail instead of a solid blob, and Botamon G's bubble finally looks like a bubble.")
 
 
     BINDINGS = [
