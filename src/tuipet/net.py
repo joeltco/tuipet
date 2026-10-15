@@ -340,7 +340,13 @@ class LobbyClient(_WsClient):
         self._send({"t": "raid_hit", "damage": int(damage)})
 
     def raid_claim(self, raid_id):
-        self._send({"t": "raid_claim", "raid": raid_id})
+        # acks: this build ledgers applied raids and sends raid_ack, so the
+        # server may hold the payout for re-send (battle call #23 = A)
+        self._send({"t": "raid_claim", "raid": raid_id, "acks": True})
+
+    def raid_ack(self, raid_id):
+        """The reward is APPLIED: the server may drop its held copy."""
+        self._send({"t": "raid_ack", "raid": raid_id})
 
     def update_pet(self, pet):
         self.pet = pet

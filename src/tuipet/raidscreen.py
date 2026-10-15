@@ -212,6 +212,15 @@ class RaidPanel(menu.SubHost):
             self.msg = "Nothing to claim."
             self.sfx = "error"
             return
+        rid = reward.get("id")
+        if rid is not None and persistence.raid_paid(rid):
+            # a RE-SENT payout this profile already applied (its ack was
+            # lost): never pay twice, just let the server drop its copy
+            self.client.raid_ack(rid)
+            self.msg = "Already collected."
+            return
+        if rid is not None:
+            persistence.note_raid_paid(rid)  # ledger FIRST: a crash can't double-pay
         bits = int(reward.get("bits", 0))
         self.pet.bits += bits
         got = list(reward.get("items") or [])
@@ -246,6 +255,8 @@ class RaidPanel(menu.SubHost):
         # moment's mirror: body on the field, then the champion's bounce).
         self._fell = None
         self._won = (self.frame_i + REWARD_T, bool(reward.get("defeated")))
+        if rid is not None:
+            self.client.raid_ack(rid)        # applied: the server drops its copy
 
     def strip(self):
         if self.sub is not None:

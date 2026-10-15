@@ -848,10 +848,11 @@ def _load_raid():
         d.setdefault("history", [])
         d.setdefault("claimed", {})
         d.setdefault("attempts", {})
+        d.setdefault("paid", {})
         return d
     except Exception:
         return {"boss": None, "board": {}, "history": [], "claimed": {},
-                "attempts": {}}
+                "attempts": {}, "paid": {}}
 
 
 RAID = _load_raid()
@@ -993,6 +994,17 @@ def _raid_award(name):
     return None
 
 
+def _raid_pending(name):
+    """A reward PAID but not yet acknowledged by the client (battle call
+    #23 = A, Joel 2026-10-15): a dropped socket used to lose it for good.
+    Shaped like an award so the client's claim flow re-collects it."""
+    for rid, who in sorted(RAID.get("paid", {}).items(), reverse=True):
+        r = who.get(name)
+        if r:
+            return dict(r, id=rid, pending=True)
+    return None
+
+
 def _raid_view(name, now=None):
     now = time.time() if now is None else now
     _raid_rotate(now)
@@ -1007,7 +1019,7 @@ def _raid_view(name, now=None):
             "top": [(who, v["damage"]) for who, v in top[:10]],
             "you": list(you),
             "attempts": _raid_attempts(name, now)["left"],
-            "award": _raid_award(name)}
+            "award": _raid_award(name) or _raid_pending(name)}
 
 
 def _raid_hit(name, raw, num, now=None):
@@ -1045,8 +1057,16 @@ def _raid_hit(name, raw, num, now=None):
     return {"t": "raid_hit", "ok": True, "dealt": dealt}
 
 
-def _raid_claim(name, raid_id, now=None):
+def _raid_claim(name, raid_id, now=None, acks=False):
+    """`acks`: the client ledgers applied raid ids and sends raid_ack (0.6.20+).
+    Only such a client gets its payout HELD for re-send -- an older build
+    would re-claim the pending row and apply it twice."""
     now = time.time() if now is None else now
+    paid = RAID.setdefault("paid", {}).get(str(raid_id), {}).get(name)
+    if paid:
+        # already paid, never acknowledged: RE-SEND the same reward (the
+        # client's ledger of raid ids it applied stops a double payout)
+        return dict(paid, t="raid_reward", ok=True, id=str(raid_id))
     a = _raid_award(name)
     if not a or a["id"] != str(raid_id):
         return {"t": "raid_reward", "ok": False}
@@ -1062,12 +1082,25 @@ def _raid_claim(name, raid_id, now=None):
         bits = int(bits * 1.5)
     items = [_r.choice(RAID_ITEM_POOL) for _ in range(a["items"])]
     RAID["claimed"].setdefault(a["id"], []).append(name)
+    reward = {"bits": bits, "items": items, "defeated": a["defeated"],
+              "rank": a["rank"], "boss": a["boss"]}
+    if acks:
+        RAID["paid"].setdefault(a["id"], {})[name] = reward   # held until raid_ack
     if len(RAID["claimed"]) > RAID_HISTORY_KEEP * 4:
         keep = {r["id"] for r in RAID["history"]}
         RAID["claimed"] = {k: v for k, v in RAID["claimed"].items() if k in keep}
+        RAID["paid"] = {k: v for k, v in RAID["paid"].items() if k in keep}
     _save_raid()
-    return {"t": "raid_reward", "ok": True, "bits": bits, "items": items,
-            "defeated": a["defeated"], "rank": a["rank"], "boss": a["boss"]}
+    return dict(reward, t="raid_reward", ok=True, id=a["id"])
+
+
+def _raid_ack(name, raid_id):
+    """The client APPLIED the reward: drop the held copy."""
+    who = RAID.get("paid", {}).get(str(raid_id))
+    if who and who.pop(name, None) is not None:
+        if not who:
+            RAID["paid"].pop(str(raid_id), None)
+        _save_raid()
 
 
 async def handler(ws):
@@ -1279,8 +1312,11 @@ async def handler(ws):
                 await _send(client, r)
                 await _send(client, _raid_view(client.name))
             elif t == "raid_claim":
-                await _send(client, _raid_claim(client.name, m.get("raid")))
+                await _send(client, _raid_claim(client.name, m.get("raid"),
+                                                acks=bool(m.get("acks"))))
                 await _send(client, _raid_view(client.name))
+            elif t == "raid_ack":
+                _raid_ack(client.name, m.get("raid"))
 
             elif t == "chat":
                 text = _clean(m.get("text"), MAX_CHAT)

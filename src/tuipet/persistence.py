@@ -164,6 +164,22 @@ def ladder_award_claimed(season):
     return season in load_settings().get("progress", {}).get("ladder_claimed", [])
 
 
+def raid_paid(raid_id):
+    """Has this profile already APPLIED raid `raid_id`'s reward?  The server
+    re-sends an unacknowledged payout (battle call #23 = A, 2026-10-15);
+    this ledger keeps a re-send from paying twice."""
+    return str(raid_id) in load_settings().get("progress", {}).get("raids_paid", [])
+
+
+def note_raid_paid(raid_id):
+    d = load_settings()
+    lst = d.setdefault("progress", {}).setdefault("raids_paid", [])
+    if str(raid_id) not in lst:
+        lst.append(str(raid_id))
+        del lst[:-50]                        # the newest fifty are plenty
+        save_settings(d)
+
+
 def note_ladder_award(season):
     d = load_settings()
     lst = d.setdefault("progress", {}).setdefault("ladder_claimed", [])
@@ -694,6 +710,7 @@ def get_progress():
 # deliberately NOT here: they are current state, not earned history, and no
 # merge of them is lose-nothing.  Deciding those is a design call, not this fix.
 _PROG_SETS = ("album", "eggs_owned", "titles_owned", "connections", "maps", "maps_cleared",
+              "raids_paid",
               "tourneys", "festivals", "eggs_announced", "ladder_claimed",
               "shop_unlocks")
 _PROG_MAXES = ("wins", "mega_kills", "armor_evos", "raids",
