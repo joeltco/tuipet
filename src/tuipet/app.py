@@ -162,7 +162,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("GAMMAMON + KAIJU. The Gammamon card is a new egg line (Mountains road), the Godzilla Egg is now earned on Monster Island, and every VB egg's hatch was redrawn from the classic eggs.")
+    WHATS_NEW = ("19 NEW VB EGGS. Guilmon, Impmon, Agumon, Gabumon, Ryudamon, Jellymon, Angoramon, the Spirit EX cards and more -- 28 official Vital Bracelet lines now, each egg earned on its own adventure road.")
 
 
     BINDINGS = [
