@@ -65,6 +65,7 @@ OPTIONAL_DATA = (
     "battle_fx.json.gz", "backgrounds.json.gz", "effects.json.gz",
     "icons.json.gz", "eggs.json.gz", "jogress_overlays.json",
     "digicoreMenuConfig.csv", "deviceAttacks.csv",
+    "shadow_ties.json",     # missing = pure first-match (evolution call #18)
 )
 
 

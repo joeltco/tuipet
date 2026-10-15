@@ -488,3 +488,36 @@ def test_dm20_jogress_capstones_are_declared_doors():
         pet.dead = False
         o = next(o for o in jogress.options(pet) if o["num"] == target)
         assert o["partner_num"] == partner and o["partners"] == []
+
+
+def test_shadow_ties_are_current_and_every_shadowed_form_is_reachable():
+    """Evolution call #18 = A (Joel 2026-10-15): 42 chart rows could never
+    win first-match.  They now tie with the first match (the stage roll
+    picks), so each is reachable; the shipped table matches its generator."""
+    import json
+    import os
+    import subprocess
+    import sys
+    from types import SimpleNamespace
+    root = os.path.join(os.path.dirname(__file__), "..")
+    env = dict(os.environ, PYTHONPATH=os.path.join(root, "src"))
+    out = subprocess.run([sys.executable, os.path.join(root, "tools", "shadow_ties.py"),
+                          "--check"], env=env, capture_output=True, text=True, timeout=300)
+    assert out.returncode == 0, out.stdout + out.stderr
+    ties = lines.shadow_ties()
+    assert sum(len(t) for chart in ties.values() for t in chart.values()) == 42
+    # Garurumon 108 on vbu: WereGarurumon 222 used to win every time
+    assert 201 in ties["vbu"][108]
+    rows = lines.load_lines()["vbu"]["children"][108]
+    mammoth = next(r for r in rows if r["num"] == 201)
+    alt = mammoth["rule"][0]
+    cm = next((lo for k, lo, _ in alt if k == "cm"), 0)
+    picks = set()
+    for roll in range(100):
+        pet = SimpleNamespace(num=108, line_id="vbu", stage="Champion",
+                              care_mistakes=cm, stage_trainings=99, overeat=0,
+                              stage_battles=15, exp=10**6, mega_kills=0, gcell=0,
+                              stage_roll=roll, gcell_fragment=False,
+                              battle_log=[1] * 15)
+        picks.add(lines.select_line(pet))
+    assert {201, 222} <= picks
