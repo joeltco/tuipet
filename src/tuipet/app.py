@@ -162,7 +162,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("IMPULSE CITY. A new Vital Bracelet egg line (Dokimon to Shroudmon), earned on the City Sunset road -- and every VB egg now bounces with the same shape as the classic eggs.")
+    WHATS_NEW = ("GAMMAMON + KAIJU. The Gammamon card is a new egg line (Mountains road), the Godzilla Egg is now earned on Monster Island, and every VB egg's hatch was redrawn from the classic eggs.")
 
 
     BINDINGS = [
