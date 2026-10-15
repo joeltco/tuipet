@@ -242,10 +242,10 @@ def test_charge_cost_uses_actual_bank_and_explains_existing_penalties():
     assert "Charges clear at every evolution" in text and "ties disarm" in text
     text = card(panel)
     assert "Charge x3/99: energy -6" in text
-    assert "Effort +1/ea, up to 3" in text and "Below 0: obedience falls" in text
+    assert "Effort +1/ea, up to 3" in text and "Stops at empty energy" in text
     from tuipet import helpscreen
     guide = "\n".join(text for text, _ in helpscreen.HELP)
-    assert "ties disarm" in guide and "below zero also costs obedience" in guide
+    assert "ties disarm" in guide and "stops at empty energy" in guide
 
 
 def test_no_road_form_does_not_suggest_charging_to_arm():

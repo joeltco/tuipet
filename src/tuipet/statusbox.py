@@ -1491,7 +1491,7 @@ def dna(app):
     roads = evolution.divergence_roads(p)
     armed = p.highest_dna() if evolution.divergence_options(p) else ""
     need = evolution.DIVERGE_NEED.get(p.stage)
-    amt = min(m.amount, own)
+    amt = min(m.amount, own, p.dna_affordable(f))   # never past empty (DNA call #5)
     bill = amt * (1 if same else 2)
     road = ("Armed " + data.pretty_field(armed)) if armed else "DNA not armed"
     progress = (f"Road {chg}/{need} · {len(roads[f])} forms" if f in roads and need
@@ -1513,7 +1513,7 @@ def dna(app):
         f"[dim]{cost}[/]",
         f"Charge x{amt}/{m.amount}: energy -{bill}",
         "[dim]Effort +1/ea, up to 3[/]",
-        "[dim]Below 0: obedience falls[/]",
+        "[dim]Stops at empty energy[/]",
         *last_rows,
         "[dim]Ties disarm; need a road[/]",
         "[dim]ESC steps back out[/]",

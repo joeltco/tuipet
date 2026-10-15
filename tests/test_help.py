@@ -272,7 +272,9 @@ def test_the_help_claims_match_the_shipped_mechanics():
     assert "from the bag" not in text
     assert "bandage" in text.lower()
     assert "find loot and eggs" not in text
-    assert "sell eggs" in text and "map clears" in text
+    # adventure call #26 = A (2026-10-15): the fuller page names the area
+    # unlock, the town shelves and the road cure
+    assert "sell eggs" in text and "Clearing an" in text and "patch" in text
     assert "hit saves your battle form" not in text
     # battle audit 2026-10-14: proto 4 duels commit their own live bar lock.
     assert "battles lock their own bar" in text
