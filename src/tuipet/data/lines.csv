@@ -1216,3 +1216,20 @@ mbr,Mega,810,1038;990;241,"TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",23:00,Ome
 mbr,Mega,380,365;990;195,"TR 20+, LV 7+, BTL 20+, WIN 14/20",23:00,Gaioumon
 mbr,Mega,299,239;241;195,"TR 15+, LV 6+, BTL 15+, WIN 11/15",23:00,Black War Greymon
 mbr,Mega,347,1038;239;365,"TR 10+, LV 6+, BTL 15+, WIN 8/15",23:00,Victory Greymon
+tsh,Fresh,1412,egg,TIME,20:00,"Punimon (official True Shadow Howl DIM card, humulos vbdm/vol)"
+tsh,InTraining,16,1412,TIME,21:00,Tsunomon
+tsh,Rookie,82,16,TIME,21:00,Gabumon (Black)
+tsh,Champion,108,82,"TR 10+, LV 4+, BTL 8+",22:00,Garurumon
+tsh,Champion,187,82,"TR 8+, LV 3+, BTL 5+",22:00,Garurumon (Black)
+tsh,Champion,713,82,"TR 5+, LV 2+, BTL 3+",22:00,Dorulumon
+tsh,Champion,122,82,TIME,22:00,Drimogemon
+tsh,Ultimate,1039,108;187,"TR 12+, LV 6+, BTL 15+, WIN 11/15",23:00,Were Garurumon: Saggitarius Mode
+tsh,Ultimate,448,122;713,"TR 12+, LV 6+, BTL 15+, WIN 11/15",23:00,Cerberumon
+tsh,Ultimate,570,122;713,"TR 10+, LV 5+, BTL 10+, WIN 5/10",23:00,Rhinomon (card slot V/Ultimate; plays as its global Champion -- Joel 2026-10-15)
+tsh,Ultimate,262,108;187,"TR 10+, LV 5+, BTL 10+, WIN 5/10",23:00,Pandamon
+tsh,Ultimate,270,108;187,"TR 8+, LV 4+, BTL 10+, WIN 5/10",23:00,Were Garurumon (Black)
+tsh,Ultimate,701,122;713,"TR 8+, LV 4+, BTL 10+, WIN 5/10",23:00,Jaeger Dorulumon
+tsh,Mega,810,1039;270;701,"TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",23:00,Omegamon Zwart
+tsh,Mega,436,448;262;701,"TR 20+, LV 7+, BTL 20+, WIN 14/20",23:00,Mercurymon
+tsh,Mega,353,448;570;270,"TR 15+, LV 6+, BTL 15+, WIN 11/15",23:00,Metal Garurumon (Black)
+tsh,Mega,346,1039;570;262,"TR 10+, LV 6+, BTL 15+, WIN 8/15",23:00,Z'd Garurumon

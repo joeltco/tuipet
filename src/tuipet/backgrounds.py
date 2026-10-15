@@ -157,6 +157,7 @@ EGG_BG = {
     50: "frozenpeak",    # Blizzard Fang Egg (VB DIM card; the genuinely cold line Frozen Peak waited for)
     51: "jungle",        # Hermit in the Jungle Egg (VB DIM card; unlocks on the Jungle road)
     52: "tealhollow",    # Mad Black Roar Egg (VB DIM card; unlocks on the Teal Hollow road)
+    53: "moonmeadow",    # True Shadow Howl Egg (VB DIM card; wolves howl on the Moonlit Meadow road)
 }
 
 

@@ -13,6 +13,9 @@ STAGES = ["Fresh", "InTraining", "Rookie", "Champion", "Ultimate", "Mega"]
 # design; ver1's Betamon road + the ver2-verE canon rewrite, 2026-07-07 --
 # every device line now matches its humulos DM20 chart)
 DECLARED_EDGES = {
+    # tsh -- the official True Shadow Howl DIM card's connectors the corpus
+    # graph never carried (humulos vbdm/vol; Joel approved the line 2026-10-15)
+    (1412, 16), (82, 108), (108, 1039), (187, 1039), (122, 448), (122, 570), (713, 570), (187, 262), (108, 270), (122, 701), (570, 346), (262, 346), (448, 353), (570, 353), (448, 436), (262, 436), (701, 436), (1039, 810), (270, 810), (701, 810),
     # mbr -- the official Mad Black Roar DIM card's connectors the corpus graph
     # never carried (humulos vbdm/vol; Joel approved the line 2026-10-15)
     (1411, 12), (56, 93), (56, 125), (93, 1038), (149, 1038), (125, 239), (129, 365), (125, 990), (129, 990), (239, 347), (365, 347), (239, 299), (365, 380), (990, 380), (195, 380), (1038, 810), (990, 810), (241, 810),
@@ -254,7 +257,8 @@ def _all_lines():
 # a card places a form in a slot its global stage disagrees with, and Joel
 # ruled to keep it there playing as its global stage (2026-10-15: Blizzard
 # Fang's Daipenmon sits in the card's Ultimate slot, a Mega in tuipet)
-STAGE_SLOT_EXCEPTIONS = {("bfa", 696)}
+STAGE_SLOT_EXCEPTIONS = {("bfa", 696),   # Daipenmon: Mega in an Ultimate slot
+                         ("tsh", 570)}   # Rhinomon: Champion in an Ultimate slot (Joel 2026-10-15)
 
 
 def test_every_member_is_a_real_form_at_its_stage():

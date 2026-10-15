@@ -849,6 +849,7 @@ EGG_STOCK_PER_TOWN = 6
 EARN_ONLY_EGGS = frozenset({"Godzilla Egg", "Draco Egg", "Volcanic Beat Egg",
                             "Infinite Tide Egg", "Nu Metal Empire Egg", "Blizzard Fang Egg",
                             "Hermit in the Jungle Egg", "Mad Black Roar Egg",
+                            "True Shadow Howl Egg",
                             "Digitama X3"})
 
 

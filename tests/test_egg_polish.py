@@ -226,3 +226,25 @@ def test_mad_black_roar_egg_hatches_botamon_into_its_line_on_teal_hollow():
     q._hatch_into_fresh()
     assert q.num == 1411 and q.line_id == "ver1"
     assert shop.town_egg_buy(Pet(num=29), idx)[1] == "error"
+
+
+def test_true_shadow_howl_egg_hatches_punimon_into_its_line_on_moonlit_meadow():
+    """Joel 2026-10-15: the official True Shadow Howl DIM card as an egg line,
+    earned on the Moonlit Meadow road (map 7, index 6); Rhinomon keeps the
+    card's Ultimate slot while playing as its global Champion."""
+    from tuipet import data, egg, lines, shop
+    idx = next(i for i in range(egg.count()) if egg.hatch_name(i) == "True Shadow Howl Egg")
+    rule = data.load_egg_unlock()[idx]
+    prog = dict(persistence.get_progress(), maps=set(), maps_cleared=set(), raids=0)
+    assert not egg._conditions_met(rule, prog)
+    prog["maps_cleared"] = {6}
+    assert egg._conditions_met(rule, prog)
+    p = Pet.new_egg(egg_type=idx)
+    p._hatch_into_fresh()
+    assert p.num == 1412 and p.line_id == "tsh"
+    q = Pet.new_egg(egg_type=1)                          # the Punimon starter egg
+    q._hatch_into_fresh()
+    assert q.num == 1412 and q.line_id == "ver2"
+    line = lines.load_lines()["tsh"]
+    assert len(line["members"]) == 17 and 570 in line["members"]
+    assert shop.town_egg_buy(Pet(num=29), idx)[1] == "error"

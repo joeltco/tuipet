@@ -1,0 +1,2189 @@
+{
+  "card": "TRUE SHADOW HOWL",
+  "line_id": "tsh",
+  "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+  "source_kind": "Saved Humulos HTML is authoritative for this proposal; live page opened 2026-10-15",
+  "digitama": {
+    "image_name": "digitama_puni.gif",
+    "title_quote": "Punimon Digitama",
+    "source_image": "//humulos.com/digimon/images/dot/vbdm/digitama_puni.gif",
+    "status": "Colour source only; no art conversion authorized"
+  },
+  "requirements_scope": "Each listed icon is AND; N/A means no constraint. No icons on I-II-III. No attribute Jogress inferred as connector edges.",
+  "source_hashes": {
+    "_astra/vbdm_vol.html": "281985d9690c848254c015a041f6422dabe5aedec78181b7a0fbdb3ff6394eb1",
+    "_astra/list_vbdm.html": "43acd3463364054c1396811a24f2eb61ccace9bbbceca5532caee2adb9692b95",
+    "src/tuipet/data/digimon.csv": "445e7c04bcb13e3fe3106ca8d75591aac6484c244a819d64f6929ed1de0e9f25",
+    "src/tuipet/data/sprites.json.gz": "e275515239cd5a278dadf9deef5cf7a50d0e6fab3c7c3eee5724ffed3d6b354d",
+    "src/tuipet/data/lines.csv": "82523efb50c0988e7d12ce5646a27daa1e4d3fb3d82931025e978a9fd502a580",
+    "LINES_SPEC.md": "decdc120b183a315add0caece7f6c6a3ed8d6a47bb2f2b379222540b6e45b1d4",
+    "src/tuipet/data/eggs.json.gz": "2eec2f9c013d6259ef73d8a105d8b4fc2f7d0b68de3d1f70156f400f2e7ee73e",
+    "src/tuipet/egg.py": "65f2d5580f92259bd3325827c49c3018d1555bd791881eeff437f12727b15b46",
+    "src/tuipet/pet.py": "50d7f3fb8344cda89495faaf12098bfd12099a8e4945525f624af561aaa62833",
+    "src/tuipet/lines.py": "1d0098d5f24268d829ab0ece2c35c7d6ddfdce2847aa0b3717a5ea24bf65bf9f",
+    "src/tuipet/digicore.py": "59c676855513204f6cf9cd8713659dd77802b6f7d587e6e636a141fa661e1fd0",
+    "src/tuipet/evolution.py": "26aac233383d52e666e66ed4b788b7610dfb3ce1ad07fc8bab9182626c40f8e9",
+    "tests/test_line_curation.py": "fc4a50c8047c731e0202dae7a6a0898224c3dbe6b5cdaea8846330bf561e03c4"
+  },
+  "node_count": 17,
+  "edge_count": 30,
+  "nodes": [
+    {
+      "slug": "puni",
+      "name": "Punimon",
+      "stage": "I",
+      "tuipet_stage": "Fresh",
+      "attribute": "None",
+      "parents": [],
+      "connector_classes": [],
+      "requirements": [],
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh baby column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "I",
+      "list_attribute_quote": "Free",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "identity_candidates": [
+        {
+          "dex_num": 3,
+          "name": "Punimon",
+          "stage": "Fresh",
+          "attribute": "None",
+          "element": "None",
+          "sprite_set": 0,
+          "sprite_num": 22,
+          "frame_0_sha256": "a95e081f5babc501de2c55bd9ffbe166a03e3a1866b035dab4164abe33fdcba3"
+        },
+        {
+          "dex_num": 1412,
+          "name": "Punimon",
+          "stage": "Fresh",
+          "attribute": "None",
+          "element": "None",
+          "sprite_set": 0,
+          "sprite_num": 22,
+          "frame_0_sha256": "a95e081f5babc501de2c55bd9ffbe166a03e3a1866b035dab4164abe33fdcba3"
+        }
+      ],
+      "identity_review": "Explicit alias/duplicate selection; see mapping.tsv and rules_proposal.md",
+      "dex_num": 1412,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [],
+          "requirements": [],
+          "proposed_rule": "TIME"
+        }
+      ],
+      "proposed_rule": "TIME"
+    },
+    {
+      "slug": "tuno",
+      "name": "Tsunomon",
+      "stage": "II",
+      "tuipet_stage": "InTraining",
+      "attribute": "None",
+      "parents": [
+        "puni"
+      ],
+      "connector_classes": [
+        "tsh_puni_lineOut"
+      ],
+      "requirements": [],
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_tuno_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "II",
+      "list_attribute_quote": "Free",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "connector_note": "Unbranched adjacent stage columns; preceding horizontal lineOut, no requirement text.",
+      "identity_candidates": [
+        {
+          "dex_num": 16,
+          "name": "Tsunomon",
+          "stage": "InTraining",
+          "attribute": "None",
+          "element": "Earth",
+          "sprite_set": 0,
+          "sprite_num": 11,
+          "frame_0_sha256": "f5fc904bd05cff1b58c5f253cc92248799586434af75a63a6dd85f9ca7f41393"
+        },
+        {
+          "dex_num": 1459,
+          "name": "Tsunomon",
+          "stage": "InTraining",
+          "attribute": "None",
+          "element": "Earth",
+          "sprite_set": 0,
+          "sprite_num": 11,
+          "frame_0_sha256": "f5fc904bd05cff1b58c5f253cc92248799586434af75a63a6dd85f9ca7f41393"
+        }
+      ],
+      "identity_review": "Explicit alias/duplicate selection; see mapping.tsv and rules_proposal.md",
+      "dex_num": 16,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "puni"
+          ],
+          "requirements": [],
+          "proposed_rule": "TIME"
+        }
+      ],
+      "proposed_rule": "TIME"
+    },
+    {
+      "slug": "gabu_b",
+      "name": "Gabumon (Black)",
+      "stage": "III",
+      "tuipet_stage": "Rookie",
+      "attribute": "Virus",
+      "parents": [
+        "tuno"
+      ],
+      "connector_classes": [
+        "tsh_tuno_lineOut"
+      ],
+      "requirements": [],
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh child column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "III",
+      "list_attribute_quote": "Virus",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "connector_note": "Unbranched adjacent stage columns; preceding horizontal lineOut, no requirement text.",
+      "identity_candidates": [
+        {
+          "dex_num": 34,
+          "name": "Gabumon",
+          "stage": "Rookie",
+          "attribute": "Data",
+          "element": "Ice",
+          "sprite_set": 0,
+          "sprite_num": 88,
+          "frame_0_sha256": "fb65b27a39fef287235748c1fc929150648dc6f9e5f9696844a8263f80101bc8"
+        },
+        {
+          "dex_num": 82,
+          "name": "Gabumon",
+          "stage": "Rookie",
+          "attribute": "Virus",
+          "element": "Dark",
+          "sprite_set": 5,
+          "sprite_num": 22,
+          "frame_0_sha256": "e6f56686471cb6ec6fd21701f443f0d1ff03031321cb844244b20b93c6639d1f"
+        }
+      ],
+      "identity_review": "Explicit alias/duplicate selection; see mapping.tsv and rules_proposal.md",
+      "dex_num": 82,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "tuno"
+          ],
+          "requirements": [],
+          "proposed_rule": "TIME"
+        }
+      ],
+      "proposed_rule": "TIME"
+    },
+    {
+      "slug": "garuru",
+      "name": "Garurumon",
+      "stage": "IV",
+      "tuipet_stage": "Champion",
+      "attribute": "Vaccine",
+      "parents": [
+        "gabu_b"
+      ],
+      "connector_classes": [
+        "tsh_gabu_b_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "1,300+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_garuru_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "IV",
+      "list_attribute_quote": "Vaccine",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "identity_candidates": [
+        {
+          "dex_num": 108,
+          "name": "Garurumon",
+          "stage": "Champion",
+          "attribute": "Data",
+          "element": "Ice",
+          "sprite_set": 2,
+          "sprite_num": 11,
+          "frame_0_sha256": "31e7835b53b5c76aa3569ccfd5e627819141234f65ea6384a5ca9c58079928cd"
+        },
+        {
+          "dex_num": 187,
+          "name": "Garurumon",
+          "stage": "Champion",
+          "attribute": "Virus",
+          "element": "Dark",
+          "sprite_set": 9,
+          "sprite_num": 44,
+          "frame_0_sha256": "c2ffc087f67a3a45fe8799fa7173e7fbb84f2e5c36fafeea4b3eceff18e64a15"
+        }
+      ],
+      "identity_review": "Explicit alias/duplicate selection; see mapping.tsv and rules_proposal.md",
+      "dex_num": 108,
+      "mapping_status": "ATTRIBUTE_CONFLICT",
+      "requirement_groups": [
+        {
+          "parents": [
+            "gabu_b"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "10+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "1,300+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "8+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "N/A"
+            }
+          ],
+          "proposed_rule": "TR 10+, LV 4+, BTL 8+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 4+, BTL 8+"
+    },
+    {
+      "slug": "drimoge",
+      "name": "Drimogemon",
+      "stage": "IV",
+      "tuipet_stage": "Champion",
+      "attribute": "Data",
+      "parents": [
+        "gabu_b"
+      ],
+      "connector_classes": [
+        "tsh_gabu_b_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_drimoge_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "IV",
+      "list_attribute_quote": "Data",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "identity_candidates": [
+        {
+          "dex_num": 122,
+          "name": "Drimogemon",
+          "stage": "Champion",
+          "attribute": "Data",
+          "element": "Earth",
+          "sprite_set": 3,
+          "sprite_num": 55,
+          "frame_0_sha256": "0b8c966c2fb955b796afca8258927ac7d2dc51616c87a1c43482a226f8502bb8"
+        }
+      ],
+      "identity_review": "Sole normalized exact-name identity",
+      "dex_num": 122,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "gabu_b"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "N/A"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "N/A"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "N/A"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "N/A"
+            }
+          ],
+          "proposed_rule": "TIME"
+        }
+      ],
+      "proposed_rule": "TIME"
+    },
+    {
+      "slug": "dorulu",
+      "name": "Dorulumon",
+      "stage": "IV",
+      "tuipet_stage": "Champion",
+      "attribute": "Virus",
+      "parents": [
+        "gabu_b"
+      ],
+      "connector_classes": [
+        "tsh_gabu_b_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "5+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "600+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "3+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_dorulu_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "IV",
+      "list_attribute_quote": "Virus",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "identity_candidates": [
+        {
+          "dex_num": 713,
+          "name": "Dorulumon",
+          "stage": "Champion",
+          "attribute": "Virus",
+          "element": "Metal",
+          "sprite_set": 19,
+          "sprite_num": 88,
+          "frame_0_sha256": "de917802fa9af53a7d3cff62468c72356d3cdef9efed21e73dd539321cf58086"
+        }
+      ],
+      "identity_review": "Sole normalized exact-name identity",
+      "dex_num": 713,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "gabu_b"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "5+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "600+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "3+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "N/A"
+            }
+          ],
+          "proposed_rule": "TR 5+, LV 2+, BTL 3+"
+        }
+      ],
+      "proposed_rule": "TR 5+, LV 2+, BTL 3+"
+    },
+    {
+      "slug": "garuru_b",
+      "name": "Garurumon (Black)",
+      "stage": "IV",
+      "tuipet_stage": "Champion",
+      "attribute": "Virus",
+      "parents": [
+        "gabu_b"
+      ],
+      "connector_classes": [
+        "tsh_gabu_b_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "900+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "5+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_garuru_b_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "IV",
+      "list_attribute_quote": "Virus",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "identity_candidates": [
+        {
+          "dex_num": 108,
+          "name": "Garurumon",
+          "stage": "Champion",
+          "attribute": "Data",
+          "element": "Ice",
+          "sprite_set": 2,
+          "sprite_num": 11,
+          "frame_0_sha256": "31e7835b53b5c76aa3569ccfd5e627819141234f65ea6384a5ca9c58079928cd"
+        },
+        {
+          "dex_num": 187,
+          "name": "Garurumon",
+          "stage": "Champion",
+          "attribute": "Virus",
+          "element": "Dark",
+          "sprite_set": 9,
+          "sprite_num": 44,
+          "frame_0_sha256": "c2ffc087f67a3a45fe8799fa7173e7fbb84f2e5c36fafeea4b3eceff18e64a15"
+        }
+      ],
+      "identity_review": "Explicit alias/duplicate selection; see mapping.tsv and rules_proposal.md",
+      "dex_num": 187,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "gabu_b"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "8+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "900+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "5+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "N/A"
+            }
+          ],
+          "proposed_rule": "TR 8+, LV 3+, BTL 5+"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 3+, BTL 5+"
+    },
+    {
+      "slug": "weregaruru_s",
+      "name": "Were Garurumon: Saggitarius Mode",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Vaccine",
+      "parents": [
+        "garuru",
+        "garuru_b"
+      ],
+      "connector_classes": [
+        "tsh_garuru_line",
+        "tsh_garuru_b_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_weregaruru_s_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "V",
+      "list_attribute_quote": "Vaccine",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "identity_candidates": [
+        {
+          "dex_num": 1039,
+          "name": "WereGarurumon SM",
+          "stage": "Ultimate",
+          "attribute": "Data",
+          "element": "Earth",
+          "sprite_set": 20,
+          "sprite_num": 55,
+          "frame_0_sha256": "444d879d3121513c38df21221d1125a874d3cda53bd5dfad4f2cb7e1334d0c7a"
+        }
+      ],
+      "identity_review": "Explicit alias/duplicate selection; see mapping.tsv and rules_proposal.md",
+      "dex_num": 1039,
+      "mapping_status": "ATTRIBUTE_CONFLICT",
+      "requirement_groups": [
+        {
+          "parents": [
+            "garuru",
+            "garuru_b"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "12+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "3,000+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "15+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "70%+"
+            }
+          ],
+          "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15"
+        }
+      ],
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15"
+    },
+    {
+      "slug": "cerberu",
+      "name": "Cerberumon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Vaccine",
+      "parents": [
+        "drimoge",
+        "dorulu"
+      ],
+      "connector_classes": [
+        "tsh_drimoge_line",
+        "tsh_dorulu_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_cerberu_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "V",
+      "list_attribute_quote": "Vaccine",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "identity_candidates": [
+        {
+          "dex_num": 448,
+          "name": "Cerberumon",
+          "stage": "Ultimate",
+          "attribute": "Vaccine",
+          "element": "Fire",
+          "sprite_set": 9,
+          "sprite_num": 33,
+          "frame_0_sha256": "9b55863be052182d41384982f00c7eaee7193f09f6fc5e707b0f83688e128831"
+        }
+      ],
+      "identity_review": "Sole normalized exact-name identity",
+      "dex_num": 448,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "drimoge",
+            "dorulu"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "12+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "3,000+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "15+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "70%+"
+            }
+          ],
+          "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15"
+        }
+      ],
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15"
+    },
+    {
+      "slug": "rhino",
+      "name": "Rhinomon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "None",
+      "parents": [
+        "drimoge",
+        "dorulu"
+      ],
+      "connector_classes": [
+        "tsh_drimoge_line",
+        "tsh_dorulu_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_rhino_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "V",
+      "list_attribute_quote": "Free",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "identity_candidates": [
+        {
+          "dex_num": 570,
+          "name": "Rhinomon",
+          "stage": "Champion",
+          "attribute": "Vaccine",
+          "element": "Metal",
+          "sprite_set": 18,
+          "sprite_num": 22,
+          "frame_0_sha256": "7257b91ed3a25e8eeb25b7efb944a13324198ced1994a88c999f34174baf6761"
+        }
+      ],
+      "identity_review": "Sole normalized exact-name identity",
+      "dex_num": 570,
+      "mapping_status": "STAGE_CONFLICT;ATTRIBUTE_CONFLICT",
+      "requirement_groups": [
+        {
+          "parents": [
+            "drimoge",
+            "dorulu"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "10+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "2,500+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "10+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "50%+"
+            }
+          ],
+          "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10"
+    },
+    {
+      "slug": "panda",
+      "name": "Pandamon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Data",
+      "parents": [
+        "garuru",
+        "garuru_b"
+      ],
+      "connector_classes": [
+        "tsh_garuru_line",
+        "tsh_garuru_b_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_panda_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "V",
+      "list_attribute_quote": "Data",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "identity_candidates": [
+        {
+          "dex_num": 262,
+          "name": "Pandamon",
+          "stage": "Ultimate",
+          "attribute": "Data",
+          "element": "Earth",
+          "sprite_set": 6,
+          "sprite_num": 55,
+          "frame_0_sha256": "35fdd1fe49022adc576f4e1f3937abc960ce198a50883286ecb029e58b9a016e"
+        }
+      ],
+      "identity_review": "Sole normalized exact-name identity",
+      "dex_num": 262,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "garuru",
+            "garuru_b"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "10+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "2,500+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "10+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "50%+"
+            }
+          ],
+          "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10"
+    },
+    {
+      "slug": "weregaruru_b",
+      "name": "Were Garurumon (Black)",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Virus",
+      "parents": [
+        "garuru",
+        "garuru_b"
+      ],
+      "connector_classes": [
+        "tsh_garuru_line",
+        "tsh_garuru_b_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_weregaruru_b_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "V",
+      "list_attribute_quote": "Virus",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "identity_candidates": [
+        {
+          "dex_num": 222,
+          "name": "WereGarurumon",
+          "stage": "Ultimate",
+          "attribute": "Data",
+          "element": "Earth",
+          "sprite_set": 2,
+          "sprite_num": 99,
+          "frame_0_sha256": "e2d80c4e51d3889602da10480ed367d8f3a290d4a9061e346d77fc9850a2acec"
+        },
+        {
+          "dex_num": 270,
+          "name": "WereGarurumon",
+          "stage": "Ultimate",
+          "attribute": "Virus",
+          "element": "Dark",
+          "sprite_set": 7,
+          "sprite_num": 22,
+          "frame_0_sha256": "ddca4bce3a295d6546385deddf65d18cdc816c9acdc27d481a4e3bd72567cd96"
+        }
+      ],
+      "identity_review": "Explicit alias/duplicate selection; see mapping.tsv and rules_proposal.md",
+      "dex_num": 270,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "garuru",
+            "garuru_b"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "8+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "2,000+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "10+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "50%+"
+            }
+          ],
+          "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10"
+    },
+    {
+      "slug": "jaegerdorulu",
+      "name": "Jaeger Dorulumon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Virus",
+      "parents": [
+        "drimoge",
+        "dorulu"
+      ],
+      "connector_classes": [
+        "tsh_drimoge_line",
+        "tsh_dorulu_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_jaegerdorulu_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "V",
+      "list_attribute_quote": "Virus",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "identity_candidates": [
+        {
+          "dex_num": 701,
+          "name": "JagerDorulumon",
+          "stage": "Ultimate",
+          "attribute": "Virus",
+          "element": "Earth",
+          "sprite_set": 13,
+          "sprite_num": 99,
+          "frame_0_sha256": "2a52e45a5378d0a5c7098e2f70b5b4c4d5ccf747f2f4b47c12ac454b55b6fd05"
+        }
+      ],
+      "identity_review": "Explicit alias/duplicate selection; see mapping.tsv and rules_proposal.md",
+      "dex_num": 701,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "drimoge",
+            "dorulu"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "8+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "2,000+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "10+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "50%+"
+            }
+          ],
+          "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10"
+    },
+    {
+      "slug": "zdgaruru",
+      "name": "Z'd Garurumon",
+      "stage": "VI",
+      "tuipet_stage": "Mega",
+      "attribute": "Data",
+      "parents": [
+        "weregaruru_s",
+        "rhino",
+        "panda"
+      ],
+      "connector_classes": [
+        "tsh_weregaruru_s_line",
+        "tsh_rhino_line",
+        "tsh_panda_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_zdgaruru_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "VI",
+      "list_attribute_quote": "Data",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "identity_candidates": [
+        {
+          "dex_num": 346,
+          "name": "ZeedGarurumon",
+          "stage": "Mega",
+          "attribute": "Data",
+          "element": "Metal",
+          "sprite_set": 6,
+          "sprite_num": 66,
+          "frame_0_sha256": "c0608e3db90e276feb5f2829eae34e9034e385e65d2e4f735b4a079a8bb475b6"
+        }
+      ],
+      "identity_review": "Explicit alias/duplicate selection; see mapping.tsv and rules_proposal.md",
+      "dex_num": 346,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "weregaruru_s",
+            "rhino",
+            "panda"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "10+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "4,500+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "15+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "50%+"
+            }
+          ],
+          "proposed_rule": "TR 10+, LV 6+, BTL 15+, WIN 8/15"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 6+, BTL 15+, WIN 8/15"
+    },
+    {
+      "slug": "metalgaruru_b",
+      "name": "Metal Garurumon (Black)",
+      "stage": "VI",
+      "tuipet_stage": "Mega",
+      "attribute": "Virus",
+      "parents": [
+        "cerberu",
+        "rhino",
+        "weregaruru_b"
+      ],
+      "connector_classes": [
+        "tsh_cerberu_line",
+        "tsh_rhino_line",
+        "tsh_weregaruru_b_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_metalgaruru_b_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "VI",
+      "list_attribute_quote": "Virus",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "identity_candidates": [
+        {
+          "dex_num": 279,
+          "name": "MetalGarurumon",
+          "stage": "Mega",
+          "attribute": "Data",
+          "element": "Ice",
+          "sprite_set": 0,
+          "sprite_num": 55,
+          "frame_0_sha256": "7aa2238c7ecbc26fb9372f3bacf90fdd6378003c10bcf88e56847a0c9b1744e3"
+        },
+        {
+          "dex_num": 353,
+          "name": "MetalGarurumon",
+          "stage": "Mega",
+          "attribute": "Virus",
+          "element": "Dark",
+          "sprite_set": 7,
+          "sprite_num": 22,
+          "frame_0_sha256": "e8f7be76a29c48b738fee2f172270cecd2d3c5a075c930063587c2d6f1989ea1"
+        }
+      ],
+      "identity_review": "Explicit alias/duplicate selection; see mapping.tsv and rules_proposal.md",
+      "dex_num": 353,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "cerberu",
+            "rhino",
+            "weregaruru_b"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "15+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "4,500+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "15+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "70%+"
+            }
+          ],
+          "proposed_rule": "TR 15+, LV 6+, BTL 15+, WIN 11/15"
+        }
+      ],
+      "proposed_rule": "TR 15+, LV 6+, BTL 15+, WIN 11/15"
+    },
+    {
+      "slug": "mercury",
+      "name": "Mercurymon",
+      "stage": "VI",
+      "tuipet_stage": "Mega",
+      "attribute": "Virus",
+      "parents": [
+        "cerberu",
+        "panda",
+        "jaegerdorulu"
+      ],
+      "connector_classes": [
+        "tsh_cerberu_line",
+        "tsh_panda_line",
+        "tsh_jaegerdorulu_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "5,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_mercury_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "VI",
+      "list_attribute_quote": "Virus",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "identity_candidates": [
+        {
+          "dex_num": 436,
+          "name": "Mercurymon",
+          "stage": "Mega",
+          "attribute": "Virus",
+          "element": "Thunder",
+          "sprite_set": 10,
+          "sprite_num": 0,
+          "frame_0_sha256": "4c5fa883a4367038dda5cc1099fac828b9fe88e52f80f4ca2e3f1940d926e900"
+        }
+      ],
+      "identity_review": "Sole normalized exact-name identity",
+      "dex_num": 436,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "cerberu",
+            "panda",
+            "jaegerdorulu"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "20+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "5,000+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "20+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "70%+"
+            }
+          ],
+          "proposed_rule": "TR 20+, LV 7+, BTL 20+, WIN 14/20"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 7+, BTL 20+, WIN 14/20"
+    },
+    {
+      "slug": "omega_z",
+      "name": "Omegamon Zwart",
+      "stage": "VI",
+      "tuipet_stage": "Mega",
+      "attribute": "Vaccine",
+      "parents": [
+        "weregaruru_s",
+        "weregaruru_b",
+        "jaegerdorulu"
+      ],
+      "connector_classes": [
+        "tsh_weregaruru_s_line",
+        "tsh_weregaruru_b_line",
+        "tsh_jaegerdorulu_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "7,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "25+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        },
+        {
+          "label_quote": "Special unlock",
+          "value_quote": "Stage 15 Cleared"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_omega_z_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "VI",
+      "list_attribute_quote": "Vaccine",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "identity_candidates": [
+        {
+          "dex_num": 810,
+          "name": "Omnimon Zwart",
+          "stage": "Mega",
+          "attribute": "Virus",
+          "element": "Dark",
+          "sprite_set": 21,
+          "sprite_num": 11,
+          "frame_0_sha256": "27fc22ae969212036e589c358757657a33f3ae972ca8d73579c45a4069cb9721"
+        },
+        {
+          "dex_num": 1097,
+          "name": "Omnimon Zwart",
+          "stage": "Mega",
+          "attribute": "Virus",
+          "element": "Dark",
+          "sprite_set": 21,
+          "sprite_num": 11,
+          "frame_0_sha256": "27fc22ae969212036e589c358757657a33f3ae972ca8d73579c45a4069cb9721"
+        }
+      ],
+      "identity_review": "Explicit alias/duplicate selection; see mapping.tsv and rules_proposal.md",
+      "dex_num": 810,
+      "mapping_status": "ATTRIBUTE_CONFLICT",
+      "requirement_groups": [
+        {
+          "parents": [
+            "weregaruru_s",
+            "weregaruru_b",
+            "jaegerdorulu"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "20+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "7,000+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "25+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "70%+"
+            },
+            {
+              "label_quote": "Special unlock",
+              "value_quote": "Stage 15 Cleared"
+            }
+          ],
+          "proposed_rule": "TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14"
+    }
+  ],
+  "edges": [
+    {
+      "parent": "puni",
+      "child": "tuno",
+      "connector_class": "tsh_puni_lineOut",
+      "requirements": [],
+      "proposed_rule": "TIME",
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh .tsh_puni_lineOut",
+      "connector_element_quote": "<div class=\"line_hor30 lineBlue tsh_puni_lineOut reqToggle\"></div>"
+    },
+    {
+      "parent": "tuno",
+      "child": "gabu_b",
+      "connector_class": "tsh_tuno_lineOut",
+      "requirements": [],
+      "proposed_rule": "TIME",
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh .tsh_tuno_lineOut",
+      "connector_element_quote": "<div class=\"line_hor30 lineBlue tsh_tuno_lineOut reqToggle\"></div>"
+    },
+    {
+      "parent": "gabu_b",
+      "child": "garuru",
+      "connector_class": "tsh_gabu_b_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "1,300+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 4+, BTL 8+",
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_garuru_Req_column .tsh_gabu_b_line",
+      "connector_element_quote": "<div class=\"line_hor30 linePurple tsh_gabu_b_line\"></div>"
+    },
+    {
+      "parent": "gabu_b",
+      "child": "drimoge",
+      "connector_class": "tsh_gabu_b_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "proposed_rule": "TIME",
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_drimoge_Req_column .tsh_gabu_b_line",
+      "connector_element_quote": "<div class=\"line_hor30 linePurple tsh_gabu_b_line\"></div>"
+    },
+    {
+      "parent": "gabu_b",
+      "child": "dorulu",
+      "connector_class": "tsh_gabu_b_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "5+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "600+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "3+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "proposed_rule": "TR 5+, LV 2+, BTL 3+",
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_dorulu_Req_column .tsh_gabu_b_line",
+      "connector_element_quote": "<div class=\"line_hor30 linePurple tsh_gabu_b_line\"></div>"
+    },
+    {
+      "parent": "gabu_b",
+      "child": "garuru_b",
+      "connector_class": "tsh_gabu_b_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "900+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "5+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 3+, BTL 5+",
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_garuru_b_Req_column .tsh_gabu_b_line",
+      "connector_element_quote": "<div class=\"line_hor30 linePurple tsh_gabu_b_line\"></div>"
+    },
+    {
+      "parent": "garuru",
+      "child": "weregaruru_s",
+      "connector_class": "tsh_garuru_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_weregaruru_s_Req_column .tsh_garuru_line",
+      "connector_element_quote": "<div class=\"line_hor60 lineRed tsh_garuru_line\"></div>"
+    },
+    {
+      "parent": "garuru_b",
+      "child": "weregaruru_s",
+      "connector_class": "tsh_garuru_b_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_weregaruru_s_Req_column .tsh_garuru_b_line",
+      "connector_element_quote": "<div class=\"line_hor30 lineIndigo tsh_garuru_b_line\"></div>"
+    },
+    {
+      "parent": "drimoge",
+      "child": "cerberu",
+      "connector_class": "tsh_drimoge_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_cerberu_Req_column .tsh_drimoge_line",
+      "connector_element_quote": "<div class=\"line_hor50 lineGreen tsh_drimoge_line\"></div>"
+    },
+    {
+      "parent": "dorulu",
+      "child": "cerberu",
+      "connector_class": "tsh_dorulu_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_cerberu_Req_column .tsh_dorulu_line",
+      "connector_element_quote": "<div class=\"line_hor40 linePurple tsh_dorulu_line\"></div>"
+    },
+    {
+      "parent": "drimoge",
+      "child": "rhino",
+      "connector_class": "tsh_drimoge_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_rhino_Req_column .tsh_drimoge_line",
+      "connector_element_quote": "<div class=\"line_hor50 lineGreen tsh_drimoge_line\"></div>"
+    },
+    {
+      "parent": "dorulu",
+      "child": "rhino",
+      "connector_class": "tsh_dorulu_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_rhino_Req_column .tsh_dorulu_line",
+      "connector_element_quote": "<div class=\"line_hor40 linePurple tsh_dorulu_line\"></div>"
+    },
+    {
+      "parent": "garuru",
+      "child": "panda",
+      "connector_class": "tsh_garuru_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_panda_Req_column .tsh_garuru_line",
+      "connector_element_quote": "<div class=\"line_hor60 lineRed tsh_garuru_line\"></div>"
+    },
+    {
+      "parent": "garuru_b",
+      "child": "panda",
+      "connector_class": "tsh_garuru_b_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_panda_Req_column .tsh_garuru_b_line",
+      "connector_element_quote": "<div class=\"line_hor30 lineIndigo tsh_garuru_b_line\"></div>"
+    },
+    {
+      "parent": "garuru",
+      "child": "weregaruru_b",
+      "connector_class": "tsh_garuru_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_weregaruru_b_Req_column .tsh_garuru_line",
+      "connector_element_quote": "<div class=\"line_hor60 lineRed tsh_garuru_line\"></div>"
+    },
+    {
+      "parent": "garuru_b",
+      "child": "weregaruru_b",
+      "connector_class": "tsh_garuru_b_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_weregaruru_b_Req_column .tsh_garuru_b_line",
+      "connector_element_quote": "<div class=\"line_hor30 lineIndigo tsh_garuru_b_line\"></div>"
+    },
+    {
+      "parent": "drimoge",
+      "child": "jaegerdorulu",
+      "connector_class": "tsh_drimoge_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_jaegerdorulu_Req_column .tsh_drimoge_line",
+      "connector_element_quote": "<div class=\"line_hor50 lineGreen tsh_drimoge_line\"></div>"
+    },
+    {
+      "parent": "dorulu",
+      "child": "jaegerdorulu",
+      "connector_class": "tsh_dorulu_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_jaegerdorulu_Req_column .tsh_dorulu_line",
+      "connector_element_quote": "<div class=\"line_hor40 linePurple tsh_dorulu_line\"></div>"
+    },
+    {
+      "parent": "weregaruru_s",
+      "child": "zdgaruru",
+      "connector_class": "tsh_weregaruru_s_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 6+, BTL 15+, WIN 8/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_zdgaruru_Req_column .tsh_weregaruru_s_line",
+      "connector_element_quote": "<div class=\"line_hor70 lineRed tsh_weregaruru_s_line\"></div>"
+    },
+    {
+      "parent": "rhino",
+      "child": "zdgaruru",
+      "connector_class": "tsh_rhino_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 6+, BTL 15+, WIN 8/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_zdgaruru_Req_column .tsh_rhino_line",
+      "connector_element_quote": "<div class=\"line_hor50 lineBlue tsh_rhino_line\"></div>"
+    },
+    {
+      "parent": "panda",
+      "child": "zdgaruru",
+      "connector_class": "tsh_panda_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 6+, BTL 15+, WIN 8/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_zdgaruru_Req_column .tsh_panda_line",
+      "connector_element_quote": "<div class=\"line_hor40 lineGreen tsh_panda_line\"></div>"
+    },
+    {
+      "parent": "cerberu",
+      "child": "metalgaruru_b",
+      "connector_class": "tsh_cerberu_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 15+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_metalgaruru_b_Req_column .tsh_cerberu_line",
+      "connector_element_quote": "<div class=\"line_hor60 lineYellow tsh_cerberu_line\"></div>"
+    },
+    {
+      "parent": "rhino",
+      "child": "metalgaruru_b",
+      "connector_class": "tsh_rhino_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 15+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_metalgaruru_b_Req_column .tsh_rhino_line",
+      "connector_element_quote": "<div class=\"line_hor50 lineBlue tsh_rhino_line\"></div>"
+    },
+    {
+      "parent": "weregaruru_b",
+      "child": "metalgaruru_b",
+      "connector_class": "tsh_weregaruru_b_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 15+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_metalgaruru_b_Req_column .tsh_weregaruru_b_line",
+      "connector_element_quote": "<div class=\"line_hor30 linePurple tsh_weregaruru_b_line\"></div>"
+    },
+    {
+      "parent": "cerberu",
+      "child": "mercury",
+      "connector_class": "tsh_cerberu_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "5,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 7+, BTL 20+, WIN 14/20",
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_mercury_Req_column .tsh_cerberu_line",
+      "connector_element_quote": "<div class=\"line_hor60 lineYellow tsh_cerberu_line\"></div>"
+    },
+    {
+      "parent": "panda",
+      "child": "mercury",
+      "connector_class": "tsh_panda_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "5,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 7+, BTL 20+, WIN 14/20",
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_mercury_Req_column .tsh_panda_line",
+      "connector_element_quote": "<div class=\"line_hor40 lineGreen tsh_panda_line\"></div>"
+    },
+    {
+      "parent": "jaegerdorulu",
+      "child": "mercury",
+      "connector_class": "tsh_jaegerdorulu_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "5,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 7+, BTL 20+, WIN 14/20",
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_mercury_Req_column .tsh_jaegerdorulu_line",
+      "connector_element_quote": "<div class=\"line_hor60 lineIndigo tsh_jaegerdorulu_line\"></div>"
+    },
+    {
+      "parent": "weregaruru_s",
+      "child": "omega_z",
+      "connector_class": "tsh_weregaruru_s_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "7,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "25+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        },
+        {
+          "label_quote": "Special unlock",
+          "value_quote": "Stage 15 Cleared"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_omega_z_Req_column .tsh_weregaruru_s_line",
+      "connector_element_quote": "<div class=\"line_hor70 lineRed tsh_weregaruru_s_line area1\" area=\"1\"></div>"
+    },
+    {
+      "parent": "weregaruru_b",
+      "child": "omega_z",
+      "connector_class": "tsh_weregaruru_b_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "7,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "25+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        },
+        {
+          "label_quote": "Special unlock",
+          "value_quote": "Stage 15 Cleared"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_omega_z_Req_column .tsh_weregaruru_b_line",
+      "connector_element_quote": "<div class=\"line_hor30 linePurple tsh_weregaruru_b_line area1\" area=\"1\"></div>"
+    },
+    {
+      "parent": "jaegerdorulu",
+      "child": "omega_z",
+      "connector_class": "tsh_jaegerdorulu_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "7,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "25+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        },
+        {
+          "label_quote": "Special unlock",
+          "value_quote": "Stage 15 Cleared"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",
+      "source": "https://humulos.com/digimon/vbdm/vol/#tsh_anchor",
+      "source_locator": "#tsh_omega_z_Req_column .tsh_jaegerdorulu_line",
+      "connector_element_quote": "<div class=\"line_hor60 lineIndigo tsh_jaegerdorulu_line area1\" area=\"1\"></div>"
+    }
+  ]
+}
