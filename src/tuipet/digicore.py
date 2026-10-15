@@ -369,7 +369,12 @@ def _trophy_rows(pet):
     won = sorted((getattr(pet, "trophies_won", None) or {}).items())
     for tid, season in won[:4]:                     # keep the page at 9 rows max
         # trophy_name speaks every id space -- town cups included
-        rows.append((_t.trophy_name(tid)[:12], season))   # (was 5: Maps row joined)
+        # the stored label is the WORLD day (the fast clock, not real days --
+        # DigiCore call #10 = A, 2026-10-15); saves keep "day N", shown as such
+        shown = str(season)
+        if shown.startswith("day "):
+            shown = "world " + shown
+        rows.append((_t.trophy_name(tid)[:12], shown))   # (was 5: Maps row joined)
     if len(won) > 4:
         rows.append(("…", f"+{len(won) - 4} more"))
     return rows
@@ -454,8 +459,7 @@ def build_pages(pet):
                      f" · {getattr(pet, 'stage_trainings', 0)} this stage"),
         ("KO6", f"{pet.mega_kills} Mega felled"),
     ]
-    if pet.x_antibody != "None":
-        power.append(("X-Anti", pet.x_antibody))   # keep the page at its 9-row max
+    # (the X-Anti row left: CORE's X-State already shows it -- call #10 = A)
     # (the Likes/Dislikes clock rows left with the timeRanks system --
     # BASIC VPET 2026-07-17)
     person = [

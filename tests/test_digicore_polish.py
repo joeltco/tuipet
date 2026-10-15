@@ -343,3 +343,15 @@ def test_call_9_the_person_core_flavor_reads_as_a_badge():
     num, name = next(iter(data.load_digicore_icons().items()))
     person = dict(dict(digicore.build_pages(Pet(num=num, stage="Mega")))["PERSON"])
     assert "Core" not in person and person["Badge"].endswith(name)
+
+
+def test_call_10_no_duplicate_x_row_and_trophy_days_say_world_day():
+    """Joel 2026-10-15 (DigiCore call #10 = A)."""
+    from tuipet import digicore
+    from tuipet.pet import Pet
+    p = Pet(num=29, name="Agumon", stage="Rookie", attribute="Vaccine")
+    p.x_antibody = "Permanent"
+    p.trophies_won = {1: "day 12"}
+    pages = dict(digicore.build_pages(p))
+    assert "X-Anti" not in dict(pages["POWER"])
+    assert "world day 12" in [v for _, v in digicore._trophy_rows(p)]
