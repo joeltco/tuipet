@@ -846,7 +846,7 @@ EGG_STOCK_PER_TOWN = 6
 # PRESTIGE EGGS ARE EARNED, NEVER BOUGHT (eggs call #30 = B, Joel 2026-10-15):
 # the achievement IS the egg.  Matched by the egg's hatch name so a bank
 # reorder can't silently put one back on a shelf.
-EARN_ONLY_EGGS = frozenset({"Godzilla Egg", "Draco Egg", "Volcanic Beat Egg",
+EARN_ONLY_EGGS = frozenset({"Terriermon EX Egg", "Agnimon EX Egg", "Wolfmon EX Egg", "Blitzmon EX Egg", "Espimon Egg", "Wolf Howl Egg", "Louwemon EX Egg", "Shadow Howl Egg", "Black Roar Egg", "Impmon GP Egg", "Ryudamon Egg", "Guilmon EX Egg", "Guilmon GP Egg", "Dinosaur Roar Egg", "Gabumon EX Egg", "Agumon EX Egg", "Jellymon Egg", "Angoramon Egg", "Fairimon EX Egg", "Godzilla Egg", "Draco Egg", "Volcanic Beat Egg",
                             "Infinite Tide Egg", "Nu Metal Empire Egg", "Blizzard Fang Egg",
                             "Hermit in the Jungle Egg", "Mad Black Roar Egg",
                             "True Shadow Howl Egg", "Impulse City Egg", "Gammamon Egg",

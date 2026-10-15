@@ -43,18 +43,9 @@ def test_every_sheet_is_wired_or_allowlisted():
     ALLOWED_SILENT = {
         # off-catalog DSprite data scenes: no egg picked them (yet) -- kept
         # as real rips a future egg/system can wear without a data rebuild
-        "boulevard", "boulevardusk", "fileisland",   # (citysunset: the Impulse City egg)
-        "islandnight",   # (seafloor/jungle: wired as the Infinite Tide / Hermit eggs' scenes)
-        # sunsetshore: SEABED art (the warm band is sunlight through the
-        # water), named Seafloor Sunset -- pick-only
-        "sunsetshore",
-        # (frozenpeak: the cold line arrived -- Blizzard Fang, 2026-10-15)
-        # their wearers (Sunamon / the Meicoomon egg skin) left with the
-        # fake-egg cut (2026-07-17); the rips stay for a future wearer
-        "desert",   # (tealhollow: the Mad Black Roar egg wears it, 2026-10-15)
-        # cove is a BEACH -- its art is a sandy shore, NOT a seafloor (scene
-        # audit 2026-07-20); pick-only on the E-shelf
-        "cove",
+        "islandnight",
+        # (every other sheet now dresses a card egg's home -- the VB card eggs
+        #  wear their unlock road's scene, 2026-10-15)
     }
     wired = set(backgrounds.EGG_BG.values()) | {"tourneyBack"}
     plates = {k for k in data.load_backgrounds() if k.startswith("digicore")}

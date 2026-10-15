@@ -19,7 +19,13 @@ _GATES = ("album_n", "wins", "mega", "tourney", "connections", "price",
 
 
 def _line_of(eid):
-    """The full set of creatures this egg can ever reach."""
+    """The full set of creatures this egg can ever reach -- or, for a card
+    egg that names its own line (hatch_line), that line: two eggs sharing a
+    baby still raise different charts (VB cards, 2026-10-15)."""
+    from tuipet import lines
+    bound = egg_mod.hatch_line(eid)
+    if bound in lines.load_lines():
+        return ("line", bound)
     evos = data.load_evolutions()
     roots = egg_mod._real_eggs()[eid].get("hatch", [])
     seen, frontier = set(roots), list(roots)
