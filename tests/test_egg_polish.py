@@ -381,3 +381,32 @@ def test_the_godzilla_hatch_shows_botamon_g_not_plain_botamon():
     idx = next(i for i in range(egg.count()) if egg.hatch_name(i) == "Godzilla Egg")
     hatch = egg.frames(idx)[2]
     assert hatch[9][4] == "1" and hatch[9][11] == "1"
+
+
+def test_a_baby_no_original_hatches_is_seated_the_originals_way():
+    """Measured on the 46 originals (Joel 2026-10-15): the breakout shows the
+    baby's full-size frame 5, feet on row 12 -- inside the shell, which is
+    drawn in front of its lower body."""
+    import importlib.util
+    import os
+    from tuipet import data, egg
+    spec = importlib.util.spec_from_file_location(
+        "egg_template", os.path.join(os.path.dirname(__file__), "..", "tools", "egg_template.py"))
+    tmpl = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(tmpl)
+    _, by_num = data.load_sprites()
+    for name in ("Nu Metal Empire Egg", "Gammamon Egg"):
+        idx = next(i for i in range(egg.count()) if egg.hatch_name(i) == name)
+        still, _, hatch = egg.frames(idx)
+        assert hatch[11:] == still[11:]                  # the shell is in front
+        rim_y, rim = tmpl.SEAT_RIM
+        assert hatch[rim_y] == rim                       # its broken top line (Joel)
+        dex = egg.hatch_targets(idx)[0]
+        pose = by_num[dex]["frames"][tmpl.SEAT_FRAME]
+        ink = [y for y, r in enumerate(pose) if "1" in r]
+        lift = ink[-1] - max(tmpl.SEAT_FEET_ROW, ink[-1] - ink[0])
+        for y in ink:                                    # every pixel above the shell is shown
+            if y - lift < tmpl.SEAT_RIM[0]:
+                for x, c in enumerate(pose[y]):
+                    if c == "1":
+                        assert hatch[y - lift][x] == "1", (name, y, x)

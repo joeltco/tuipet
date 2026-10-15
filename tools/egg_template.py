@@ -114,33 +114,43 @@ def donor_hatch(still, donor):
     return dh[:11] + bottom
 
 
+# the originals' own numbers (measured over the 46 eggs, 2026-10-15): the
+# breakout most often shows the baby's frame 5, at FULL size, its feet on row 12
+# -- two rows down inside the shell, which is drawn in FRONT of it
+SEAT_FRAME = 5
+SEAT_FEET_ROW = 12
+# ...and 29 of the 46 draw the broken shell's RIM as a line right across the egg
+# at row 10/11, in front of the baby (Joel: "You guys cut off the top line of
+# the bottom half shell") -- the originals' own row-10 rim
+SEAT_RIM = (10, "0010111111111010")
+
+
 def seated_hatch(dex, still):
-    """No original hatches this baby: its own frame 0, WHOLE, feet on row 10
-    over the still's shell (rows 11-15).  A baby taller than the 11 rows above
-    the shell sinks into it (its body replaces the shell behind it), never
-    clipped -- Jyarimon is 15 rows (VB batch 2026-10-15)."""
+    """No original hatches this baby: do what the originals do -- the baby's
+    own full-size frame 5 (frame 0 if it has none), feet on row 12, the egg's
+    shell (still rows 11-15) in front of its lower body, the shell rim and the
+    Godzilla egg's shard spray kept clear of it.  A baby too tall for that sits
+    with its head on row 0 and sinks deeper -- never clipped at the top."""
     _, by_num = data.load_sprites()
-    baby = by_num[dex]["frames"][0]
+    frames = by_num[dex]["frames"]
+    baby = frames[SEAT_FRAME] if len(frames) > SEAT_FRAME and any("1" in r for r in frames[SEAT_FRAME]) \
+        else frames[0]
     ink = [y for y, r in enumerate(baby) if "1" in r]
     height = ink[-1] - ink[0] + 1
-    feet = max(10, height - 1)                     # tall babies sink into the shell
+    feet = max(SEAT_FEET_ROW, height - 1)
     lift = ink[-1] - feet
     g = [["0"] * 16 for _ in range(11)] + [list(r) for r in still[11:]]
     body = set()
     for y in ink:
-        row = baby[y]
-        xs = [x for x, c in enumerate(row) if c == "1"]
-        for x in range(xs[0], xs[-1] + 1):
-            if y - lift > 10:                      # inside the shell: body replaces it
-                g[y - lift][x] = row[x]
-            elif row[x] == "1":
+        if y - lift > 10:                          # behind the shell's front
+            continue
+        for x, c in enumerate(baby[y]):
+            if c == "1":
                 g[y - lift][x] = "1"
-            if row[x] == "1":
                 body.add((y - lift, x))
-    for y in (9, 10):                              # the shell rim rising at the sides
-        for x in (2, 13):
-            if (y, x) not in body:
-                g[y][x] = "1"
+    rim_y, rim = SEAT_RIM                          # the shell's broken top, in FRONT
+    g[rim_y] = list(rim)
+    g[rim_y - 1][2] = g[rim_y - 1][13] = "1"       # the walls rise one more row at the sides
     shards = next(e for e in _bank() if e.get("hatch_name") == GODZILLA_EGG)["frames"][2]
     near = lambda y, x: any((y + dy, x + dx) in body for dy in (-1, 0, 1) for dx in (-1, 0, 1))
     for y in range(7):
