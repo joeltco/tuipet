@@ -134,12 +134,21 @@ def load_lines():
     return out
 
 
+@lru_cache(maxsize=1)
+def egg_bound_lines():
+    """Lines an egg names EXPLICITLY (eggs.json hatch_line): the VB cards,
+    whose babies are shared with an older line.  A name/root lookup never
+    lands a pet in one of these -- only its own egg does (2026-10-15)."""
+    from . import egg as egg_mod
+    return frozenset(filter(None, (egg_mod.hatch_line(i) for i in range(egg_mod.count()))))
+
+
 def line_for_hatch(dex):
-    """The line whose root Fresh form is `dex` ('' = no line: corpus engine)."""
-    for lid, line in load_lines().items():
-        if line["root"] == dex:
-            return lid
-    return ""
+    """The line whose root Fresh form is `dex` ('' = no line: corpus engine).
+    A root shared with an egg-bound card line answers its NATURAL line."""
+    owners = [lid for lid, line in load_lines().items() if line["root"] == dex]
+    natural = [lid for lid in owners if lid not in egg_bound_lines()]
+    return (natural or owners or [""])[0]
 
 
 def canonical_root(dex):
@@ -161,8 +170,9 @@ def canonical_root(dex):
     if rec:
         owners = [(line["root"], lid) for lid, line in load_lines().items()
                   if (by_num.get(line["root"]) or {}).get("name") == rec["name"]]
-        if owners:
-            return min(owners)
+        natural = [o for o in owners if o[1] not in egg_bound_lines()]
+        if natural or owners:
+            return min(natural or owners)
     return None, ""
 
 
@@ -387,7 +397,12 @@ def adopt_line(pet, prev=None):
     if live:
         owners = live
     if owners:
-        lid = min(owners, key=lambda o: o[1]["root"])[0]
+        # a root's NATURAL line outranks a line only an explicit egg binds
+        # (the VB cards share babies: Mokumon/Pichimon/YukimiBotamon -- a
+        # repaired save must not drift into the card line, 2026-10-15)
+        def natural(o):
+            return 1 if o[0] in egg_bound_lines() else 0
+        lid = min(owners, key=lambda o: (natural(o), o[1]["root"]))[0]
         pet.line_id = lid
         return lid
     pet.line_id = ""

@@ -83,5 +83,6 @@ def test_dormant_columns_are_empty_in_the_corpus():
             assert r["obedience"] is None and r["mood"] is None
         assert r["food"] is None and r["item"] is None and r["habitat"] is None
         # the zone slot woke up 2026-10-15: one adventure map cleared (Volcanic Beat)
-        if r["name"] not in ("Volcanic Beat Egg", "Infinite Tide Egg", "Nu Metal Empire Egg"):
+        if r["name"] not in ("Volcanic Beat Egg", "Infinite Tide Egg", "Nu Metal Empire Egg",
+                             "Blizzard Fang Egg"):
             assert r["zone"] is None

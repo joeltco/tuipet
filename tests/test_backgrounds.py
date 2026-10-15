@@ -48,10 +48,7 @@ def test_every_sheet_is_wired_or_allowlisted():
         # sunsetshore: SEABED art (the warm band is sunlight through the
         # water), named Seafloor Sunset -- pick-only
         "sunsetshore",
-        # Frozen Peak (Tundra) lost its egg defaults when the four Sky lines
-        # moved to Mountains -- Sky is warm & windy, not icy (scene audit
-        # 2026-07-20); pick-only now, awaiting a genuinely cold line
-        "frozenpeak",
+        # (frozenpeak: the cold line arrived -- Blizzard Fang, 2026-10-15)
         # their wearers (Sunamon / the Meicoomon egg skin) left with the
         # fake-egg cut (2026-07-17); the rips stay for a future wearer
         "desert", "tealhollow",

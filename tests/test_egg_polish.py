@@ -162,3 +162,26 @@ def test_nu_metal_empire_egg_hatches_bommon_into_its_line_on_the_factory_road():
     assert p.num == 960 and p.line_id == "nme"
     assert len(lines.load_lines()["nme"]["members"]) == 17
     assert shop.town_egg_buy(Pet(num=29), idx)[1] == "error"
+
+
+def test_blizzard_fang_egg_hatches_yukimibotamon_into_its_line_on_frozen_peak():
+    """Joel 2026-10-15: the official Blizzard Fang DIM card as an egg line,
+    earned on the Frozen Peak road (map 17, index 16); Daipenmon keeps the
+    card's Ultimate slot while playing as its global Mega."""
+    from tuipet import data, egg, lines, shop
+    idx = next(i for i in range(egg.count()) if egg.hatch_name(i) == "Blizzard Fang Egg")
+    rule = data.load_egg_unlock()[idx]
+    prog = dict(persistence.get_progress(), maps=set(), maps_cleared=set(), raids=0)
+    assert not egg._conditions_met(rule, prog)
+    prog["maps_cleared"] = {16}
+    assert egg._conditions_met(rule, prog)
+    p = Pet.new_egg(egg_type=idx)
+    p._hatch_into_fresh()
+    assert p.num == 1410 and p.line_id == "bfa"
+    meicoo = next(i for i in range(egg.count()) if egg.hatch_name(i) == "Meicoo Egg")
+    q = Pet.new_egg(egg_type=meicoo)
+    q._hatch_into_fresh()
+    assert q.num == 1410 and q.line_id != "bfa"        # the shared baby keeps its line
+    line = lines.load_lines()["bfa"]
+    assert len(line["members"]) == 17 and 696 in line["members"]
+    assert shop.town_egg_buy(Pet(num=29), idx)[1] == "error"

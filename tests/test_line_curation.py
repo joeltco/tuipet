@@ -13,6 +13,9 @@ STAGES = ["Fresh", "InTraining", "Rookie", "Champion", "Ultimate", "Mega"]
 # design; ver1's Betamon road + the ver2-verE canon rewrite, 2026-07-07 --
 # every device line now matches its humulos DM20 chart)
 DECLARED_EDGES = {
+    # bfa -- the official Blizzard Fang DIM card's connectors the corpus graph
+    # never carried (humulos vbdm/vol; Joel approved the line 2026-10-15)
+    (628, 547), (547, 391), (136, 696), (547, 696), (696, 290), (696, 1047), (201, 649), (627, 649), (1284, 649),
     # nme -- the official Nu Metal Empire DIM card's connectors the corpus
     # graph never carried (humulos vbdm/vol; Joel approved the line 2026-10-15)
     (960, 961), (42, 681), (42, 690), (112, 478), (690, 699), (112, 213), (681, 589), (681, 687), (213, 1360), (478, 375), (589, 689), (687, 276),
@@ -242,12 +245,20 @@ def _all_lines():
     return lines.load_lines()
 
 
+# a card places a form in a slot its global stage disagrees with, and Joel
+# ruled to keep it there playing as its global stage (2026-10-15: Blizzard
+# Fang's Daipenmon sits in the card's Ultimate slot, a Mega in tuipet)
+STAGE_SLOT_EXCEPTIONS = {("bfa", 696)}
+
+
 def test_every_member_is_a_real_form_at_its_stage():
     _, by_num = data.load_sprites()
     for lid, line in _all_lines().items():
         for num, row in line["members"].items():
             assert num in by_num, (lid, num)
             assert not data.is_placeholder(num), (lid, num)
+            if (lid, num) in STAGE_SLOT_EXCEPTIONS:
+                continue
             assert by_num[num]["stage"] == row["stage"], (lid, num)
 
 

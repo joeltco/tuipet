@@ -1164,3 +1164,21 @@ nme,Mega,276,699;213;687,"TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",23:00,Muge
 nme,Mega,689,589;1517;687,"TR 20+, LV 7+, BTL 20+, WIN 14/20",23:00,Zeke Greymon
 nme,Mega,375,478;699;589,"TR 15+, LV 6+, BTL 15+, WIN 11/15",23:00,Grand Locomon
 nme,Mega,1360,478;213;1517,"TR 10+, LV 6+, BTL 15+, WIN 8/15",23:00,Heavy Leomon
+bfa,Fresh,1410,egg,TIME,20:00,"Yukimibotamon (official Blizzard Fang DIM card, humulos vbdm/vol; #1410 = the canonical twin of #1)"
+bfa,InTraining,1516,1410,TIME,21:00,Hiyarimon
+bfa,Rookie,628,1516,TIME,21:00,Blucomon
+bfa,Champion,136,628,"TR 10+, LV 4+, BTL 8+",22:00,Yukidarumon
+bfa,Champion,629,628,"TR 8+, LV 3+, BTL 5+",22:00,Paledramon
+bfa,Champion,180,628,"TR 5+, LV 2+, BTL 3+",22:00,Hyougamon
+bfa,Champion,547,628,TIME,22:00,Moosemon
+bfa,Ultimate,201,136;547,"TR 12+, LV 6+, BTL 15+, WIN 11/15",23:00,Mammon
+bfa,Ultimate,269,629;180,"TR 12+, LV 6+, BTL 15+, WIN 11/15",23:00,Panjyamon
+bfa,Ultimate,627,629;180,"TR 10+, LV 5+, BTL 10+, WIN 5/10",23:00,Crys Paledramon
+bfa,Ultimate,391,136;547,"TR 10+, LV 5+, BTL 10+, WIN 5/10",23:00,Crescemon
+bfa,Ultimate,1284,629;180,"TR 8+, LV 4+, BTL 10+, WIN 5/10",23:00,Frozomon
+bfa,Ultimate,696,136;547,"TR 8+, LV 4+, BTL 10+, WIN 5/10",23:00,Daipenmon (card slot V/Ultimate; plays as its global Mega -- Joel 2026-10-15)
+bfa,Mega,649,201;627;1284,"TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",23:00,Ancient Megatheriumon
+bfa,Mega,914,627;391,"TR 20+, LV 7+, BTL 20+, WIN 14/20",23:00,Hexeblaumon
+bfa,Mega,1047,269;391;696,"TR 15+, LV 6+, BTL 15+, WIN 11/15",23:00,Fros Velgrmon
+bfa,Mega,290,201;269;696,"TR 10+, LV 6+, BTL 15+, WIN 8/15",23:00,Skull Mammon
+bfa,Mega,914,1284,"TR 10+, LV 6+, BTL 15+, WIN 8/15",23:00,Hexeblaumon

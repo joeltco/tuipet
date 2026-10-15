@@ -1,0 +1,1897 @@
+{
+  "card": "BLIZZARD FANG",
+  "line_id": "bfa",
+  "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+  "source_kind": "Saved Humulos HTML is authoritative for this proposal; live page opened 2026-10-15",
+  "digitama": {
+    "image_name": "digitama_yukimibota.gif",
+    "title_quote": "Yukimi Botamon Digitama",
+    "source_image": "//humulos.com/digimon/images/dot/vbdm/digitama_yukimibota.gif",
+    "status": "Colour source only; no art conversion authorized"
+  },
+  "requirements_scope": "Each listed icon is AND; N/A means no constraint. No icons on I-II-III. No attribute Jogress inferred as connector edges.",
+  "source_hashes": {
+    "_astra/vbdm_vol.html": "281985d9690c848254c015a041f6422dabe5aedec78181b7a0fbdb3ff6394eb1",
+    "_astra/list_vbdm.html": "43acd3463364054c1396811a24f2eb61ccace9bbbceca5532caee2adb9692b95",
+    "src/tuipet/data/digimon.csv": "445e7c04bcb13e3fe3106ca8d75591aac6484c244a819d64f6929ed1de0e9f25",
+    "src/tuipet/data/sprites.json.gz": "e275515239cd5a278dadf9deef5cf7a50d0e6fab3c7c3eee5724ffed3d6b354d",
+    "src/tuipet/data/lines.csv": "423f7f627648e1883ac75c6f8c9f738368fb944c4f0d310e541508af98854d48",
+    "LINES_SPEC.md": "30c9db222fc1a30191c418399d4d31694a6ad13b9637f0bc30ba9c09854b759a",
+    "src/tuipet/data/eggs.json.gz": "f2fff8292ad0e50ef6662080346cc4412778b4285cacdb895d90e447b2f4bf6a",
+    "src/tuipet/egg.py": "65f2d5580f92259bd3325827c49c3018d1555bd791881eeff437f12727b15b46",
+    "src/tuipet/pet.py": "50d7f3fb8344cda89495faaf12098bfd12099a8e4945525f624af561aaa62833",
+    "src/tuipet/lines.py": "0c307f1772582697af5058609c30e7566434399e2c5fe4fd330b23aeaad65a35",
+    "src/tuipet/digicore.py": "59c676855513204f6cf9cd8713659dd77802b6f7d587e6e636a141fa661e1fd0",
+    "src/tuipet/evolution.py": "26aac233383d52e666e66ed4b788b7610dfb3ce1ad07fc8bab9182626c40f8e9",
+    "tests/test_line_curation.py": "3e275ce16008888c0024ce2628f418b889be23b031dba31ebfc1ec87d34aa96d"
+  },
+  "node_count": 17,
+  "edge_count": 30,
+  "nodes": [
+    {
+      "slug": "yukimibota",
+      "name": "Yukimibotamon",
+      "stage": "I",
+      "tuipet_stage": "Fresh",
+      "attribute": "None",
+      "parents": [],
+      "connector_classes": [],
+      "requirements": [],
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "source_locator": "#bfa baby column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "I",
+      "list_attribute_quote": "Free",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "dex_num": 1,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [],
+          "requirements": [],
+          "proposed_rule": "TIME"
+        }
+      ],
+      "proposed_rule": "TIME"
+    },
+    {
+      "slug": "hiyari",
+      "name": "Hiyarimon",
+      "stage": "II",
+      "tuipet_stage": "InTraining",
+      "attribute": "None",
+      "parents": [
+        "yukimibota"
+      ],
+      "connector_classes": [
+        "bfa_yukimibota_lineOut"
+      ],
+      "requirements": [],
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "source_locator": "#bfa_hiyari_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "II",
+      "list_attribute_quote": "Free",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "connector_note": "Unbranched adjacent stage columns; preceding horizontal lineOut, no requirement text.",
+      "dex_num": 1516,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "yukimibota"
+          ],
+          "requirements": [],
+          "proposed_rule": "TIME"
+        }
+      ],
+      "proposed_rule": "TIME"
+    },
+    {
+      "slug": "bluco",
+      "name": "Blucomon",
+      "stage": "III",
+      "tuipet_stage": "Rookie",
+      "attribute": "Data",
+      "parents": [
+        "hiyari"
+      ],
+      "connector_classes": [
+        "bfa_hiyari_lineOut"
+      ],
+      "requirements": [],
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "source_locator": "#bfa child column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "III",
+      "list_attribute_quote": "Data",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "connector_note": "Unbranched adjacent stage columns; preceding horizontal lineOut, no requirement text.",
+      "dex_num": 628,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "hiyari"
+          ],
+          "requirements": [],
+          "proposed_rule": "TIME"
+        }
+      ],
+      "proposed_rule": "TIME"
+    },
+    {
+      "slug": "yukidaru",
+      "name": "Yukidarumon",
+      "stage": "IV",
+      "tuipet_stage": "Champion",
+      "attribute": "Vaccine",
+      "parents": [
+        "bluco"
+      ],
+      "connector_classes": [
+        "bfa_bluco_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "1,300+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "source_locator": "#bfa_yukidaru_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "IV",
+      "list_attribute_quote": "Vaccine",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "dex_num": 136,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "bluco"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "10+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "1,300+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "8+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "N/A"
+            }
+          ],
+          "proposed_rule": "TR 10+, LV 4+, BTL 8+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 4+, BTL 8+"
+    },
+    {
+      "slug": "paledra",
+      "name": "Paledramon",
+      "stage": "IV",
+      "tuipet_stage": "Champion",
+      "attribute": "Data",
+      "parents": [
+        "bluco"
+      ],
+      "connector_classes": [
+        "bfa_bluco_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "900+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "5+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "source_locator": "#bfa_paledra_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "IV",
+      "list_attribute_quote": "Data",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "dex_num": 629,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "bluco"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "8+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "900+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "5+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "N/A"
+            }
+          ],
+          "proposed_rule": "TR 8+, LV 3+, BTL 5+"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 3+, BTL 5+"
+    },
+    {
+      "slug": "hyouga",
+      "name": "Hyougamon",
+      "stage": "IV",
+      "tuipet_stage": "Champion",
+      "attribute": "Virus",
+      "parents": [
+        "bluco"
+      ],
+      "connector_classes": [
+        "bfa_bluco_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "5+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "600+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "3+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "source_locator": "#bfa_hyouga_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "IV",
+      "list_attribute_quote": "Virus",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "dex_num": 180,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "bluco"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "5+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "600+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "3+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "N/A"
+            }
+          ],
+          "proposed_rule": "TR 5+, LV 2+, BTL 3+"
+        }
+      ],
+      "proposed_rule": "TR 5+, LV 2+, BTL 3+"
+    },
+    {
+      "slug": "moose",
+      "name": "Moosemon",
+      "stage": "IV",
+      "tuipet_stage": "Champion",
+      "attribute": "None",
+      "parents": [
+        "bluco"
+      ],
+      "connector_classes": [
+        "bfa_bluco_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "source_locator": "#bfa_moose_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "IV",
+      "list_attribute_quote": "Free",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "dex_num": 547,
+      "mapping_status": "ATTRIBUTE_CONFLICT",
+      "requirement_groups": [
+        {
+          "parents": [
+            "bluco"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "N/A"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "N/A"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "N/A"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "N/A"
+            }
+          ],
+          "proposed_rule": "TIME"
+        }
+      ],
+      "proposed_rule": "TIME"
+    },
+    {
+      "slug": "mam",
+      "name": "Mammon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Vaccine",
+      "parents": [
+        "yukidaru",
+        "moose"
+      ],
+      "connector_classes": [
+        "bfa_yukidaru_line",
+        "bfa_moose_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "source_locator": "#bfa_mam_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "V",
+      "list_attribute_quote": "Vaccine",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "dex_num": 201,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "yukidaru",
+            "moose"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "12+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "3,000+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "15+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "70%+"
+            }
+          ],
+          "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15"
+        }
+      ],
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15"
+    },
+    {
+      "slug": "panjya",
+      "name": "Panjyamon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Vaccine",
+      "parents": [
+        "paledra",
+        "hyouga"
+      ],
+      "connector_classes": [
+        "bfa_paledra_line",
+        "bfa_hyouga_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "source_locator": "#bfa_panjya_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "V",
+      "list_attribute_quote": "Vaccine",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "dex_num": 269,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "paledra",
+            "hyouga"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "12+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "3,000+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "15+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "70%+"
+            }
+          ],
+          "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15"
+        }
+      ],
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15"
+    },
+    {
+      "slug": "cryspaledra",
+      "name": "Crys Paledramon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Data",
+      "parents": [
+        "paledra",
+        "hyouga"
+      ],
+      "connector_classes": [
+        "bfa_paledra_line",
+        "bfa_hyouga_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "source_locator": "#bfa_cryspaledra_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "V",
+      "list_attribute_quote": "Data",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "dex_num": 627,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "paledra",
+            "hyouga"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "10+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "2,500+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "10+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "50%+"
+            }
+          ],
+          "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10"
+    },
+    {
+      "slug": "cresce",
+      "name": "Crescemon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Data",
+      "parents": [
+        "yukidaru",
+        "moose"
+      ],
+      "connector_classes": [
+        "bfa_yukidaru_line",
+        "bfa_moose_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "source_locator": "#bfa_cresce_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "V",
+      "list_attribute_quote": "Data",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "dex_num": 391,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "yukidaru",
+            "moose"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "10+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "2,500+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "10+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "50%+"
+            }
+          ],
+          "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10"
+    },
+    {
+      "slug": "frozo",
+      "name": "Frozomon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Virus",
+      "parents": [
+        "paledra",
+        "hyouga"
+      ],
+      "connector_classes": [
+        "bfa_paledra_line",
+        "bfa_hyouga_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "source_locator": "#bfa_frozo_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "V",
+      "list_attribute_quote": "Virus",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "dex_num": 1284,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "paledra",
+            "hyouga"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "8+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "2,000+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "10+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "50%+"
+            }
+          ],
+          "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10"
+    },
+    {
+      "slug": "daipen",
+      "name": "Daipenmon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "None",
+      "parents": [
+        "yukidaru",
+        "moose"
+      ],
+      "connector_classes": [
+        "bfa_yukidaru_line",
+        "bfa_moose_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "source_locator": "#bfa_daipen_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "V",
+      "list_attribute_quote": "Free",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "dex_num": 696,
+      "mapping_status": "STAGE_CONFLICT",
+      "requirement_groups": [
+        {
+          "parents": [
+            "yukidaru",
+            "moose"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "8+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "2,000+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "10+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "50%+"
+            }
+          ],
+          "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10"
+    },
+    {
+      "slug": "skullmam",
+      "name": "Skull Mammon",
+      "stage": "VI",
+      "tuipet_stage": "Mega",
+      "attribute": "Vaccine",
+      "parents": [
+        "mam",
+        "panjya",
+        "daipen"
+      ],
+      "connector_classes": [
+        "bfa_mam_line",
+        "bfa_panjya_line",
+        "bfa_daipen_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "source_locator": "#bfa_skullmam_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "VI",
+      "list_attribute_quote": "Vaccine",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "dex_num": 290,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "mam",
+            "panjya",
+            "daipen"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "10+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "4,500+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "15+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "50%+"
+            }
+          ],
+          "proposed_rule": "TR 10+, LV 6+, BTL 15+, WIN 8/15"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 6+, BTL 15+, WIN 8/15"
+    },
+    {
+      "slug": "hexeblau",
+      "name": "Hexeblaumon",
+      "stage": "VI",
+      "tuipet_stage": "Mega",
+      "attribute": "Data",
+      "parents": [
+        "cryspaledra",
+        "cresce",
+        "frozo"
+      ],
+      "connector_classes": [
+        "bfa_cryspaledra_line",
+        "bfa_cresce_line",
+        "bfa_frozo_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "5,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        },
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "source_locator": "#bfa_hexeblau_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "VI",
+      "list_attribute_quote": "Data",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "dex_num": 914,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "cryspaledra",
+            "cresce"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "20+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "5,000+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "20+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "70%+"
+            }
+          ],
+          "proposed_rule": "TR 20+, LV 7+, BTL 20+, WIN 14/20"
+        },
+        {
+          "parents": [
+            "frozo"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "10+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "4,500+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "15+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "50%+"
+            }
+          ],
+          "proposed_rule": "TR 10+, LV 6+, BTL 15+, WIN 8/15"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 7+, BTL 20+, WIN 14/20 / TR 10+, LV 6+, BTL 15+, WIN 8/15"
+    },
+    {
+      "slug": "frosvelgr",
+      "name": "Fros Velgrmon",
+      "stage": "VI",
+      "tuipet_stage": "Mega",
+      "attribute": "Virus",
+      "parents": [
+        "panjya",
+        "cresce",
+        "daipen"
+      ],
+      "connector_classes": [
+        "bfa_panjya_line",
+        "bfa_cresce_line",
+        "bfa_daipen_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "source_locator": "#bfa_frosvelgr_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "VI",
+      "list_attribute_quote": "Virus",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "dex_num": 1047,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "panjya",
+            "cresce",
+            "daipen"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "15+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "4,500+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "15+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "70%+"
+            }
+          ],
+          "proposed_rule": "TR 15+, LV 6+, BTL 15+, WIN 11/15"
+        }
+      ],
+      "proposed_rule": "TR 15+, LV 6+, BTL 15+, WIN 11/15"
+    },
+    {
+      "slug": "ancientmegatheriu",
+      "name": "Ancient Megatheriumon",
+      "stage": "VI",
+      "tuipet_stage": "Mega",
+      "attribute": "Data",
+      "parents": [
+        "mam",
+        "cryspaledra",
+        "frozo"
+      ],
+      "connector_classes": [
+        "bfa_mam_line",
+        "bfa_cryspaledra_line",
+        "bfa_frozo_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "7,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "25+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        },
+        {
+          "label_quote": "Special unlock",
+          "value_quote": "Stage 15 Cleared"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "source_locator": "#bfa_ancientmegatheriu_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "VI",
+      "list_attribute_quote": "Data",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "dex_num": 649,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "mam",
+            "cryspaledra",
+            "frozo"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "20+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "7,000+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "25+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "70%+"
+            },
+            {
+              "label_quote": "Special unlock",
+              "value_quote": "Stage 15 Cleared"
+            }
+          ],
+          "proposed_rule": "TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14"
+    }
+  ],
+  "edges": [
+    {
+      "parent": "yukimibota",
+      "child": "hiyari",
+      "connector_class": "bfa_yukimibota_lineOut",
+      "requirements": [],
+      "proposed_rule": "TIME",
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 lineBlue bfa_yukimibota_lineOut reqToggle\"></div>"
+    },
+    {
+      "parent": "hiyari",
+      "child": "bluco",
+      "connector_class": "bfa_hiyari_lineOut",
+      "requirements": [],
+      "proposed_rule": "TIME",
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 lineBlue bfa_hiyari_lineOut reqToggle\"></div>"
+    },
+    {
+      "parent": "bluco",
+      "child": "yukidaru",
+      "connector_class": "bfa_bluco_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "1,300+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 4+, BTL 8+",
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 lineGreen bfa_bluco_line\"></div>"
+    },
+    {
+      "parent": "bluco",
+      "child": "paledra",
+      "connector_class": "bfa_bluco_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "900+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "5+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 3+, BTL 5+",
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 lineGreen bfa_bluco_line\"></div>"
+    },
+    {
+      "parent": "bluco",
+      "child": "hyouga",
+      "connector_class": "bfa_bluco_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "5+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "600+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "3+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "proposed_rule": "TR 5+, LV 2+, BTL 3+",
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 lineGreen bfa_bluco_line\"></div>"
+    },
+    {
+      "parent": "bluco",
+      "child": "moose",
+      "connector_class": "bfa_bluco_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "proposed_rule": "TIME",
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 lineGreen bfa_bluco_line\"></div>"
+    },
+    {
+      "parent": "yukidaru",
+      "child": "mam",
+      "connector_class": "bfa_yukidaru_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "connector_element_quote": "<div class=\"line_hor60 lineRed bfa_yukidaru_line\"></div>"
+    },
+    {
+      "parent": "moose",
+      "child": "mam",
+      "connector_class": "bfa_moose_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 lineBlue bfa_moose_line\"></div>"
+    },
+    {
+      "parent": "paledra",
+      "child": "panjya",
+      "connector_class": "bfa_paledra_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "connector_element_quote": "<div class=\"line_hor50 lineGreen bfa_paledra_line\"></div>"
+    },
+    {
+      "parent": "hyouga",
+      "child": "panjya",
+      "connector_class": "bfa_hyouga_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "connector_element_quote": "<div class=\"line_hor40 linePurple bfa_hyouga_line\"></div>"
+    },
+    {
+      "parent": "paledra",
+      "child": "cryspaledra",
+      "connector_class": "bfa_paledra_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "connector_element_quote": "<div class=\"line_hor50 lineGreen bfa_paledra_line\"></div>"
+    },
+    {
+      "parent": "hyouga",
+      "child": "cryspaledra",
+      "connector_class": "bfa_hyouga_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "connector_element_quote": "<div class=\"line_hor40 linePurple bfa_hyouga_line\"></div>"
+    },
+    {
+      "parent": "yukidaru",
+      "child": "cresce",
+      "connector_class": "bfa_yukidaru_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "connector_element_quote": "<div class=\"line_hor60 lineRed bfa_yukidaru_line\"></div>"
+    },
+    {
+      "parent": "moose",
+      "child": "cresce",
+      "connector_class": "bfa_moose_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 lineBlue bfa_moose_line\"></div>"
+    },
+    {
+      "parent": "paledra",
+      "child": "frozo",
+      "connector_class": "bfa_paledra_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "connector_element_quote": "<div class=\"line_hor50 lineGreen bfa_paledra_line\"></div>"
+    },
+    {
+      "parent": "hyouga",
+      "child": "frozo",
+      "connector_class": "bfa_hyouga_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "connector_element_quote": "<div class=\"line_hor40 linePurple bfa_hyouga_line\"></div>"
+    },
+    {
+      "parent": "yukidaru",
+      "child": "daipen",
+      "connector_class": "bfa_yukidaru_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "connector_element_quote": "<div class=\"line_hor60 lineRed bfa_yukidaru_line\"></div>"
+    },
+    {
+      "parent": "moose",
+      "child": "daipen",
+      "connector_class": "bfa_moose_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 lineBlue bfa_moose_line\"></div>"
+    },
+    {
+      "parent": "mam",
+      "child": "skullmam",
+      "connector_class": "bfa_mam_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 6+, BTL 15+, WIN 8/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "connector_element_quote": "<div class=\"line_hor80 lineRed bfa_mam_line\"></div>"
+    },
+    {
+      "parent": "panjya",
+      "child": "skullmam",
+      "connector_class": "bfa_panjya_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 6+, BTL 15+, WIN 8/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "connector_element_quote": "<div class=\"line_hor70 lineYellow bfa_panjya_line\"></div>"
+    },
+    {
+      "parent": "daipen",
+      "child": "skullmam",
+      "connector_class": "bfa_daipen_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 6+, BTL 15+, WIN 8/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 lineBlue bfa_daipen_line\"></div>"
+    },
+    {
+      "parent": "cryspaledra",
+      "child": "hexeblau",
+      "connector_class": "bfa_cryspaledra_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "5,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 7+, BTL 20+, WIN 14/20",
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "connector_element_quote": "<div class=\"line_hor60 lineGreen bfa_cryspaledra_line\"></div>"
+    },
+    {
+      "parent": "cresce",
+      "child": "hexeblau",
+      "connector_class": "bfa_cresce_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "5,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 7+, BTL 20+, WIN 14/20",
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "connector_element_quote": "<div class=\"line_hor50 lineTeal bfa_cresce_line\"></div>"
+    },
+    {
+      "parent": "frozo",
+      "child": "hexeblau",
+      "connector_class": "bfa_frozo_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 6+, BTL 15+, WIN 8/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "connector_element_quote": "<div class=\"line_hor40 linePurple bfa_frozo_line\"></div>"
+    },
+    {
+      "parent": "panjya",
+      "child": "frosvelgr",
+      "connector_class": "bfa_panjya_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 15+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "connector_element_quote": "<div class=\"line_hor70 lineYellow bfa_panjya_line\"></div>"
+    },
+    {
+      "parent": "cresce",
+      "child": "frosvelgr",
+      "connector_class": "bfa_cresce_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 15+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "connector_element_quote": "<div class=\"line_hor50 lineTeal bfa_cresce_line\"></div>"
+    },
+    {
+      "parent": "daipen",
+      "child": "frosvelgr",
+      "connector_class": "bfa_daipen_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 15+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 lineBlue bfa_daipen_line\"></div>"
+    },
+    {
+      "parent": "mam",
+      "child": "ancientmegatheriu",
+      "connector_class": "bfa_mam_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "7,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "25+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        },
+        {
+          "label_quote": "Special unlock",
+          "value_quote": "Stage 15 Cleared"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "connector_element_quote": "<div class=\"line_hor80 lineRed bfa_mam_line area1\" area=\"1\"></div>"
+    },
+    {
+      "parent": "cryspaledra",
+      "child": "ancientmegatheriu",
+      "connector_class": "bfa_cryspaledra_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "7,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "25+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        },
+        {
+          "label_quote": "Special unlock",
+          "value_quote": "Stage 15 Cleared"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "connector_element_quote": "<div class=\"line_hor60 lineGreen bfa_cryspaledra_line area1\" area=\"1\"></div>"
+    },
+    {
+      "parent": "frozo",
+      "child": "ancientmegatheriu",
+      "connector_class": "bfa_frozo_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "7,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "25+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        },
+        {
+          "label_quote": "Special unlock",
+          "value_quote": "Stage 15 Cleared"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",
+      "source": "https://humulos.com/digimon/vbdm/vol/#bfa_anchor",
+      "connector_element_quote": "<div class=\"line_hor40 linePurple bfa_frozo_line area1\" area=\"1\"></div>"
+    }
+  ]
+}
