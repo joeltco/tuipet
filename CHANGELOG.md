@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.24 — 19 NEW VB EGGS. Guilmon, Impmon, Agumon, Gabumon, Ryudamon,  (2026-10-15)
+
+19 NEW VB EGGS. Guilmon, Impmon, Agumon, Gabumon, Ryudamon, Jellymon, Angoramon, the Spirit EX cards and more -- 28 official Vital Bracelet lines now, each egg earned on its own adventure road.
+
 ## 0.6.23 — GAMMAMON + KAIJU. The Gammamon card is a new egg line (Mount (2026-10-15)
 
 GAMMAMON + KAIJU. The Gammamon card is a new egg line (Mountains road), the Godzilla Egg is now earned on Monster Island, and every VB egg's hatch was redrawn from the classic eggs.
