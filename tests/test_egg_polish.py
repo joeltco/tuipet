@@ -316,3 +316,30 @@ def test_the_godzilla_egg_opens_on_monster_island():
     prog["maps_cleared"] = {22}
     assert egg._conditions_met(rule, prog)
     assert data.record_for(adventure.ZONES[22]["bosses"][0]["num"])["name"].startswith("Godzilla")
+
+
+def test_the_egg_template_builds_on_grid_frames_for_every_card_egg():
+    """Joel 2026-10-15: "Just make a permanent template" -- tools/egg_template.py
+    turns one approved still design + the baby's dex into the wobble and hatch
+    frames by fixed rules: both outlines exact, the baby never clipped, the
+    hatch keeping the still egg's own shell."""
+    import importlib.util
+    import os
+    from tuipet import data, lines
+    spec = importlib.util.spec_from_file_location(
+        "egg_template", os.path.join(os.path.dirname(__file__), "..", "tools", "egg_template.py"))
+    tmpl = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(tmpl)
+    bank = tmpl._bank()
+    cards = [e for e in bank if e.get("hatch_line") in lines.load_lines()
+             and e["hatch_line"] != "godzilla"]
+    assert len(cards) >= 8
+    for e in cards:
+        still, wobble, hatch = tmpl.build(e["frames"][0], e["hatch"][0])
+        assert tmpl.on_grid(still, tmpl.STILL) and tmpl.on_grid(wobble, tmpl.WOBBLE)
+        assert hatch[11:] == still[11:]
+    # a baby no egg hatches is seated whole: every pixel of Curimon survives
+    top = tmpl.seated_hatch(1137)
+    _, by_num = data.load_sprites()
+    baby = [r for r in by_num[1137]["frames"][0] if "1" in r]
+    assert sum(r.count("1") for r in top) >= sum(r.count("1") for r in baby)
