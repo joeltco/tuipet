@@ -257,11 +257,12 @@ def test_a8_full_trophy_and_legacy_pages_keep_note_and_footer_visible():
         for i in range(10)]}})
     for page in ("TROPHIES", "LEGACY"):
         pan = DigiCorePanel(p, start=page)
-        assert "↑↓ scroll" in fits(pan)
+        fits(pan)                       # keys ride the strip (menus call #12 = A)
+        assert "↑↓ scroll" in Text.from_markup(pan.strip()).plain
         for _ in range(3):
             pan.key("pagedown")
         assert "more" in fits(pan)
-        assert "ESC back" in pan.text().plain
+        assert "ESC back" in Text.from_markup(pan.strip()).plain
 
 
 def test_a9_strip_and_card_follow_page_gaze_and_requirements():
@@ -291,7 +292,8 @@ def test_a9_card_fits_wide_names_and_preserves_note_words():
 def test_a8_mode_message_has_a_readable_tail_without_marquee():
     pan = DigiCorePanel(pet())
     pan.note = "Long mode verdict " * 8 + "FINAL VERDICT"
-    assert "↑↓ scroll" in fits(pan)
+    fits(pan)
+    assert "↑↓ scroll" in Text.from_markup(pan.strip()).plain
     for _ in range(20):
         pan.key("down")
     assert "FINAL VERDICT" in fits(pan)

@@ -74,6 +74,8 @@ class EggSelectPanel:
         scene now -- the dossier lives on the STATUS card, the words live
         HERE; the box's own marquee carries over-wide lines).  E advertises
         the egg guide -- the pick is permanent for the generation."""
+        if not self.n:
+            return menu.hints(("ESC", "back"))
         if self.msg:
             return self.msg
         if (self.locked > 0 and self.hint
@@ -142,7 +144,7 @@ class EggSelectPanel:
             out = menu.header("CHOOSE YOUR EGG", "0/0")
             out.append_text(menu.blanks(ROWS // 2))
             out.append_text(menu.note("no eggs ready — earn them out in the world"))
-            out.append_text(menu.footer("ESC back"))
+            out.append_text(menu.footer(""))
             return out
         placements = []
         base = round(self.scroll)

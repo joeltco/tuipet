@@ -278,7 +278,7 @@ def test_every_digicore_page_speaks_the_menu_language():
     assert "SPACE" in strip and "ESC" in strip
     first = pan.text().plain
     assert "DIGICORE  CORE" in first and chr(0x25CF) in first    # title + dots
-    assert "SPACE gaze" in first                                 # in-page footer
+    assert "SPACE gaze" not in first        # keys ride the strip only (menus call #12 = A)
     lines = first.split("\n")
     assert len(lines) <= 12 and all(len(l) <= 40 for l in lines)
     for _ in range(len(pan.pages) - 1):

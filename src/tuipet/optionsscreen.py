@@ -176,7 +176,7 @@ class KeysPanel:
         for r in shown:
             out.append_text(menu.row(r))
         out.append_text(menu.blanks(self.VISIBLE - len(shown) + 1))
-        out.append_text(menu.footer("↑↓ scroll  ESC back"))
+        out.append_text(menu.footer(""))
         return out
 
 

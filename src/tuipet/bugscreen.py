@@ -79,5 +79,5 @@ class BugReportPanel(menu.SubHost):
         for ln in view:
             out.append(ln + "\n", style=INK if self.buf else DIM)
         out.append_text(menu.note(self.msg, tick=self.frame_i))
-        out.append_text(menu.footer("type  ENTER send  ESC cancel"))
+        out.append_text(menu.footer(""))
         return out

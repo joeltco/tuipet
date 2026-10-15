@@ -105,7 +105,7 @@ def test_the_panel_plants_its_feet_and_space_re_issues(monkeypatch):
     # honest outs only (energy audit 2026-07-23): no false "rest refills"
     # promise -- energy cannot rise on the road, town warp or home are it
     assert "Refuses" in pan.strip() and "spent" in pan.strip()
-    assert "ESC home" in pan.strip()
+    assert "ESC leave" in pan.strip()
     assert "rest refills" not in pan.strip()
     pan.key("space")                                   # urge it on: still spent
     assert pan._refused and pan._refuse_t == REFUSE_T  # ...it refuses again

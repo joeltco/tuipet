@@ -1287,7 +1287,7 @@ def road(app):
         f"Fights {a.wins}W/{a.fights}",
         f"Loot   {a.finds}",
         flex, DIV,
-        "[dim]SPACE hurry · ESC home[/]",
+        "[dim]SPACE hurry · ESC leave[/]",
         warp,
     ]
     app.stats_w.update("\n".join(lines))

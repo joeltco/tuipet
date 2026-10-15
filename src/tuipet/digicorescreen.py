@@ -76,6 +76,7 @@ class DigiCorePanel:
         self._back_t = 0          # evolSilhouetteBack dark-blink ticks left
         self.frame_i = 0
         self.note = "the core stirs…"
+        self._keys = [("SPACE", "gaze"), ("←→", "page"), ("ESC", "back")]  # set by text()
         self.evo_sel = 0          # EVOLVES page: the highlighted candidate
         self.detail = None        # (num, name): the open requirement checklist
         self.det_off = 0          # ...and its scroll offset
@@ -245,8 +246,10 @@ class DigiCorePanel:
         rendered += [Text(part.plain + "\n", style=INK_B) for part in _wrapped(note, menu.W)]
         self.row_off = menu.scroll_window(out, rendered, self.row_off, 9,
                                           lambda text, i: text)
-        out.append_text(menu.footer("↑↓ scroll SPACE gaze ←→ ESC back" if len(rendered) > 9
-                                    else "SPACE gaze  ←→ page  ESC back"))
+        # keys live in ONE place, the hint strip (menus call #12 = A, 2026-10-15)
+        self._keys = ([("↑↓", "scroll"), ("SPACE", "gaze"), ("ESC", "back")] if len(rendered) > 9
+                      else [("SPACE", "gaze"), ("←→", "page"), ("ESC", "back")])
+        out.append_text(menu.footer(""))
         return out
 
     def _teaser_scene(self):
@@ -295,8 +298,8 @@ class DigiCorePanel:
         if self.detail is not None and not self.teaser:
             return menu.hints(("↑↓", "scroll"), ("ESC", "back"))
         if not self.teaser:
-            return menu.hints(("SPACE", "gaze" if self.i == 0 else "page"), ("\u2190\u2192", "page"),
-                              ("ESC", "back"))
+            self.text()                    # the page's keys are set as it draws
+            return menu.hints(*self._keys)
         t = self.teaser_t
         if t < MON_T:
             return "the core stirs…"
@@ -343,7 +346,7 @@ class DigiCorePanel:
 
         self.det_off = menu.scroll_window(out, report, self.det_off, vis, fmt)
         more = "" if len(report) <= vis else f"  ({self.det_off + 1}-{min(len(report), self.det_off + vis)}/{len(report)})"
-        out.append_text(menu.footer(f"↑↓ scroll{more}   ESC back"))
+        out.append_text(menu.footer(more.strip()))    # the position, not the keys
         return out
 
     def _evolves_scene(self, rows, dots):
@@ -352,7 +355,8 @@ class DigiCorePanel:
         if isinstance(rows, str):                      # "(final form)"
             out.append(f" {rows}\n", style=DIM)
             out.append_text(menu.blanks(8))
-            out.append_text(menu.footer("←→ page    ESC back"))
+            self._keys = [("←→", "page"), ("ESC", "back")]
+            out.append_text(menu.footer(""))
             return out
 
         options = evolution.divergence_options(self.pet)
@@ -373,7 +377,8 @@ class DigiCorePanel:
 
         self.evo_sel = menu.list_window(out, rows, self.evo_sel, 8, fmt)
         out.append_text(menu.note("ENTER: what it takes"))
-        out.append_text(menu.footer("↑↓ pick  ENTER req  ←→ page  ESC back"))
+        self._keys = [("↑↓", "pick"), ("ENTER", "req"), ("←→", "page"), ("ESC", "back")]
+        out.append_text(menu.footer(""))
         return out
 
     def text(self):
@@ -399,13 +404,16 @@ class DigiCorePanel:
             # the Album row fronts a browsable book (2026-07-21): teach the
             # door the way EVOLVES teaches its checklist
             out.append_text(menu.note("ENTER: the album"))
-            out.append_text(menu.footer("↑↓ scroll ENTER album ←→ ESC back" if scroll
-                                        else "ENTER album  ←→ page  ESC back"))
+            self._keys = ([("↑↓", "scroll")] if scroll else []) + [("ENTER", "album")] \
+                + ([] if scroll else [("←→", "page")]) + [("ESC", "back")]
+            out.append_text(menu.footer(""))
         elif title == "LEGACY":
             # the headstones front their room now too (2026-07-26)
             out.append_text(menu.note("ENTER: the hall of memory"))
-            out.append_text(menu.footer("↑↓ scroll ENTER hall ←→ ESC back" if scroll
-                                        else "ENTER hall  ←→ page  ESC back"))
+            self._keys = ([("↑↓", "scroll")] if scroll else []) + [("ENTER", "hall")] \
+                + ([] if scroll else [("←→", "page")]) + [("ESC", "back")]
+            out.append_text(menu.footer(""))
         else:
-            out.append_text(menu.footer(scroll + "←→ page    ESC back"))
+            self._keys = ([("↑↓", "scroll")] if scroll else []) + [("←→", "page"), ("ESC", "back")]
+            out.append_text(menu.footer(""))
         return out

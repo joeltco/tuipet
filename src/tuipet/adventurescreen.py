@@ -852,10 +852,10 @@ class AdventurePanel(menu.SubHost):
             return menu.hints(("any key", "skip"))
         if self._pulse is not None:
             line = self._pulse.get("line")     # the flash SAYS what it's for
-            return f"[b]★ {_fit(line or 'Map clear!', 29)}[/] [dim]KEY skip[/]"
+            return f"[b]★ {_fit(line or 'Map clear!', 29)}[/] [dim]any key[/]"
         if self._parade is not None:
             msg = self._parade.get("msg")      # the parade carries the victory line
-            return f"[b]★ {_fit(msg or 'The road is complete!', 29)}[/] [dim]KEY skip[/]"
+            return f"[b]★ {_fit(msg or 'The road is complete!', 29)}[/] [dim]any key[/]"
         if self._summary:
             return menu.hints(("any key", "home"))
         # adventure audit 2026-10-14: gate input already uses this same item menu.
@@ -873,14 +873,14 @@ class AdventurePanel(menu.SubHost):
                 # single spacing: the hungriest clause + a held warp ran 41
                 # cells and put the outs on the marquee (audit 2026-07-25)
                 out = "T item · " if self.adv.held_transports() else ""
-                return f"[b]{self._gate_refusal}[/] [dim]· {out}ESC home[/]"
+                return f"[b]{self._gate_refusal.rstrip('.')}[/] [dim]· {out}ESC leave[/]"
             # CELL BUDGET (audit 2026-07-25: ten boss names ran 41-45 cells
             # and scrolled the required keys off the box): the hints + hearts
             # are fixed, the NAME takes what remains, ellipsis-trimmed
             held = "T " if self.adv.held_transports() else ""
-            tail = f" {hearts} [dim]· SPACE fight {held}ESC home[/]"
+            tail = f" {hearts} [dim]· SPACE fight {held}ESC leave[/]"
             plain = f" {'♥' * self.adv.lives}{'♡' * (MAX_LIVES - self.adv.lives)}" \
-                    f" · SPACE fight {held}ESC home"
+                    f" · SPACE fight {held}ESC leave"
             return f"{_fit(self.adv.boss_name, 40 - _cells(plain))}{tail}"
         if self.travelling:
             lost = MAX_LIVES - self.adv.lives
@@ -891,7 +891,7 @@ class AdventurePanel(menu.SubHost):
                 # unreachable today (the door disturbs sleepers, the pill
                 # refuses on the road) -- but a waiting state must name its
                 # key if it ever becomes reachable (SHOW-FLOW, audit 2026-07-25)
-                return "[dim]zzZ — a roadside nap · ESC home[/]"
+                return "[dim]zzZ — a roadside nap · ESC leave[/]"
             if self._refuse_t > 0 or self._refused:
                 # the refusal only ever fires PAST EMPTY (stop_travel_prob:
                 # negative energy only) -- say so, or the bare "SPACE urge"
@@ -899,13 +899,13 @@ class AdventurePanel(menu.SubHost):
                 # only (energy audit 2026-07-23): energy cannot rise on the
                 # road itself -- a town's rest or home are the ways out.
                 out = ("T item · " if self.adv.held_transports() else "")
-                return f"[b]Refuses — spent![/]  [dim]{out}ESC home[/]"
+                return f"[b]Refuses — spent![/]  [dim]{out}ESC leave[/]"
             if self._scene is not None:
                 s, t = self._scene, self._scene["t"]
                 if s["grade"] is None and t >= INV_WALK_T:
                     return menu.hints(("SPACE", "dig!"))   # the meter is live
                 if t >= INV_REVEAL_T:         # the reveal, unsealed
-                    return f"[b]✦ {_fit(self._find_msg, 29)}[/] [dim]KEY skip[/]"
+                    return f"[b]✦ {_fit(self._find_msg, 29)}[/] [dim]any key skip[/]"
                 if t >= INV_WALK_T:           # suspense: . .. ...
                     dots = "." * min(3, 1 + (t - INV_WALK_T))
                     return f"[dim]{dots} · any key skip[/]"
@@ -1355,7 +1355,7 @@ class AdventurePanel(menu.SubHost):
         # the card is 12 physical rows: pad only while both extras are absent
         if (1 if a.best_streak >= 2 else 0) + (1 if a.holiday else 0) < 2:
             out.append_text(menu.blanks(1))
-        out.append_text(menu.footer("press any key — home"))
+        out.append_text(menu.footer(""))
         return out
 
     def text(self):
@@ -1464,5 +1464,5 @@ class ZonePickPanel:
             # cursor crosses a conquered row (audit 2026-07-25: the footer
             # hopped a row)
             out.append_text(menu.note(""))
-        out.append_text(menu.footer("↑↓ pick   ENTER go   ESC back"))
+        out.append_text(menu.footer(""))
         return out

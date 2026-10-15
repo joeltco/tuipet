@@ -31,7 +31,7 @@ class DisciplinePanel:
         self.frame_i += 1
 
     def strip(self):
-        return menu.hints(("ENTER", "apply"), ("ESC", "back"))
+        return menu.hints(("↑↓", "pick"), ("ENTER", "apply"), ("ESC", "back"))
 
     def key(self, k):
         if k in ("up", "down", "j", "k"):
@@ -74,5 +74,5 @@ class DisciplinePanel:
         out.append("\n")
         out.append(f" {self._state_line()}\n", style=INK)
         out.append_text(menu.blanks(9 - 4))
-        out.append_text(menu.footer("ENTER apply  ↑↓ pick  ESC back"))
+        out.append_text(menu.footer(""))
         return out

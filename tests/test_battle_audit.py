@@ -313,13 +313,13 @@ def test_a_healthy_pet_still_walks_straight_into_the_boss():
 
 
 def test_a_refused_gate_is_never_a_dead_end():
-    """ESC home always works, and a held transport still warps -- the same
+    """ESC leave always works, and a held transport still warps -- the same
     honest outs the planted-on-the-road refusal offers."""
     p = _pet(injured=True)
     p.add_item("shortcut")
     pan = _road(p)
     pan._start_boss(pan.adv.boss)
-    assert "ESC home" in pan.strip() and "T item" in pan.strip()
+    assert "ESC leave" in pan.strip() and "T item" in pan.strip()
     pan.key("t")
     assert pan._transport == ["shortcut"]
 

@@ -287,7 +287,7 @@ class DNAPanel:
             out.append_text(menu.row("%-13s%s" % (label, self._home_tag(key)), i == self.home_i))
         out.append_text(menu.blanks(1))
         out.append_text(menu.row("[%s]" % (self.last or "")[:34], False))
-        out.append_text(menu.footer("↑↓ pick  ENTER open  ESC back"))
+        out.append_text(menu.footer(""))
         return out
 
     def _text_charge(self):
@@ -318,7 +318,7 @@ class DNAPanel:
 
         self.cursor = menu.list_window(out, self.charge_fields, self.cursor, 6, fmt)
         out.append_text(menu.note("* own Field  ▸ road  ties disarm"))
-        out.append_text(menu.footer("↑↓fld ←→amt ENTER chg  ESC back"))
+        out.append_text(menu.footer(""))
         return out
 
     def _text_stats(self):
@@ -329,7 +329,7 @@ class DNAPanel:
             bar = "█" * (pct * 12 // 100)
             out.append_text(menu.row("%-17s%3d%% %s" % (_field_word(f, 17), pct, bar),
                                      i == self.cursor))
-        out.append_text(menu.footer("↑↓ field   ESC back"))
+        out.append_text(menu.footer(""))
         return out
 
 
@@ -344,7 +344,7 @@ class DNAPanel:
             out.append_text(menu.blanks(1))
             out.append_text(menu.row("Bank DNA for a later form.", False))
             out.append_text(menu.row("Charging now cannot arm a road.", False))
-            out.append_text(menu.footer("ESC back"))
+            out.append_text(menu.footer(""))
             return out
         armed = self._armed()
         flds = sorted(self._roads)
@@ -361,7 +361,7 @@ class DNAPanel:
 
         self.road_i = menu.list_window(out, flds, self.road_i, 6, fmt)
         out.append_text(menu.note("Ties disarm; ENTER lists all forms"))
-        out.append_text(menu.footer("↑↓ field  ENTER forms  ESC back"))
+        out.append_text(menu.footer(""))
         return out
 
     def _target_name(self, num):
@@ -385,7 +385,7 @@ class DNAPanel:
         self.target_i = menu.list_window(out, targets, self.target_i,
                                         max(1, 8 - len(wrapped)),
                                         lambda num, i: self._target_name(num))
-        out.append_text(menu.footer("↑↓ form   ESC back"))
+        out.append_text(menu.footer(""))
         return out
 
     def _text_bet(self):
@@ -410,7 +410,7 @@ class DNAPanel:
             out.append_text(menu.row("stabilized — it never rolls None", False))
         else:
             out.append_text(menu.row("too slow / fast → half back", False))
-        out.append_text(menu.footer("←→ ±1  ↑↓ tier  ENTER mash!  ESC back"))
+        out.append_text(menu.footer(""))
         return out
 
     def _text_mash(self):
@@ -444,11 +444,11 @@ class DNAPanel:
             return ("%s r%s→[b]%s[/] %.1fs SPACE"
                     % (self._meter(rate), shown_rate, fld, left))
         if self.phase == "charge":
-            return menu.hints(("↑↓", "field"), ("←→", "amount"),
-                              ("ENTER", "charge"))
+            return menu.hints(("↑↓", "pick"), ("←→", "±"),
+                              ("ENTER", "charge"), ("ESC", "back"))
         if self.phase == "bet":
-            return menu.hints(("←→", "wager"), ("ENTER", "mash!"),
-                              ("ESC", "back"))
+            return menu.hints(("←→", "±1"), ("↑↓", "tier"),
+                              ("ENTER", "mash!"), ("ESC", "back"))
         if self.phase == "result":
             return menu.hints(("any key", "continue"))
         if self.phase == "roads":
@@ -476,5 +476,5 @@ class DNAPanel:
                 out.append_text(menu.row("+%d %s DNA" % (gained, data.pretty_field(f))))
         else:
             out.append_text(menu.row("banked — open Charge to use it", False))
-        out.append_text(menu.footer("any key  →  DNA menu"))
+        out.append_text(menu.footer(""))
         return out

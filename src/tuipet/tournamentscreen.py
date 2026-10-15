@@ -109,7 +109,7 @@ class TournamentPanel(menu.SubHost):
         if self.sub is not None:
             return ""                          # the bout's own panel owns the box
         if self._ceremony is not None:
-            return "[b]★ CHAMPION — trophy![/] [dim]KEY skip[/]"
+            return "[b]★ CHAMPION — trophy![/] [dim]any key skip[/]"
         if self._advance is not None:
             return "[dim]%s · any key skip[/]" % menu._clip(self._say or "field advances", 29)
         if self._intro is not None:
@@ -299,13 +299,7 @@ class TournamentPanel(menu.SubHost):
             out.append(" %-11s%-11s%s\n" % (c1, c2, c3),
                        style=style if you else (INK if c1 else DIM))
         out.append_text(menu.note(t.last, tick=self.frame_i))
-        if t.over:
-            out.append_text(menu.footer("SPACE result   ESC leave"))
-        else:
-            # two-space gap: "quarterfinal" runs the line to exactly 38 --
-            # three spaces clipped "ESC forfeit" to "ESC forfei" (menu audit
-            # 2026-07-21; menu.footer hard-cuts at W)
-            out.append_text(menu.footer("SPACE to the %s  ESC forfeit" % t.round_name.lower()))
+        out.append_text(menu.footer(""))     # keys ride the strip (menus call #12 = A)
         return out
 
     def _frames(self, num, role="idle"):

@@ -68,7 +68,7 @@ def test_the_charge_page_honors_the_dna_rulings():
     pan.phase = "bet"
     pan.bet = 99
     pan.key("right")
-    assert pan.bet == 500 and "↑↓ tier" in pan.text().plain
+    assert pan.bet == 500 and "tier" in pan.strip()
     pan.bet = 99
     assert "banks up to 99" in pan.text().plain
     pan.bet = 2500

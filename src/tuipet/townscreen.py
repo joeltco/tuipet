@@ -107,5 +107,5 @@ class TownPanel(menu.SubHost):
         menu.list_window(out, list(_MENU), self.cursor, 6, lambda row, _i: row[1])
         out.append_text(menu.blanks(1))
         out.append_text(menu.note(self.msg, tick=self.frame_i))
-        out.append_text(menu.footer("↑↓ pick   ENTER go   ESC leave"))
+        out.append_text(menu.footer(""))
         return out
