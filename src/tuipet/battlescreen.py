@@ -329,7 +329,8 @@ class BattlePanel:
             self._enter_result()
             return
         self.timeline = round_timeline(ph0, fh0, rec["pdmg"], rec["edmg"],
-                                       True, hold_foe_bar=self.raid)
+                                       getattr(b, "player_first", True),
+                                       hold_foe_bar=self.raid)
         # the death beat is for a boss BEATEN TO ZERO -- won alone would fire
         # it on a survived raid, whose boss never falls
         if b.over and b.won and (b.enemy or {}).get("boss") and b.enemy_hp <= 0:
@@ -352,10 +353,10 @@ class BattlePanel:
                             "note": note}
         self._enter_result()
 
-    def duel_volley(self, my_hp0, foe_hp0, dealt, taken):
+    def duel_volley(self, my_hp0, foe_hp0, dealt, taken, mine_first=True):
         """Stage one seeded round on THIS panel (the duel keeps one panel for
         the whole bout, so the arena never blinks between volleys)."""
-        self.timeline = round_timeline(my_hp0, foe_hp0, dealt, taken, True)
+        self.timeline = round_timeline(my_hp0, foe_hp0, dealt, taken, mine_first)
         self.i = 0
         self._last_m = None
         self.phase = "anim"

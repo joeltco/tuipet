@@ -173,3 +173,50 @@ def test_raid_calendar_text_describes_end_day_bonus(monkeypatch):
     text = panel._context_line(panel.view, panel._boss())
     assert "weekend claims pay" not in text
     assert "weekend finishes pay 1.5x" in text
+
+
+def test_initiative_is_a_coin_and_even_bouts_are_even():
+    """Battle call #20 = A (Joel 2026-10-15): the first striker won ~56% of
+    even bouts and home fights always handed it to the player."""
+    import random as _r
+    from tuipet import battle
+    rng = _r.Random(7)
+
+    def share(first_of):
+        won = lost = 0
+        for _ in range(4000):
+            _seq, mh, fh = battle.generate(battle.Side.wild(29), battle.Side.wild(29),
+                                           rng=rng.random, me_first=first_of())
+            won += mh > fh
+            lost += fh > mh
+        return won / (won + lost)
+    assert share(lambda: True) > 0.53                 # the edge is real...
+    assert abs(share(lambda: rng.random() < 0.5) - 0.5) < 0.03   # ...the coin evens it
+
+
+def test_a_side_felled_by_the_first_volley_never_fires_back():
+    from tuipet import battle
+
+    class _S:
+        def __init__(self):
+            self.hit_type = "mega"
+        def hit_chance(self, other):
+            return 1.0
+        def roll_damage(self, rng):
+            return 5
+    seq, mh, fh = battle.generate(_S(), _S(), rng=lambda: 0.0, me_first=False)
+    assert seq == [(False, 5, True, 5)] and mh == 0 and fh == 5
+    seq, mh, fh = battle.generate(_S(), _S(), rng=lambda: 0.0, me_first=True)
+    assert seq == [(True, 5, False, 5)] and mh == 5 and fh == 0
+
+
+def test_a_home_battle_rolls_initiative():
+    from tuipet import battle
+    from tuipet.pet import Pet
+    seen = set()
+    for s in range(40):
+        import random as _r
+        b = battle.Battle(Pet(num=29, stage="Rookie", attribute="Vaccine"),
+                          rng=_r.Random(s).random)
+        seen.add(b.player_first)
+    assert seen == {True, False}

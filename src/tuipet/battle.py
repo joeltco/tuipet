@@ -163,7 +163,7 @@ class Side:
         return 2 if rng() < 0.5 else 1
 
 
-def generate(me, foe, rounds=ROUNDS_LOCAL, rng=None):
+def generate(me, foe, rounds=ROUNDS_LOCAL, rng=None, me_first=True):
     """The whole fight: [(my_hit, my_dmg, foe_hit, foe_dmg), ...] plus final
     HPs.
 
@@ -176,7 +176,12 @@ def generate(me, foe, rounds=ROUNDS_LOCAL, rng=None):
     flip on who whiffs -- both leave with it).  NOTE for the lobby: a
     mixed-version peer computes the old fight from the same seed, so
     reports disagree and the ladder simply doesn't credit until both
-    sides run this build."""
+    sides run this build.
+
+    INITIATIVE IS A COIN (battle call #20 = A, Joel 2026-10-15): the side
+    that volleys first won ~56% of even bouts, and home fights always gave
+    it to the player.  `me_first` names who strikes first this bout; the
+    callers flip it (Battle, the lobby's seeded duel, the NPC cup)."""
     rng = rng or random.random
     my_hp, foe_hp = HP, HP
     p_me, p_foe = me.hit_chance(foe), foe.hit_chance(me)
@@ -188,12 +193,20 @@ def generate(me, foe, rounds=ROUNDS_LOCAL, rng=None):
         my_hit = rng() < p_me
         foe_dmg = foe.roll_damage(rng)
         foe_hit = rng() < p_foe
-        if my_hit:
-            foe_hp -= my_dmg
-            if foe_hp <= 0:
-                foe_hit = False          # no posthumous return fire
-        if foe_hit:
-            my_hp -= foe_dmg
+        if me_first:
+            if my_hit:
+                foe_hp -= my_dmg
+                if foe_hp <= 0:
+                    foe_hit = False      # no posthumous return fire
+            if foe_hit:
+                my_hp -= foe_dmg
+        else:
+            if foe_hit:
+                my_hp -= foe_dmg
+                if my_hp <= 0:
+                    my_hit = False       # no posthumous return fire
+            if my_hit:
+                foe_hp -= my_dmg
         seq.append((my_hit, my_dmg, foe_hit, foe_dmg))
     return seq, max(0, my_hp), max(0, foe_hp)
 
@@ -272,8 +285,10 @@ class Battle:
         self.me = pet if isinstance(pet, Side) else Side.of_pet(pet)
         self.foe = enemy["side"] if "side" in enemy else Side.wild(
             enemy.get("num", 0), boss=bool(enemy.get("boss")))
+        # who strikes first is a coin (battle call #20 = A, 2026-10-15)
+        self.player_first = rng() < 0.5
         self.seq, self._my_end, self._foe_end = generate(
-            self.me, self.foe, rounds=rounds, rng=rng)
+            self.me, self.foe, rounds=rounds, rng=rng, me_first=self.player_first)
         self.pet_hp, self.enemy_hp = HP, HP
         self.pet_max = self.enemy_max = HP
         self.round = 0

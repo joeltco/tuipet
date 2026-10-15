@@ -189,9 +189,13 @@ class BoutMixin:
         rng = random.Random(seed).random
         host = battle.Side.of_card(dict(host_card))
         guest = battle.Side.of_card(dict(guest_card))
+        # initiative from the SHARED seed, so both peers agree (battle call
+        # #20 = A, 2026-10-15: the host used to strike first every bout)
+        host_first = rng() < 0.5
         seq, hhp, ghp = battle.generate(host, guest, rounds=battle.ROUNDS_ONLINE,
-                                        rng=rng)
-        self.battle = {"seq": seq, "host_hp": 5, "guest_hp": 5, "i": 0}
+                                        rng=rng, me_first=host_first)
+        self.battle = {"seq": seq, "host_hp": 5, "guest_hp": 5, "i": 0,
+                       "host_first": host_first}
         self.bphase = "fight"
         self._play_next_round()
     def _play_next_round(self):
@@ -285,7 +289,8 @@ class BoutMixin:
         try:
             if self.bshow is None:
                 return
-            self.bshow.duel_volley(my0, opp0, dealt, taken)
+            self.bshow.duel_volley(my0, opp0, dealt, taken,
+                                   (self.battle or {}).get("host_first", True) == self.is_host)
         except Exception:
             self.bshow = None               # presentation must never break the bout
     def _key_battle(self, k):
