@@ -84,7 +84,11 @@ def test_the_energy_reads_live_on_the_road_card(monkeypatch):
         pan.anim()
         if pan.travelling:
             break
-    assert f"Energy {pan.pet.energy}" in road_card(pan)   # live while marching
+    # live while marching -- a BAR like every energy readout (menus call #13 = A)
+    import re
+    from tuipet.arena import bar
+    live = re.sub(r"\[/?[^\[\]]*\]", "", bar(pan.pet.energy_pct(), 11))
+    assert f"Energy {live}" in road_card(pan)
     assert "⚡" not in pan.strip()                        # ...and OFF the strip
 
 

@@ -437,7 +437,9 @@ def test_the_road_card_names_the_wound_line_and_the_gate_verdict():
     plain = lambda t: re.sub(r"\[/?[^\[\]]*\]", "", t)
     app.pet._set_energy(BATTLE_MIN_ENERGY + 5)
     txt = plain(_card(app, road))
-    assert f"Energy {BATTLE_MIN_ENERGY + 5}" in txt and "wounds easy" not in txt
+    from tuipet.arena import bar
+    live = plain(bar(app.pet.energy_pct(), 11))           # a bar (menus call #13 = A)
+    assert f"Energy {live}" in txt and "wounds easy" not in txt
     app.pet._set_energy(BATTLE_MIN_ENERGY - 1)
     assert "wounds easy" in plain(_card(app, road))    # the line, named
 

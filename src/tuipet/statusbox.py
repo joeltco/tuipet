@@ -1214,7 +1214,8 @@ def zonepick(app):
     elif p.asleep:
         lines.append(f"[{T.NEG}]fast asleep[/]")
     else:
-        lines.append(f"Energy  [b]{p.energy}[/]")
+        # energy is a BAR everywhere (menus call #13 = A, 2026-10-15)
+        lines.append(f"Energy  {bar(p.energy_pct(), 11, T.ENERGY)}")
     lines += ["", "[dim]ENTER go  ↑↓ pick[/]"]
     app.stats_w.update("\n".join(lines))
 
@@ -1267,8 +1268,12 @@ def road(app):
     # decoy -- see AdventurePanel._check_spent: energy alone never plants a
     # pet, only a hazard knock past empty does.)
     from .petbase import BATTLE_MIN_ENERGY
-    energy_line = (f"Energy [{T.NEG}]{p.energy}[/] [dim]· wounds easy[/]"
-                   if p.energy < BATTLE_MIN_ENERGY else f"Energy [b]{p.energy}[/]")
+    # a BAR like every other energy readout (menus call #13 = A, 2026-10-15);
+    # under the line it turns red and its own row names the risk
+    low = p.energy < BATTLE_MIN_ENERGY
+    energy_line = f"Energy {bar(p.energy_pct(), 11, T.NEG if low else T.ENERGY)}"
+    if low:
+        energy_line += f"\n[{T.NEG}]low energy: wounds easy[/]"
     # ...and WHAT THE GATE WILL SAY, the moment it is true, instead of after
     # forty legs.  Same source the gate itself reads (check_energy=False --
     # the road's own energy law, D3 ruling), so the card cannot drift from it.
