@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.25 — 8 MORE VB EGGS. Renamon GP + EX, Monodramon GP, Dynasty of t (2026-10-15)
+
+8 MORE VB EGGS. Renamon GP + EX, Monodramon GP, Dynasty of the Evil, Chackmon EX, Ancient + Primeval Warriors, Titan of Dust -- 36 official lines, with new forms like Sakuyamon: Miko Mode and Justimon's Accel + Critical Arms. Most of these eggs unlock by beating the card's partner in the wild on an adventure road.
+
 ## 0.6.24 — 19 NEW VB EGGS. Guilmon, Impmon, Agumon, Gabumon, Ryudamon,  (2026-10-15)
 
 19 NEW VB EGGS. Guilmon, Impmon, Agumon, Gabumon, Ryudamon, Jellymon, Angoramon, the Spirit EX cards and more -- 28 official Vital Bracelet lines now, each egg earned on its own adventure road.
