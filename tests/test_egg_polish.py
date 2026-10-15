@@ -366,3 +366,12 @@ def test_gammamon_egg_hatches_curimon_into_its_line_on_the_mountains_road():
     assert p.num == 1137 and p.line_id == "gam"
     assert len(lines.load_lines()["gam"]["members"]) == 14
     assert shop.town_egg_buy(Pet(num=29), idx)[1] == "error"
+
+
+def test_the_godzilla_hatch_shows_botamon_g_not_plain_botamon():
+    """Egg audit 2026-10-15 (Joel: A): the breakout was plain Botamon's; Botamon
+    G's two distinguishing pixels belong at (9,4) and (9,11)."""
+    from tuipet import egg
+    idx = next(i for i in range(egg.count()) if egg.hatch_name(i) == "Godzilla Egg")
+    hatch = egg.frames(idx)[2]
+    assert hatch[9][4] == "1" and hatch[9][11] == "1"
