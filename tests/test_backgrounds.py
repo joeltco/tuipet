@@ -43,7 +43,7 @@ def test_every_sheet_is_wired_or_allowlisted():
     ALLOWED_SILENT = {
         # off-catalog DSprite data scenes: no egg picked them (yet) -- kept
         # as real rips a future egg/system can wear without a data rebuild
-        "boulevard", "boulevardusk", "citysunset", "fileisland",
+        "boulevard", "boulevardusk", "fileisland",   # (citysunset: the Impulse City egg)
         "islandnight",   # (seafloor/jungle: wired as the Infinite Tide / Hermit eggs' scenes)
         # sunsetshore: SEABED art (the warm band is sunlight through the
         # water), named Seafloor Sunset -- pick-only

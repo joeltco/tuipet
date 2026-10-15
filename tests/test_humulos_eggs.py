@@ -19,14 +19,14 @@ def _by_name():
     return {egg.hatch_name(i): i for i in range(egg.count())}
 
 
-def test_bank_is_54_and_every_egg_is_gated():
+def test_bank_is_55_and_every_egg_is_gated():
     # 46 device-verified digitama + the Godzilla Egg (Digital Monster COLOR
     # Godzilla 70th, wired 2026-10-13) + the Volcanic Beat Egg (VB DIM card,
     # 2026-10-15) + the Infinite Tide and Nu Metal Empire Eggs (VB DIM cards,
     # 2026-10-15) + the Blizzard Fang, Hermit in the Jungle and Mad Black Roar
-    # Eggs + the True Shadow Howl Egg (2026-10-15)
+    # Eggs + the True Shadow Howl and Impulse City Eggs (2026-10-15)
     n = egg.count()
-    assert n == 54
+    assert n == 55
     rules = data.load_egg_unlock()
     for i in range(n):
         assert i in rules, i                       # every egg has a real rule row

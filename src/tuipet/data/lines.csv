@@ -1233,3 +1233,20 @@ tsh,Mega,810,1039;270;701,"TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",23:00,Ome
 tsh,Mega,436,448;262;701,"TR 20+, LV 7+, BTL 20+, WIN 14/20",23:00,Mercurymon
 tsh,Mega,353,448;570;270,"TR 15+, LV 6+, BTL 15+, WIN 11/15",23:00,Metal Garurumon (Black)
 tsh,Mega,346,1039;570;262,"TR 10+, LV 6+, BTL 15+, WIN 8/15",23:00,Z'd Garurumon
+ici,Fresh,1429,egg,TIME,20:00,"Dokimon (official Impulse City DIM card, humulos vbdm)"
+ici,InTraining,936,1429,TIME,21:00,Bibimon
+ici,Rookie,937,936,TIME,21:00,Pulsemon
+ici,Champion,995,937,"TR 8+, LV 4+, BTL 8+",22:00,Bulkmon
+ici,Champion,1012,937,"TR 5+, LV 3+, BTL 3+",22:00,Runnermon
+ici,Champion,1010,937,"TR 3+, LV 2+",22:00,Exermon
+ici,Champion,996,937,TIME,22:00,Namakemon
+ici,Ultimate,1006,995;1012,"TR 12+, LV 6+, BTL 15+, WIN 11/15",23:00,Boutmon
+ici,Ultimate,1009,1010;996,"TR 12+, LV 6+, BTL 15+, WIN 11/15",23:00,Shootmon
+ici,Ultimate,1008,995;1012,"TR 10+, LV 5+, BTL 10+, WIN 5/10",23:00,Divemon
+ici,Ultimate,1011,1010;996,"TR 10+, LV 5+, BTL 10+, WIN 5/10",23:00,Tempomon
+ici,Ultimate,1007,995;996,"TR 6+, LV 4+, BTL 10+, WIN 5/10",23:00,Climbmon
+ici,Ultimate,1013,1010;1012,"TR 6+, LV 4+, BTL 10+, WIN 5/10",23:00,Pistmon
+ici,Mega,1015,1006;1008;1007,"TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",23:00,Shroudmon
+ici,Mega,1014,1006;1011;1013,"TR 20+, LV 7+, BTL 20+, WIN 14/20",23:00,Kazuchimon
+ici,Mega,1017,1009;1008;1007,"TR 15+, LV 6+, BTL 15+, WIN 11/15",23:00,Shivamon
+ici,Mega,1016,1009;1011;1013,"TR 10+, LV 6+, BTL 15+, WIN 8/15",23:00,Achillesmon

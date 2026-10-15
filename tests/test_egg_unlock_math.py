@@ -85,5 +85,6 @@ def test_dormant_columns_are_empty_in_the_corpus():
         # the zone slot woke up 2026-10-15: one adventure map cleared (Volcanic Beat)
         if r["name"] not in ("Volcanic Beat Egg", "Infinite Tide Egg", "Nu Metal Empire Egg",
                              "Blizzard Fang Egg", "Hermit in the Jungle Egg",
-                             "Mad Black Roar Egg", "True Shadow Howl Egg"):
+                             "Mad Black Roar Egg", "True Shadow Howl Egg",
+                             "Impulse City Egg"):
             assert r["zone"] is None

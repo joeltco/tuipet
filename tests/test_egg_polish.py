@@ -281,3 +281,23 @@ def test_every_vb_card_egg_sits_on_the_shared_egg_grid():
             assert outline(e["frames"][k]) == shared, (e["hatch_name"], k)
     for e in cards:                                      # the hatch keeps its own shell
         assert e["frames"][2][11:] == e["frames"][0][11:], e["hatch_name"]
+
+
+def test_impulse_city_egg_hatches_dokimon_into_its_line_on_city_sunset():
+    """Joel 2026-10-15: the official Impulse City DIM card as an egg line,
+    earned on the City Sunset road (map 15, index 14)."""
+    from tuipet import data, egg, lines, shop
+    idx = next(i for i in range(egg.count()) if egg.hatch_name(i) == "Impulse City Egg")
+    rule = data.load_egg_unlock()[idx]
+    prog = dict(persistence.get_progress(), maps=set(), maps_cleared=set(), raids=0)
+    assert not egg._conditions_met(rule, prog)
+    prog["maps_cleared"] = {14}
+    assert egg._conditions_met(rule, prog)
+    p = Pet.new_egg(egg_type=idx)
+    p._hatch_into_fresh()
+    assert p.num == 1429 and p.line_id == "ici"
+    q = Pet.new_egg(egg_type=12)                         # the Dokimon egg
+    q._hatch_into_fresh()
+    assert q.num == 1429 and q.line_id == "dokimon"
+    assert len(lines.load_lines()["ici"]["members"]) == 17
+    assert shop.town_egg_buy(Pet(num=29), idx)[1] == "error"

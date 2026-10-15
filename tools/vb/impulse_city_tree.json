@@ -1,0 +1,2130 @@
+{
+  "card": "IMPULSE CITY",
+  "line_id": "ici",
+  "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+  "source_kind": "Saved Humulos HTML is authoritative for this proposal; live page opened 2026-10-15",
+  "digitama": {
+    "image_name": "digitama_doki.gif",
+    "title_quote": "Dokimon Digitama",
+    "source_image": "//humulos.com/digimon/images/dot/vbdm/digitama_doki.gif",
+    "status": "Colour source only; no art conversion authorized"
+  },
+  "requirements_scope": "Each listed icon is AND; N/A means no constraint. No icons on I-II-III. No attribute Jogress inferred as connector edges.",
+  "source_hashes": {
+    "_astra/vbmore/vbdm_main.html": "a796a76b9564fe71ed60175f0b98637dae91713a1450c7d416fb1ad44f0dacf9",
+    "_astra/list_vbdm.html": "43acd3463364054c1396811a24f2eb61ccace9bbbceca5532caee2adb9692b95",
+    "src/tuipet/data/digimon.csv": "445e7c04bcb13e3fe3106ca8d75591aac6484c244a819d64f6929ed1de0e9f25",
+    "src/tuipet/data/sprites.json.gz": "e275515239cd5a278dadf9deef5cf7a50d0e6fab3c7c3eee5724ffed3d6b354d",
+    "src/tuipet/data/lines.csv": "d4482fc039610ab3bcaf1249729e51d82be009145af2da58f95de3f43571083a",
+    "LINES_SPEC.md": "0250356d52016b781738d63b30c06a0ad193b040b50e2bf03787984f85d90e4a",
+    "src/tuipet/data/eggs.json.gz": "60b02322179d9f0ab92ca35fd312ce19bf9a1648289a9ff088ee2b0cd04ae8ce",
+    "src/tuipet/egg.py": "65f2d5580f92259bd3325827c49c3018d1555bd791881eeff437f12727b15b46",
+    "src/tuipet/pet.py": "50d7f3fb8344cda89495faaf12098bfd12099a8e4945525f624af561aaa62833",
+    "src/tuipet/lines.py": "1d0098d5f24268d829ab0ece2c35c7d6ddfdce2847aa0b3717a5ea24bf65bf9f",
+    "src/tuipet/digicore.py": "59c676855513204f6cf9cd8713659dd77802b6f7d587e6e636a141fa661e1fd0",
+    "src/tuipet/evolution.py": "26aac233383d52e666e66ed4b788b7610dfb3ce1ad07fc8bab9182626c40f8e9",
+    "tests/test_line_curation.py": "13b4e459de3db55bdb1491fcbe1c44eb8debb462a33815a37248a741ab8ea611",
+    "_astra/vbmore/mapping.tsv": "9319f02fd9f23c8e5d8535e5781524fbe420fb7680782096806a6462f7eaa76c"
+  },
+  "node_count": 17,
+  "edge_count": 30,
+  "nodes": [
+    {
+      "slug": "doki",
+      "name": "Dokimon",
+      "stage": "I",
+      "tuipet_stage": "Fresh",
+      "attribute": "None",
+      "parents": [],
+      "connector_classes": [],
+      "requirements": [],
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici baby column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "I",
+      "list_attribute_quote": "Free",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "identity_candidates": [
+        {
+          "dex_num": 935,
+          "name": "Dokimon",
+          "stage": "Fresh",
+          "attribute": "None",
+          "element": "None",
+          "sprite_set": 3,
+          "sprite_num": 44,
+          "frame_0_sha256": "e50cc7ba9246933d8edc6980fe3a0b09d5f1c3579a0f646795310df7b06c7beb"
+        },
+        {
+          "dex_num": 1429,
+          "name": "Dokimon",
+          "stage": "Fresh",
+          "attribute": "None",
+          "element": "None",
+          "sprite_set": 3,
+          "sprite_num": 44,
+          "frame_0_sha256": "e50cc7ba9246933d8edc6980fe3a0b09d5f1c3579a0f646795310df7b06c7beb"
+        }
+      ],
+      "identity_review": "Explicit alias/duplicate selection; see mapping.tsv and rules_proposal.md",
+      "dex_num": 1429,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [],
+          "requirements": [],
+          "proposed_rule": "TIME"
+        }
+      ],
+      "proposed_rule": "TIME"
+    },
+    {
+      "slug": "bibi",
+      "name": "Bibimon",
+      "stage": "II",
+      "tuipet_stage": "InTraining",
+      "attribute": "None",
+      "parents": [
+        "doki"
+      ],
+      "connector_classes": [
+        "ici_doki_lineOut"
+      ],
+      "requirements": [],
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici babyII column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "II",
+      "list_attribute_quote": "Free",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "connector_note": "Unbranched adjacent stage columns; preceding horizontal lineOut, no requirement text.",
+      "identity_candidates": [
+        {
+          "dex_num": 936,
+          "name": "Bibimon",
+          "stage": "InTraining",
+          "attribute": "None",
+          "element": "Thunder",
+          "sprite_set": 2,
+          "sprite_num": 66,
+          "frame_0_sha256": "ab13bb165ee98fc7b5c0ed10c9773658667482194cea9fb07da04391ca46f3a1"
+        },
+        {
+          "dex_num": 1482,
+          "name": "Bibimon",
+          "stage": "InTraining",
+          "attribute": "None",
+          "element": "Thunder",
+          "sprite_set": 2,
+          "sprite_num": 66,
+          "frame_0_sha256": "ab13bb165ee98fc7b5c0ed10c9773658667482194cea9fb07da04391ca46f3a1"
+        }
+      ],
+      "identity_review": "Explicit alias/duplicate selection; see mapping.tsv and rules_proposal.md",
+      "dex_num": 936,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "doki"
+          ],
+          "requirements": [],
+          "proposed_rule": "TIME"
+        }
+      ],
+      "proposed_rule": "TIME"
+    },
+    {
+      "slug": "pulse",
+      "name": "Pulsemon",
+      "stage": "III",
+      "tuipet_stage": "Rookie",
+      "attribute": "Vaccine",
+      "parents": [
+        "bibi"
+      ],
+      "connector_classes": [
+        "ici_bibi_lineOut"
+      ],
+      "requirements": [],
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici child column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "III",
+      "list_attribute_quote": "Vaccine",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "connector_note": "Unbranched adjacent stage columns; preceding horizontal lineOut, no requirement text.",
+      "identity_candidates": [
+        {
+          "dex_num": 937,
+          "name": "Pulsemon",
+          "stage": "Rookie",
+          "attribute": "Vaccine",
+          "element": "Thunder",
+          "sprite_set": 12,
+          "sprite_num": 110,
+          "frame_0_sha256": "12531845e308bab19c6ff7d8eaa11dec958077d03060f9baa3704c0f1e00a455"
+        }
+      ],
+      "identity_review": "Sole normalized exact-name identity",
+      "dex_num": 937,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "bibi"
+          ],
+          "requirements": [],
+          "proposed_rule": "TIME"
+        }
+      ],
+      "proposed_rule": "TIME"
+    },
+    {
+      "slug": "bulk",
+      "name": "Bulkmon",
+      "stage": "IV",
+      "tuipet_stage": "Champion",
+      "attribute": "Vaccine",
+      "parents": [
+        "pulse"
+      ],
+      "connector_classes": [
+        "ici_pulse_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "1,200+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici_bulk_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "IV",
+      "list_attribute_quote": "Vaccine",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "identity_candidates": [
+        {
+          "dex_num": 995,
+          "name": "Bulkmon",
+          "stage": "Champion",
+          "attribute": "Vaccine",
+          "element": "Thunder",
+          "sprite_set": 27,
+          "sprite_num": 11,
+          "frame_0_sha256": "0e0b248750aaddb0eeb7b2cc6a39c02d3c267b9e1bef730bac4c7a521fa37d7f"
+        }
+      ],
+      "identity_review": "Sole normalized exact-name identity",
+      "dex_num": 995,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "pulse"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "8+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "1,200+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "8+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "N/A"
+            }
+          ],
+          "proposed_rule": "TR 8+, LV 4+, BTL 8+"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 4+, BTL 8+"
+    },
+    {
+      "slug": "exer",
+      "name": "Exermon",
+      "stage": "IV",
+      "tuipet_stage": "Champion",
+      "attribute": "Data",
+      "parents": [
+        "pulse"
+      ],
+      "connector_classes": [
+        "ici_pulse_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "3+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici_exer_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "IV",
+      "list_attribute_quote": "Data",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "identity_candidates": [
+        {
+          "dex_num": 1010,
+          "name": "Exermon",
+          "stage": "Champion",
+          "attribute": "Data",
+          "element": "Thunder",
+          "sprite_set": 27,
+          "sprite_num": 66,
+          "frame_0_sha256": "0ad6e84bf4fc4c6b2c6f28b9aadb468db9c0a89221e50a0a80be70147bc1d1e5"
+        }
+      ],
+      "identity_review": "Sole normalized exact-name identity",
+      "dex_num": 1010,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "pulse"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "3+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "500+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "N/A"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "N/A"
+            }
+          ],
+          "proposed_rule": "TR 3+, LV 2+"
+        }
+      ],
+      "proposed_rule": "TR 3+, LV 2+"
+    },
+    {
+      "slug": "runner",
+      "name": "Runnermon",
+      "stage": "IV",
+      "tuipet_stage": "Champion",
+      "attribute": "Virus",
+      "parents": [
+        "pulse"
+      ],
+      "connector_classes": [
+        "ici_pulse_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "5+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "800+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "3+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici_runner_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "IV",
+      "list_attribute_quote": "Virus",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "identity_candidates": [
+        {
+          "dex_num": 1012,
+          "name": "Runnermon",
+          "stage": "Champion",
+          "attribute": "Virus",
+          "element": "Thunder",
+          "sprite_set": 27,
+          "sprite_num": 77,
+          "frame_0_sha256": "c2795fe9b2ebe331420ea758c56761d1cb549102add56044d175df5c8eec186d"
+        }
+      ],
+      "identity_review": "Sole normalized exact-name identity",
+      "dex_num": 1012,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "pulse"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "5+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "800+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "3+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "N/A"
+            }
+          ],
+          "proposed_rule": "TR 5+, LV 3+, BTL 3+"
+        }
+      ],
+      "proposed_rule": "TR 5+, LV 3+, BTL 3+"
+    },
+    {
+      "slug": "namake",
+      "name": "Namakemon",
+      "stage": "IV",
+      "tuipet_stage": "Champion",
+      "attribute": "Virus",
+      "parents": [
+        "pulse"
+      ],
+      "connector_classes": [
+        "ici_pulse_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici_namake_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "IV",
+      "list_attribute_quote": "Virus",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "identity_candidates": [
+        {
+          "dex_num": 996,
+          "name": "Namakemon",
+          "stage": "Champion",
+          "attribute": "Virus",
+          "element": "Thunder",
+          "sprite_set": 27,
+          "sprite_num": 33,
+          "frame_0_sha256": "f38b384596c94e1f67c99e3db79fc335f3f62fff755d6945bfe343aa936825e4"
+        }
+      ],
+      "identity_review": "Sole normalized exact-name identity",
+      "dex_num": 996,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "pulse"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "N/A"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "N/A"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "N/A"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "N/A"
+            }
+          ],
+          "proposed_rule": "TIME"
+        }
+      ],
+      "proposed_rule": "TIME"
+    },
+    {
+      "slug": "bout",
+      "name": "Boutmon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Vaccine",
+      "parents": [
+        "bulk",
+        "runner"
+      ],
+      "connector_classes": [
+        "ici_bulk_line",
+        "ici_runner_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici_bout_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "V",
+      "list_attribute_quote": "Vaccine",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "identity_candidates": [
+        {
+          "dex_num": 1006,
+          "name": "Boutmon",
+          "stage": "Ultimate",
+          "attribute": "Vaccine",
+          "element": "Thunder",
+          "sprite_set": 19,
+          "sprite_num": 66,
+          "frame_0_sha256": "e1f7c0d1a7144081710f77c72bad7c44df6672b896cffddbaa16fe734be84e4b"
+        }
+      ],
+      "identity_review": "Sole normalized exact-name identity",
+      "dex_num": 1006,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "bulk",
+            "runner"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "12+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "3,000+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "15+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "70%+"
+            }
+          ],
+          "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15"
+        }
+      ],
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15"
+    },
+    {
+      "slug": "shoot",
+      "name": "Shootmon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Vaccine",
+      "parents": [
+        "exer",
+        "namake"
+      ],
+      "connector_classes": [
+        "ici_exer_line",
+        "ici_namake_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici_shoot_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "V",
+      "list_attribute_quote": "Vaccine",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "identity_candidates": [
+        {
+          "dex_num": 1009,
+          "name": "Shootmon",
+          "stage": "Ultimate",
+          "attribute": "Vaccine",
+          "element": "Metal",
+          "sprite_set": 19,
+          "sprite_num": 99,
+          "frame_0_sha256": "01be530e8764ec1d897591547d3957c717222d46a54647bf969f5dad8015fe5e"
+        }
+      ],
+      "identity_review": "Sole normalized exact-name identity",
+      "dex_num": 1009,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "exer",
+            "namake"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "12+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "3,000+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "15+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "70%+"
+            }
+          ],
+          "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15"
+        }
+      ],
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15"
+    },
+    {
+      "slug": "dive",
+      "name": "Divemon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Data",
+      "parents": [
+        "bulk",
+        "runner"
+      ],
+      "connector_classes": [
+        "ici_bulk_line",
+        "ici_runner_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici_dive_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "V",
+      "list_attribute_quote": "Data",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "identity_candidates": [
+        {
+          "dex_num": 1008,
+          "name": "Divemon",
+          "stage": "Ultimate",
+          "attribute": "Data",
+          "element": "Water",
+          "sprite_set": 19,
+          "sprite_num": 88,
+          "frame_0_sha256": "914ac7c6c4aab44389c76256dc77225c99ef8654c784ddc947ba8f2ca7d19bfe"
+        }
+      ],
+      "identity_review": "Sole normalized exact-name identity",
+      "dex_num": 1008,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "bulk",
+            "runner"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "10+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "2,500+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "10+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "50%+"
+            }
+          ],
+          "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10"
+    },
+    {
+      "slug": "tempo",
+      "name": "Tempomon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Data",
+      "parents": [
+        "exer",
+        "namake"
+      ],
+      "connector_classes": [
+        "ici_exer_line",
+        "ici_namake_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici_tempo_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "V",
+      "list_attribute_quote": "Data",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "identity_candidates": [
+        {
+          "dex_num": 1011,
+          "name": "Tempomon",
+          "stage": "Ultimate",
+          "attribute": "Data",
+          "element": "Ice",
+          "sprite_set": 19,
+          "sprite_num": 110,
+          "frame_0_sha256": "9dd0f67efc37ba12a2c1205f8f59020c3c8e48ec942438a6a444e0faff49dffc"
+        }
+      ],
+      "identity_review": "Sole normalized exact-name identity",
+      "dex_num": 1011,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "exer",
+            "namake"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "10+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "2,500+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "10+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "50%+"
+            }
+          ],
+          "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10"
+    },
+    {
+      "slug": "climb",
+      "name": "Climbmon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Virus",
+      "parents": [
+        "bulk",
+        "namake"
+      ],
+      "connector_classes": [
+        "ici_bulk_line",
+        "ici_namake_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "6+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici_climb_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "V",
+      "list_attribute_quote": "Virus",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "identity_candidates": [
+        {
+          "dex_num": 1007,
+          "name": "Climbmon",
+          "stage": "Ultimate",
+          "attribute": "Virus",
+          "element": "Earth",
+          "sprite_set": 19,
+          "sprite_num": 77,
+          "frame_0_sha256": "a172d975f6aed6ed68261c469b62cc596b5471a5acd701e04d1c35a87fdd3e6a"
+        }
+      ],
+      "identity_review": "Sole normalized exact-name identity",
+      "dex_num": 1007,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "bulk",
+            "namake"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "6+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "2,000+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "10+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "50%+"
+            }
+          ],
+          "proposed_rule": "TR 6+, LV 4+, BTL 10+, WIN 5/10"
+        }
+      ],
+      "proposed_rule": "TR 6+, LV 4+, BTL 10+, WIN 5/10"
+    },
+    {
+      "slug": "pist",
+      "name": "Pistmon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Virus",
+      "parents": [
+        "exer",
+        "runner"
+      ],
+      "connector_classes": [
+        "ici_exer_line",
+        "ici_runner_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "6+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici_pist_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "V",
+      "list_attribute_quote": "Virus",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "identity_candidates": [
+        {
+          "dex_num": 1013,
+          "name": "Pistmon",
+          "stage": "Ultimate",
+          "attribute": "Virus",
+          "element": "Wood",
+          "sprite_set": 20,
+          "sprite_num": 0,
+          "frame_0_sha256": "7b959cfd739ccc7d46b2c2a273fcd878af5ab29e29db1e726ef29ac27c7a5183"
+        }
+      ],
+      "identity_review": "Sole normalized exact-name identity",
+      "dex_num": 1013,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "exer",
+            "runner"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "6+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "2,000+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "10+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "50%+"
+            }
+          ],
+          "proposed_rule": "TR 6+, LV 4+, BTL 10+, WIN 5/10"
+        }
+      ],
+      "proposed_rule": "TR 6+, LV 4+, BTL 10+, WIN 5/10"
+    },
+    {
+      "slug": "kazuchi",
+      "name": "Kazuchimon",
+      "stage": "VI",
+      "tuipet_stage": "Mega",
+      "attribute": "Vaccine",
+      "parents": [
+        "bout",
+        "tempo",
+        "pist"
+      ],
+      "connector_classes": [
+        "ici_bout_line",
+        "ici_tempo_line",
+        "ici_pist_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "5,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici_kazuchi_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "VI",
+      "list_attribute_quote": "Vaccine",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "identity_candidates": [
+        {
+          "dex_num": 1014,
+          "name": "Kazuchimon",
+          "stage": "Mega",
+          "attribute": "Vaccine",
+          "element": "Thunder",
+          "sprite_set": 24,
+          "sprite_num": 66,
+          "frame_0_sha256": "d37652cb33d5a96f3cc24b2cd49a5292ce9368fe47c364d9e95f065673ac8115"
+        }
+      ],
+      "identity_review": "Sole normalized exact-name identity",
+      "dex_num": 1014,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "bout",
+            "tempo",
+            "pist"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "20+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "5,000+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "20+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "70%+"
+            }
+          ],
+          "proposed_rule": "TR 20+, LV 7+, BTL 20+, WIN 14/20"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 7+, BTL 20+, WIN 14/20"
+    },
+    {
+      "slug": "shiva",
+      "name": "Shivamon",
+      "stage": "VI",
+      "tuipet_stage": "Mega",
+      "attribute": "Data",
+      "parents": [
+        "shoot",
+        "dive",
+        "climb"
+      ],
+      "connector_classes": [
+        "ici_shoot_line",
+        "ici_dive_line",
+        "ici_climb_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici_shiva_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "VI",
+      "list_attribute_quote": "Data",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "identity_candidates": [
+        {
+          "dex_num": 1017,
+          "name": "Shivamon",
+          "stage": "Mega",
+          "attribute": "Data",
+          "element": "Light",
+          "sprite_set": 24,
+          "sprite_num": 99,
+          "frame_0_sha256": "d76e61184d936fd2215ed841dd4b4ad6d14e478744529936e024534ef2d33738"
+        }
+      ],
+      "identity_review": "Sole normalized exact-name identity",
+      "dex_num": 1017,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "shoot",
+            "dive",
+            "climb"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "15+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "4,500+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "15+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "70%+"
+            }
+          ],
+          "proposed_rule": "TR 15+, LV 6+, BTL 15+, WIN 11/15"
+        }
+      ],
+      "proposed_rule": "TR 15+, LV 6+, BTL 15+, WIN 11/15"
+    },
+    {
+      "slug": "achilles",
+      "name": "Achillesmon",
+      "stage": "VI",
+      "tuipet_stage": "Mega",
+      "attribute": "Virus",
+      "parents": [
+        "shoot",
+        "tempo",
+        "pist"
+      ],
+      "connector_classes": [
+        "ici_shoot_line",
+        "ici_tempo_line",
+        "ici_pist_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici_achilles_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "VI",
+      "list_attribute_quote": "Virus",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "identity_candidates": [
+        {
+          "dex_num": 1016,
+          "name": "Achillesmon",
+          "stage": "Mega",
+          "attribute": "Virus",
+          "element": "Metal",
+          "sprite_set": 24,
+          "sprite_num": 88,
+          "frame_0_sha256": "c905507eb4461eb17f4c51024c8186d8bc60a4191bc89066611bd300aeba513e"
+        }
+      ],
+      "identity_review": "Sole normalized exact-name identity",
+      "dex_num": 1016,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "shoot",
+            "tempo",
+            "pist"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "10+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "4,500+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "15+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "50%+"
+            }
+          ],
+          "proposed_rule": "TR 10+, LV 6+, BTL 15+, WIN 8/15"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 6+, BTL 15+, WIN 8/15"
+    },
+    {
+      "slug": "shroud",
+      "name": "Shroudmon",
+      "stage": "VI",
+      "tuipet_stage": "Mega",
+      "attribute": "Virus",
+      "parents": [
+        "bout",
+        "dive",
+        "climb"
+      ],
+      "connector_classes": [
+        "ici_bout_line",
+        "ici_dive_line",
+        "ici_climb_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "7,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "25+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        },
+        {
+          "label_quote": "Special unlock",
+          "value_quote": "Stage 15 Cleared"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici_shroud_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "VI",
+      "list_attribute_quote": "Virus",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "identity_candidates": [
+        {
+          "dex_num": 1015,
+          "name": "Shroudmon",
+          "stage": "Mega",
+          "attribute": "Virus",
+          "element": "Fire",
+          "sprite_set": 24,
+          "sprite_num": 77,
+          "frame_0_sha256": "77cd8daa72044a26a0954aebfda0b3a7fa218632b80645cddb236c2a7dcc0188"
+        }
+      ],
+      "identity_review": "Sole normalized exact-name identity",
+      "dex_num": 1015,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "bout",
+            "dive",
+            "climb"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "20+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "7,000+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "25+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "70%+"
+            },
+            {
+              "label_quote": "Special unlock",
+              "value_quote": "Stage 15 Cleared"
+            }
+          ],
+          "proposed_rule": "TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14"
+    }
+  ],
+  "edges": [
+    {
+      "parent": "doki",
+      "child": "bibi",
+      "connector_class": "ici_doki_lineOut",
+      "requirements": [],
+      "proposed_rule": "TIME",
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici .ici_doki_lineOut",
+      "connector_element_quote": "<div class=\"line_hor30 lineBlue ici_doki_lineOut reqToggle\"></div>"
+    },
+    {
+      "parent": "bibi",
+      "child": "pulse",
+      "connector_class": "ici_bibi_lineOut",
+      "requirements": [],
+      "proposed_rule": "TIME",
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici .ici_bibi_lineOut",
+      "connector_element_quote": "<div class=\"line_hor30 lineBlue ici_bibi_lineOut reqToggle\"></div>"
+    },
+    {
+      "parent": "pulse",
+      "child": "bulk",
+      "connector_class": "ici_pulse_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "1,200+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 4+, BTL 8+",
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici_bulk_Req_column .ici_pulse_line",
+      "connector_element_quote": "<div class=\"line_hor30 lineRed ici_pulse_line\"></div>"
+    },
+    {
+      "parent": "pulse",
+      "child": "exer",
+      "connector_class": "ici_pulse_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "3+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "proposed_rule": "TR 3+, LV 2+",
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici_exer_Req_column .ici_pulse_line",
+      "connector_element_quote": "<div class=\"line_hor30 lineRed ici_pulse_line\"></div>"
+    },
+    {
+      "parent": "pulse",
+      "child": "runner",
+      "connector_class": "ici_pulse_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "5+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "800+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "3+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "proposed_rule": "TR 5+, LV 3+, BTL 3+",
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici_runner_Req_column .ici_pulse_line",
+      "connector_element_quote": "<div class=\"line_hor30 lineRed ici_pulse_line\"></div>"
+    },
+    {
+      "parent": "pulse",
+      "child": "namake",
+      "connector_class": "ici_pulse_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "proposed_rule": "TIME",
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici_namake_Req_column .ici_pulse_line",
+      "connector_element_quote": "<div class=\"line_hor30 lineRed ici_pulse_line\"></div>"
+    },
+    {
+      "parent": "bulk",
+      "child": "bout",
+      "connector_class": "ici_bulk_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici_bout_Req_column .ici_bulk_line",
+      "connector_element_quote": "<div class=\"line_hor60 lineRed ici_bulk_line\"></div>"
+    },
+    {
+      "parent": "runner",
+      "child": "bout",
+      "connector_class": "ici_runner_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici_bout_Req_column .ici_runner_line",
+      "connector_element_quote": "<div class=\"line_hor40 linePurple ici_runner_line\"></div>"
+    },
+    {
+      "parent": "exer",
+      "child": "shoot",
+      "connector_class": "ici_exer_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici_shoot_Req_column .ici_exer_line",
+      "connector_element_quote": "<div class=\"line_hor50 lineGreen ici_exer_line\"></div>"
+    },
+    {
+      "parent": "namake",
+      "child": "shoot",
+      "connector_class": "ici_namake_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici_shoot_Req_column .ici_namake_line",
+      "connector_element_quote": "<div class=\"line_hor30 lineIndigo ici_namake_line\"></div>"
+    },
+    {
+      "parent": "bulk",
+      "child": "dive",
+      "connector_class": "ici_bulk_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici_dive_Req_column .ici_bulk_line",
+      "connector_element_quote": "<div class=\"line_hor60 lineRed ici_bulk_line\"></div>"
+    },
+    {
+      "parent": "runner",
+      "child": "dive",
+      "connector_class": "ici_runner_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici_dive_Req_column .ici_runner_line",
+      "connector_element_quote": "<div class=\"line_hor40 linePurple ici_runner_line\"></div>"
+    },
+    {
+      "parent": "exer",
+      "child": "tempo",
+      "connector_class": "ici_exer_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici_tempo_Req_column .ici_exer_line",
+      "connector_element_quote": "<div class=\"line_hor50 lineGreen ici_exer_line\"></div>"
+    },
+    {
+      "parent": "namake",
+      "child": "tempo",
+      "connector_class": "ici_namake_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici_tempo_Req_column .ici_namake_line",
+      "connector_element_quote": "<div class=\"line_hor30 lineIndigo ici_namake_line\"></div>"
+    },
+    {
+      "parent": "bulk",
+      "child": "climb",
+      "connector_class": "ici_bulk_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "6+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 6+, LV 4+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici_climb_Req_column .ici_bulk_line",
+      "connector_element_quote": "<div class=\"line_hor60 lineRed ici_bulk_line\"></div>"
+    },
+    {
+      "parent": "namake",
+      "child": "climb",
+      "connector_class": "ici_namake_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "6+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 6+, LV 4+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici_climb_Req_column .ici_namake_line",
+      "connector_element_quote": "<div class=\"line_hor30 lineIndigo ici_namake_line\"></div>"
+    },
+    {
+      "parent": "exer",
+      "child": "pist",
+      "connector_class": "ici_exer_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "6+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 6+, LV 4+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici_pist_Req_column .ici_exer_line",
+      "connector_element_quote": "<div class=\"line_hor50 lineGreen ici_exer_line\"></div>"
+    },
+    {
+      "parent": "runner",
+      "child": "pist",
+      "connector_class": "ici_runner_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "6+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 6+, LV 4+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici_pist_Req_column .ici_runner_line",
+      "connector_element_quote": "<div class=\"line_hor40 linePurple ici_runner_line\"></div>"
+    },
+    {
+      "parent": "bout",
+      "child": "kazuchi",
+      "connector_class": "ici_bout_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "5,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 7+, BTL 20+, WIN 14/20",
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici_kazuchi_Req_column .ici_bout_line",
+      "connector_element_quote": "<div class=\"line_hor80 lineRed ici_bout_line\"></div>"
+    },
+    {
+      "parent": "tempo",
+      "child": "kazuchi",
+      "connector_class": "ici_tempo_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "5,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 7+, BTL 20+, WIN 14/20",
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici_kazuchi_Req_column .ici_tempo_line",
+      "connector_element_quote": "<div class=\"line_hor50 lineTeal ici_tempo_line\"></div>"
+    },
+    {
+      "parent": "pist",
+      "child": "kazuchi",
+      "connector_class": "ici_pist_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "5,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 7+, BTL 20+, WIN 14/20",
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici_kazuchi_Req_column .ici_pist_line",
+      "connector_element_quote": "<div class=\"line_hor30 lineIndigo ici_pist_line\"></div>"
+    },
+    {
+      "parent": "shoot",
+      "child": "shiva",
+      "connector_class": "ici_shoot_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 15+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici_shiva_Req_column .ici_shoot_line",
+      "connector_element_quote": "<div class=\"line_hor70 lineYellow ici_shoot_line\"></div>"
+    },
+    {
+      "parent": "dive",
+      "child": "shiva",
+      "connector_class": "ici_dive_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 15+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici_shiva_Req_column .ici_dive_line",
+      "connector_element_quote": "<div class=\"line_hor60 lineGreen ici_dive_line\"></div>"
+    },
+    {
+      "parent": "climb",
+      "child": "shiva",
+      "connector_class": "ici_climb_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 15+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici_shiva_Req_column .ici_climb_line",
+      "connector_element_quote": "<div class=\"line_hor40 linePurple ici_climb_line\"></div>"
+    },
+    {
+      "parent": "shoot",
+      "child": "achilles",
+      "connector_class": "ici_shoot_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 6+, BTL 15+, WIN 8/15",
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici_achilles_Req_column .ici_shoot_line",
+      "connector_element_quote": "<div class=\"line_hor70 lineYellow ici_shoot_line\"></div>"
+    },
+    {
+      "parent": "tempo",
+      "child": "achilles",
+      "connector_class": "ici_tempo_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 6+, BTL 15+, WIN 8/15",
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici_achilles_Req_column .ici_tempo_line",
+      "connector_element_quote": "<div class=\"line_hor50 lineTeal ici_tempo_line\"></div>"
+    },
+    {
+      "parent": "pist",
+      "child": "achilles",
+      "connector_class": "ici_pist_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 6+, BTL 15+, WIN 8/15",
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici_achilles_Req_column .ici_pist_line",
+      "connector_element_quote": "<div class=\"line_hor30 lineIndigo ici_pist_line\"></div>"
+    },
+    {
+      "parent": "bout",
+      "child": "shroud",
+      "connector_class": "ici_bout_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "7,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "25+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        },
+        {
+          "label_quote": "Special unlock",
+          "value_quote": "Stage 15 Cleared"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici_shroud_Req_column .ici_bout_line",
+      "connector_element_quote": "<div class=\"line_hor80 lineRed ici_bout_line area1\" area=\"1\"></div>"
+    },
+    {
+      "parent": "dive",
+      "child": "shroud",
+      "connector_class": "ici_dive_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "7,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "25+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        },
+        {
+          "label_quote": "Special unlock",
+          "value_quote": "Stage 15 Cleared"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici_shroud_Req_column .ici_dive_line",
+      "connector_element_quote": "<div class=\"line_hor60 lineGreen ici_dive_line area1\" area=\"1\"></div>"
+    },
+    {
+      "parent": "climb",
+      "child": "shroud",
+      "connector_class": "ici_climb_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "7,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "25+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        },
+        {
+          "label_quote": "Special unlock",
+          "value_quote": "Stage 15 Cleared"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",
+      "source": "https://humulos.com/digimon/vbdm/#ici_anchor",
+      "source_locator": "#ici_shroud_Req_column .ici_climb_line",
+      "connector_element_quote": "<div class=\"line_hor40 linePurple ici_climb_line area1\" area=\"1\"></div>"
+    }
+  ]
+}

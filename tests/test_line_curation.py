@@ -13,6 +13,9 @@ STAGES = ["Fresh", "InTraining", "Rookie", "Champion", "Ultimate", "Mega"]
 # design; ver1's Betamon road + the ver2-verE canon rewrite, 2026-07-07 --
 # every device line now matches its humulos DM20 chart)
 DECLARED_EDGES = {
+    # ici -- the official Impulse City DIM card's connectors the corpus graph
+    # never carried (humulos vbdm; Joel approved the line 2026-10-15)
+    (1429, 936),
     # tsh -- the official True Shadow Howl DIM card's connectors the corpus
     # graph never carried (humulos vbdm/vol; Joel approved the line 2026-10-15)
     (1412, 16), (82, 108), (108, 1039), (187, 1039), (122, 448), (122, 570), (713, 570), (187, 262), (108, 270), (122, 701), (570, 346), (262, 346), (448, 353), (570, 353), (448, 436), (262, 436), (701, 436), (1039, 810), (270, 810), (701, 810),
