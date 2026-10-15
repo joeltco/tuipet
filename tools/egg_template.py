@@ -6,11 +6,10 @@ fixed rules, so no egg can drift off the grid again:
   egg_b (wobble)  egg_a squashed into the outline the original eggs share:
                   rows 6..15, each row resampled (nearest neighbour) from a
                   fixed source row onto the shared span, edges inked.
-  hatch           rows 0-10: the breakout of an EXISTING egg that hatches the
-                  same baby (canonical twin) when there is one; otherwise the
-                  baby's own frame 0 seated so its feet rest on row 10, with the
-                  shell rim and the Godzilla egg's shard spray kept clear of it.
-                  rows 11-15: egg_a's own shell.
+  hatch           the hatch of the ORIGINAL egg that hatches the same baby,
+                  with egg_a's shell shown only where that original's shell is
+                  untouched (donor_hatch); a baby no original hatches is seated
+                  from its own frame 0 on egg_a's shell (seated_hatch).
 
   python3 tools/egg_template.py EGG_A.json DEX OUT.json [OUT.png]
       EGG_A.json: {"frames": [egg_a, ...]} or a bare list of 16 rows.
@@ -93,17 +92,26 @@ def squash(still):
     return stamp(["".join(r) for r in rows], 1)
 
 
-def donor_hatch(dex):
-    """rows 0-10 of an existing egg's hatch that breaks out the same baby."""
+def donor_egg(dex):
+    """The ORIGINAL egg (not a card egg) that hatches the same baby, or None."""
     root, _ = lines.canonical_root(dex)
     root = dex if root is None else root
     for e in _bank():
         if root in (e.get("hatch") or []) and not (e.get("hatch_line") or "").isalpha():
-            return e["frames"][2][:11]
-    for e in _bank():
-        if root in (e.get("hatch") or []):
-            return e["frames"][2][:11]
+            return e
     return None
+
+
+def donor_hatch(still, donor):
+    """The original egg's hatch frame used as the template (Joel 2026-10-15,
+    "Good enough"): rows 0-10 exactly as the original breaks out; rows 11-15
+    keep every pixel the original's hatch CHANGED from its still (the cracks,
+    the baby's feet) and show OUR shell only where the original's shell is
+    untouched."""
+    ds, dh = donor["frames"][0], donor["frames"][2]
+    bottom = ["".join(still[y][x] if dh[y][x] == ds[y][x] else dh[y][x] for x in range(16))
+              for y in range(11, 16)]
+    return dh[:11] + bottom
 
 
 def seated_hatch(dex):
@@ -139,8 +147,8 @@ def build(still, dex):
         raise SystemExit("egg_a is off the shared egg grid: " + repr(outline(still)))
     still = stamp(still, 0)
     wobble = squash(still)
-    top = donor_hatch(dex) or seated_hatch(dex)
-    hatch = top + still[11:]
+    donor = donor_egg(dex)
+    hatch = donor_hatch(still, donor) if donor else seated_hatch(dex) + still[11:]
     assert on_grid(wobble, WOBBLE)
     return [still, wobble, hatch]
 

@@ -279,8 +279,8 @@ def test_every_vb_card_egg_sits_on_the_shared_egg_grid():
         shared = Counter(outline(e["frames"][k]) for e in originals).most_common(1)[0][0]
         for e in cards:
             assert outline(e["frames"][k]) == shared, (e["hatch_name"], k)
-    for e in cards:                                      # the hatch keeps its own shell
-        assert e["frames"][2][11:] == e["frames"][0][11:], e["hatch_name"]
+    # (the hatch shell rule moved to the template test: our shell where the
+    #  original hatch leaves its shell untouched -- Joel 2026-10-15)
 
 
 def test_impulse_city_egg_hatches_dokimon_into_its_line_on_city_sunset():
@@ -337,7 +337,13 @@ def test_the_egg_template_builds_on_grid_frames_for_every_card_egg():
     for e in cards:
         still, wobble, hatch = tmpl.build(e["frames"][0], e["hatch"][0])
         assert tmpl.on_grid(still, tmpl.STILL) and tmpl.on_grid(wobble, tmpl.WOBBLE)
-        assert hatch[11:] == still[11:]
+        donor = tmpl.donor_egg(e["hatch"][0])
+        if donor is None:                                # seated baby on our own shell
+            assert hatch[11:] == still[11:]
+        else:                                            # the original's hatch, our shell
+            assert hatch[:11] == donor["frames"][2][:11]
+            if e["hatch_name"] != "Godzilla Egg":        # (+ Botamon G's two pixels)
+                assert e["frames"][2] == hatch, e["hatch_name"]
         for k, frame in ((0, still), (1, wobble)):       # the originals' exact shape
             ink, blank = tmpl.template_shape(k)
             assert all(frame[y][x] == "1" for y, x in ink), (e["hatch_name"], k)
