@@ -1250,3 +1250,19 @@ ici,Mega,1015,1006;1008;1007,"TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",23:00,
 ici,Mega,1014,1006;1011;1013,"TR 20+, LV 7+, BTL 20+, WIN 14/20",23:00,Kazuchimon
 ici,Mega,1017,1009;1008;1007,"TR 15+, LV 6+, BTL 15+, WIN 11/15",23:00,Shivamon
 ici,Mega,1016,1009;1011;1013,"TR 10+, LV 6+, BTL 15+, WIN 8/15",23:00,Achillesmon
+gam,Fresh,1137,egg,TIME,20:00,"Curimon (official Gammamon DIM card, humulos vbdm/v)"
+gam,InTraining,1143,1137,TIME,21:00,Gurimon
+gam,Rookie,1074,1143,TIME,21:00,Gammamon
+gam,Champion,1075,1074,"TR 10+, LV 4+, BTL 8+",22:00,Betel Gammamon
+gam,Champion,1077,1074,"TR 8+, LV 3+, BTL 5+",22:00,Kaus Gammamon
+gam,Champion,1078,1074,"TR 5+, LV 2+, BTL 3+",22:00,Wezen Gammamon
+gam,Champion,1076,1074,TIME,22:00,Gulus Gammamon
+gam,Ultimate,1079,1075;1077;1078;1076,"TR 12+, LV 6+, BTL 15+, WIN 11/15",23:00,Canoweissmon
+gam,Ultimate,625,1075,"TR 10+, LV 5+, BTL 10+, WIN 5/10",23:00,Brachiomon
+gam,Ultimate,625,1077,"TR 8+, LV 4+, BTL 10+, WIN 5/10",23:00,Brachiomon
+gam,Ultimate,480,1075;1076,"TR 8+, LV 4+, BTL 10+, WIN 5/10",23:00,Chimairamon
+gam,Ultimate,447,1078,"TR 8+, LV 4+, BTL 10+, WIN 5/10",23:00,Tankdramon
+gam,Mega,345,1079;625;480;447,"TR 20+, LV 8+, BTL 25+, WIN 18/25",23:00,Chaosdramon
+gam,Mega,396,1079;447,"TR 15+, LV 7+, BTL 15+, WIN 11/15",23:00,Aegisdramon
+gam,Mega,987,480,"TR 15+, LV 7+, BTL 15+, WIN 9/15",23:00,Ultimate Brachiomon
+gam,Mega,987,1079;625,"TR 15+, LV 6+, BTL 15+, WIN 9/15",23:00,Ultimate Brachiomon

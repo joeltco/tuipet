@@ -159,6 +159,7 @@ EGG_BG = {
     52: "tealhollow",    # Mad Black Roar Egg (VB DIM card; unlocks on the Teal Hollow road)
     53: "moonmeadow",    # True Shadow Howl Egg (VB DIM card; wolves howl on the Moonlit Meadow road)
     54: "citysunset",    # Impulse City Egg (VB DIM card; unlocks on the City Sunset road)
+    55: "mountains",     # Gammamon Egg (VB DIM card; unlocks on the Mountains road, Wingdramon's)
 }
 
 

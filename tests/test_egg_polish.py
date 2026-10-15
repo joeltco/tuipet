@@ -349,3 +349,20 @@ def test_the_egg_template_builds_on_grid_frames_for_every_card_egg():
     _, by_num = data.load_sprites()
     baby = [r for r in by_num[1137]["frames"][0] if "1" in r]
     assert sum(r.count("1") for r in top) >= sum(r.count("1") for r in baby)
+
+
+def test_gammamon_egg_hatches_curimon_into_its_line_on_the_mountains_road():
+    """Joel 2026-10-15: the official Gammamon DIM card as an egg line,
+    earned on the Mountains road (map 12, index 11) -- dragon Wingdramon's."""
+    from tuipet import data, egg, lines, shop
+    idx = next(i for i in range(egg.count()) if egg.hatch_name(i) == "Gammamon Egg")
+    rule = data.load_egg_unlock()[idx]
+    prog = dict(persistence.get_progress(), maps=set(), maps_cleared=set(), raids=0)
+    assert not egg._conditions_met(rule, prog)
+    prog["maps_cleared"] = {11}
+    assert egg._conditions_met(rule, prog)
+    p = Pet.new_egg(egg_type=idx)
+    p._hatch_into_fresh()
+    assert p.num == 1137 and p.line_id == "gam"
+    assert len(lines.load_lines()["gam"]["members"]) == 14
+    assert shop.town_egg_buy(Pet(num=29), idx)[1] == "error"

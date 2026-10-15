@@ -13,6 +13,9 @@ STAGES = ["Fresh", "InTraining", "Rookie", "Champion", "Ultimate", "Mega"]
 # design; ver1's Betamon road + the ver2-verE canon rewrite, 2026-07-07 --
 # every device line now matches its humulos DM20 chart)
 DECLARED_EDGES = {
+    # gam -- the official Gammamon DIM card's connectors the corpus graph never
+    # carried (humulos vbdm/v; Joel approved the line 2026-10-15)
+    (447, 345), (447, 396), (480, 345), (480, 987), (625, 345), (1137, 1143),
     # ici -- the official Impulse City DIM card's connectors the corpus graph
     # never carried (humulos vbdm; Joel approved the line 2026-10-15)
     (1429, 936),

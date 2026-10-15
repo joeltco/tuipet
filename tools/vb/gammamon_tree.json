@@ -1,0 +1,1800 @@
+{
+  "card": "GAMMAMON",
+  "line_id": "gam",
+  "source": "https://humulos.com/digimon/vbdm/v/#gamma_anchor",
+  "source_kind": "Saved Humulos HTML is authoritative for this proposal; live page opened 2026-10-15",
+  "digitama": {
+    "image_name": "digitama_curi.gif",
+    "title_quote": "Curimon Digitama",
+    "source_image": "//humulos.com/digimon/images/dot/vbdm/digitama_curi.gif",
+    "status": "Colour source only; no art conversion authorized"
+  },
+  "requirements_scope": "Each listed icon is AND; N/A means no constraint. No icons on I-II-III. No attribute Jogress inferred as connector edges.",
+  "source_hashes": {
+    "_astra/vbmore/vbdm_v.html": "9cd8cced07b936909fd44afd8ee3cf7529d19eec2c98928767c20a7134a6170b",
+    "_astra/list_vbdm.html": "43acd3463364054c1396811a24f2eb61ccace9bbbceca5532caee2adb9692b95",
+    "src/tuipet/data/digimon.csv": "445e7c04bcb13e3fe3106ca8d75591aac6484c244a819d64f6929ed1de0e9f25",
+    "src/tuipet/data/sprites.json.gz": "e275515239cd5a278dadf9deef5cf7a50d0e6fab3c7c3eee5724ffed3d6b354d",
+    "src/tuipet/data/lines.csv": "150903622e18f39242f8bb7d0fee0e36ff81574268ff444dd5d9214b5d3863bf",
+    "LINES_SPEC.md": "4e84c39a90a4a306399334696a23525839f07928abdc259496d1fab9670e778e",
+    "src/tuipet/data/eggs.json.gz": "c9835a660fdccec5643889c7ef2be500b235056562b9a5687ad4703d43618da5",
+    "src/tuipet/egg.py": "65f2d5580f92259bd3325827c49c3018d1555bd791881eeff437f12727b15b46",
+    "src/tuipet/pet.py": "50d7f3fb8344cda89495faaf12098bfd12099a8e4945525f624af561aaa62833",
+    "src/tuipet/lines.py": "1d0098d5f24268d829ab0ece2c35c7d6ddfdce2847aa0b3717a5ea24bf65bf9f",
+    "src/tuipet/digicore.py": "59c676855513204f6cf9cd8713659dd77802b6f7d587e6e636a141fa661e1fd0",
+    "src/tuipet/evolution.py": "26aac233383d52e666e66ed4b788b7610dfb3ce1ad07fc8bab9182626c40f8e9",
+    "tests/test_line_curation.py": "397a0d70cb5984781536c6f7cf1230c130f0db748e4337da455e2d0c513bc5b2",
+    "_astra/vbmore/mapping.tsv": "9319f02fd9f23c8e5d8535e5781524fbe420fb7680782096806a6462f7eaa76c"
+  },
+  "node_count": 14,
+  "edge_count": 24,
+  "nodes": [
+    {
+      "slug": "curi",
+      "name": "Curimon",
+      "stage": "I",
+      "tuipet_stage": "Fresh",
+      "attribute": "None",
+      "parents": [],
+      "connector_classes": [],
+      "requirements": [],
+      "source": "https://humulos.com/digimon/vbdm/v/#gamma_anchor",
+      "source_locator": "#gamma baby column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "I",
+      "list_attribute_quote": "Free",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "identity_candidates": [
+        {
+          "dex_num": 1137,
+          "name": "Curimon",
+          "stage": "Fresh",
+          "attribute": "None",
+          "element": "None",
+          "sprite_set": 3,
+          "sprite_num": 110,
+          "frame_0_sha256": "a2ee819264b63ae89e5c1960e2e563cab114582b2d7ad3a26c4618102dc772e9"
+        },
+        {
+          "dex_num": 1452,
+          "name": "Curimon",
+          "stage": "Fresh",
+          "attribute": "None",
+          "element": "None",
+          "sprite_set": 3,
+          "sprite_num": 110,
+          "frame_0_sha256": "a2ee819264b63ae89e5c1960e2e563cab114582b2d7ad3a26c4618102dc772e9"
+        }
+      ],
+      "identity_review": "Explicit alias/duplicate selection; see mapping.tsv and rules_proposal.md",
+      "dex_num": 1137,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [],
+          "requirements": [],
+          "proposed_rule": "TIME"
+        }
+      ],
+      "proposed_rule": "TIME"
+    },
+    {
+      "slug": "guri",
+      "name": "Gurimon",
+      "stage": "II",
+      "tuipet_stage": "InTraining",
+      "attribute": "None",
+      "parents": [
+        "curi"
+      ],
+      "connector_classes": [
+        "gamma_curi_lineOut"
+      ],
+      "requirements": [],
+      "source": "https://humulos.com/digimon/vbdm/v/#gamma_anchor",
+      "source_locator": "#gamma babyII column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "II",
+      "list_attribute_quote": "Free",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "connector_note": "Unbranched adjacent stage columns; preceding horizontal lineOut, no requirement text.",
+      "identity_candidates": [
+        {
+          "dex_num": 1143,
+          "name": "Gurimon",
+          "stage": "InTraining",
+          "attribute": "None",
+          "element": "Wind",
+          "sprite_set": 4,
+          "sprite_num": 110,
+          "frame_0_sha256": "1b8b67fe2ada032cb448547bdd825fac80e4340d0a7434afb4e09b0e123cc0ef"
+        },
+        {
+          "dex_num": 1508,
+          "name": "Gurimon",
+          "stage": "InTraining",
+          "attribute": "None",
+          "element": "Wind",
+          "sprite_set": 4,
+          "sprite_num": 110,
+          "frame_0_sha256": "1b8b67fe2ada032cb448547bdd825fac80e4340d0a7434afb4e09b0e123cc0ef"
+        }
+      ],
+      "identity_review": "Explicit alias/duplicate selection; see mapping.tsv and rules_proposal.md",
+      "dex_num": 1143,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "curi"
+          ],
+          "requirements": [],
+          "proposed_rule": "TIME"
+        }
+      ],
+      "proposed_rule": "TIME"
+    },
+    {
+      "slug": "gamma",
+      "name": "Gammamon",
+      "stage": "III",
+      "tuipet_stage": "Rookie",
+      "attribute": "Virus",
+      "parents": [
+        "guri"
+      ],
+      "connector_classes": [
+        "gamma_guri_lineOut"
+      ],
+      "requirements": [],
+      "source": "https://humulos.com/digimon/vbdm/v/#gamma_anchor",
+      "source_locator": "#gamma child column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "III",
+      "list_attribute_quote": "Virus",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "connector_note": "Unbranched adjacent stage columns; preceding horizontal lineOut, no requirement text.",
+      "identity_candidates": [
+        {
+          "dex_num": 1074,
+          "name": "Gammamon",
+          "stage": "Rookie",
+          "attribute": "Virus",
+          "element": "Light",
+          "sprite_set": 14,
+          "sprite_num": 77,
+          "frame_0_sha256": "96e3b8d0ab5f71de0aded0e4b02351d5c15a17f67b7d04dff5826af23f22f3db"
+        }
+      ],
+      "identity_review": "Sole normalized exact-name identity",
+      "dex_num": 1074,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "guri"
+          ],
+          "requirements": [],
+          "proposed_rule": "TIME"
+        }
+      ],
+      "proposed_rule": "TIME"
+    },
+    {
+      "slug": "betelgamma",
+      "name": "Betel Gammamon",
+      "stage": "IV",
+      "tuipet_stage": "Champion",
+      "attribute": "Vaccine",
+      "parents": [
+        "gamma"
+      ],
+      "connector_classes": [
+        "gamma_gamma_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "1,100+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/v/#gamma_anchor",
+      "source_locator": "#gamma_betelgamma_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "IV",
+      "list_attribute_quote": "Vaccine",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "identity_candidates": [
+        {
+          "dex_num": 1075,
+          "name": "BetelGammamon",
+          "stage": "Champion",
+          "attribute": "Vaccine",
+          "element": "Fire",
+          "sprite_set": 28,
+          "sprite_num": 55,
+          "frame_0_sha256": "4e4eae89867156eaa8e11eaf85f6eb5097d4cb25e8914b6b88a41aaa25383c27"
+        }
+      ],
+      "identity_review": "Sole normalized exact-name identity",
+      "dex_num": 1075,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "gamma"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "10+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "1,100+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "8+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "N/A"
+            }
+          ],
+          "proposed_rule": "TR 10+, LV 4+, BTL 8+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 4+, BTL 8+"
+    },
+    {
+      "slug": "kausgamma",
+      "name": "Kaus Gammamon",
+      "stage": "IV",
+      "tuipet_stage": "Champion",
+      "attribute": "Data",
+      "parents": [
+        "gamma"
+      ],
+      "connector_classes": [
+        "gamma_gamma_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "900+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "5+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/v/#gamma_anchor",
+      "source_locator": "#gamma_kausgamma_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "IV",
+      "list_attribute_quote": "Data",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "identity_candidates": [
+        {
+          "dex_num": 1077,
+          "name": "KausGammamon",
+          "stage": "Champion",
+          "attribute": "Data",
+          "element": "Wind",
+          "sprite_set": 28,
+          "sprite_num": 77,
+          "frame_0_sha256": "dcc1f5c6ac17e1b4f984ba524d7568512cb27bc021ae0245938482c00947eaa5"
+        }
+      ],
+      "identity_review": "Sole normalized exact-name identity",
+      "dex_num": 1077,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "gamma"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "8+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "900+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "5+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "N/A"
+            }
+          ],
+          "proposed_rule": "TR 8+, LV 3+, BTL 5+"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 3+, BTL 5+"
+    },
+    {
+      "slug": "wezengamma",
+      "name": "Wezen Gammamon",
+      "stage": "IV",
+      "tuipet_stage": "Champion",
+      "attribute": "Data",
+      "parents": [
+        "gamma"
+      ],
+      "connector_classes": [
+        "gamma_gamma_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "5+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "600+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "3+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/v/#gamma_anchor",
+      "source_locator": "#gamma_wezengamma_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "IV",
+      "list_attribute_quote": "Data",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "identity_candidates": [
+        {
+          "dex_num": 1078,
+          "name": "WezenGammamon",
+          "stage": "Champion",
+          "attribute": "Data",
+          "element": "Thunder",
+          "sprite_set": 28,
+          "sprite_num": 88,
+          "frame_0_sha256": "53f8c681ef71a7d1535c514b12770d927dc5f4a31e917a4c74eb4b5ab1641694"
+        }
+      ],
+      "identity_review": "Sole normalized exact-name identity",
+      "dex_num": 1078,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "gamma"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "5+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "600+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "3+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "N/A"
+            }
+          ],
+          "proposed_rule": "TR 5+, LV 2+, BTL 3+"
+        }
+      ],
+      "proposed_rule": "TR 5+, LV 2+, BTL 3+"
+    },
+    {
+      "slug": "gulusgamma",
+      "name": "Gulus Gammamon",
+      "stage": "IV",
+      "tuipet_stage": "Champion",
+      "attribute": "Virus",
+      "parents": [
+        "gamma"
+      ],
+      "connector_classes": [
+        "gamma_gamma_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/v/#gamma_anchor",
+      "source_locator": "#gamma_gulusgamma_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "IV",
+      "list_attribute_quote": "Virus",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "identity_candidates": [
+        {
+          "dex_num": 1076,
+          "name": "GulusGammamon",
+          "stage": "Champion",
+          "attribute": "Virus",
+          "element": "Dark",
+          "sprite_set": 28,
+          "sprite_num": 66,
+          "frame_0_sha256": "4c140451caf6d15537360844c94b57b55909a5af90c50b4ba8b2f7756ce46a36"
+        }
+      ],
+      "identity_review": "Sole normalized exact-name identity",
+      "dex_num": 1076,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "gamma"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "N/A"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "N/A"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "N/A"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "N/A"
+            }
+          ],
+          "proposed_rule": "TIME"
+        }
+      ],
+      "proposed_rule": "TIME"
+    },
+    {
+      "slug": "canoweiss",
+      "name": "Canoweissmon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Vaccine",
+      "parents": [
+        "betelgamma",
+        "kausgamma",
+        "wezengamma",
+        "gulusgamma"
+      ],
+      "connector_classes": [
+        "gamma_betelgamma_line",
+        "gamma_kausgamma_line",
+        "gamma_wezengamma_line",
+        "gamma_gulusgamma_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/v/#gamma_anchor",
+      "source_locator": "#gamma_canoweiss_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "V",
+      "list_attribute_quote": "Vaccine",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "identity_candidates": [
+        {
+          "dex_num": 1079,
+          "name": "Canoweissmon",
+          "stage": "Ultimate",
+          "attribute": "Vaccine",
+          "element": "Earth",
+          "sprite_set": 21,
+          "sprite_num": 0,
+          "frame_0_sha256": "5071161a1f8d1a6acfdd59a2919adf2147e3ab6bc043f41ef40b42014c49146f"
+        }
+      ],
+      "identity_review": "Sole normalized exact-name identity",
+      "dex_num": 1079,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "betelgamma",
+            "kausgamma",
+            "wezengamma",
+            "gulusgamma"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "12+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "3,000+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "15+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "70%+"
+            }
+          ],
+          "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15"
+        }
+      ],
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15"
+    },
+    {
+      "slug": "brachio",
+      "name": "Brachiomon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Data",
+      "parents": [
+        "betelgamma",
+        "kausgamma"
+      ],
+      "connector_classes": [
+        "gamma_betelgamma_line",
+        "gamma_kausgamma_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        },
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/v/#gamma_anchor",
+      "source_locator": "#gamma_brachio_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "V",
+      "list_attribute_quote": "Data",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "identity_candidates": [
+        {
+          "dex_num": 625,
+          "name": "Brachimon",
+          "stage": "Ultimate",
+          "attribute": "Data",
+          "element": "Water",
+          "sprite_set": 11,
+          "sprite_num": 88,
+          "frame_0_sha256": "accc2c1fdd19f1d8fba62c634c9881a26b0f47a6cf98bd7a38d651f81914cb0f"
+        }
+      ],
+      "identity_review": "Explicit alias/duplicate selection; see mapping.tsv and rules_proposal.md",
+      "dex_num": 625,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "betelgamma"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "10+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "2,500+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "10+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "50%+"
+            }
+          ],
+          "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10"
+        },
+        {
+          "parents": [
+            "kausgamma"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "8+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "2,000+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "10+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "50%+"
+            }
+          ],
+          "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10 / TR 8+, LV 4+, BTL 10+, WIN 5/10"
+    },
+    {
+      "slug": "chimaira",
+      "name": "Chimairamon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Data",
+      "parents": [
+        "betelgamma",
+        "gulusgamma"
+      ],
+      "connector_classes": [
+        "gamma_betelgamma_line",
+        "gamma_gulusgamma_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/v/#gamma_anchor",
+      "source_locator": "#gamma_chimaira_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "V",
+      "list_attribute_quote": "Data",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "identity_candidates": [
+        {
+          "dex_num": 480,
+          "name": "Kimeramon",
+          "stage": "Ultimate",
+          "attribute": "Data",
+          "element": "Dark",
+          "sprite_set": 9,
+          "sprite_num": 110,
+          "frame_0_sha256": "183596e7e248c096907e4c7bb97c9bbead23dfd504c83a2578ffa9d5253eba1a"
+        }
+      ],
+      "identity_review": "Explicit alias/duplicate selection; see mapping.tsv and rules_proposal.md",
+      "dex_num": 480,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "betelgamma",
+            "gulusgamma"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "8+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "2,000+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "10+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "50%+"
+            }
+          ],
+          "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10"
+    },
+    {
+      "slug": "tankdra",
+      "name": "Tankdramon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Virus",
+      "parents": [
+        "wezengamma"
+      ],
+      "connector_classes": [
+        "gamma_wezengamma_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/v/#gamma_anchor",
+      "source_locator": "#gamma_tankdra_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "V",
+      "list_attribute_quote": "Virus",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "identity_candidates": [
+        {
+          "dex_num": 447,
+          "name": "Tankdramon",
+          "stage": "Ultimate",
+          "attribute": "Virus",
+          "element": "Fire",
+          "sprite_set": 9,
+          "sprite_num": 22,
+          "frame_0_sha256": "57af4784f3629472721e17f24acb998cb166e3c6bdc421128ac63e89d06e57e4"
+        }
+      ],
+      "identity_review": "Sole normalized exact-name identity",
+      "dex_num": 447,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "wezengamma"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "8+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "2,000+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "10+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "50%+"
+            }
+          ],
+          "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10"
+    },
+    {
+      "slug": "aegisdra",
+      "name": "Aegisdramon",
+      "stage": "VI",
+      "tuipet_stage": "Mega",
+      "attribute": "Vaccine",
+      "parents": [
+        "canoweiss",
+        "tankdra"
+      ],
+      "connector_classes": [
+        "gamma_canoweiss_line",
+        "gamma_tankdra_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "5,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/v/#gamma_anchor",
+      "source_locator": "#gamma_aegisdra_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "VI",
+      "list_attribute_quote": "Vaccine",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "identity_candidates": [
+        {
+          "dex_num": 396,
+          "name": "Aegisdramon",
+          "stage": "Mega",
+          "attribute": "Vaccine",
+          "element": "Thunder",
+          "sprite_set": 8,
+          "sprite_num": 99,
+          "frame_0_sha256": "c77ee2ff2d0976fa97d408bbf13d9cf327f8d4b5d28a33565bfec196548db5c2"
+        },
+        {
+          "dex_num": 1570,
+          "name": "Aegisdramon",
+          "stage": "Mega",
+          "attribute": "Vaccine",
+          "element": "Thunder",
+          "sprite_set": 8,
+          "sprite_num": 99,
+          "frame_0_sha256": "c77ee2ff2d0976fa97d408bbf13d9cf327f8d4b5d28a33565bfec196548db5c2"
+        }
+      ],
+      "identity_review": "Explicit alias/duplicate selection; see mapping.tsv and rules_proposal.md",
+      "dex_num": 396,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "canoweiss",
+            "tankdra"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "15+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "5,000+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "15+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "70%+"
+            }
+          ],
+          "proposed_rule": "TR 15+, LV 7+, BTL 15+, WIN 11/15"
+        }
+      ],
+      "proposed_rule": "TR 15+, LV 7+, BTL 15+, WIN 11/15"
+    },
+    {
+      "slug": "ultimatebrachi",
+      "name": "Ultimate Brachiomon",
+      "stage": "VI",
+      "tuipet_stage": "Mega",
+      "attribute": "Data",
+      "parents": [
+        "canoweiss",
+        "brachio",
+        "chimaira"
+      ],
+      "connector_classes": [
+        "gamma_canoweiss_line",
+        "gamma_brachio_line",
+        "gamma_chimaira_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "60%+"
+        },
+        {
+          "label_quote": "Trophies",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "5,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "60%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/v/#gamma_anchor",
+      "source_locator": "#gamma_ultimatebrachi_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "VI",
+      "list_attribute_quote": "Data",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "identity_candidates": [
+        {
+          "dex_num": 987,
+          "name": "UltimateBrachimon",
+          "stage": "Mega",
+          "attribute": "Data",
+          "element": "Metal",
+          "sprite_set": 22,
+          "sprite_num": 110,
+          "frame_0_sha256": "646dc2b10cb87c43b26d2ede259709183fb17127d51c124bbb98d53c2de2784e"
+        }
+      ],
+      "identity_review": "Explicit alias/duplicate selection; see mapping.tsv and rules_proposal.md",
+      "dex_num": 987,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "canoweiss",
+            "brachio"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "15+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "4,500+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "15+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "60%+"
+            }
+          ],
+          "proposed_rule": "TR 15+, LV 6+, BTL 15+, WIN 9/15"
+        },
+        {
+          "parents": [
+            "chimaira"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "15+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "5,000+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "15+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "60%+"
+            }
+          ],
+          "proposed_rule": "TR 15+, LV 7+, BTL 15+, WIN 9/15"
+        }
+      ],
+      "proposed_rule": "TR 15+, LV 6+, BTL 15+, WIN 9/15 / TR 15+, LV 7+, BTL 15+, WIN 9/15"
+    },
+    {
+      "slug": "chaosdra",
+      "name": "Chaosdramon",
+      "stage": "VI",
+      "tuipet_stage": "Mega",
+      "attribute": "Virus",
+      "parents": [
+        "canoweiss",
+        "brachio",
+        "chimaira",
+        "tankdra"
+      ],
+      "connector_classes": [
+        "gamma_canoweiss_line",
+        "gamma_brachio_line",
+        "gamma_chimaira_line",
+        "gamma_tankdra_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "7,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "25+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/v/#gamma_anchor",
+      "source_locator": "#gamma_chaosdra_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "VI",
+      "list_attribute_quote": "Virus",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "identity_candidates": [
+        {
+          "dex_num": 345,
+          "name": "Chaosdramon",
+          "stage": "Mega",
+          "attribute": "Virus",
+          "element": "Dark",
+          "sprite_set": 6,
+          "sprite_num": 55,
+          "frame_0_sha256": "b86232c9445364016c18e46c8b321400c51d04effd1305b3e1db0273301be4ea"
+        },
+        {
+          "dex_num": 1572,
+          "name": "Chaosdramon",
+          "stage": "Mega",
+          "attribute": "Virus",
+          "element": "Dark",
+          "sprite_set": 6,
+          "sprite_num": 55,
+          "frame_0_sha256": "b86232c9445364016c18e46c8b321400c51d04effd1305b3e1db0273301be4ea"
+        }
+      ],
+      "identity_review": "Explicit alias/duplicate selection; see mapping.tsv and rules_proposal.md",
+      "dex_num": 345,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "canoweiss",
+            "brachio",
+            "chimaira",
+            "tankdra"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "20+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "7,000+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "25+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "70%+"
+            }
+          ],
+          "proposed_rule": "TR 20+, LV 8+, BTL 25+, WIN 18/25"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 8+, BTL 25+, WIN 18/25"
+    }
+  ],
+  "edges": [
+    {
+      "parent": "curi",
+      "child": "guri",
+      "connector_class": "gamma_curi_lineOut",
+      "requirements": [],
+      "proposed_rule": "TIME",
+      "source": "https://humulos.com/digimon/vbdm/v/#gamma_anchor",
+      "source_locator": "#gamma .gamma_curi_lineOut",
+      "connector_element_quote": "<div class=\"line_hor30 lineBlue gamma_curi_lineOut reqToggle\"></div>"
+    },
+    {
+      "parent": "guri",
+      "child": "gamma",
+      "connector_class": "gamma_guri_lineOut",
+      "requirements": [],
+      "proposed_rule": "TIME",
+      "source": "https://humulos.com/digimon/vbdm/v/#gamma_anchor",
+      "source_locator": "#gamma .gamma_guri_lineOut",
+      "connector_element_quote": "<div class=\"line_hor30 lineBlue gamma_guri_lineOut reqToggle\"></div>"
+    },
+    {
+      "parent": "gamma",
+      "child": "betelgamma",
+      "connector_class": "gamma_gamma_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "1,100+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 4+, BTL 8+",
+      "source": "https://humulos.com/digimon/vbdm/v/#gamma_anchor",
+      "source_locator": "#gamma_betelgamma_Req_column .gamma_gamma_line",
+      "connector_element_quote": "<div class=\"line_hor30 linePurple gamma_gamma_line\"></div>"
+    },
+    {
+      "parent": "gamma",
+      "child": "kausgamma",
+      "connector_class": "gamma_gamma_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "900+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "5+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 3+, BTL 5+",
+      "source": "https://humulos.com/digimon/vbdm/v/#gamma_anchor",
+      "source_locator": "#gamma_kausgamma_Req_column .gamma_gamma_line",
+      "connector_element_quote": "<div class=\"line_hor30 linePurple gamma_gamma_line\"></div>"
+    },
+    {
+      "parent": "gamma",
+      "child": "wezengamma",
+      "connector_class": "gamma_gamma_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "5+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "600+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "3+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "proposed_rule": "TR 5+, LV 2+, BTL 3+",
+      "source": "https://humulos.com/digimon/vbdm/v/#gamma_anchor",
+      "source_locator": "#gamma_wezengamma_Req_column .gamma_gamma_line",
+      "connector_element_quote": "<div class=\"line_hor30 linePurple gamma_gamma_line\"></div>"
+    },
+    {
+      "parent": "gamma",
+      "child": "gulusgamma",
+      "connector_class": "gamma_gamma_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "proposed_rule": "TIME",
+      "source": "https://humulos.com/digimon/vbdm/v/#gamma_anchor",
+      "source_locator": "#gamma_gulusgamma_Req_column .gamma_gamma_line",
+      "connector_element_quote": "<div class=\"line_hor30 linePurple gamma_gamma_line\"></div>"
+    },
+    {
+      "parent": "betelgamma",
+      "child": "canoweiss",
+      "connector_class": "gamma_betelgamma_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/v/#gamma_anchor",
+      "source_locator": "#gamma_canoweiss_Req_column .gamma_betelgamma_line",
+      "connector_element_quote": "<div class=\"line_hor60 lineRed gamma_betelgamma_line\"></div>"
+    },
+    {
+      "parent": "kausgamma",
+      "child": "canoweiss",
+      "connector_class": "gamma_kausgamma_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/v/#gamma_anchor",
+      "source_locator": "#gamma_canoweiss_Req_column .gamma_kausgamma_line",
+      "connector_element_quote": "<div class=\"line_hor50 lineGreen gamma_kausgamma_line\"></div>"
+    },
+    {
+      "parent": "wezengamma",
+      "child": "canoweiss",
+      "connector_class": "gamma_wezengamma_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/v/#gamma_anchor",
+      "source_locator": "#gamma_canoweiss_Req_column .gamma_wezengamma_line",
+      "connector_element_quote": "<div class=\"line_hor40 lineTeal gamma_wezengamma_line\"></div>"
+    },
+    {
+      "parent": "gulusgamma",
+      "child": "canoweiss",
+      "connector_class": "gamma_gulusgamma_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/v/#gamma_anchor",
+      "source_locator": "#gamma_canoweiss_Req_column .gamma_gulusgamma_line",
+      "connector_element_quote": "<div class=\"line_hor30 linePurple gamma_gulusgamma_line\"></div>"
+    },
+    {
+      "parent": "betelgamma",
+      "child": "brachio",
+      "connector_class": "gamma_betelgamma_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/v/#gamma_anchor",
+      "source_locator": "#gamma_brachio_Req_column .gamma_betelgamma_line",
+      "connector_element_quote": "<div class=\"line_hor60 lineRed gamma_betelgamma_line\"></div>"
+    },
+    {
+      "parent": "kausgamma",
+      "child": "brachio",
+      "connector_class": "gamma_kausgamma_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/v/#gamma_anchor",
+      "source_locator": "#gamma_brachio_Req_column .gamma_kausgamma_line",
+      "connector_element_quote": "<div class=\"line_hor50 lineGreen gamma_kausgamma_line\"></div>"
+    },
+    {
+      "parent": "betelgamma",
+      "child": "chimaira",
+      "connector_class": "gamma_betelgamma_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/v/#gamma_anchor",
+      "source_locator": "#gamma_chimaira_Req_column .gamma_betelgamma_line",
+      "connector_element_quote": "<div class=\"line_hor60 lineRed gamma_betelgamma_line\"></div>"
+    },
+    {
+      "parent": "gulusgamma",
+      "child": "chimaira",
+      "connector_class": "gamma_gulusgamma_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/v/#gamma_anchor",
+      "source_locator": "#gamma_chimaira_Req_column .gamma_gulusgamma_line",
+      "connector_element_quote": "<div class=\"line_hor30 linePurple gamma_gulusgamma_line\"></div>"
+    },
+    {
+      "parent": "wezengamma",
+      "child": "tankdra",
+      "connector_class": "gamma_wezengamma_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/v/#gamma_anchor",
+      "source_locator": "#gamma_tankdra_Req_column .gamma_wezengamma_line",
+      "connector_element_quote": "<div class=\"line_hor40 lineTeal gamma_wezengamma_line\"></div>"
+    },
+    {
+      "parent": "canoweiss",
+      "child": "aegisdra",
+      "connector_class": "gamma_canoweiss_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "5,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 15+, LV 7+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/v/#gamma_anchor",
+      "source_locator": "#gamma_aegisdra_Req_column .gamma_canoweiss_line",
+      "connector_element_quote": "<div class=\"line_hor60 lineRed gamma_canoweiss_line\"></div>"
+    },
+    {
+      "parent": "tankdra",
+      "child": "aegisdra",
+      "connector_class": "gamma_tankdra_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "5,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 15+, LV 7+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/v/#gamma_anchor",
+      "source_locator": "#gamma_aegisdra_Req_column .gamma_tankdra_line",
+      "connector_element_quote": "<div class=\"line_hor30 linePurple gamma_tankdra_line\"></div>"
+    },
+    {
+      "parent": "canoweiss",
+      "child": "ultimatebrachi",
+      "connector_class": "gamma_canoweiss_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "60%+"
+        }
+      ],
+      "proposed_rule": "TR 15+, LV 6+, BTL 15+, WIN 9/15",
+      "source": "https://humulos.com/digimon/vbdm/v/#gamma_anchor",
+      "source_locator": "#gamma_ultimatebrachi_Req_column .gamma_canoweiss_line",
+      "connector_element_quote": "<div class=\"line_hor60 lineRed gamma_canoweiss_line\"></div>"
+    },
+    {
+      "parent": "brachio",
+      "child": "ultimatebrachi",
+      "connector_class": "gamma_brachio_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "60%+"
+        }
+      ],
+      "proposed_rule": "TR 15+, LV 6+, BTL 15+, WIN 9/15",
+      "source": "https://humulos.com/digimon/vbdm/v/#gamma_anchor",
+      "source_locator": "#gamma_ultimatebrachi_Req_column .gamma_brachio_line",
+      "connector_element_quote": "<div class=\"line_hor50 lineGreen gamma_brachio_line\"></div>"
+    },
+    {
+      "parent": "chimaira",
+      "child": "ultimatebrachi",
+      "connector_class": "gamma_chimaira_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "5,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "60%+"
+        }
+      ],
+      "proposed_rule": "TR 15+, LV 7+, BTL 15+, WIN 9/15",
+      "source": "https://humulos.com/digimon/vbdm/v/#gamma_anchor",
+      "source_locator": "#gamma_ultimatebrachi_Req_column .gamma_chimaira_line",
+      "connector_element_quote": "<div class=\"line_hor40 lineTeal gamma_chimaira_line\"></div>"
+    },
+    {
+      "parent": "canoweiss",
+      "child": "chaosdra",
+      "connector_class": "gamma_canoweiss_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "7,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "25+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 8+, BTL 25+, WIN 18/25",
+      "source": "https://humulos.com/digimon/vbdm/v/#gamma_anchor",
+      "source_locator": "#gamma_chaosdra_Req_column .gamma_canoweiss_line",
+      "connector_element_quote": "<div class=\"line_hor60 lineRed gamma_canoweiss_line\"></div>"
+    },
+    {
+      "parent": "brachio",
+      "child": "chaosdra",
+      "connector_class": "gamma_brachio_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "7,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "25+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 8+, BTL 25+, WIN 18/25",
+      "source": "https://humulos.com/digimon/vbdm/v/#gamma_anchor",
+      "source_locator": "#gamma_chaosdra_Req_column .gamma_brachio_line",
+      "connector_element_quote": "<div class=\"line_hor50 lineGreen gamma_brachio_line\"></div>"
+    },
+    {
+      "parent": "chimaira",
+      "child": "chaosdra",
+      "connector_class": "gamma_chimaira_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "7,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "25+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 8+, BTL 25+, WIN 18/25",
+      "source": "https://humulos.com/digimon/vbdm/v/#gamma_anchor",
+      "source_locator": "#gamma_chaosdra_Req_column .gamma_chimaira_line",
+      "connector_element_quote": "<div class=\"line_hor40 lineTeal gamma_chimaira_line\"></div>"
+    },
+    {
+      "parent": "tankdra",
+      "child": "chaosdra",
+      "connector_class": "gamma_tankdra_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "7,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "25+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 8+, BTL 25+, WIN 18/25",
+      "source": "https://humulos.com/digimon/vbdm/v/#gamma_anchor",
+      "source_locator": "#gamma_chaosdra_Req_column .gamma_tankdra_line",
+      "connector_element_quote": "<div class=\"line_hor30 linePurple gamma_tankdra_line\"></div>"
+    }
+  ]
+}
