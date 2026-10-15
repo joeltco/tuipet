@@ -63,3 +63,4 @@ server/pending_pms.json
 # promo recordings are large binaries; the .tape scripts regenerate them
 tools/promo/*.mp4
 tools/promo/*.gif
+server/wiped.json*
