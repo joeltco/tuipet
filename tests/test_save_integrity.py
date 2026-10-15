@@ -105,3 +105,19 @@ def test_session_lease_stops_the_two_device_fork():
     assert srv._lease_ok(legacy, "joeltco")       # keeps last-login-wins until updated
     srv._take_lease(desktop, "joeltco", 200.0)    # ...and any stamped login takes over
     assert srv._lease_ok(desktop, "joeltco")
+
+
+def test_earned_history_is_kept_per_account(tmp_path, monkeypatch):
+    """Saves call #28 = A (Joel 2026-10-15): a second account signed in on
+    this device no longer inherits the first one's album and unlocks."""
+    from tuipet import persistence
+    persistence.save_settings({"progress": {"album": [29], "wins": 7}})
+    persistence.set_account("joel", "pw")             # the pre-split history is joel's
+    assert persistence.get_album() == {29}
+    persistence.set_account("layla", "pw")
+    assert persistence.get_album() == set()           # her own, empty book
+    persistence.album_add(100)
+    persistence.set_account("joel", "pw")
+    assert persistence.get_album() == {29}            # his book untouched
+    persistence.set_account("layla", "pw")
+    assert persistence.get_album() == {100}

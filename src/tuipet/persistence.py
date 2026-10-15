@@ -61,8 +61,54 @@ def load_settings(path=None):
             continue
         if _migrate_v401_settings(d):        # .400/.401 egg indices -> .402 bank
             save_settings(d, path)
+        _bind_progress(d)
         return d
     return {}
+
+
+# ---- PER-ACCOUNT HISTORY (saves call #28 = A, Joel 2026-10-15) --------------
+# The earned history ("progress": album, wins, eggs, titles, maps...) used to
+# be ONE per device, so every account signed in here merged into it.  It is
+# kept per ACCOUNT now: settings hold `progress_by_account` {account: progress}
+# and `progress` is the signed-in account's bucket, swapped in on load and
+# filed back on save.  A pre-split file's history becomes the signed-in
+# account's (nothing is lost or re-sorted); history earned SIGNED OUT goes
+# with the first account signed into.
+_OWNER = "_progress_owner"
+
+
+def _account_key(d):
+    return ((d.get("account") or {}).get("name") or "").strip().lower()
+
+
+def _bind_progress(d):
+    buckets = d.get("progress_by_account")
+    if not isinstance(buckets, dict):
+        buckets = {}
+    key = _account_key(d)
+    if "progress_by_account" not in d:          # a pre-split file: adopt it whole
+        buckets[key] = d.get("progress") or {}
+    elif key not in buckets and key and buckets.get(""):
+        buckets[key] = buckets.pop("")          # signed-out play joins the first account
+    d["progress_by_account"] = buckets
+    d["progress"] = buckets.get(key) or {}
+    d[_OWNER] = key
+
+
+def _file_progress(d):
+    """save_settings: put the live bucket back under the account it was
+    LOADED for (set_account may have changed the name since)."""
+    if _OWNER not in d and "progress_by_account" not in d:
+        _bind_progress(d)                       # a dict built without load_settings
+    owner = d.pop(_OWNER, _account_key(d))
+    buckets = d.get("progress_by_account")
+    if not isinstance(buckets, dict):
+        buckets = {}
+    buckets[owner] = d.get("progress") or {}
+    d["progress_by_account"] = buckets
+    # `progress` stays on disk too, the signed-in account's bucket: an
+    # older build (a rollback) reads only that key
+    d["progress"] = buckets.get(_account_key(d)) or {}
 
 
 def get_auto_update():
@@ -105,7 +151,9 @@ def save_settings(d, path=None):
     # settings file created THIS session would look like a pre-migration
     # (.400/.401) file on the next load and get wrongly re-translated
     d["egg_order_v"] = EGG_ORDER_V
-    _atomic_write_json(path or SETTINGS_PATH, d, keep_bak=True)
+    out = dict(d)                               # the caller's dict stays bound
+    _file_progress(out)
+    _atomic_write_json(path or SETTINGS_PATH, out, keep_bak=True)
 
 
 def get_album():
