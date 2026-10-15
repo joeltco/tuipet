@@ -179,6 +179,14 @@ EGG_BG = {
     72: "sunsetshore", # Wolfmon EX Egg (VB DIM card; unlocks on the Seafloor Sunset road)
     73: "desert",      # Agnimon EX Egg (VB DIM card; unlocks on the Desert road)
     74: "baybridge",   # Terriermon EX Egg (VB DIM card; unlocks on the Bay Bridge road)
+    75: "moonmeadow",  # Renamon GP Egg (VB DIM card; unlocks on the Moonlit Meadow road)
+    76: "tealhollow",  # Renamon EX Egg (VB DIM card; unlocks on the Teal Hollow road)
+    77: "islandsea",   # Monodramon GP Egg (VB DIM card; unlocks on the Island Day road)
+    78: "islandsea",   # Ancient Warriors Egg (VB DIM card; unlocks on the Island Day road)
+    79: "underwater",  # Chackmon EX Egg (VB DIM card; unlocks on the Seafloor road)
+    80: "greenhills",  # Titan of Dust Egg (VB DIM card; unlocks on the Green Hills road)
+    81: "forestgate",  # Primeval Warriors Egg (VB DIM card; unlocks on the Green Hollow road)
+    82: "city",        # Dynasty of the Evil Egg (VB DIM card; unlocks on the City road)
 }
 
 

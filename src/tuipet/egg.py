@@ -132,6 +132,19 @@ def record(egg_type=0):
 # only hatchable (owned/temp) eggs. persistence.get_progress() supplies the state.
 
 
+def _zone_parts(zone):
+    """The ZoneEnemyBeat value -> (map, dex): "MAP" = that map's boss cleared
+    (dex None); "MAP:DEX" = that species beaten as a WILD on that map (the
+    card eggs, Joel 2026-10-15).  None when the value isn't numeric."""
+    parts = str(zone).split(":")
+    try:
+        mi = int(parts[0])
+        dex = int(parts[1]) if len(parts) > 1 and parts[1].strip() else None
+    except ValueError:
+        return None
+    return mi, dex
+
+
 def _conditions_met(rule, prog):
     from . import data
     if rule["gen"] is not None and prog["max_gen"] < rule["gen"]:
@@ -195,16 +208,51 @@ def _conditions_met(rule, prog):
     # into the 30-map world; Volcanic Beat egg, 2026-10-14).  A cleared AREA
     # implies its maps too (maps unlock in order), so saves from before the
     # per-map record still count.  Anything non-numeric stays locked.
+    # "MAP:DEX" instead = that species beaten as a wild on that map (the
+    # persistence.wild_beaten_add record; nothing older implies it).
     if rule["zone"] is not None:
-        try:
-            mi = int(str(rule["zone"]).split(":")[0])
-        except ValueError:
+        zp = _zone_parts(rule["zone"])
+        if zp is None:
             return False
-        areas = prog.get("maps", ()) or ()
-        if mi not in (prog.get("maps_cleared", ()) or ()) \
-                and not any(6 * (a + 1) > mi for a in areas):
-            return False
+        mi, dex = zp
+        if dex is not None:
+            if f"{mi}:{dex}" not in (prog.get("wilds_beaten", ()) or ()):
+                return False
+        else:
+            areas = prog.get("maps", ()) or ()
+            if mi not in (prog.get("maps_cleared", ()) or ()) \
+                    and not any(6 * (a + 1) > mi for a in areas):
+                return False
     return True
+
+
+def wild_goal(zone):
+    """The "MAP:DEX" zone gate's one sentence ('' for the boss form or junk):
+    'Beat a wild Renamon on the Moonlit Meadow road'."""
+    from . import adventure, data
+    zp = _zone_parts(zone)
+    if zp is None or zp[1] is None or not 0 <= zp[0] < len(adventure.MAPS):
+        return ""
+    rec = data.load_sprites()[1].get(zp[1]) or {}
+    return f"Beat a wild {rec.get('name', zp[1])} on the {adventure.MAPS[zp[0]]['name']} road"
+
+
+def unreachable_wild_rows():
+    """Egg names whose "MAP:DEX" zone gate names a species that never walks
+    that map (not in its wilds) or a map off the road -- such an egg could
+    never open.  Empty when the table is sound (a release test pins it)."""
+    from . import adventure, data
+    bad = []
+    for r in data.load_egg_unlock().values():
+        zp = _zone_parts(r["zone"]) if r["zone"] is not None else None
+        if zp is None or zp[1] is None:
+            continue
+        mi, dex = zp
+        ok = 0 <= mi < len(adventure.MAPS) and any(
+            e["num"] == dex for e in adventure.MAPS[mi]["randoms"])
+        if not ok:
+            bad.append(r["name"])
+    return bad
 
 
 def egg_state(idx, prog, owned):
@@ -317,6 +365,10 @@ def unlock_progress(idx, prog):
             return ""                         # region cleared -> unlocked
         from . import data_meta
         return data_meta.map_goal(n)          # ONE story, shared with the desc
+    if rule["zone"] is not None and (zp := _zone_parts(rule["zone"])) and zp[1] is not None:
+        if f"{zp[0]}:{zp[1]}" in (prog.get("wilds_beaten", ()) or ()):
+            return ""                         # the wild fell -> unlocked
+        return wild_goal(rule["zone"])
     if rule["gen"] is not None:
         return f"generation {min(prog['max_gen'], rule['gen'])}/{rule['gen']}"
     return rule.get("desc", "")

@@ -81,9 +81,14 @@ def is_gz(n):
     return 1623 <= n <= 1650
 
 
+def is_card_only(n):
+    """The VB card forms kitbashed 2026-10-15: they hatch from their cards, never roam the maps."""
+    return 1651 <= n <= 1658
+
+
 def main():
     _, by = data.load_sprites()
-    live = {n: r for n, r in by.items() if not data.is_placeholder(n)}
+    live = {n: r for n, r in by.items() if not data.is_placeholder(n) and not is_card_only(n)}
     for k in sum((m[3] for m in MAPS), []) + list(REWARD.values()) + SPIRITS:
         assert k in shop.CATALOG, k
     taken, out = set(), []

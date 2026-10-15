@@ -338,12 +338,12 @@ def test_the_egg_template_builds_on_grid_frames_for_every_card_egg():
         still, wobble, hatch = tmpl.build(e["frames"][0], e["hatch"][0])
         assert tmpl.on_grid(still, tmpl.STILL) and tmpl.on_grid(wobble, tmpl.WOBBLE)
         donor = tmpl.donor_egg(e["hatch"][0])
-        if donor is None:                                # seated baby on our own shell
-            assert hatch[11:] == still[11:]
-        else:                                            # the original's hatch, our shell
+        if donor is None or tmpl.donor_scattered(donor):  # seated baby on our own shell
+            assert hatch[11:] == still[11:]                # (hatch rules v2, Joel 2026-10-15:
+        else:                                            # a dot-scatter donor seats too)
             assert hatch[:11] == donor["frames"][2][:11]
-            if e["hatch_name"] != "Godzilla Egg":        # (+ Botamon G's two pixels)
-                assert e["frames"][2] == hatch, e["hatch_name"]
+        if e["hatch_name"] != "Godzilla Egg":            # (+ Botamon G's two pixels)
+            assert e["frames"][2] == hatch, e["hatch_name"]
         for k, frame in ((0, still), (1, wobble)):       # the originals' exact shape
             ink, blank = tmpl.template_shape(k)
             assert all(frame[y][x] == "1" for y, x in ink), (e["hatch_name"], k)

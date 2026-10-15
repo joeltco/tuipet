@@ -583,6 +583,10 @@ class AdventurePanel(menu.SubHost):
         if won and enemy is not None:
             self.adv.award_bits(enemy)        # the bounty into the purse + run tally
             drop = self.adv.award_drop(enemy)  # a boss's map reward (first clear)
+            zi = adventure.zone_index(self.adv.zone)
+            if zi is not None and enemy.get("num") is not None:
+                from . import persistence
+                persistence.wild_beaten_add(zi, enemy["num"])   # species-on-map egg gates
         if self._fighting_boss:
             self._fighting_boss = False
             out = self.adv.resolve_boss(won, fled=fled)

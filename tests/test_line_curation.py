@@ -13,6 +13,30 @@ STAGES = ["Fresh", "InTraining", "Rookie", "Champion", "Ultimate", "Mega"]
 # design; ver1's Betamon road + the ver2-verE canon rewrite, 2026-07-07 --
 # every device line now matches its humulos DM20 chart)
 DECLARED_EDGES = {
+    # dev -- the official Dynasty of the Evil DIM card's connectors the corpus
+    # graph never carried (humulos vbdm; VB batch 2026-10-15)
+    (14, 886), (99, 759), (102, 500), (102, 759), (103, 203), (103, 216), (103, 1655), (121, 1655), (216, 799), (216, 1031), (230, 278), (500, 1031), (759, 703), (886, 102), (886, 103), (886, 121), (1415, 14), (1655, 703), (1655, 799),
+    # pwa -- the official Primeval Warriors DIM card's connectors the corpus
+    # graph never carried (humulos vbdm; VB batch 2026-10-15)
+    (65, 178), (156, 529), (178, 422), (178, 526), (178, 529), (248, 314), (413, 248), (413, 529), (422, 314), (492, 526), (492, 529), (526, 343), (526, 734), (529, 304), (529, 314), (529, 343), (529, 734), (1434, 949),
+    # tdu -- the official Titan of Dust DIM card's connectors the corpus
+    # graph never carried (humulos vbdm; VB batch 2026-10-15)
+    (113, 604), (113, 1658), (145, 227), (226, 579), (226, 926), (227, 825), (227, 913), (410, 227), (555, 226), (555, 604), (555, 1658), (604, 926), (887, 145), (887, 555), (889, 913), (1136, 1142), (1658, 579), (1658, 926),
+    # cex -- the official Chackmon EX DIM card's connectors the corpus
+    # graph never carried (humulos vbdm; VB batch 2026-10-15)
+    (79, 135), (79, 175), (135, 197), (135, 739), (175, 197), (175, 1656), (197, 333), (197, 1047), (450, 593), (499, 333), (499, 659), (593, 696), (672, 499), (672, 1656), (696, 659), (739, 659), (739, 1047), (1656, 649), (1656, 659),
+    # awa -- the official Ancient Warriors DIM card's connectors the corpus
+    # graph never carried (humulos vbdm; VB batch 2026-10-15)
+    (144, 521), (144, 1657), (153, 1657), (198, 311), (198, 519), (248, 313), (422, 313), (515, 198), (515, 521), (520, 198), (520, 248), (520, 422), (521, 311), (521, 519), (1430, 939), (1657, 313), (1657, 519),
+    # mgp -- the official Monodramon GP DIM card's connectors the corpus
+    # graph never carried (humulos vbdm; VB batch 2026-10-15)
+    (219, 1653), (219, 1654), (1433, 947),
+    # rex -- the official Renamon EX DIM card's connectors the corpus
+    # graph never carried (humulos vbdm; VB batch 2026-10-15)
+    (64, 185), (64, 536), (155, 645), (155, 648), (185, 273), (185, 639), (185, 647), (189, 639), (189, 647), (247, 857), (273, 1652), (536, 247), (536, 645), (639, 580), (639, 1652), (645, 580), (645, 857), (647, 580), (647, 1652), (648, 307), (648, 857), (966, 967),
+    # rgp -- the official Renamon GP DIM card's connectors the corpus
+    # graph never carried (humulos vbdm; VB batch 2026-10-15)
+    (247, 1651), (966, 967),
     # trx -- the official Terriermon EX DIM card's connectors the corpus
     # graph never carried (humulos vbdm; VB batch 2026-10-15)
     (60, 546), (157, 642), (163, 249), (163, 640), (243, 306), (244, 305), (249, 573), (546, 640), (546, 641), (546, 642), (640, 309), (640, 573), (641, 309), (641, 573), (642, 305), (642, 306), (1445, 971),
@@ -320,7 +344,7 @@ def _all_lines():
 # a card places a form in a slot its global stage disagrees with, and Joel
 # ruled to keep it there playing as its global stage (2026-10-15: Blizzard
 # Fang's Daipenmon sits in the card's Ultimate slot, a Mega in tuipet)
-STAGE_SLOT_EXCEPTIONS = {("anx", 727), ("wfx", 798), ("blx", 774), ("lwx", 925), ("frx", 549), ("frx", 758), ("bfa", 696),   # Daipenmon: Mega in an Ultimate slot
+STAGE_SLOT_EXCEPTIONS = {("pwa", 529), ("pwa", 526), ("cex", 696), ("awa", 521), ("anx", 727), ("wfx", 798), ("blx", 774), ("lwx", 925), ("frx", 549), ("frx", 758), ("bfa", 696),   # Daipenmon: Mega in an Ultimate slot
                          ("tsh", 570)}   # Rhinomon: Champion in an Ultimate slot (Joel 2026-10-15)
 
 

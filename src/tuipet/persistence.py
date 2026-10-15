@@ -416,6 +416,13 @@ def map_cleared_add(map_index):
     _note_set("maps_cleared", int(map_index))
 
 
+def wild_beaten_add(map_index, num):
+    """One species beaten on one adventure map ("MAP:DEX", 0-based map index
+    + the foe's dex num) -- the card eggs' "beat the partner as a WILD on
+    that road" gate (Joel 2026-10-15).  Bosses land here too; harmless."""
+    _note_set("wilds_beaten", f"{int(map_index)}:{int(num)}")
+
+
 def zone_best_set(zone_index, score):
     """Record an adventure run's SCORE against the zone's standing best
     (arcade arc, 2026-07-21).  Returns True when it's a NEW best -- the
@@ -732,6 +739,7 @@ def get_progress():
         "xanti_ever": bool(prog.get("xanti_ever", False)),
         "maps": set(prog.get("maps", [])),
         "maps_cleared": set(prog.get("maps_cleared", [])),
+        "wilds_beaten": set(prog.get("wilds_beaten", [])),
         "raids": int(prog.get("raids", 0)),
         "tourneys": set(prog.get("tourneys", [])),
         "last_field": last.get("field", "None"),
@@ -761,7 +769,7 @@ def get_progress():
 # deliberately NOT here: they are current state, not earned history, and no
 # merge of them is lose-nothing.  Deciding those is a design call, not this fix.
 _PROG_SETS = ("album", "eggs_owned", "titles_owned", "connections", "maps", "maps_cleared",
-              "raids_paid",
+              "wilds_beaten", "raids_paid",
               "tourneys", "festivals", "eggs_announced", "ladder_claimed",
               "shop_unlocks")
 _PROG_MAXES = ("wins", "mega_kills", "armor_evos", "raids",

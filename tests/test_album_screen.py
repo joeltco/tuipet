@@ -109,7 +109,7 @@ def test_an_unseen_entry_names_its_route_home():
     answer.  Routes name eggs and doors, never masked forms."""
     from tuipet import albumscreen
     assert albumscreen.route_hint(29).startswith("raised on the ")   # a line member
-    assert albumscreen.route_hint(492) == "an armor jump reaches it"
+    assert albumscreen.route_hint(514) == "an armor jump reaches it"   # Depthmon (Shadramon #492 joined the pwa card line)
 
 
 def test_every_roster_form_gets_a_route_class():

@@ -18,8 +18,10 @@ HAPPY, ATTACK = 5, 6
 KNOWN_HAPPY_IS_ATTACK = {118, 168}        # Nanimon, BomberNanimon (DVPet data)
 KNOWN_SOLID_SHOT = set()
 # legacy DVPet sprites whose attack frame repeats another slot (untouched art)
-KNOWN_ATTACK_REPEATS = {12, 16, 31, 33, 34, 36, 45, 56, 78, 79, 82, 88, 90, 91, 94, 97, 103, 104, 108, 109, 111, 112, 114, 115, 117, 118, 168, 179, 180, 186, 187, 197, 213, 262, 269, 295, 338, 358, 360, 430, 583, 689, 812, 1455, 1459, 1624}
+KNOWN_ATTACK_REPEATS = {12, 16, 31, 33, 34, 36, 45, 56, 78, 79, 82, 88, 90, 91, 94, 97, 103, 104, 108, 109, 111, 112, 114, 115, 117, 118, 168, 179, 180, 186, 187, 197, 213, 262, 269, 295, 338, 358, 360, 430, 583, 689, 812, 1455, 1459, 1624,
+                        1656}   # Panjyamon X keeps its base #269's own repeat
 FIRST_OWN_SHOT_NUM = 1623                 # the Godzilla line on: every new species fires its own shot
+KITBASH_FORMS = range(1651, 1659)         # VB card forms built from a base sprite: fire the base's special shot
 
 
 def test_every_monster_has_eleven_real_frames():
@@ -46,7 +48,10 @@ def test_new_species_fire_their_own_shot():
     """0.6.0 shipped 28 kaiju on the generic orb: no deviceAttacks row."""
     own = data.load_device_attacks()
     for e in SPRITES:
-        if e["num"] >= FIRST_OWN_SHOT_NUM:
+        if e["num"] in KITBASH_FORMS:
+            idx = data.load_requirements()[e["num"]]["attack_index"][e["attribute"]]
+            assert idx >= 0 and data.load_orbs()["special"].get(str(idx)), e["name"]
+        elif e["num"] >= FIRST_OWN_SHOT_NUM:
             nm = "".join(c for c in e["name"].lower() if c.isalnum())
             assert nm in own, e["name"]
 

@@ -1554,3 +1554,124 @@ trx,Mega,573,249;641;640,"TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",23:00,Rapi
 trx,Mega,305,642;243;244,"TR 20+, LV 7+, BTL 20+, WIN 14/20",23:00,Cherubimon (Virtue)
 trx,Mega,306,642;243;244,"TR 15+, LV 6+, BTL 15+, WIN 11/15",23:00,Cherubimon (Vice)
 trx,Mega,309,249;641;640,"TR 10+, LV 6+, BTL 15+, WIN 8/15",23:00,Saint Galgomon
+rgp,Fresh,966,egg,TIME,20:00,"Relemon (official Renamon GP DIM card, humulos vbdm)"
+rgp,InTraining,967,966,TIME,21:00,Pokomon
+rgp,Rookie,64,967,TIME,21:00,Renamon
+rgp,Champion,155,64,TIME,22:00,Kyubimon
+rgp,Ultimate,247,155,"TR 12+, LV 6+, BTL 15+, WIN 11/15",23:00,Taomon
+rgp,Mega,1651,247,"TR 20+, LV 8+, BTL 25+, WIN 18/25",23:00,Sakuyamon: Miko Mode
+rgp,Mega,307,247,"TR 20+, LV 7+, BTL 20+, WIN 14/20",23:00,Sakuyamon
+rgp,Mega,351,247,"TR 10+, LV 6+, BTL 15+, WIN 8/15",23:00,Kuzuhamon
+rex,Fresh,966,egg,TIME,20:00,"Relemon (official Renamon EX DIM card, humulos vbdm)"
+rex,InTraining,967,966,TIME,21:00,Pokomon
+rex,Rookie,64,967,TIME,21:00,Renamon
+rex,Champion,155,64,"TR 10+, LV 4+, BTL 8+",22:00,Kyubimon
+rex,Champion,189,64,"TR 8+, LV 3+, BTL 5+",22:00,Youkomon
+rex,Champion,185,64,"TR 5+, LV 2+, BTL 3+",22:00,Ice Devimon
+rex,Champion,536,64,TIME,22:00,Lynxmon
+rex,Ultimate,648,155;536,"TR 12+, LV 6+, BTL 15+, WIN 11/15",23:00,Kumbhiramon
+rex,Ultimate,639,189;185,"TR 12+, LV 6+, BTL 15+, WIN 11/15",23:00,Vikaralamon
+rex,Ultimate,247,155;536,"TR 10+, LV 5+, BTL 10+, WIN 5/10",23:00,Taomon
+rex,Ultimate,273,189;185,"TR 10+, LV 5+, BTL 10+, WIN 5/10",23:00,Doumon
+rex,Ultimate,645,155;536,"TR 8+, LV 4+, BTL 10+, WIN 5/10",23:00,Caturamon
+rex,Ultimate,647,189;185,"TR 8+, LV 4+, BTL 10+, WIN 5/10",23:00,Indaramon
+rex,Mega,857,648;247;645,"TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",23:00,Sakuyamon X
+rex,Mega,1652,639;273;647,"TR 20+, LV 7+, BTL 20+, WIN 14/20",23:00,Kuzuhamon: Miko Mode
+rex,Mega,580,639;645;647,"TR 15+, LV 6+, BTL 15+, WIN 11/15",23:00,Parasimon
+rex,Mega,307,648;247;273,"TR 10+, LV 6+, BTL 15+, WIN 8/15",23:00,Sakuyamon
+mgp,Fresh,1433,egg,TIME,20:00,"Ketomon (official Monodramon GP DIM card, humulos vbdm)"
+mgp,InTraining,947,1433,TIME,21:00,Hopmon
+mgp,Rookie,405,947,TIME,21:00,Monodramon
+mgp,Champion,412,405,TIME,22:00,Strikedramon
+mgp,Ultimate,219,412,"TR 12+, LV 6+, BTL 15+, WIN 11/15",23:00,Cyberdramon
+mgp,Mega,1654,219,"TR 10+, LV 8+, BTL 10+, WIN 7/10",23:00,Justimon: Critical Arm
+mgp,Mega,308,219,"TR 10+, LV 6+, BTL 25+, WIN 18/25",23:00,Justimon: Blitz Arm
+mgp,Mega,1653,219,"TR 30+, LV 6+, BTL 10+, WIN 5/10",23:00,Justimon: Accel Arm
+awa,Fresh,1430,egg,TIME,20:00,"Chicomon (official Ancient Warriors DIM card, humulos vbdm)"
+awa,InTraining,939,1430,TIME,21:00,Chibimon
+awa,Rookie,62,939,TIME,21:00,V-mon
+awa,Champion,144,62,"TR 8+, LV 4+, BTL 8+",22:00,V-dramon
+awa,Champion,153,62,"TR 5+, LV 3+, BTL 3+",22:00,XV-mon
+awa,Champion,515,62,"TR 3+, LV 2+",22:00,Fladramon
+awa,Champion,520,62,TIME,22:00,Lighdramon
+awa,Ultimate,233,144;515,"TR 12+, LV 6+, BTL 15+, WIN 11/15",23:00,Aero V-dramon
+awa,Ultimate,248,153;520,"TR 12+, LV 6+, BTL 15+, WIN 11/15",23:00,Paildramon
+awa,Ultimate,521,144;515,"TR 10+, LV 5+, BTL 10+, WIN 5/10",23:00,Sagittarimon
+awa,Ultimate,422,153;520,"TR 10+, LV 5+, BTL 10+, WIN 5/10",23:00,Dinobeemon
+awa,Ultimate,1657,144;153,"TR 6+, LV 4+, BTL 10+, WIN 5/10",23:00,Gold V-dramon
+awa,Ultimate,198,515;520,"TR 6+, LV 4+, BTL 10+, WIN 5/10",23:00,Digitamamon
+awa,Mega,313,248;422;1657,"TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",23:00,Imperialdramon: Fighter Mode
+awa,Mega,311,233;198,"TR 20+, LV 7+, BTL 20+, WIN 14/20",23:00,Ulforce V-dramon
+awa,Mega,311,521,"TR 20+, LV 6+, BTL 20+, WIN 14/20",23:00,Ulforce V-dramon
+awa,Mega,304,233;248;422,"TR 15+, LV 6+, BTL 15+, WIN 11/15",23:00,Imperialdramon: Dragon Mode
+awa,Mega,519,521;1657;198,"TR 10+, LV 6+, BTL 15+, WIN 8/15",23:00,Magnamon
+cex,Fresh,1410,egg,TIME,20:00,"(official Chackmon EX DIM card, humulos vbdm)"
+cex,InTraining,1516,1410,TIME,21:00,Hiyarimon
+cex,Rookie,450,1516,LV 2+,21:00,Bearmon
+cex,Rookie,79,1516,TIME,21:00,Snow Goblimon
+cex,Champion,593,450,"TR 10+, LV 4+, BTL 8+",22:00,Chackmon
+cex,Champion,135,79,"TR 10+, LV 4+, BTL 8+",22:00,Mojyamon
+cex,Champion,672,450,TIME,22:00,Gryzmon
+cex,Champion,175,79,TIME,22:00,Icemon
+cex,Ultimate,696,593,"TR 12+, LV 6+, BTL 15+, WIN 11/15",23:00,Daipenmon
+cex,Ultimate,499,672,"TR 12+, LV 6+, BTL 15+, WIN 11/15",23:00,Astamon
+cex,Ultimate,739,593;135,"TR 10+, LV 5+, BTL 10+, WIN 5/10",23:00,Blizzarmon
+cex,Ultimate,1656,672;175,"TR 10+, LV 5+, BTL 10+, WIN 5/10",23:00,Panjyamon X
+cex,Ultimate,197,175;135,"TR 8+, LV 4+, BTL 10+, WIN 5/10",23:00,Nanomon
+cex,Mega,333,197;499,"TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",23:00,Dynasmon
+cex,Mega,1047,739;197,"TR 20+, LV 7+, BTL 20+, WIN 14/20",23:00,Fros Velgrmon
+cex,Mega,649,696;1656,"TR 20+, LV 7+, BTL 20+, WIN 14/20",23:00,Ancient Megatheriumon
+cex,Mega,659,696;739;1656;499,"TR 10+, LV 6+, BTL 15+, WIN 8/15",23:00,Olegmon
+tdu,Fresh,1136,egg,TIME,20:00,"Sunamon (official Titan of Dust DIM card, humulos vbdm)"
+tdu,InTraining,1142,1136,TIME,21:00,Goromon
+tdu,Rookie,887,1142,TIME,21:00,Sunarizamon
+tdu,Champion,113,887,"TR 10+, LV 4+, BTL 8+",22:00,Tortamon
+tdu,Champion,145,887,"TR 8+, LV 3+, BTL 5+",22:00,Togemon
+tdu,Champion,555,887,"TR 5+, LV 2+, BTL 3+",22:00,Digmon
+tdu,Champion,410,887,TIME,22:00,Golemon
+tdu,Ultimate,889,113;410,"TR 12+, LV 6+, BTL 15+, WIN 11/15",23:00,Gogmamon
+tdu,Ultimate,226,145;555,"TR 12+, LV 6+, BTL 15+, WIN 11/15",23:00,Jyagamon
+tdu,Ultimate,227,145;410,"TR 10+, LV 5+, BTL 10+, WIN 5/10",23:00,Triceramon
+tdu,Ultimate,1658,113;555,"TR 10+, LV 5+, BTL 10+, WIN 5/10",23:00,Scorpiomon
+tdu,Ultimate,1044,145;410,"TR 8+, LV 4+, BTL 10+, WIN 5/10",23:00,Vulturemon
+tdu,Ultimate,604,113;555,"TR 8+, LV 4+, BTL 10+, WIN 5/10",23:00,Mummymon
+tdu,Mega,926,226;1658;604,"TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",23:00,Ancient Sphinxmon
+tdu,Mega,913,889;227;1044,"TR 20+, LV 7+, BTL 20+, WIN 14/20",23:00,Dinorexmon
+tdu,Mega,825,227;1044;604,"TR 15+, LV 6+, BTL 15+, WIN 11/15",23:00,Pharaohmon
+tdu,Mega,579,889;226;1658,"TR 10+, LV 6+, BTL 15+, WIN 8/15",23:00,Blastmon
+pwa,Fresh,1434,egg,TIME,20:00,"Leafmon (official Primeval Warriors DIM card, humulos vbdm)"
+pwa,InTraining,949,1434,TIME,21:00,Minomon
+pwa,Rookie,65,949,TIME,21:00,Wormmon
+pwa,Champion,156,65,"TR 10+, LV 4+, BTL 8+",22:00,Stingmon
+pwa,Champion,492,65,"TR 8+, LV 3+, BTL 5+",22:00,Shadramon
+pwa,Champion,413,65,"TR 5+, LV 2+, BTL 3+",22:00,Hudiemon
+pwa,Champion,178,65,TIME,22:00,Gokimon
+pwa,Ultimate,248,156;413,"TR 12+, LV 6+, BTL 15+, WIN 11/15",23:00,Paildramon
+pwa,Ultimate,526,492;178,"TR 12+, LV 6+, BTL 15+, WIN 11/15",23:00,Kongoumon
+pwa,Ultimate,613,156;413,"TR 10+, LV 5+, BTL 10+, WIN 5/10",23:00,Jewelbeemon
+pwa,Ultimate,422,492;178,"TR 10+, LV 5+, BTL 10+, WIN 5/10",23:00,Dinobeemon
+pwa,Ultimate,529,492;178,"TR 8+, LV 4+, BTL 10+, WIN 5/10",23:00,Pucchiemon
+pwa,Ultimate,529,156;413,"TR 8+, LV 4+, BTL 10+, WIN 5/10",23:00,Pucchiemon (Green)
+pwa,Mega,314,422;248,"TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",23:00,Imperialdramon: Paladin Mode
+pwa,Mega,314,529,"TR 20+, LV 6+, BTL 25+, WIN 18/25, AREA 14",23:00,Imperialdramon: Paladin Mode
+pwa,Mega,304,422;248,"TR 20+, LV 7+, BTL 20+, WIN 14/20",23:00,Imperialdramon: Dragon Mode
+pwa,Mega,304,529,"TR 20+, LV 6+, BTL 20+, WIN 14/20",23:00,Imperialdramon: Dragon Mode
+pwa,Mega,343,613;526;529,"TR 15+, LV 6+, BTL 15+, WIN 11/15",23:00,Gran Kuwagamon
+pwa,Mega,734,613;526;529,"TR 10+, LV 6+, BTL 15+, WIN 8/15",23:00,Bancho Stingmon
+dev,Fresh,1415,egg,TIME,20:00,"Zurumon (official Dynasty of the Evil DIM card, humulos vbdm)"
+dev,InTraining,14,1415,TIME,21:00,Pagumon
+dev,Rookie,886,14,TIME,21:00,Ghostmon
+dev,Champion,103,886,"TR 10+, LV 4+, BTL 8+",22:00,Saberdramon
+dev,Champion,99,886,"TR 8+, LV 3+, BTL 5+",22:00,Wizarmon
+dev,Champion,102,886,"TR 5+, LV 2+, BTL 3+",22:00,Devimon
+dev,Champion,121,886,TIME,22:00,Bakemon
+dev,Ultimate,500,99;102,"TR 12+, LV 6+, BTL 15+, WIN 11/15",23:00,Baalmon
+dev,Ultimate,1655,103;121,"TR 12+, LV 6+, BTL 15+, WIN 11/15",23:00,Cyberdramon (2010)
+dev,Ultimate,230,99;121,"TR 10+, LV 5+, BTL 10+, WIN 5/10",23:00,Pumpmon
+dev,Ultimate,203,103;102,"TR 10+, LV 5+, BTL 10+, WIN 5/10",23:00,Vamdemon
+dev,Ultimate,759,99;102,"TR 8+, LV 4+, BTL 10+, WIN 5/10",23:00,Jokermon
+dev,Ultimate,216,103;121,"TR 8+, LV 4+, BTL 10+, WIN 5/10",23:00,Fantomon
+dev,Mega,799,1655;203;216,"TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",23:00,Neo Vamdemon
+dev,Mega,278,230;203;759,"TR 20+, LV 7+, BTL 20+, WIN 14/20",23:00,Piemon
+dev,Mega,703,500;1655;759,"TR 15+, LV 6+, BTL 15+, WIN 11/15",23:00,Beelzebumon (2010)
+dev,Mega,1031,500;230;216,"TR 10+, LV 6+, BTL 15+, WIN 8/15",23:00,Noble Pumpmon
