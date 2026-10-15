@@ -333,3 +333,13 @@ def test_call_8_readout_labels():
     assert "Fullness" in cond and cond["Disturb"].endswith("this stage")
     p.line_id, p.gcell = "godzilla", 351
     assert dict(dict(digicore.build_pages(p))["STATUS"])["G-Cell"].split()[3] == "351pt"
+
+
+def test_call_9_the_person_core_flavor_reads_as_a_badge():
+    """Joel 2026-10-15 (DigiCore call #9 = A): Dark/Burst/Twelve/Two is the
+    art catalog's badge name, not a stat -- labelled Badge, not Core."""
+    from tuipet import data, digicore
+    from tuipet.pet import Pet
+    num, name = next(iter(data.load_digicore_icons().items()))
+    person = dict(dict(digicore.build_pages(Pet(num=num, stage="Mega")))["PERSON"])
+    assert "Core" not in person and person["Badge"].endswith(name)

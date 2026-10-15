@@ -473,7 +473,7 @@ def build_pages(pet):
                        f"{pet.rival_name} · {pet.rival_wins}W-{pet.rival_losses}L"))
     core = data.load_digicore_icons().get(pet.num)
     if core:
-        person.append(("Core", f"{chr(0x25C6)} {core}"))   # DVPet digicore badge
+        person.append(("Badge", f"{chr(0x25C6)} {core}"))   # art-catalog badge name: flavor, no mechanic (call #9 = A)
     return [
         ("STATUS", status),
         ("POWER", power),
