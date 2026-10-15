@@ -162,7 +162,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("THREE MORE VB EGGS. Hermit in the Jungle (Jungle road), Mad Black Roar (Teal Hollow) and True Shadow Howl (Moonlit Meadow) join the Vital Bracelet lines -- seven official cards to earn.")
+    WHATS_NEW = ("IMPULSE CITY. A new Vital Bracelet egg line (Dokimon to Shroudmon), earned on the City Sunset road -- and every VB egg now bounces with the same shape as the classic eggs.")
 
 
     BINDINGS = [
