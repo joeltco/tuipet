@@ -1,0 +1,1447 @@
+{
+  "card": "NU METAL EMPIRE",
+  "line_id": "nme",
+  "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+  "source_kind": "Saved Humulos HTML is authoritative for this proposal; live page opened 2026-10-15",
+  "digitama": {
+    "image_name": "digitama_bom.gif",
+    "title_quote": "Bommon Digitama",
+    "source_image": "//humulos.com/digimon/images/dot/vbdm/digitama_bom.gif",
+    "status": "Colour source only; no art conversion authorized"
+  },
+  "requirements_scope": "Each listed icon is AND; N/A means no constraint. No icons on I-II-III. No attribute Jogress inferred as connector edges.",
+  "source_hashes": {
+    "_astra/vbdm_vol.html": "281985d9690c848254c015a041f6422dabe5aedec78181b7a0fbdb3ff6394eb1",
+    "_astra/list_vbdm.html": "43acd3463364054c1396811a24f2eb61ccace9bbbceca5532caee2adb9692b95",
+    "src/tuipet/data/digimon.csv": "445e7c04bcb13e3fe3106ca8d75591aac6484c244a819d64f6929ed1de0e9f25",
+    "src/tuipet/data/sprites.json.gz": "e275515239cd5a278dadf9deef5cf7a50d0e6fab3c7c3eee5724ffed3d6b354d",
+    "src/tuipet/data/lines.csv": "5894620ce2e17c5d0b33cb4f02671a29a47dd0ce3f0a344231b388350d771388",
+    "LINES_SPEC.md": "9572cc53d0e665cb56965ae466021d261eeda20ce6569195702807f6d041c3a6",
+    "src/tuipet/data/eggs.json.gz": "91806c66d3d60afcdbd597aa9e5d8c25a559d236713206a3282df155beba7259",
+    "src/tuipet/egg.py": "65f2d5580f92259bd3325827c49c3018d1555bd791881eeff437f12727b15b46",
+    "src/tuipet/pet.py": "50d7f3fb8344cda89495faaf12098bfd12099a8e4945525f624af561aaa62833"
+  },
+  "node_count": 17,
+  "edge_count": 30,
+  "nodes": [
+    {
+      "slug": "bom",
+      "name": "Bommon",
+      "stage": "I",
+      "tuipet_stage": "Fresh",
+      "attribute": "None",
+      "parents": [],
+      "connector_classes": [],
+      "requirements": [],
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "source_locator": "#nme baby column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "I",
+      "list_attribute_quote": "Free",
+      "requirements_note": "No requirement icons/text on this node in the saved card.",
+      "dex_num": 960,
+      "mapping_status": "OK",
+      "proposed_rule": "TIME"
+    },
+    {
+      "slug": "missi",
+      "name": "Missimon",
+      "stage": "II",
+      "tuipet_stage": "InTraining",
+      "attribute": "None",
+      "parents": [
+        "bom"
+      ],
+      "connector_classes": [
+        "nme_bom_lineOut"
+      ],
+      "requirements": [],
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "source_locator": "#nme_missi_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "II",
+      "list_attribute_quote": "Free",
+      "requirements_note": "No requirement icons/text on this node in the saved card.",
+      "connector_note": "Unbranched adjacent stage columns; preceding horizontal lineOut, no requirement text.",
+      "dex_num": 961,
+      "mapping_status": "OK",
+      "proposed_rule": "TIME"
+    },
+    {
+      "slug": "haguru",
+      "name": "Hagurumon",
+      "stage": "III",
+      "tuipet_stage": "Rookie",
+      "attribute": "Virus",
+      "parents": [
+        "missi"
+      ],
+      "connector_classes": [
+        "nme_missi_lineOut"
+      ],
+      "requirements": [],
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "source_locator": "#nme child column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "III",
+      "list_attribute_quote": "Virus",
+      "requirements_note": "No requirement icons/text on this node in the saved card.",
+      "connector_note": "Unbranched adjacent stage columns; preceding horizontal lineOut, no requirement text.",
+      "dex_num": 42,
+      "mapping_status": "OK",
+      "proposed_rule": "TIME"
+    },
+    {
+      "slug": "mach",
+      "name": "Machmon",
+      "stage": "IV",
+      "tuipet_stage": "Champion",
+      "attribute": "Vaccine",
+      "parents": [
+        "haguru"
+      ],
+      "connector_classes": [
+        "nme_haguru_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "1,300+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "source_locator": "#nme_mach_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "IV",
+      "list_attribute_quote": "Vaccine",
+      "requirements_note": "All listed icons are AND; N/A is no gate.",
+      "dex_num": 1512,
+      "mapping_status": "OK",
+      "proposed_rule": "TR 10+, LV 4+, BTL 8+"
+    },
+    {
+      "slug": "ballista",
+      "name": "Ballistamon",
+      "stage": "IV",
+      "tuipet_stage": "Champion",
+      "attribute": "Vaccine",
+      "parents": [
+        "haguru"
+      ],
+      "connector_classes": [
+        "nme_haguru_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "900+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "5+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "source_locator": "#nme_ballista_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "IV",
+      "list_attribute_quote": "Vaccine",
+      "requirements_note": "All listed icons are AND; N/A is no gate.",
+      "dex_num": 681,
+      "mapping_status": "OK",
+      "proposed_rule": "TR 8+, LV 3+, BTL 5+"
+    },
+    {
+      "slug": "mailbirdra",
+      "name": "Mail Birdramon",
+      "stage": "IV",
+      "tuipet_stage": "Champion",
+      "attribute": "Data",
+      "parents": [
+        "haguru"
+      ],
+      "connector_classes": [
+        "nme_haguru_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "5+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "600+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "3+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "source_locator": "#nme_mailbirdra_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "IV",
+      "list_attribute_quote": "Data",
+      "requirements_note": "All listed icons are AND; N/A is no gate.",
+      "dex_num": 690,
+      "mapping_status": "OK",
+      "proposed_rule": "TR 5+, LV 2+, BTL 3+"
+    },
+    {
+      "slug": "rare",
+      "name": "Raremon",
+      "stage": "IV",
+      "tuipet_stage": "Champion",
+      "attribute": "Virus",
+      "parents": [
+        "haguru"
+      ],
+      "connector_classes": [
+        "nme_haguru_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "source_locator": "#nme_rare_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "IV",
+      "list_attribute_quote": "Virus",
+      "requirements_note": "All listed icons are AND; N/A is no gate.",
+      "dex_num": 112,
+      "mapping_status": "OK",
+      "proposed_rule": "TIME"
+    },
+    {
+      "slug": "loaderlio",
+      "name": "Loader Leomon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Vaccine",
+      "parents": [
+        "mach",
+        "rare"
+      ],
+      "connector_classes": [
+        "nme_mach_line",
+        "nme_rare_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "source_locator": "#nme_loaderlio_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "V",
+      "list_attribute_quote": "Vaccine",
+      "requirements_note": "All listed icons are AND; N/A is no gate.",
+      "dex_num": 478,
+      "mapping_status": "OK",
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15"
+    },
+    {
+      "slug": "atlurballista",
+      "name": "Atlur Ballistamon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Vaccine",
+      "parents": [
+        "ballista",
+        "mailbirdra"
+      ],
+      "connector_classes": [
+        "nme_ballista_line",
+        "nme_mailbirdra_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "source_locator": "#nme_atlurballista_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "V",
+      "list_attribute_quote": "Vaccine",
+      "requirements_note": "All listed icons are AND; N/A is no gate.",
+      "dex_num": 699,
+      "mapping_status": "OK",
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15"
+    },
+    {
+      "slug": "metalmame",
+      "name": "Metal Mamemon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Data",
+      "parents": [
+        "mach",
+        "rare"
+      ],
+      "connector_classes": [
+        "nme_mach_line",
+        "nme_rare_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "source_locator": "#nme_metalmame_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "V",
+      "list_attribute_quote": "Data",
+      "requirements_note": "All listed icons are AND; N/A is no gate.",
+      "dex_num": 213,
+      "mapping_status": "OK",
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10"
+    },
+    {
+      "slug": "loco",
+      "name": "Locomon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Data",
+      "parents": [
+        "ballista",
+        "mailbirdra"
+      ],
+      "connector_classes": [
+        "nme_ballista_line",
+        "nme_mailbirdra_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "source_locator": "#nme_loco_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "V",
+      "list_attribute_quote": "Data",
+      "requirements_note": "All listed icons are AND; N/A is no gate.",
+      "dex_num": 589,
+      "mapping_status": "OK",
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10"
+    },
+    {
+      "slug": "rebelli",
+      "name": "Rebellimon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Virus",
+      "parents": [
+        "mach",
+        "rare"
+      ],
+      "connector_classes": [
+        "nme_mach_line",
+        "nme_rare_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "source_locator": "#nme_rebelli_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "V",
+      "list_attribute_quote": "Virus",
+      "requirements_note": "All listed icons are AND; N/A is no gate.",
+      "dex_num": 1517,
+      "mapping_status": "OK",
+      "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10"
+    },
+    {
+      "slug": "metalgrey_2010",
+      "name": "Metal Greymon (2010)",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Virus",
+      "parents": [
+        "ballista",
+        "mailbirdra"
+      ],
+      "connector_classes": [
+        "nme_ballista_line",
+        "nme_mailbirdra_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "source_locator": "#nme_metalgrey_2010_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "V",
+      "list_attribute_quote": "Virus",
+      "requirements_note": "All listed icons are AND; N/A is no gate.",
+      "dex_num": 687,
+      "mapping_status": "PROVISIONAL_IDENTITY_ATTRIBUTE_CONFLICT",
+      "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10"
+    },
+    {
+      "slug": "heavyleo",
+      "name": "Heavy Leomon",
+      "stage": "VI",
+      "tuipet_stage": "Mega",
+      "attribute": "Vaccine",
+      "parents": [
+        "loaderlio",
+        "metalmame",
+        "rebelli"
+      ],
+      "connector_classes": [
+        "nme_loaderlio_line",
+        "nme_metalmame_line",
+        "nme_rebelli_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "source_locator": "#nme_heavyleo_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "VI",
+      "list_attribute_quote": "Vaccine",
+      "requirements_note": "All listed icons are AND; N/A is no gate.",
+      "dex_num": 1360,
+      "mapping_status": "OK",
+      "proposed_rule": "TR 10+, LV 6+, BTL 15+, WIN 8/15"
+    },
+    {
+      "slug": "grandloco",
+      "name": "Grand Locomon",
+      "stage": "VI",
+      "tuipet_stage": "Mega",
+      "attribute": "Data",
+      "parents": [
+        "loaderlio",
+        "atlurballista",
+        "loco"
+      ],
+      "connector_classes": [
+        "nme_loaderlio_line",
+        "nme_atlurballista_line",
+        "nme_loco_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "source_locator": "#nme_grandloco_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "VI",
+      "list_attribute_quote": "Data",
+      "requirements_note": "All listed icons are AND; N/A is no gate.",
+      "dex_num": 375,
+      "mapping_status": "OK",
+      "proposed_rule": "TR 15+, LV 6+, BTL 15+, WIN 11/15"
+    },
+    {
+      "slug": "zekegrey",
+      "name": "Zeke Greymon",
+      "stage": "VI",
+      "tuipet_stage": "Mega",
+      "attribute": "Virus",
+      "parents": [
+        "loco",
+        "rebelli",
+        "metalgrey_2010"
+      ],
+      "connector_classes": [
+        "nme_loco_line",
+        "nme_rebelli_line",
+        "nme_metalgrey_2010_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "5,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "source_locator": "#nme_zekegrey_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "VI",
+      "list_attribute_quote": "Virus",
+      "requirements_note": "All listed icons are AND; N/A is no gate.",
+      "dex_num": 689,
+      "mapping_status": "OK",
+      "proposed_rule": "TR 20+, LV 7+, BTL 20+, WIN 14/20"
+    },
+    {
+      "slug": "mugendra",
+      "name": "Mugendramon",
+      "stage": "VI",
+      "tuipet_stage": "Mega",
+      "attribute": "Virus",
+      "parents": [
+        "atlurballista",
+        "metalmame",
+        "metalgrey_2010"
+      ],
+      "connector_classes": [
+        "nme_atlurballista_line",
+        "nme_metalmame_line",
+        "nme_metalgrey_2010_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "7,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "25+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        },
+        {
+          "label_quote": "Special unlock",
+          "value_quote": "Stage 15 Cleared"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "source_locator": "#nme_mugendra_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "VI",
+      "list_attribute_quote": "Virus",
+      "requirements_note": "All listed icons are AND; N/A is no gate.",
+      "dex_num": 276,
+      "mapping_status": "OK",
+      "proposed_rule": "TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14"
+    }
+  ],
+  "edges": [
+    {
+      "parent": "bom",
+      "child": "missi",
+      "connector_class": "nme_bom_lineOut",
+      "requirements": [],
+      "proposed_rule": "TIME",
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 lineBlue nme_bom_lineOut reqToggle\"></div>"
+    },
+    {
+      "parent": "missi",
+      "child": "haguru",
+      "connector_class": "nme_missi_lineOut",
+      "requirements": [],
+      "proposed_rule": "TIME",
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 lineBlue nme_missi_lineOut reqToggle\"></div>"
+    },
+    {
+      "parent": "haguru",
+      "child": "mach",
+      "connector_class": "nme_haguru_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "1,300+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 4+, BTL 8+",
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 linePurple nme_haguru_line\"></div>"
+    },
+    {
+      "parent": "haguru",
+      "child": "ballista",
+      "connector_class": "nme_haguru_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "900+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "5+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 3+, BTL 5+",
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 linePurple nme_haguru_line\"></div>"
+    },
+    {
+      "parent": "haguru",
+      "child": "mailbirdra",
+      "connector_class": "nme_haguru_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "5+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "600+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "3+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "proposed_rule": "TR 5+, LV 2+, BTL 3+",
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 linePurple nme_haguru_line\"></div>"
+    },
+    {
+      "parent": "haguru",
+      "child": "rare",
+      "connector_class": "nme_haguru_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "proposed_rule": "TIME",
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 linePurple nme_haguru_line\"></div>"
+    },
+    {
+      "parent": "mach",
+      "child": "loaderlio",
+      "connector_class": "nme_mach_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "connector_element_quote": "<div class=\"line_hor60 lineRed nme_mach_line\"></div>"
+    },
+    {
+      "parent": "rare",
+      "child": "loaderlio",
+      "connector_class": "nme_rare_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 linePurple nme_rare_line\"></div>"
+    },
+    {
+      "parent": "ballista",
+      "child": "atlurballista",
+      "connector_class": "nme_ballista_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "connector_element_quote": "<div class=\"line_hor50 lineYellow nme_ballista_line\"></div>"
+    },
+    {
+      "parent": "mailbirdra",
+      "child": "atlurballista",
+      "connector_class": "nme_mailbirdra_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "connector_element_quote": "<div class=\"line_hor40 lineGreen nme_mailbirdra_line\"></div>"
+    },
+    {
+      "parent": "mach",
+      "child": "metalmame",
+      "connector_class": "nme_mach_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "connector_element_quote": "<div class=\"line_hor60 lineRed nme_mach_line\"></div>"
+    },
+    {
+      "parent": "rare",
+      "child": "metalmame",
+      "connector_class": "nme_rare_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 linePurple nme_rare_line\"></div>"
+    },
+    {
+      "parent": "ballista",
+      "child": "loco",
+      "connector_class": "nme_ballista_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "connector_element_quote": "<div class=\"line_hor50 lineYellow nme_ballista_line\"></div>"
+    },
+    {
+      "parent": "mailbirdra",
+      "child": "loco",
+      "connector_class": "nme_mailbirdra_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "connector_element_quote": "<div class=\"line_hor40 lineGreen nme_mailbirdra_line\"></div>"
+    },
+    {
+      "parent": "mach",
+      "child": "rebelli",
+      "connector_class": "nme_mach_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "connector_element_quote": "<div class=\"line_hor60 lineRed nme_mach_line\"></div>"
+    },
+    {
+      "parent": "rare",
+      "child": "rebelli",
+      "connector_class": "nme_rare_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 linePurple nme_rare_line\"></div>"
+    },
+    {
+      "parent": "ballista",
+      "child": "metalgrey_2010",
+      "connector_class": "nme_ballista_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "connector_element_quote": "<div class=\"line_hor50 lineYellow nme_ballista_line\"></div>"
+    },
+    {
+      "parent": "mailbirdra",
+      "child": "metalgrey_2010",
+      "connector_class": "nme_mailbirdra_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "connector_element_quote": "<div class=\"line_hor40 lineGreen nme_mailbirdra_line\"></div>"
+    },
+    {
+      "parent": "loaderlio",
+      "child": "heavyleo",
+      "connector_class": "nme_loaderlio_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 6+, BTL 15+, WIN 8/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "connector_element_quote": "<div class=\"line_hor70 lineRed nme_loaderlio_line\"></div>"
+    },
+    {
+      "parent": "metalmame",
+      "child": "heavyleo",
+      "connector_class": "nme_metalmame_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 6+, BTL 15+, WIN 8/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "connector_element_quote": "<div class=\"line_hor50 lineGreen nme_metalmame_line\"></div>"
+    },
+    {
+      "parent": "rebelli",
+      "child": "heavyleo",
+      "connector_class": "nme_rebelli_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 6+, BTL 15+, WIN 8/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "connector_element_quote": "<div class=\"line_hor40 linePurple nme_rebelli_line\"></div>"
+    },
+    {
+      "parent": "loaderlio",
+      "child": "grandloco",
+      "connector_class": "nme_loaderlio_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 15+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "connector_element_quote": "<div class=\"line_hor70 lineRed nme_loaderlio_line\"></div>"
+    },
+    {
+      "parent": "atlurballista",
+      "child": "grandloco",
+      "connector_class": "nme_atlurballista_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 15+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "connector_element_quote": "<div class=\"line_hor60 lineYellow nme_atlurballista_line\"></div>"
+    },
+    {
+      "parent": "loco",
+      "child": "grandloco",
+      "connector_class": "nme_loco_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 15+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "connector_element_quote": "<div class=\"line_hor70 lineTeal nme_loco_line\"></div>"
+    },
+    {
+      "parent": "loco",
+      "child": "zekegrey",
+      "connector_class": "nme_loco_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "5,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 7+, BTL 20+, WIN 14/20",
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "connector_element_quote": "<div class=\"line_hor70 lineTeal nme_loco_line\"></div>"
+    },
+    {
+      "parent": "rebelli",
+      "child": "zekegrey",
+      "connector_class": "nme_rebelli_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "5,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 7+, BTL 20+, WIN 14/20",
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "connector_element_quote": "<div class=\"line_hor40 linePurple nme_rebelli_line\"></div>"
+    },
+    {
+      "parent": "metalgrey_2010",
+      "child": "zekegrey",
+      "connector_class": "nme_metalgrey_2010_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "5,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 7+, BTL 20+, WIN 14/20",
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 lineIndigo nme_metalgrey_2010_line\"></div>"
+    },
+    {
+      "parent": "atlurballista",
+      "child": "mugendra",
+      "connector_class": "nme_atlurballista_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "7,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "25+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        },
+        {
+          "label_quote": "Special unlock",
+          "value_quote": "Stage 15 Cleared"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "connector_element_quote": "<div class=\"line_hor60 lineYellow nme_atlurballista_line area1\" area=\"1\"></div>"
+    },
+    {
+      "parent": "metalmame",
+      "child": "mugendra",
+      "connector_class": "nme_metalmame_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "7,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "25+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        },
+        {
+          "label_quote": "Special unlock",
+          "value_quote": "Stage 15 Cleared"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "connector_element_quote": "<div class=\"line_hor50 lineGreen nme_metalmame_line area1\" area=\"1\"></div>"
+    },
+    {
+      "parent": "metalgrey_2010",
+      "child": "mugendra",
+      "connector_class": "nme_metalgrey_2010_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "7,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "25+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        },
+        {
+          "label_quote": "Special unlock",
+          "value_quote": "Stage 15 Cleared"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",
+      "source": "https://humulos.com/digimon/vbdm/vol/#nme_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 lineIndigo nme_metalgrey_2010_line area1\" area=\"1\"></div>"
+    }
+  ]
+}

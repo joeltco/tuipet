@@ -153,6 +153,7 @@ EGG_BG = {
                          #   the device's G-Cell scenes end "Inside City")
     47: "volcano",       # Volcanic Beat Egg (VB DIM card; its egg unlocks on the Volcano road)
     48: "seafloor",      # Infinite Tide Egg (VB DIM card; unlocks on the Seafloor Deep road)
+    49: "factory",       # Nu Metal Empire Egg (VB DIM card; unlocks on the Factory road)
 }
 
 

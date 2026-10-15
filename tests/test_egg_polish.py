@@ -143,3 +143,22 @@ def test_infinite_tide_egg_hatches_its_own_line_and_opens_on_seafloor_deep():
     assert q.num == 1602 and q.line_id == "dsv"          # the shared baby keeps its own line
     assert len(lines.load_lines()["iti"]["members"]) == 17
     assert shop.town_egg_buy(Pet(num=29), idx)[1] == "error"   # earned, never sold
+
+
+def test_nu_metal_empire_egg_hatches_bommon_into_its_line_on_the_factory_road():
+    """Joel 2026-10-15: the official Nu Metal Empire DIM card as an egg line,
+    earned on the Factory road (map 28, index 27) -- Machinedramon's road,
+    the line's own Mugendramon."""
+    from tuipet import adventure, data, egg, lines, shop
+    idx = next(i for i in range(egg.count()) if egg.hatch_name(i) == "Nu Metal Empire Egg")
+    rule = data.load_egg_unlock()[idx]
+    prog = dict(persistence.get_progress(), maps=set(), maps_cleared=set(), raids=0)
+    assert not egg._conditions_met(rule, prog)
+    prog["maps_cleared"] = {27}
+    assert egg._conditions_met(rule, prog)
+    assert adventure.ZONES[27]["bosses"][0]["num"] == 276      # Mugendramon/Machinedramon
+    p = Pet.new_egg(egg_type=idx)
+    p._hatch_into_fresh()
+    assert p.num == 960 and p.line_id == "nme"
+    assert len(lines.load_lines()["nme"]["members"]) == 17
+    assert shop.town_egg_buy(Pet(num=29), idx)[1] == "error"

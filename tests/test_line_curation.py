@@ -13,6 +13,9 @@ STAGES = ["Fresh", "InTraining", "Rookie", "Champion", "Ultimate", "Mega"]
 # design; ver1's Betamon road + the ver2-verE canon rewrite, 2026-07-07 --
 # every device line now matches its humulos DM20 chart)
 DECLARED_EDGES = {
+    # nme -- the official Nu Metal Empire DIM card's connectors the corpus
+    # graph never carried (humulos vbdm/vol; Joel approved the line 2026-10-15)
+    (960, 961), (42, 681), (42, 690), (112, 478), (690, 699), (112, 213), (681, 589), (681, 687), (213, 1360), (478, 375), (589, 689), (687, 276),
     # iti -- the official Infinite Tide DIM card's connectors the corpus graph
     # never carried (humulos vbdm/vol; Joel approved the line 2026-10-15)
     (878, 110), (878, 105), (105, 202), (879, 881), (110, 881), (106, 206), (603, 275), (880, 283), (206, 283),

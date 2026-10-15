@@ -1147,3 +1147,20 @@ iti,Mega,283,880;202;206,"TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",23:00,Ples
 iti,Mega,275,603;202;206,"TR 20+, LV 7+, BTL 20+, WIN 14/20",23:00,Metal Seadramon
 iti,Mega,883,882;880;881,"TR 15+, LV 6+, BTL 15+, WIN 11/15",23:00,Regalecusmon
 iti,Mega,432,882;603;881,"TR 10+, LV 6+, BTL 15+, WIN 8/15",23:00,Neptunemon
+nme,Fresh,960,egg,TIME,20:00,"Bommon (official Nu Metal Empire DIM card, humulos vbdm/vol)"
+nme,InTraining,961,960,TIME,21:00,Missimon
+nme,Rookie,42,961,TIME,21:00,Hagurumon
+nme,Champion,1512,42,"TR 10+, LV 4+, BTL 8+",22:00,Machmon
+nme,Champion,681,42,"TR 8+, LV 3+, BTL 5+",22:00,Ballistamon
+nme,Champion,690,42,"TR 5+, LV 2+, BTL 3+",22:00,Mail Birdramon
+nme,Champion,112,42,TIME,22:00,Raremon
+nme,Ultimate,478,1512;112,"TR 12+, LV 6+, BTL 15+, WIN 11/15",23:00,Loader Leomon
+nme,Ultimate,699,681;690,"TR 12+, LV 6+, BTL 15+, WIN 11/15",23:00,Atlur Ballistamon
+nme,Ultimate,213,1512;112,"TR 10+, LV 5+, BTL 10+, WIN 5/10",23:00,Metal Mamemon
+nme,Ultimate,589,681;690,"TR 10+, LV 5+, BTL 10+, WIN 5/10",23:00,Locomon
+nme,Ultimate,1517,1512;112,"TR 8+, LV 4+, BTL 10+, WIN 5/10",23:00,Rebellimon
+nme,Ultimate,687,681;690,"TR 8+, LV 4+, BTL 10+, WIN 5/10",23:00,Metal Greymon (2010)
+nme,Mega,276,699;213;687,"TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",23:00,Mugendramon
+nme,Mega,689,589;1517;687,"TR 20+, LV 7+, BTL 20+, WIN 14/20",23:00,Zeke Greymon
+nme,Mega,375,478;699;589,"TR 15+, LV 6+, BTL 15+, WIN 11/15",23:00,Grand Locomon
+nme,Mega,1360,478;213;1517,"TR 10+, LV 6+, BTL 15+, WIN 8/15",23:00,Heavy Leomon
