@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.21 — THREE MORE VB EGGS. Hermit in the Jungle (Jungle road), Mad  (2026-10-15)
+
+THREE MORE VB EGGS. Hermit in the Jungle (Jungle road), Mad Black Roar (Teal Hollow) and True Shadow Howl (Moonlit Meadow) join the Vital Bracelet lines -- seven official cards to earn.
+
 ## 0.6.20 — VITAL BRACELET EGGS. Four official VB cards are egg lines -- (2026-10-15)
 
 VITAL BRACELET EGGS. Four official VB cards are egg lines -- Volcanic Beat, Infinite Tide, Nu Metal Empire, Blizzard Fang -- earned on their adventure roads. Crests sell in adventure towns; fights flip a coin for first strike; attribute powers and trained HP count in battle.
