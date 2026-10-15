@@ -136,7 +136,7 @@ _AUTHORED = {
     "television":      ("Television",      "i:10", 1000, "Rest", "deep couch · DP +2 · weight +1", "glued to the screen"),
     # ---- ADVENTURE (the road's own shelf -- cleared maps open it) -----------
     "shortcut": ("Shortcut", "i:30", 2000, "Road", "on the road: jump to the boss", "the short way"),
-    "rest_kit": ("Rest Kit", "i:31", 500, "Road", "on the road: rest to half tank", "a bedroll and a breather"),
+    "rest_kit": ("Rest Kit", "i:31", 500, "Road", "on the road: half tank + patch a wound", "a bedroll and a breather"),
     "life_recovery":      ("Life Recovery",    "i:27", 1000, "Road", "restore adventure lives on the road", "a second wind"),
     # ======================= THE EXPANSION (2026-07-26) =====================
     # Joel: "bring in all 99 unused items ... spread out ... your call".

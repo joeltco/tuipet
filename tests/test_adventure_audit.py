@@ -376,3 +376,19 @@ def test_the_repick_carries_the_antiprinter_ledgers():
     from tuipet.app import TuiPetApp
     src = inspect.getsource(TuiPetApp._hatch_new)   # the re-pick estate copy
     assert "town_bought" in src and "road_bounty" in src
+
+
+def test_the_rest_kit_patches_a_wound_on_the_road():
+    """Adventure call #25 = A (Joel 2026-10-15): a pet hurt past the town met
+    a refusing gate with no road cure; the Rest Kit now patches it."""
+    from tuipet import adventure as A
+    from tuipet.pet import Pet
+    p = Pet(num=100, stage="Champion", attribute="Vaccine")
+    p.energy = p.max_energy
+    p.injured = True
+    p.inventory = {"rest_kit": 1}
+    adv = A.Adventure(p, A.ZONES[0])
+    assert "rest_kit" in adv.held_transports()          # listed though energy is full
+    assert adv.use_transport("rest_kit") == "rest"
+    assert not p.is_injured() and p.energy == p.max_energy   # never rests energy DOWN
+    assert "patched" in adv.last

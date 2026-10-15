@@ -394,7 +394,8 @@ class Adventure:
                 continue
             if kind == "shortcut" and (self.loc >= self.total or self.boss is None):
                 continue
-            if kind == "rest" and self.pet.energy >= self.pet.max_energy // 2:
+            if (kind == "rest" and self.pet.energy >= self.pet.max_energy // 2
+                    and not self.pet.is_injured()):
                 continue
             out.append(k)
         return out
@@ -411,8 +412,15 @@ class Adventure:
             self.last = "A second wind — lives restored!"
             return "life-recovery"
         if kind == "rest":
-            self.pet._set_energy(self.pet.max_energy // 2)
-            self.last = "A short rest by the road."
+            # rests energy UP to half a tank (never down) and patches an
+            # injury -- the one road cure (adventure call #25 = A, Joel
+            # 2026-10-15: a pet hurt past the town met a refusing gate)
+            self.pet._set_energy(max(self.pet.energy, self.pet.max_energy // 2))
+            hurt = self.pet.is_injured()
+            if hurt:
+                self.pet._bandage()
+            self.last = ("A short rest — wounds patched." if hurt
+                         else "A short rest by the road.")
             return "rest"
         self.loc = self.total
         self._resting = False
