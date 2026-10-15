@@ -405,7 +405,7 @@ def eggselect(app):
                           "Destined to hatch", f"  [b]{shown}[/]",
                           f"  {badge}", "",
                           f"Home   {scene[:18]}", "",
-                          "[dim]←→ browse  ENTER pick[/]"])
+                          "[dim]←→ pick  ENTER hatch[/]"])
 
 
 def scenes(app):
@@ -423,7 +423,7 @@ def scenes(app):
                 "On the wall", f"  [b]{name[:24]}[/]",
                 f"  [dim]{state}[/]", ""]
     sc_lines += wrap(m.msg or "", 2)
-    sc_lines.append("[dim]↑↓ browse  ENTER hang[/]")
+    sc_lines.append("[dim]↑↓ pick  ENTER hang[/]")
     card(app, "Scenes", sc_lines)
 
 
@@ -593,8 +593,8 @@ def album(app):
         # the all-cards audit's own trailing-blank finding)
         + ([""] + tail if tail else [])
         # menus audit 2026-10-14: Enter opens the book only from its list.
-        + ["", "[dim]←→ browse  ESC back[/]" if m.detail
-                 else "[dim]ENTER view  ↑↓ browse[/]"],
+        + ["", "[dim]←→ page  ESC back[/]" if m.detail
+                 else "[dim]ENTER open  ↑↓ pick[/]"],
         subtitle=gen_subtitle(app.pet) if app.pet else "")
 
 
@@ -631,8 +631,8 @@ def hall(app):
     if r.get("dead"):
         cause = str(r.get("cause", "") or "old age")
         lines.append(f"[{T.NEG}]† {_fit_cells(cause, CARD_W - 2)}[/]")
-    lines += ["", "[dim]←→ browse  ESC back[/]" if m.detail
-                  else "[dim]ENTER page  ↑↓ browse[/]"]
+    lines += ["", "[dim]←→ page  ESC back[/]" if m.detail
+                  else "[dim]ENTER open  ↑↓ pick[/]"]
     card(app, "Hall", lines,
          subtitle=gen_subtitle(app.pet) if app.pet else "")
 
@@ -651,7 +651,7 @@ def eggguide(app):
     keeps = ("this gen only" if rule is not None and not rule["can_perm"]
              else "forever")
     hints = ("←→ next egg  ESC back" if m.detail
-             else "ENTER story  ↑↓ browse")     # phase-true (round 34)
+             else "ENTER open  ↑↓ pick")     # phase-true (round 34)
     # the goal WRAPS to two card lines -- the one-slice clip froze the dual
     # map gate mid-word ("clear adventure map 1 (or", Joel 2026-07-28)
     goal = wrap(live, 2) if live and state == "locked" else [""]
@@ -999,7 +999,7 @@ def help_(app):
         f"Gen    {app.pet.generation}", "",
         "[dim]the guide scrolls[/]",
         "[dim]on the display[/]", "",
-        "[dim]↑↓ scroll  ESC out[/]"])
+        "[dim]↑↓ scroll  ESC back[/]"])
 
 
 def options(app):
@@ -1115,7 +1115,7 @@ def bug(app):
         f"Typed  {n} chars", "",
         "[dim]say what you did and[/]",
         "[dim]what went wrong[/]", "",
-        "[dim]ENTER send  ESC out[/]"])
+        "[dim]ENTER send  ESC back[/]"])
 
 
 def death(app):
@@ -1450,7 +1450,7 @@ def battle(app):
         lines += [res, f"[dim]{(b.reward if b else '') or ''}"[:30] + "[/]",
                   "", "[dim]SPACE  continue[/]"]
     elif getattr(m, "phase", "") == "intro":
-        lines += ["", "[dim]ANY KEY skip[/]"]
+        lines += ["", "[dim]any key skip[/]"]
     elif getattr(m, "phase", "") == "ready":
         # readiness_line is <=26, but the result-anim note ("a draw — counts
         # as a loss · record 12W/30", ~40) also rides hud_note -- wrap so it

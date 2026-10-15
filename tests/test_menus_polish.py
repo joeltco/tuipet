@@ -345,7 +345,7 @@ def test_a13_book_detail_card_has_detail_keys(book):
         panel.n = 1
     panel.detail = True
     text = _card(p, panel)
-    assert "←→ browse  ESC back" in text and "ENTER view" not in text and "ENTER page" not in text
+    assert "←→ page  ESC back" in text and "ENTER view" not in text and "ENTER page" not in text
 
 
 @pytest.mark.parametrize("owned,worn,verb", [(False, False, "buy"), (True, False, "wear"), (True, True, "remove")])
@@ -354,7 +354,7 @@ def test_a13_honor_dossier_names_buy_wear_and_remove(owned, worn, verb):
     assert f"ENTER {verb}" in _dossier(_pet(), e)
 
 
-@pytest.mark.parametrize("phase,hint", [("intro", "ANY KEY skip"), ("anim", "SPACE hurry")])
+@pytest.mark.parametrize("phase,hint", [("intro", "any key skip"), ("anim", "SPACE hurry")])
 def test_a13_battle_card_names_the_phase_action(phase, hint):
     p = _pet()
     panel = SimpleNamespace(battle=None, enemy={"name": "Foe"}, raid=False,

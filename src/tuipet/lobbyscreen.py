@@ -951,7 +951,7 @@ class LobbyPanel(BoutMixin, ChatMixin):
         else:
             w = "misbehaving!"
         return (f"[{theme.NEG}]⚠ {(p.name or '?')[:10]} {w}[/] [dim]·[/] "
-                + menu.hints(("ESC", "home")))
+                + menu.hints(("ESC", "leave")))
     def strip(self):
         """The message box under the LCD = the lobby's CONTEXT layer (hint
         overhaul 2026-07-10): session scenes keep their prompts, every other
@@ -977,7 +977,7 @@ class LobbyPanel(BoutMixin, ChatMixin):
         if self.phase == "login":
             # ESC at login leaves the lobby entirely -> "out", the app's
             # leave-to-home word (grammar sweep 2026-07-18)
-            return menu.hints(("TAB", "field"), ("ENTER", "go"), ("ESC", "out"))
+            return menu.hints(("TAB", "field"), ("ENTER", "sign in"), ("ESC", "leave"))
         if self.phase == "ladder":
             return menu.hints(("TAB", "lobby"), ("ESC", "back"))
         if self.phase == "dm":
@@ -1013,7 +1013,7 @@ class LobbyPanel(BoutMixin, ChatMixin):
                 # V reads the thread, M quick-sends -- both are PM doors, so
                 # they share the label.  The merged token keeps M advertised
                 # (round 30's ruling) and stays under the 40-col budget.
-                return menu.hints(("B", "battle"), ("J", "jog"),
+                return menu.hints(("B", "battle"), ("J", "jogress"),
                                   ("V/M", "PM"), ("X", "block"))
             if pid == OFFLINE_ID:      # no app to nudge: the thread is the point
                 return menu.hints(("V/M", "PM"), ("X", "block"), *clear)

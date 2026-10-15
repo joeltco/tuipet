@@ -423,7 +423,7 @@ class BattlePanel:
                               ("ESC", "forfeit" if self.duel
                                else "flee" if self.wild else "back out"))
         if self.phase == "intro":
-            return menu.hints(("ANY KEY", "skip"))
+            return menu.hints(("any key", "skip"))
         if self.phase == "result":
             return menu.hints(("SPACE", "done"))
         # the round anim: the hurry keys were card-only whispers -- siblings

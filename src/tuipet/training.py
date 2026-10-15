@@ -133,7 +133,7 @@ class TrainingPanel:
 
     def strip(self):
         if self.phase == "bar":
-            return menu.hints(("SPACE", "strike"), ("ESC", "out"))
+            return menu.hints(("SPACE", "strike"), ("ESC", "back"))
         return menu.hints(("SPACE", "skip"))
 
     # ---- rendering ----

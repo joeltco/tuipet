@@ -21,7 +21,7 @@ class AssistPanel:
     def strip(self):
         on = getattr(self.pet, "auto_care", False)
         return menu.hints(("ENTER", "dismiss helper" if on else "hire helper"),
-                          ("ESC", "out"))
+                          ("ESC", "back"))
 
     def anim(self):
         # a frame heartbeat so the app repaints at 10 Hz and an

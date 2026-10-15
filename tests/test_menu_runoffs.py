@@ -52,7 +52,7 @@ def test_death_strip_labels_esc_within_the_hud():
     pan = DeathPanel(p)
     s = Text.from_markup(pan.strip()).plain
     assert cell_len(s) <= MAX_COLS, s
-    assert s.endswith("ESC out"), s
+    assert s.endswith("ESC back"), s
 
 
 # ---- DNA field columns -------------------------------------------------------

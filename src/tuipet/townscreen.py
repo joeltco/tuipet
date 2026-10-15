@@ -98,7 +98,7 @@ class TownPanel(menu.SubHost):
     def strip(self):
         if self.sub is not None:
             return self.sub.strip()
-        return menu.hints(("↑↓", "pick"), ("ENTER", "go"), ("ESC", "leave"))
+        return menu.hints(("↑↓", "pick"), ("ENTER", "open"), ("ESC", "leave"))
 
     def text(self):
         if self.sub is not None:

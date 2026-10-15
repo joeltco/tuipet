@@ -78,7 +78,7 @@ def test_the_remaining_screens_strips_fit_too():
     assert "strike" in _ok(TrainingPanel(p).strip(), "training")
     assert "gaze" in _ok(DigiCorePanel(p).strip(), "digicore")
     guide = EggGuidePanel(p)
-    assert "browse" in _ok(guide.strip(), "eggguide:list")
+    assert "pick" in _ok(guide.strip(), "eggguide:list")
     guide.detail = True
     assert "back" in _ok(guide.strip(), "eggguide:detail")
     _ok(BackgroundPanel(p).strip(), "scenes")
@@ -214,6 +214,6 @@ def test_the_march_hint_is_never_a_bare_keyset():
         marched += 1
         # every key on it wears its word, and the line never rotates
         assert re.fullmatch(
-            r"SPACE hurry( \u00b7 T item)? \u00b7 ESC home", s), \
+            r"SPACE hurry( \u00b7 T item)? \u00b7 ESC leave", s), \
             f"unlabelled march hint: {s!r}"
     assert marched > 10, "the walk never reached the marching strip"

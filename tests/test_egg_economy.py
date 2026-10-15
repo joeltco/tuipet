@@ -237,7 +237,7 @@ def test_the_carousel_is_pure_scene_with_neighbour_peeks():
         and "ESC" not in plain                     # pure scene, no text block
     assert len(plain.rstrip("\n").split("\n")) == 12   # header 2 + scene 10
     # the strip speaks: hints normally, the tease on its beat, msg first
-    assert "browse" in pan.strip()
+    assert "pick" in pan.strip() and "hatch" in pan.strip()
     pan.frame_i = 130
     if pan.locked and pan.hint:
         assert "more out there" in pan.strip()

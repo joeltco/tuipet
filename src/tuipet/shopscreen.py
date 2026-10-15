@@ -144,14 +144,14 @@ class ShopPanel:
                 taken = shop._town_taken(self.pet)
                 buyable = not sel.get("owned") and not taken.get(f"{shop.GLOBAL_SHOP_ID}:egg")
             keys = [("←→", "tab")] + ([("ENTER", act)] if buyable else [])
-            return menu.hints(*(keys + [("TAB", "bag"), ("ESC", "out")]))
+            return menu.hints(*(keys + [("TAB", "bag"), ("ESC", "back")]))
         rows = self._rows()
         sel = rows[min(self.cursor, len(rows) - 1)] if rows else {}
         _, _, usable = shop.menu_limits(self.pet, sel, "bag")
         use = [("ENTER", "use")] if usable else []
         if self.bag_only:
-            return menu.hints(*(use + [("R", "sell"), ("ESC", "out")]))
-        return menu.hints(*(use + [("R", "sell"), ("TAB", "shop"), ("ESC", "out")]))
+            return menu.hints(*(use + [("R", "sell"), ("ESC", "back")]))
+        return menu.hints(*(use + [("R", "sell"), ("TAB", "shop"), ("ESC", "back")]))
 
     # ---- data ----
     def _tabs(self):

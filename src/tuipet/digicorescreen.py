@@ -245,8 +245,8 @@ class DigiCorePanel:
         rendered += [Text(part.plain + "\n", style=INK_B) for part in _wrapped(note, menu.W)]
         self.row_off = menu.scroll_window(out, rendered, self.row_off, 9,
                                           lambda text, i: text)
-        out.append_text(menu.footer("↑↓ scroll SPACE gaze ←→ ESC out" if len(rendered) > 9
-                                    else "SPACE gaze  ←→ page  ESC out"))
+        out.append_text(menu.footer("↑↓ scroll SPACE gaze ←→ ESC back" if len(rendered) > 9
+                                    else "SPACE gaze  ←→ page  ESC back"))
         return out
 
     def _teaser_scene(self):
@@ -296,7 +296,7 @@ class DigiCorePanel:
             return menu.hints(("↑↓", "scroll"), ("ESC", "back"))
         if not self.teaser:
             return menu.hints(("SPACE", "gaze" if self.i == 0 else "page"), ("\u2190\u2192", "page"),
-                              ("ESC", "out"))
+                              ("ESC", "back"))
         t = self.teaser_t
         if t < MON_T:
             return "the core stirs…"
@@ -352,7 +352,7 @@ class DigiCorePanel:
         if isinstance(rows, str):                      # "(final form)"
             out.append(f" {rows}\n", style=DIM)
             out.append_text(menu.blanks(8))
-            out.append_text(menu.footer("←→ page    ESC out"))
+            out.append_text(menu.footer("←→ page    ESC back"))
             return out
 
         options = evolution.divergence_options(self.pet)
@@ -373,7 +373,7 @@ class DigiCorePanel:
 
         self.evo_sel = menu.list_window(out, rows, self.evo_sel, 8, fmt)
         out.append_text(menu.note("ENTER: what it takes"))
-        out.append_text(menu.footer("↑↓ pick  ENTER req  ←→ page  ESC out"))
+        out.append_text(menu.footer("↑↓ pick  ENTER req  ←→ page  ESC back"))
         return out
 
     def text(self):
@@ -399,13 +399,13 @@ class DigiCorePanel:
             # the Album row fronts a browsable book (2026-07-21): teach the
             # door the way EVOLVES teaches its checklist
             out.append_text(menu.note("ENTER: the album"))
-            out.append_text(menu.footer("↑↓ scroll ENTER album ←→ ESC out" if scroll
-                                        else "ENTER album  ←→ page  ESC out"))
+            out.append_text(menu.footer("↑↓ scroll ENTER album ←→ ESC back" if scroll
+                                        else "ENTER album  ←→ page  ESC back"))
         elif title == "LEGACY":
             # the headstones front their room now too (2026-07-26)
             out.append_text(menu.note("ENTER: the hall of memory"))
-            out.append_text(menu.footer("↑↓ scroll ENTER hall ←→ ESC out" if scroll
-                                        else "ENTER hall  ←→ page  ESC out"))
+            out.append_text(menu.footer("↑↓ scroll ENTER hall ←→ ESC back" if scroll
+                                        else "ENTER hall  ←→ page  ESC back"))
         else:
-            out.append_text(menu.footer(scroll + "←→ page    ESC out"))
+            out.append_text(menu.footer(scroll + "←→ page    ESC back"))
         return out

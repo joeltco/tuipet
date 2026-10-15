@@ -79,7 +79,7 @@ class EggSelectPanel:
         if (self.locked > 0 and self.hint
                 and self.frame_i % (2 * TEASE_BEAT) >= TEASE_BEAT):
             return f"{self.locked} more out there · {self.hint}"
-        return menu.hints(("←→", "browse"), ("ENTER", "pick"), ("E", "guide"))
+        return menu.hints(("←→", "pick"), ("ENTER", "hatch"), ("E", "guide"))
 
     def key(self, k):
         if k in ("right", "l", "down", "j"):

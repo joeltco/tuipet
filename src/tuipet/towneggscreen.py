@@ -37,7 +37,7 @@ class TownEggPanel:
         self.msg, self.msg_t = text, 26
 
     def strip(self):
-        return menu.hints(("←→↑↓", "browse"), ("ENTER", "buy"), ("ESC", "leave"))
+        return menu.hints(("←→↑↓", "pick"), ("ENTER", "buy"), ("ESC", "leave"))
 
     # -- input -----------------------------------------------------------------
     def key(self, k):
@@ -116,5 +116,5 @@ class TownEggPanel:
         tag = "owned" if idx in self.owned else f"{shop.egg_price(idx)}b"
         line = self.msg if self.msg_t > 0 else f"{egg_mod.hatch_name(idx)} — {tag}"
         out.append_text(menu.note(line, tick=self.frame_i))
-        out.append_text(menu.footer("←→ ↑↓ browse   ENTER buy   ESC leave"))
+        out.append_text(menu.footer("←→ ↑↓ pick   ENTER buy   ESC leave"))
         return out

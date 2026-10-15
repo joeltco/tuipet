@@ -74,5 +74,5 @@ class DisciplinePanel:
         out.append("\n")
         out.append(f" {self._state_line()}\n", style=INK)
         out.append_text(menu.blanks(9 - 4))
-        out.append_text(menu.footer("ENTER apply  ↑↓ pick  ESC out"))
+        out.append_text(menu.footer("ENTER apply  ↑↓ pick  ESC back"))
         return out

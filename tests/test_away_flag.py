@@ -96,7 +96,7 @@ def test_the_road_strip_is_the_whole_key_set_holding_still(monkeypatch):
     p.energy = 125                                      # 3 digits: no longer on the line
     pan.adv.streak = 12                                 # a fat chain: likewise gone
     plain = re.sub(r"\[/?[^\[\]]*\]", "", pan.strip())
-    assert plain == "SPACE hurry \u00b7 T item \u00b7 ESC home"
+    assert plain == "SPACE hurry \u00b7 T item \u00b7 ESC leave"
     assert cell_len(plain) <= 40
     # ...and it HOLDS: every frame of what used to be a full rotation is
     # byte-identical, so nothing on the road strip changes under the player
@@ -110,4 +110,4 @@ def test_the_road_strip_is_the_whole_key_set_holding_still(monkeypatch):
         assert gone not in plain, f"{gone!r} still on the strip"
     # no transport held -> T drops WITH its label, the rest holds still
     p.inventory = {}
-    assert re.sub(r"\[/?[^\[\]]*\]", "", pan.strip()) == "SPACE hurry \u00b7 ESC home"
+    assert re.sub(r"\[/?[^\[\]]*\]", "", pan.strip()) == "SPACE hurry \u00b7 ESC leave"

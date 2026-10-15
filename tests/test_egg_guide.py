@@ -114,9 +114,9 @@ def test_key_protocol():
 def test_strip_follows_the_hint_convention():
     from tuipet import menu
     pan = EggGuidePanel()
-    assert pan.strip() == menu.hints(("↑↓", "browse"), ("ENTER", "story"), ("ESC", "out"))
+    assert pan.strip() == menu.hints(("↑↓", "pick"), ("ENTER", "open"), ("ESC", "back"))
     pan.key("enter")
-    assert pan.strip() == menu.hints(("←→", "browse"), ("ESC", "back"))
+    assert pan.strip() == menu.hints(("←→", "page"), ("ESC", "back"))
 
 
 def test_home_screen_binding():
@@ -193,7 +193,7 @@ def test_the_card_reveals_and_speaks_the_phase():
         statusbox.eggguide(_App(pan))
         assert egg_mod.hatch_name(locked)[:16] in "".join(seen["rows"])
         assert "???" not in "".join(seen["rows"])
-        assert any("ENTER story" in r for r in seen["rows"])
+        assert any("ENTER open" in r for r in seen["rows"])
         pan.detail = True
         statusbox.eggguide(_App(pan))
         assert any("next egg" in r for r in seen["rows"])

@@ -261,7 +261,7 @@ def test_a8_full_trophy_and_legacy_pages_keep_note_and_footer_visible():
         for _ in range(3):
             pan.key("pagedown")
         assert "more" in fits(pan)
-        assert "ESC out" in pan.text().plain
+        assert "ESC back" in pan.text().plain
 
 
 def test_a9_strip_and_card_follow_page_gaze_and_requirements():

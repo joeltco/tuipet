@@ -12,7 +12,7 @@ silhouette (the core-gaze tease) for one still out there.  Data only:
 roster = data.album_roster() (the trophy denominator's own set), seen =
 persistence.get_album(); nothing here is guessed or drawn.
 
-↑↓ browse, PgUp/PgDn leap, ENTER view, ←→ page inside the book, ESC out.
+↑↓ pick, PgUp/PgDn leap, ENTER open, ←→ page inside the book, ESC back.
 Opened from the digicore TROPHIES page (where its count already lived)."""
 from __future__ import annotations
 from rich.text import Text
@@ -72,9 +72,9 @@ class AlbumPanel:
 
     def strip(self):
         if self.detail:
-            return menu.hints(("←→", "browse"), ("ESC", "back"))
-        return menu.hints(("↑↓", "browse"), ("ENTER", "view"),
-                          ("ESC", "out"))
+            return menu.hints(("←→", "page"), ("ESC", "back"))
+        return menu.hints(("↑↓", "pick"), ("ENTER", "open"),
+                          ("ESC", "back"))
 
     def key(self, k):
         if self.detail:

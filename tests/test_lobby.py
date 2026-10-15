@@ -814,13 +814,13 @@ def test_ladder_lost_its_secret_q_g_closes():
     assert pan.phase == "lobby"
 
 
-def test_login_strip_says_out_not_back():
-    """ESC at login leaves the lobby entirely — the strip speaks the app's
-    leave-to-home word."""
+def test_login_strip_says_leave_not_back():
+    """ESC at login leaves the lobby entirely — the strip speaks the
+    leave-a-place word (menus call #11 = A, 2026-10-15)."""
     p = Pet(num=100, stage="Champion", attribute="Vaccine")
     pan = lobbyscreen.LobbyPanel(p, lambda name, pw, card: None)
     assert pan.phase == "login"
-    assert "out" in pan.strip() and "back" not in pan.strip()
+    assert "leave" in pan.strip() and "back" not in pan.strip()
 
 
 def test_pm_flush_keeps_undelivered_mail(tmp_path, monkeypatch):

@@ -63,9 +63,9 @@ class EggGuidePanel:
 
     def strip(self):
         if self.detail:
-            return menu.hints(("←→", "browse"), ("ESC", "back"))
-        return menu.hints(("↑↓", "browse"), ("ENTER", "story"),
-                          ("ESC", "out"))
+            return menu.hints(("←→", "page"), ("ESC", "back"))
+        return menu.hints(("↑↓", "pick"), ("ENTER", "open"),
+                          ("ESC", "back"))
 
     def key(self, k):
         if self.detail:

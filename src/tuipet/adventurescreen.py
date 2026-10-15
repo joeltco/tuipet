@@ -849,7 +849,7 @@ class AdventurePanel(menu.SubHost):
         if self.sub is not None:
             return self.sub.strip()            # the wild fight owns the line
         if self._trans is not None:
-            return menu.hints(("ANY KEY", "skip"))
+            return menu.hints(("any key", "skip"))
         if self._pulse is not None:
             line = self._pulse.get("line")     # the flash SAYS what it's for
             return f"[b]★ {_fit(line or 'Map clear!', 29)}[/] [dim]KEY skip[/]"
@@ -908,7 +908,7 @@ class AdventurePanel(menu.SubHost):
                     return f"[b]✦ {_fit(self._find_msg, 29)}[/] [dim]KEY skip[/]"
                 if t >= INV_WALK_T:           # suspense: . .. ...
                     dots = "." * min(3, 1 + (t - INV_WALK_T))
-                    return f"[dim]{dots} · ANY KEY skip[/]"
+                    return f"[dim]{dots} · any key skip[/]"
                 return ""                     # the walk-out plays wordless
             if self._hazard is not None:
                 h = self._hazard
@@ -950,9 +950,9 @@ class AdventurePanel(menu.SubHost):
             # Name what the key does (KEYS SPELL THEMSELVES).
             keys = ([("SPACE", "hurry")]
                     + ([("T", "item")] if self.adv.held_transports() else [])
-                    + [("ESC", "home")])
+                    + [("ESC", "leave")])
             return menu.hints(*keys)
-        return menu.hints(("ESC", "home"))
+        return menu.hints(("ESC", "leave"))
 
     # -- render ---------------------------------------------------------------
     def _rows(self, idx):

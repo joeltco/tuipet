@@ -287,7 +287,7 @@ class DNAPanel:
             out.append_text(menu.row("%-13s%s" % (label, self._home_tag(key)), i == self.home_i))
         out.append_text(menu.blanks(1))
         out.append_text(menu.row("[%s]" % (self.last or "")[:34], False))
-        out.append_text(menu.footer("↑↓ pick  ENTER open  ESC out"))
+        out.append_text(menu.footer("↑↓ pick  ENTER open  ESC back"))
         return out
 
     def _text_charge(self):
@@ -452,10 +452,10 @@ class DNAPanel:
         if self.phase == "result":
             return menu.hints(("any key", "continue"))
         if self.phase == "roads":
-            return menu.hints(("↑↓", "field"), ("ENTER", "forms"), ("ESC", "back"))
+            return menu.hints(("↑↓", "pick"), ("ENTER", "open"), ("ESC", "back"))
         if self.phase in ("stats", "road_detail"):
-            return menu.hints(("↑↓", "browse"), ("ESC", "back"))
-        return menu.hints(("↑↓", "pick"), ("ENTER", "open"), ("ESC", "out"))
+            return menu.hints(("↑↓", "pick"), ("ESC", "back"))
+        return menu.hints(("↑↓", "pick"), ("ENTER", "open"), ("ESC", "back"))
 
     def _text_result(self):
         field, wager, rate, banked, refund = self.won

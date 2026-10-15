@@ -111,11 +111,11 @@ class TournamentPanel(menu.SubHost):
         if self._ceremony is not None:
             return "[b]★ CHAMPION — trophy![/] [dim]KEY skip[/]"
         if self._advance is not None:
-            return "[dim]%s · KEY skip[/]" % menu._clip(self._say or "field advances", 29)
+            return "[dim]%s · any key skip[/]" % menu._clip(self._say or "field advances", 29)
         if self._intro is not None:
-            return "[b]%s[/] [dim]· KEY skip[/]" % menu._clip(self._say or "introductions…", 29)
+            return "[b]%s[/] [dim]· any key skip[/]" % menu._clip(self._say or "introductions…", 29)
         if self.phase == "select":
-            return menu.hints(("↑↓", "pick"), ("ENTER", "go"),
+            return menu.hints(("↑↓", "pick"), ("ENTER", "join"),
                               ("F", "feat."), ("A", "alarm"))
         # menus audit 2026-10-14: exiting a live bracket records a loss.
         if self.tourney is not None and self.tourney.over:

@@ -14,7 +14,7 @@ Headstones banked before 2026-07-26 predate the portrait fields (num/cause/
 wins) — those elders stand behind the GRAVE glyph and the epitaph says only
 what the record knows; nothing here is guessed (the never-fake law).
 
-↑↓ browse, PgUp/PgDn leap, ENTER view, ←→ page inside the book, ESC out.
+↑↓ pick, PgUp/PgDn leap, ENTER open, ←→ page inside the book, ESC back.
 Opened from the digicore LEGACY page (where the headstones already lived),
 the TROPHIES→ALBUM door's exact grammar."""
 from __future__ import annotations
@@ -55,9 +55,9 @@ class HallPanel:
 
     def strip(self):
         if self.detail:
-            return menu.hints(("←→", "browse"), ("ESC", "back"))
-        return menu.hints(("↑↓", "browse"), ("ENTER", "view"),
-                          ("ESC", "out"))
+            return menu.hints(("←→", "page"), ("ESC", "back"))
+        return menu.hints(("↑↓", "pick"), ("ENTER", "open"),
+                          ("ESC", "back"))
 
     def key(self, k):
         if not self.n:

@@ -251,8 +251,8 @@ class RaidPanel(menu.SubHost):
         if self.sub is not None:
             return ""
         if self._fell is not None or self._won is not None:
-            return menu.hints(("ANY KEY", "skip"))
-        return menu.hints(("SPACE", "raid!"), ("C", "claim"), ("ESC", "out"))
+            return menu.hints(("any key", "skip"))
+        return menu.hints(("SPACE", "raid!"), ("C", "claim"), ("ESC", "back"))
 
     # ---- the attempt ----
     def _boss_enemy(self):

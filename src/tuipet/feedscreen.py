@@ -94,7 +94,7 @@ class FeedPanel:
         self.frame_i += 1
 
     def strip(self):
-        return menu.hints(("↑↓", "pick"), ("ENTER", "feed"), ("ESC", "out"))
+        return menu.hints(("↑↓", "pick"), ("ENTER", "feed"), ("ESC", "back"))
 
     def key(self, k):
         if k in ("up", "k", "down", "j"):
