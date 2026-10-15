@@ -1199,3 +1199,20 @@ hju,Mega,1067,235;896;474,"TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",23:00,Hyd
 hju,Mega,1046,1045;613;218,"TR 20+, LV 7+, BTL 20+, WIN 14/20",23:00,Bloom Lordmon
 hju,Mega,619,1045;235;896,"TR 15+, LV 6+, BTL 15+, WIN 11/15",23:00,Spinomon
 hju,Mega,508,613;218;474,"TR 10+, LV 6+, BTL 15+, WIN 8/15",23:00,Rafflesimon
+mbr,Fresh,1411,egg,TIME,20:00,"Botamon (official Mad Black Roar DIM card, humulos vbdm/vol)"
+mbr,InTraining,12,1411,TIME,21:00,Koromon
+mbr,Rookie,56,12,TIME,21:00,Agumon (Black)
+mbr,Champion,93,56,"TR 10+, LV 4+, BTL 8+",22:00,Greymon
+mbr,Champion,149,56,"TR 8+, LV 3+, BTL 5+",22:00,Greymon (Blue)
+mbr,Champion,129,56,"TR 5+, LV 2+, BTL 3+",22:00,Dark Tyranomon
+mbr,Champion,125,56,TIME,22:00,Monochromon
+mbr,Ultimate,1038,93;149,"TR 12+, LV 6+, BTL 15+, WIN 11/15",23:00,Metal Greymon: Alterous Mode
+mbr,Ultimate,239,125;129,"TR 12+, LV 6+, BTL 15+, WIN 11/15",23:00,Ex-Tyranomon
+mbr,Ultimate,365,125;129,"TR 10+, LV 5+, BTL 10+, WIN 5/10",23:00,Vermillimon
+mbr,Ultimate,241,93;149,"TR 10+, LV 5+, BTL 10+, WIN 5/10",23:00,Metal Greymon (Virus)
+mbr,Ultimate,990,125;129,"TR 8+, LV 4+, BTL 10+, WIN 5/10",23:00,Mametyramon
+mbr,Ultimate,195,93;149,"TR 8+, LV 4+, BTL 10+, WIN 5/10",23:00,Skull Greymon
+mbr,Mega,810,1038;990;241,"TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",23:00,Omegamon Zwart
+mbr,Mega,380,365;990;195,"TR 20+, LV 7+, BTL 20+, WIN 14/20",23:00,Gaioumon
+mbr,Mega,299,239;241;195,"TR 15+, LV 6+, BTL 15+, WIN 11/15",23:00,Black War Greymon
+mbr,Mega,347,1038;239;365,"TR 10+, LV 6+, BTL 15+, WIN 8/15",23:00,Victory Greymon

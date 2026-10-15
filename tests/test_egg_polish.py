@@ -205,3 +205,24 @@ def test_hermit_in_the_jungle_egg_hatches_yuramon_into_its_line_on_the_jungle_ro
     assert q.num == 1414 and q.line_id == "ver4"         # the shared baby keeps its line
     assert len(lines.load_lines()["hju"]["members"]) == 17
     assert shop.town_egg_buy(Pet(num=29), idx)[1] == "error"
+
+
+def test_mad_black_roar_egg_hatches_botamon_into_its_line_on_teal_hollow():
+    """Joel 2026-10-15: the official Mad Black Roar DIM card as an egg line,
+    earned on the Teal Hollow road (map 11, index 10) -- SkullGreymon's road,
+    one of the line's own Ultimates."""
+    from tuipet import adventure, data, egg, lines, shop
+    idx = next(i for i in range(egg.count()) if egg.hatch_name(i) == "Mad Black Roar Egg")
+    rule = data.load_egg_unlock()[idx]
+    prog = dict(persistence.get_progress(), maps=set(), maps_cleared=set(), raids=0)
+    assert not egg._conditions_met(rule, prog)
+    prog["maps_cleared"] = {10}
+    assert egg._conditions_met(rule, prog)
+    assert adventure.ZONES[10]["bosses"][0]["num"] in lines.load_lines()["mbr"]["members"]
+    p = Pet.new_egg(egg_type=idx)
+    p._hatch_into_fresh()
+    assert p.num == 1411 and p.line_id == "mbr"
+    q = Pet.new_egg(egg_type=0)                          # the Botamon starter egg
+    q._hatch_into_fresh()
+    assert q.num == 1411 and q.line_id == "ver1"
+    assert shop.town_egg_buy(Pet(num=29), idx)[1] == "error"

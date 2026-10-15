@@ -156,6 +156,7 @@ EGG_BG = {
     49: "factory",       # Nu Metal Empire Egg (VB DIM card; unlocks on the Factory road)
     50: "frozenpeak",    # Blizzard Fang Egg (VB DIM card; the genuinely cold line Frozen Peak waited for)
     51: "jungle",        # Hermit in the Jungle Egg (VB DIM card; unlocks on the Jungle road)
+    52: "tealhollow",    # Mad Black Roar Egg (VB DIM card; unlocks on the Teal Hollow road)
 }
 
 

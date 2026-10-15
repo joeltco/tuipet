@@ -848,7 +848,7 @@ EGG_STOCK_PER_TOWN = 6
 # reorder can't silently put one back on a shelf.
 EARN_ONLY_EGGS = frozenset({"Godzilla Egg", "Draco Egg", "Volcanic Beat Egg",
                             "Infinite Tide Egg", "Nu Metal Empire Egg", "Blizzard Fang Egg",
-                            "Hermit in the Jungle Egg",
+                            "Hermit in the Jungle Egg", "Mad Black Roar Egg",
                             "Digitama X3"})
 
 

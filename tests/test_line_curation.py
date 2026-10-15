@@ -13,6 +13,9 @@ STAGES = ["Fresh", "InTraining", "Rookie", "Champion", "Ultimate", "Mega"]
 # design; ver1's Betamon road + the ver2-verE canon rewrite, 2026-07-07 --
 # every device line now matches its humulos DM20 chart)
 DECLARED_EDGES = {
+    # mbr -- the official Mad Black Roar DIM card's connectors the corpus graph
+    # never carried (humulos vbdm/vol; Joel approved the line 2026-10-15)
+    (1411, 12), (56, 93), (56, 125), (93, 1038), (149, 1038), (125, 239), (129, 365), (125, 990), (129, 990), (239, 347), (365, 347), (239, 299), (365, 380), (990, 380), (195, 380), (1038, 810), (990, 810), (241, 810),
     # hju -- the official Hermit in the Jungle DIM card's connectors the corpus
     # graph never carried (humulos vbdm/vol; Joel approved the line 2026-10-15)
     (1414, 18), (44, 675), (44, 894), (675, 613), (170, 613), (894, 218), (675, 235), (170, 896), (675, 474), (109, 474), (613, 508), (218, 508), (474, 508), (235, 619), (896, 619),

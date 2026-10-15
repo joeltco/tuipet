@@ -129,3 +129,12 @@ def test_shipped_hatch_names_and_partner_checklists_have_no_hidden_name_leak():
             for row in rows:
                 if isinstance(row["jogress"], int):
                     assert not reqs.get(row["jogress"], {}).get("hidden_evo")
+
+
+def test_a_mode_change_never_lands_a_pet_in_a_vb_card_line():
+    """MetalGreymon AM joined Mad Black Roar (2026-10-15); a pet from another
+    chart that Mode-changes into it must not be captured by the card line --
+    card lines are entered only through their own egg."""
+    p = Pet.from_num(1038)
+    p.line_id = ""
+    assert lines.adopt_line(p) != "mbr"

@@ -51,7 +51,7 @@ def test_every_sheet_is_wired_or_allowlisted():
         # (frozenpeak: the cold line arrived -- Blizzard Fang, 2026-10-15)
         # their wearers (Sunamon / the Meicoomon egg skin) left with the
         # fake-egg cut (2026-07-17); the rips stay for a future wearer
-        "desert", "tealhollow",
+        "desert",   # (tealhollow: the Mad Black Roar egg wears it, 2026-10-15)
         # cove is a BEACH -- its art is a sandy shore, NOT a seafloor (scene
         # audit 2026-07-20); pick-only on the E-shelf
         "cove",

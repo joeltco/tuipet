@@ -186,9 +186,15 @@ def test_adopt_line_prefers_hatchable_for_every_shared_form():
     live_roots = lines.hatchable_roots()
     for lid, line in L.items():
         for num in line["members"]:
-            claim = [i for i, l in L.items() if num in l["members"]]
+            # a VB card line is entered only through its own egg (2026-10-15):
+            # a form ONLY a card claims re-anchors to no line at all
+            claim = [i for i, l in L.items() if num in l["members"]
+                     and i not in lines.egg_bound_lines()]
             has_live = any(L[c]["root"] in live_roots for c in claim)
             got = lines.adopt_line(_Adoptee(num))
+            if not claim:
+                assert got == "", (num, got)
+                continue
             assert got in claim
             if has_live:
                 assert L[got]["root"] in live_roots, (num, got, claim)

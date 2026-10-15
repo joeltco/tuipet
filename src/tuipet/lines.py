@@ -140,7 +140,12 @@ def egg_bound_lines():
     whose babies are shared with an older line.  A name/root lookup never
     lands a pet in one of these -- only its own egg does (2026-10-15)."""
     from . import egg as egg_mod
-    return frozenset(filter(None, (egg_mod.hatch_line(i) for i in range(egg_mod.count()))))
+    named = set(filter(None, (egg_mod.hatch_line(i) for i in range(egg_mod.count()))))
+    L = load_lines()
+    # only a SHARED-baby card counts (the Godzilla egg names its line too,
+    # but no other line roots on its baby -- membership can't mislead there)
+    return frozenset(lid for lid in named if lid in L and any(
+        o != lid and line["root"] == L[lid]["root"] for o, line in L.items()))
 
 
 def line_for_hatch(dex):
@@ -387,8 +392,11 @@ def adopt_line(pet, prev=None):
     cur = load_lines().get(getattr(pet, "line_id", ""))
     if cur and pet.num in cur["members"]:
         return pet.line_id
+    # a card line (egg-bound, the VB cards) is entered ONLY through its own
+    # egg -- a jogress/mode/repair never re-anchors a pet into one (2026-10-15:
+    # a Godzilla-line MetalGreymon's Mode into AM landed in Mad Black Roar)
     owners = [(lid, line) for lid, line in load_lines().items()
-              if pet.num in line["members"]]
+              if pet.num in line["members"] and lid not in egg_bound_lines()]
     if prev is not None:
         travelled = [o for o in owners if prev in o[1]["members"]]
         if travelled:
