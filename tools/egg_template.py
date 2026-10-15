@@ -53,8 +53,36 @@ def _bank():
         return json.load(fh)
 
 
+def template_shape(k):
+    """The SHAPE the original eggs share for frame k (Joel: "Theres perfectly
+    built eggs already fucking made ... Use those as template shapes"): the
+    cells inked in EVERY original on the shared outline, and the cells blank in
+    every one.  Measured from the bank, never typed in."""
+    target = STILL if k == 0 else WOBBLE
+    originals = [e for e in _bank()
+                 if not (e.get("hatch_line") or "").isalpha()
+                 and on_grid(e["frames"][k], target)]
+    ink = {(y, x) for y in range(16) for x in range(16)
+           if all(e["frames"][k][y][x] == "1" for e in originals)}
+    blank = {(y, x) for y in range(16) for x in range(16)
+             if all(e["frames"][k][y][x] == "0" for e in originals)}
+    return ink, blank
+
+
+def stamp(frame, k):
+    """Press a frame onto the originals' shared shape."""
+    ink, blank = template_shape(k)
+    rows = [list(r) for r in frame]
+    for y, x in ink:
+        rows[y][x] = "1"
+    for y, x in blank:
+        rows[y][x] = "0"
+    return ["".join(r) for r in rows]
+
+
 def squash(still):
-    """egg_a -> egg_b on the shared wobble outline."""
+    """egg_a -> egg_b: the motif resampled onto the wobble rows, then pressed
+    onto the shape every original wobble shares."""
     rows = [["0"] * 16 for _ in range(16)]
     for y, src_y in SQUASH_FROM.items():
         sl, sr = STILL[src_y]
@@ -62,8 +90,7 @@ def squash(still):
         for x in range(tl, tr + 1):
             sx = sl + round((x - tl) * (sr - sl) / max(1, tr - tl))
             rows[y][x] = still[src_y][sx]
-        rows[y][tl] = rows[y][tr] = "1"            # the shell edge is always inked
-    return ["".join(r) for r in rows]
+    return stamp(["".join(r) for r in rows], 1)
 
 
 def donor_hatch(dex):
@@ -110,6 +137,7 @@ def seated_hatch(dex):
 def build(still, dex):
     if not on_grid(still, STILL):
         raise SystemExit("egg_a is off the shared egg grid: " + repr(outline(still)))
+    still = stamp(still, 0)
     wobble = squash(still)
     top = donor_hatch(dex) or seated_hatch(dex)
     hatch = top + still[11:]

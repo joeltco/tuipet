@@ -338,6 +338,12 @@ def test_the_egg_template_builds_on_grid_frames_for_every_card_egg():
         still, wobble, hatch = tmpl.build(e["frames"][0], e["hatch"][0])
         assert tmpl.on_grid(still, tmpl.STILL) and tmpl.on_grid(wobble, tmpl.WOBBLE)
         assert hatch[11:] == still[11:]
+        for k, frame in ((0, still), (1, wobble)):       # the originals' exact shape
+            ink, blank = tmpl.template_shape(k)
+            assert all(frame[y][x] == "1" for y, x in ink), (e["hatch_name"], k)
+            assert all(frame[y][x] == "0" for y, x in blank), (e["hatch_name"], k)
+            shipped = e["frames"][k]                       # ...and the shipped egg too
+            assert all(shipped[y][x] == "1" for y, x in ink), (e["hatch_name"], k)
     # a baby no egg hatches is seated whole: every pixel of Curimon survives
     top = tmpl.seated_hatch(1137)
     _, by_num = data.load_sprites()
