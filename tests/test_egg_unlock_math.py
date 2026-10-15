@@ -86,5 +86,5 @@ def test_dormant_columns_are_empty_in_the_corpus():
         if r["name"] not in ("Volcanic Beat Egg", "Infinite Tide Egg", "Nu Metal Empire Egg",
                              "Blizzard Fang Egg", "Hermit in the Jungle Egg",
                              "Mad Black Roar Egg", "True Shadow Howl Egg",
-                             "Impulse City Egg"):
+                             "Impulse City Egg", "Godzilla Egg"):
             assert r["zone"] is None

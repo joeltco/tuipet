@@ -301,3 +301,18 @@ def test_impulse_city_egg_hatches_dokimon_into_its_line_on_city_sunset():
     assert q.num == 1429 and q.line_id == "dokimon"
     assert len(lines.load_lines()["ici"]["members"]) == 17
     assert shop.town_egg_buy(Pet(num=29), idx)[1] == "error"
+
+
+def test_the_godzilla_egg_opens_on_monster_island():
+    """Joel 2026-10-15: the Godzilla egg unlocks by clearing Monster Island
+    (map 23, index 22) -- the kaiju road, Godzilla 1994's -- instead of
+    raising any Digimon to Mega."""
+    from tuipet import adventure, data, egg
+    idx = next(i for i in range(egg.count()) if egg.hatch_name(i) == "Godzilla Egg")
+    rule = data.load_egg_unlock()[idx]
+    prog = dict(persistence.get_progress(), maps=set(), maps_cleared=set(), raids=0,
+                max_stage=6)
+    assert not egg._conditions_met(rule, prog)         # a Mega alone no longer opens it
+    prog["maps_cleared"] = {22}
+    assert egg._conditions_met(rule, prog)
+    assert data.record_for(adventure.ZONES[22]["bosses"][0]["num"])["name"].startswith("Godzilla")
