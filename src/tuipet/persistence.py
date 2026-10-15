@@ -503,7 +503,10 @@ def snapshot_prev_gen(pet):
         "name": getattr(pet, "name", "") or "?",
         "stage": getattr(pet, "stage", "?"),
         "age": float(getattr(pet, "age_seconds", 0.0)),
-        "cups": int(getattr(pet, "trophies", 0)),
+        "cups": int(getattr(pet, "trophies", 0)),        # the lineage total
+        # THIS life's own cups (eggs call #31 = A, Joel 2026-10-15)
+        "cups_life": max(0, int(getattr(pet, "trophies", 0))
+                         - int(getattr(pet, "trophies_at_birth", 0) or 0)),
         "dead": bool(getattr(pet, "dead", False)),
         # the HALL OF MEMORY fields (Joel 2026-07-26 "build the hall of
         # memory"): the individual, not just the count -- its form for the

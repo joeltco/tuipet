@@ -632,7 +632,8 @@ def hall(app):
         f"[b]{_fit_cells(str(r.get('name', '?')), CARD_W - 1)}[/]",
         f"[dim]gen {int(r.get('gen', 1))} · {str(r.get('stage', '?'))[:12]}[/]",
         f"Lived   {age}",
-        f"Won     {wins}W · [{T.COIN}]★{int(r.get('cups', 0))}[/]",
+        # its OWN cups when the headstone knows them (eggs call #31 = A)
+        f"Won     {wins}W · [{T.COIN}]★{int(r.get('cups_life', r.get('cups', 0)))}[/]",
     ]
     if r.get("dead"):
         cause = str(r.get("cause", "") or "old age")

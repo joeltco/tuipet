@@ -101,9 +101,14 @@ class HallPanel:
         else:
             fate = "walked to the next egg"
         extra = ""
-        cups, wins = int(r.get("cups", 0)), int(r.get("wins", -1))
-        if cups:
-            extra += f" · {cups} cup{'s' if cups != 1 else ''}"
+        wins = int(r.get("wins", -1))
+        if "cups_life" in r:                  # its OWN cups (eggs call #31 = A)
+            cups = int(r.get("cups_life", 0))
+            if cups:
+                extra += f" · {cups} cup{'s' if cups != 1 else ''}"
+        elif int(r.get("cups", 0)):           # an older headstone: the lineage total
+            cups = int(r.get("cups", 0))
+            extra += f" · {cups} cup{'s' if cups != 1 else ''} total"
         if wins > 0:
             extra += f" · {wins} wins"
         return f"lived {age} · {fate}{extra}"

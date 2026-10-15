@@ -121,3 +121,25 @@ def test_earned_history_is_kept_per_account(tmp_path, monkeypatch):
     assert persistence.get_album() == {29}            # his book untouched
     persistence.set_account("layla", "pw")
     assert persistence.get_album() == {100}
+
+
+def test_an_elder_remembers_its_own_cups_not_the_lineage_total():
+    """Eggs call #31 = A (Joel 2026-10-15)."""
+    from tuipet import persistence
+    from tuipet.hallscreen import HallPanel
+    from tuipet.pet import Pet
+    gen1 = Pet(num=29, stage="Rookie", attribute="Vaccine")
+    gen1.trophies = 3
+    persistence.snapshot_prev_gen(gen1)
+    gen2 = Pet.new_egg(generation=2, egg_type=0)
+    assert gen2.trophies == 3 and gen2.trophies_at_birth == 3
+    gen2.stage, gen2.num = "Rookie", 29
+    gen2.trophies = 5                                     # won two of its own
+    persistence.snapshot_prev_gen(gen2)
+    legacy = persistence.load_settings()["progress"]["legacy"]
+    assert [r["cups_life"] for r in legacy] == [3, 2]
+    assert [r["cups"] for r in legacy] == [3, 5]
+    pan = HallPanel.__new__(HallPanel)
+    assert "2 cups" in pan._epitaph(legacy[-1]) and "total" not in pan._epitaph(legacy[-1])
+    old = {k: v for k, v in legacy[-1].items() if k != "cups_life"}   # a pre-split headstone
+    assert "5 cups total" in pan._epitaph(old)

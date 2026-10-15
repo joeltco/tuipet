@@ -48,7 +48,8 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
     care_mistakes: int = 0
     dna_owned: dict = _dcf(default_factory=lambda: {f: 0 for f in data.DNA_FIELDS})    # banked
     dna_applied: dict = _dcf(default_factory=lambda: {f: 0 for f in data.DNA_FIELDS})  # charged
-    born_at: float = 0.0            # wall-clock birth (saves call #27: an erased pet stays erased)
+    born_at: float = 0.0
+    trophies_at_birth: int = 0      # the inherited cup count (eggs call #31: per-life cups)            # wall-clock birth (saves call #27: an erased pet stays erased)
     dna_wager_pending: int = 0      # a paid mash in flight -- settled spoiled on relaunch (S2)
     food_ranks: dict = _dcf(default_factory=lambda: {c: 0 for c in data.FOOD_CATEGORIES})
     # the ATTRIBUTE taste ledger (taste/rank audit 2026-07-06): drills warm the
@@ -344,6 +345,7 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
             pet.bits = est["bits"]
             pet.inventory = est["inventory"]
             pet.trophies = est["trophies"]
+            pet.trophies_at_birth = int(est["trophies"] or 0)
             pet.trophies_won = est["trophies_won"]   # beaten qualifiers persist (seasonBeat)
             # egg audit 2026-10-14: retirement cannot refill today's egg ration.
             pet.town_bought = est["town_bought"]
