@@ -1130,3 +1130,20 @@ vbe,Mega,724,390;217;424,"TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",23:00,Anci
 vbe,Mega,635,390;217;250,"TR 20+, LV 7+, BTL 20+, WIN 14/20",23:00,Marsmon
 vbe,Mega,507,267;424;503,"TR 15+, LV 6+, BTL 15+, WIN 11/15",23:00,Volcanicdramon
 vbe,Mega,1243,267;503;250,"TR 10+, LV 6+, BTL 15+, WIN 8/15",23:00,Cannondramon
+iti,Fresh,1602,egg,TIME,20:00,"Pitchmon (official Infinite Tide DIM card, humulos vbdm/vol)"
+iti,InTraining,20,1602,TIME,21:00,Pukamon
+iti,Rookie,878,20,TIME,21:00,Sangomon
+iti,Champion,879,878,"TR 10+, LV 4+, BTL 8+",22:00,Tobiumon
+iti,Champion,110,878,"TR 8+, LV 3+, BTL 5+",22:00,Seadramon
+iti,Champion,105,878,"TR 5+, LV 2+, BTL 3+",22:00,Octmon
+iti,Champion,106,878,TIME,22:00,Shellmon
+iti,Ultimate,882,879;106,"TR 12+, LV 6+, BTL 15+, WIN 11/15",23:00,Gusokumon
+iti,Ultimate,880,110;105,"TR 12+, LV 6+, BTL 15+, WIN 11/15",23:00,Marin Chimairamon
+iti,Ultimate,603,879;106,"TR 10+, LV 5+, BTL 10+, WIN 5/10",23:00,Mermaimon
+iti,Ultimate,202,110;105,"TR 10+, LV 5+, BTL 10+, WIN 5/10",23:00,Mega Seadramon
+iti,Ultimate,881,879;110,"TR 8+, LV 4+, BTL 10+, WIN 5/10",23:00,Piranimon
+iti,Ultimate,206,106;105,"TR 8+, LV 4+, BTL 10+, WIN 5/10",23:00,Dagomon
+iti,Mega,283,880;202;206,"TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",23:00,Plesiomon
+iti,Mega,275,603;202;206,"TR 20+, LV 7+, BTL 20+, WIN 14/20",23:00,Metal Seadramon
+iti,Mega,883,882;880;881,"TR 15+, LV 6+, BTL 15+, WIN 11/15",23:00,Regalecusmon
+iti,Mega,432,882;603;881,"TR 10+, LV 6+, BTL 15+, WIN 8/15",23:00,Neptunemon

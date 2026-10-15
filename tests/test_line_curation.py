@@ -13,6 +13,9 @@ STAGES = ["Fresh", "InTraining", "Rookie", "Champion", "Ultimate", "Mega"]
 # design; ver1's Betamon road + the ver2-verE canon rewrite, 2026-07-07 --
 # every device line now matches its humulos DM20 chart)
 DECLARED_EDGES = {
+    # iti -- the official Infinite Tide DIM card's connectors the corpus graph
+    # never carried (humulos vbdm/vol; Joel approved the line 2026-10-15)
+    (878, 110), (878, 105), (105, 202), (879, 881), (110, 881), (106, 206), (603, 275), (880, 283), (206, 283),
     # vbe -- the official Volcanic Beat DIM card's connectors the corpus graph
     # never carried (humulos vbdm/vol; Joel approved the line 2026-10-15)
     (97, 267), (124, 217), (97, 424), (95, 250), (250, 635), (424, 507), (390, 724), (217, 724), (424, 724),

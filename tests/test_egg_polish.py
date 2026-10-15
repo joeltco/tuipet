@@ -120,3 +120,26 @@ def test_volcanic_beat_egg_hatches_its_own_line_and_opens_on_the_volcano_road():
     assert p.num == 1603 and p.line_id == "vbe" and lines.active(p)
     v = lines.load_lines()["vbe"]
     assert len(v["members"]) == 17
+
+
+def test_infinite_tide_egg_hatches_its_own_line_and_opens_on_seafloor_deep():
+    """Joel 2026-10-15: the official Infinite Tide DIM card as an egg line,
+    earned by clearing the Seafloor Deep road (map 16, index 15) -- the road
+    whose boss is the line's own Plesiomon."""
+    from tuipet import adventure, data, egg, lines, shop
+    idx = next(i for i in range(egg.count()) if egg.hatch_name(i) == "Infinite Tide Egg")
+    rule = data.load_egg_unlock()[idx]
+    prog = dict(persistence.get_progress(), maps=set(), maps_cleared=set(), raids=0)
+    assert not egg._conditions_met(rule, prog)
+    prog["maps_cleared"] = {15}
+    assert egg._conditions_met(rule, prog)
+    assert data.record_for(adventure.ZONES[15]["bosses"][0]["num"])["name"] == "Plesiomon"
+    p = Pet.new_egg(egg_type=idx)
+    p._hatch_into_fresh()
+    assert p.num == 1602 and p.line_id == "iti"
+    deep = next(i for i in range(egg.count()) if egg.hatch_name(i) == "Deep Savers Egg")
+    q = Pet.new_egg(egg_type=deep)
+    q._hatch_into_fresh()
+    assert q.num == 1602 and q.line_id == "dsv"          # the shared baby keeps its own line
+    assert len(lines.load_lines()["iti"]["members"]) == 17
+    assert shop.town_egg_buy(Pet(num=29), idx)[1] == "error"   # earned, never sold

@@ -847,7 +847,7 @@ EGG_STOCK_PER_TOWN = 6
 # the achievement IS the egg.  Matched by the egg's hatch name so a bank
 # reorder can't silently put one back on a shelf.
 EARN_ONLY_EGGS = frozenset({"Godzilla Egg", "Draco Egg", "Volcanic Beat Egg",
-                            "Digitama X3"})
+                            "Infinite Tide Egg", "Digitama X3"})
 
 
 def _earn_only(idx):

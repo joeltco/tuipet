@@ -152,6 +152,7 @@ EGG_BG = {
     46: "city",          # Godzilla Egg (* the kaiju come ashore at the city --
                          #   the device's G-Cell scenes end "Inside City")
     47: "volcano",       # Volcanic Beat Egg (VB DIM card; its egg unlocks on the Volcano road)
+    48: "seafloor",      # Infinite Tide Egg (VB DIM card; unlocks on the Seafloor Deep road)
 }
 
 

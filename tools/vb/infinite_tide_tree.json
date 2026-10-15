@@ -1,0 +1,1412 @@
+{
+  "card": "INFINITE TIDE",
+  "line_id": "iti",
+  "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+  "source_kind": "Saved Humulos HTML is authoritative for this proposal; live page opened 2026-10-15",
+  "digitama": {
+    "image_name": "digitama_pitch.gif",
+    "title_quote": "Pitchmon Digitama",
+    "source_image": "//humulos.com/digimon/images/dot/vbdm/digitama_pitch.gif",
+    "status": "Colour source only; no art conversion authorized"
+  },
+  "requirements_scope": "Each listed icon is AND; N/A means no constraint. No icons on I-II-III. No attribute Jogress inferred as connector edges.",
+  "source_hashes": {
+    "_astra/vbdm_vol.html": "281985d9690c848254c015a041f6422dabe5aedec78181b7a0fbdb3ff6394eb1",
+    "src/tuipet/data/digimon.csv": "445e7c04bcb13e3fe3106ca8d75591aac6484c244a819d64f6929ed1de0e9f25",
+    "src/tuipet/data/sprites.json.gz": "e275515239cd5a278dadf9deef5cf7a50d0e6fab3c7c3eee5724ffed3d6b354d",
+    "src/tuipet/data/lines.csv": "4fa06f3bd9c4f7c9f99a52cc6bea62ca12d1c0f95b7ca2aeb6ac1a5d95f6edd6",
+    "LINES_SPEC.md": "17cfb3439a3f1ba45b827646c16423111000b9e18b193b37c5a720aa1043c3c3",
+    "src/tuipet/data/eggs.json.gz": "1cec207760037a0f9fd8a13b00ee3e4040f841c378579da10a922c583b923000",
+    "src/tuipet/egg.py": "65f2d5580f92259bd3325827c49c3018d1555bd791881eeff437f12727b15b46",
+    "src/tuipet/pet.py": "50d7f3fb8344cda89495faaf12098bfd12099a8e4945525f624af561aaa62833"
+  },
+  "node_count": 17,
+  "edge_count": 30,
+  "nodes": [
+    {
+      "slug": "pitch",
+      "name": "Pitchmon",
+      "stage": "I",
+      "tuipet_stage": "Fresh",
+      "attribute": "None",
+      "parents": [],
+      "connector_classes": [],
+      "requirements": [],
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "source_locator": "#iti baby column",
+      "device_generic_time_to_next_stage_quote": "1 Hour",
+      "device_time_source": "https://humulos.com/digimon/vbdm/#faq",
+      "device_time_note": "Generic FAQ table, not an additional connector or promise of onward evolution; VI is terminal on this card.",
+      "dex_num": 1602,
+      "proposed_rule": "TIME"
+    },
+    {
+      "slug": "puka",
+      "name": "Pukamon",
+      "stage": "II",
+      "tuipet_stage": "InTraining",
+      "attribute": "None",
+      "parents": [
+        "pitch"
+      ],
+      "connector_classes": [
+        "iti_pitch_lineOut"
+      ],
+      "requirements": [],
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "source_locator": "#iti_puka_Req_column",
+      "device_generic_time_to_next_stage_quote": "3 Hours",
+      "device_time_source": "https://humulos.com/digimon/vbdm/#faq",
+      "device_time_note": "Generic FAQ table, not an additional connector or promise of onward evolution; VI is terminal on this card.",
+      "connector_note": "Unbranched adjacent stage columns; preceding horizontal lineOut, no requirement text.",
+      "dex_num": 20,
+      "proposed_rule": "TIME"
+    },
+    {
+      "slug": "sango",
+      "name": "Sangomon",
+      "stage": "III",
+      "tuipet_stage": "Rookie",
+      "attribute": "Data",
+      "parents": [
+        "puka"
+      ],
+      "connector_classes": [
+        "iti_puka_lineOut"
+      ],
+      "requirements": [],
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "source_locator": "#iti child column",
+      "device_generic_time_to_next_stage_quote": "16 Hours",
+      "device_time_source": "https://humulos.com/digimon/vbdm/#faq",
+      "device_time_note": "Generic FAQ table, not an additional connector or promise of onward evolution; VI is terminal on this card.",
+      "connector_note": "Unbranched adjacent stage columns; preceding horizontal lineOut, no requirement text.",
+      "dex_num": 878,
+      "proposed_rule": "TIME"
+    },
+    {
+      "slug": "tobiu",
+      "name": "Tobiumon",
+      "stage": "IV",
+      "tuipet_stage": "Champion",
+      "attribute": "Vaccine",
+      "parents": [
+        "sango"
+      ],
+      "connector_classes": [
+        "iti_sango_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "1,300+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "source_locator": "#iti_tobiu_Req_column",
+      "device_generic_time_to_next_stage_quote": "24 Hours",
+      "device_time_source": "https://humulos.com/digimon/vbdm/#faq",
+      "device_time_note": "Generic FAQ table, not an additional connector or promise of onward evolution; VI is terminal on this card.",
+      "dex_num": 879,
+      "proposed_rule": "TR 10+, LV 4+, BTL 8+"
+    },
+    {
+      "slug": "seadra",
+      "name": "Seadramon",
+      "stage": "IV",
+      "tuipet_stage": "Champion",
+      "attribute": "Data",
+      "parents": [
+        "sango"
+      ],
+      "connector_classes": [
+        "iti_sango_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "900+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "5+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "source_locator": "#iti_seadra_Req_column",
+      "device_generic_time_to_next_stage_quote": "24 Hours",
+      "device_time_source": "https://humulos.com/digimon/vbdm/#faq",
+      "device_time_note": "Generic FAQ table, not an additional connector or promise of onward evolution; VI is terminal on this card.",
+      "dex_num": 110,
+      "proposed_rule": "TR 8+, LV 3+, BTL 5+"
+    },
+    {
+      "slug": "shell",
+      "name": "Shellmon",
+      "stage": "IV",
+      "tuipet_stage": "Champion",
+      "attribute": "Data",
+      "parents": [
+        "sango"
+      ],
+      "connector_classes": [
+        "iti_sango_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "source_locator": "#iti_shell_Req_column",
+      "device_generic_time_to_next_stage_quote": "24 Hours",
+      "device_time_source": "https://humulos.com/digimon/vbdm/#faq",
+      "device_time_note": "Generic FAQ table, not an additional connector or promise of onward evolution; VI is terminal on this card.",
+      "dex_num": 106,
+      "proposed_rule": "TIME"
+    },
+    {
+      "slug": "oct",
+      "name": "Octmon",
+      "stage": "IV",
+      "tuipet_stage": "Champion",
+      "attribute": "Virus",
+      "parents": [
+        "sango"
+      ],
+      "connector_classes": [
+        "iti_sango_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "5+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "600+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "3+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "source_locator": "#iti_oct_Req_column",
+      "device_generic_time_to_next_stage_quote": "24 Hours",
+      "device_time_source": "https://humulos.com/digimon/vbdm/#faq",
+      "device_time_note": "Generic FAQ table, not an additional connector or promise of onward evolution; VI is terminal on this card.",
+      "dex_num": 105,
+      "proposed_rule": "TR 5+, LV 2+, BTL 3+"
+    },
+    {
+      "slug": "gusoku",
+      "name": "Gusokumon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Vaccine",
+      "parents": [
+        "tobiu",
+        "shell"
+      ],
+      "connector_classes": [
+        "iti_tobiu_line",
+        "iti_shell_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "source_locator": "#iti_gusoku_Req_column",
+      "device_generic_time_to_next_stage_quote": "24 Hours",
+      "device_time_source": "https://humulos.com/digimon/vbdm/#faq",
+      "device_time_note": "Generic FAQ table, not an additional connector or promise of onward evolution; VI is terminal on this card.",
+      "dex_num": 882,
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15"
+    },
+    {
+      "slug": "marinchimaira",
+      "name": "Marin Chimairamon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Vaccine",
+      "parents": [
+        "seadra",
+        "oct"
+      ],
+      "connector_classes": [
+        "iti_seadra_line",
+        "iti_oct_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "source_locator": "#iti_marinchimaira_Req_column",
+      "device_generic_time_to_next_stage_quote": "24 Hours",
+      "device_time_source": "https://humulos.com/digimon/vbdm/#faq",
+      "device_time_note": "Generic FAQ table, not an additional connector or promise of onward evolution; VI is terminal on this card.",
+      "dex_num": 880,
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15"
+    },
+    {
+      "slug": "mermai",
+      "name": "Mermaimon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Data",
+      "parents": [
+        "tobiu",
+        "shell"
+      ],
+      "connector_classes": [
+        "iti_tobiu_line",
+        "iti_shell_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "source_locator": "#iti_mermai_Req_column",
+      "device_generic_time_to_next_stage_quote": "24 Hours",
+      "device_time_source": "https://humulos.com/digimon/vbdm/#faq",
+      "device_time_note": "Generic FAQ table, not an additional connector or promise of onward evolution; VI is terminal on this card.",
+      "dex_num": 603,
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10"
+    },
+    {
+      "slug": "megaseadra",
+      "name": "Mega Seadramon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Data",
+      "parents": [
+        "seadra",
+        "oct"
+      ],
+      "connector_classes": [
+        "iti_seadra_line",
+        "iti_oct_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "source_locator": "#iti_megaseadra_Req_column",
+      "device_generic_time_to_next_stage_quote": "24 Hours",
+      "device_time_source": "https://humulos.com/digimon/vbdm/#faq",
+      "device_time_note": "Generic FAQ table, not an additional connector or promise of onward evolution; VI is terminal on this card.",
+      "dex_num": 202,
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10"
+    },
+    {
+      "slug": "pirani",
+      "name": "Piranimon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Virus",
+      "parents": [
+        "tobiu",
+        "seadra"
+      ],
+      "connector_classes": [
+        "iti_tobiu_line",
+        "iti_seadra_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "source_locator": "#iti_pirani_Req_column",
+      "device_generic_time_to_next_stage_quote": "24 Hours",
+      "device_time_source": "https://humulos.com/digimon/vbdm/#faq",
+      "device_time_note": "Generic FAQ table, not an additional connector or promise of onward evolution; VI is terminal on this card.",
+      "dex_num": 881,
+      "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10"
+    },
+    {
+      "slug": "dago",
+      "name": "Dagomon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Virus",
+      "parents": [
+        "shell",
+        "oct"
+      ],
+      "connector_classes": [
+        "iti_shell_line",
+        "iti_oct_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "source_locator": "#iti_dago_Req_column",
+      "device_generic_time_to_next_stage_quote": "24 Hours",
+      "device_time_source": "https://humulos.com/digimon/vbdm/#faq",
+      "device_time_note": "Generic FAQ table, not an additional connector or promise of onward evolution; VI is terminal on this card.",
+      "dex_num": 206,
+      "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10"
+    },
+    {
+      "slug": "neptune",
+      "name": "Neptunemon",
+      "stage": "VI",
+      "tuipet_stage": "Mega",
+      "attribute": "Vaccine",
+      "parents": [
+        "gusoku",
+        "mermai",
+        "pirani"
+      ],
+      "connector_classes": [
+        "iti_gusoku_line",
+        "iti_mermai_line",
+        "iti_pirani_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "source_locator": "#iti_neptune_Req_column",
+      "device_generic_time_to_next_stage_quote": "3 Hours",
+      "device_time_source": "https://humulos.com/digimon/vbdm/#faq",
+      "device_time_note": "Generic FAQ table, not an additional connector or promise of onward evolution; VI is terminal on this card.",
+      "dex_num": 432,
+      "proposed_rule": "TR 10+, LV 6+, BTL 15+, WIN 8/15"
+    },
+    {
+      "slug": "metalseadra",
+      "name": "Metal Seadramon",
+      "stage": "VI",
+      "tuipet_stage": "Mega",
+      "attribute": "Data",
+      "parents": [
+        "mermai",
+        "megaseadra",
+        "dago"
+      ],
+      "connector_classes": [
+        "iti_mermai_line",
+        "iti_megaseadra_line",
+        "iti_dago_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "5,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "source_locator": "#iti_metalseadra_Req_column",
+      "device_generic_time_to_next_stage_quote": "3 Hours",
+      "device_time_source": "https://humulos.com/digimon/vbdm/#faq",
+      "device_time_note": "Generic FAQ table, not an additional connector or promise of onward evolution; VI is terminal on this card.",
+      "dex_num": 275,
+      "proposed_rule": "TR 20+, LV 7+, BTL 20+, WIN 14/20"
+    },
+    {
+      "slug": "regalecus",
+      "name": "Regalecusmon",
+      "stage": "VI",
+      "tuipet_stage": "Mega",
+      "attribute": "Virus",
+      "parents": [
+        "gusoku",
+        "marinchimaira",
+        "pirani"
+      ],
+      "connector_classes": [
+        "iti_gusoku_line",
+        "iti_marinchimaira_line",
+        "iti_pirani_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "source_locator": "#iti_regalecus_Req_column",
+      "device_generic_time_to_next_stage_quote": "3 Hours",
+      "device_time_source": "https://humulos.com/digimon/vbdm/#faq",
+      "device_time_note": "Generic FAQ table, not an additional connector or promise of onward evolution; VI is terminal on this card.",
+      "dex_num": 883,
+      "proposed_rule": "TR 15+, LV 6+, BTL 15+, WIN 11/15"
+    },
+    {
+      "slug": "plesio",
+      "name": "Plesiomon",
+      "stage": "VI",
+      "tuipet_stage": "Mega",
+      "attribute": "Data",
+      "parents": [
+        "marinchimaira",
+        "megaseadra",
+        "dago"
+      ],
+      "connector_classes": [
+        "iti_marinchimaira_line",
+        "iti_megaseadra_line",
+        "iti_dago_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "7,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "25+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        },
+        {
+          "label_quote": "Special unlock",
+          "value_quote": "Stage 15 Cleared"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "source_locator": "#iti_plesio_Req_column",
+      "device_generic_time_to_next_stage_quote": "3 Hours",
+      "device_time_source": "https://humulos.com/digimon/vbdm/#faq",
+      "device_time_note": "Generic FAQ table, not an additional connector or promise of onward evolution; VI is terminal on this card.",
+      "dex_num": 283,
+      "proposed_rule": "TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14"
+    }
+  ],
+  "edges": [
+    {
+      "parent": "pitch",
+      "child": "puka",
+      "connector_class": "iti_pitch_lineOut",
+      "requirements": [],
+      "proposed_rule": "TIME",
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 lineBlue iti_pitch_lineOut reqToggle\"></div>"
+    },
+    {
+      "parent": "puka",
+      "child": "sango",
+      "connector_class": "iti_puka_lineOut",
+      "requirements": [],
+      "proposed_rule": "TIME",
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 lineBlue iti_puka_lineOut reqToggle\"></div>"
+    },
+    {
+      "parent": "sango",
+      "child": "tobiu",
+      "connector_class": "iti_sango_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "1,300+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 4+, BTL 8+",
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 lineGreen iti_sango_line\"></div>"
+    },
+    {
+      "parent": "sango",
+      "child": "seadra",
+      "connector_class": "iti_sango_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "900+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "5+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 3+, BTL 5+",
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 lineGreen iti_sango_line\"></div>"
+    },
+    {
+      "parent": "sango",
+      "child": "shell",
+      "connector_class": "iti_sango_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "proposed_rule": "TIME",
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 lineGreen iti_sango_line\"></div>"
+    },
+    {
+      "parent": "sango",
+      "child": "oct",
+      "connector_class": "iti_sango_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "5+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "600+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "3+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "proposed_rule": "TR 5+, LV 2+, BTL 3+",
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 lineGreen iti_sango_line\"></div>"
+    },
+    {
+      "parent": "tobiu",
+      "child": "gusoku",
+      "connector_class": "iti_tobiu_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "connector_element_quote": "<div class=\"line_hor60 lineRed iti_tobiu_line\"></div>"
+    },
+    {
+      "parent": "shell",
+      "child": "gusoku",
+      "connector_class": "iti_shell_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "connector_element_quote": "<div class=\"line_hor40 lineTeal iti_shell_line\"></div>"
+    },
+    {
+      "parent": "seadra",
+      "child": "marinchimaira",
+      "connector_class": "iti_seadra_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "connector_element_quote": "<div class=\"line_hor50 lineGreen iti_seadra_line\"></div>"
+    },
+    {
+      "parent": "oct",
+      "child": "marinchimaira",
+      "connector_class": "iti_oct_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 linePurple iti_oct_line\"></div>"
+    },
+    {
+      "parent": "tobiu",
+      "child": "mermai",
+      "connector_class": "iti_tobiu_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "connector_element_quote": "<div class=\"line_hor60 lineRed iti_tobiu_line\"></div>"
+    },
+    {
+      "parent": "shell",
+      "child": "mermai",
+      "connector_class": "iti_shell_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "connector_element_quote": "<div class=\"line_hor40 lineTeal iti_shell_line\"></div>"
+    },
+    {
+      "parent": "seadra",
+      "child": "megaseadra",
+      "connector_class": "iti_seadra_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "connector_element_quote": "<div class=\"line_hor50 lineGreen iti_seadra_line\"></div>"
+    },
+    {
+      "parent": "oct",
+      "child": "megaseadra",
+      "connector_class": "iti_oct_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 linePurple iti_oct_line\"></div>"
+    },
+    {
+      "parent": "tobiu",
+      "child": "pirani",
+      "connector_class": "iti_tobiu_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "connector_element_quote": "<div class=\"line_hor60 lineRed iti_tobiu_line\"></div>"
+    },
+    {
+      "parent": "seadra",
+      "child": "pirani",
+      "connector_class": "iti_seadra_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "connector_element_quote": "<div class=\"line_hor50 lineGreen iti_seadra_line\"></div>"
+    },
+    {
+      "parent": "shell",
+      "child": "dago",
+      "connector_class": "iti_shell_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "connector_element_quote": "<div class=\"line_hor40 lineTeal iti_shell_line\"></div>"
+    },
+    {
+      "parent": "oct",
+      "child": "dago",
+      "connector_class": "iti_oct_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 linePurple iti_oct_line\"></div>"
+    },
+    {
+      "parent": "gusoku",
+      "child": "neptune",
+      "connector_class": "iti_gusoku_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 6+, BTL 15+, WIN 8/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "connector_element_quote": "<div class=\"line_hor80 lineRed iti_gusoku_line\"></div>"
+    },
+    {
+      "parent": "mermai",
+      "child": "neptune",
+      "connector_class": "iti_mermai_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 6+, BTL 15+, WIN 8/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "connector_element_quote": "<div class=\"line_hor60 lineGreen iti_mermai_line\"></div>"
+    },
+    {
+      "parent": "pirani",
+      "child": "neptune",
+      "connector_class": "iti_pirani_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 6+, BTL 15+, WIN 8/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "connector_element_quote": "<div class=\"line_hor40 linePurple iti_pirani_line\"></div>"
+    },
+    {
+      "parent": "mermai",
+      "child": "metalseadra",
+      "connector_class": "iti_mermai_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "5,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 7+, BTL 20+, WIN 14/20",
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "connector_element_quote": "<div class=\"line_hor60 lineGreen iti_mermai_line\"></div>"
+    },
+    {
+      "parent": "megaseadra",
+      "child": "metalseadra",
+      "connector_class": "iti_megaseadra_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "5,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 7+, BTL 20+, WIN 14/20",
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "connector_element_quote": "<div class=\"line_hor50 lineTeal iti_megaseadra_line\"></div>"
+    },
+    {
+      "parent": "dago",
+      "child": "metalseadra",
+      "connector_class": "iti_dago_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "5,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 7+, BTL 20+, WIN 14/20",
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 lineIndigo iti_dago_line\"></div>"
+    },
+    {
+      "parent": "gusoku",
+      "child": "regalecus",
+      "connector_class": "iti_gusoku_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 15+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "connector_element_quote": "<div class=\"line_hor80 lineRed iti_gusoku_line\"></div>"
+    },
+    {
+      "parent": "marinchimaira",
+      "child": "regalecus",
+      "connector_class": "iti_marinchimaira_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 15+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "connector_element_quote": "<div class=\"line_hor70 lineYellow iti_marinchimaira_line\"></div>"
+    },
+    {
+      "parent": "pirani",
+      "child": "regalecus",
+      "connector_class": "iti_pirani_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 15+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "connector_element_quote": "<div class=\"line_hor40 linePurple iti_pirani_line\"></div>"
+    },
+    {
+      "parent": "marinchimaira",
+      "child": "plesio",
+      "connector_class": "iti_marinchimaira_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "7,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "25+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        },
+        {
+          "label_quote": "Special unlock",
+          "value_quote": "Stage 15 Cleared"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "connector_element_quote": "<div class=\"line_hor70 lineYellow iti_marinchimaira_line area1\" area=\"1\"></div>"
+    },
+    {
+      "parent": "megaseadra",
+      "child": "plesio",
+      "connector_class": "iti_megaseadra_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "7,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "25+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        },
+        {
+          "label_quote": "Special unlock",
+          "value_quote": "Stage 15 Cleared"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "connector_element_quote": "<div class=\"line_hor50 lineTeal iti_megaseadra_line area1\" area=\"1\"></div>"
+    },
+    {
+      "parent": "dago",
+      "child": "plesio",
+      "connector_class": "iti_dago_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "7,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "25+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        },
+        {
+          "label_quote": "Special unlock",
+          "value_quote": "Stage 15 Cleared"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",
+      "source": "https://humulos.com/digimon/vbdm/vol/#iti_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 lineIndigo iti_dago_line area1\" area=\"1\"></div>"
+    }
+  ]
+}
