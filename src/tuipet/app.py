@@ -162,7 +162,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("NO WASTED ITEMS. An item that would do nothing now refuses and stays in your bag, the Grow Capsule works on the Godzilla Mega, and the help explains the G-Cell meter.")
+    WHATS_NEW = ("VITAL BRACELET EGGS. Four official VB cards are egg lines -- Volcanic Beat, Infinite Tide, Nu Metal Empire, Blizzard Fang -- earned on their adventure roads. Crests sell in adventure towns; fights flip a coin for first strike; attribute powers and trained HP count in battle.")
 
 
     BINDINGS = [
