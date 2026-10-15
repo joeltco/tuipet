@@ -1411,12 +1411,17 @@ def battle(app):
     enemy = m.enemy or {}
     raid = bool(getattr(m, "raid", False))
     tag = f" [{T.NEG}]BOSS[/]" if enemy.get("boss") else ""
-    from .battle import RAID_PLAYER_HP
-    dflt = RAID_PLAYER_HP if raid else 5   # pre-lock: the raid fights from 10
+    from .battle import RAID_PLAYER_HP, trained_hp
+    # pre-lock / online duel (no local Battle): the raid fights from 10, a
+    # bout from the pet's TRAINED battle HP (battle call #21 = B); a duel
+    # names both sides' maxima (hp_max, set by the lobby)
+    mine_max, foe_dflt = getattr(m, "hp_max", None) or (
+        RAID_PLAYER_HP if raid else trained_hp(getattr(p, "full_health", 5)), 5)
+    dflt = mine_max
     pet_max = b.pet_max if b else dflt
-    foe_max = b.enemy_max if b else 5
+    foe_max = b.enemy_max if b else foe_dflt
     php = getattr(m, "hud_php", b.pet_hp if b else dflt)
-    fhp = getattr(m, "hud_fhp", b.enemy_hp if b else 5)
+    fhp = getattr(m, "hud_fhp", b.enemy_hp if b else foe_dflt)
     pp = int(100 * php / pet_max) if pet_max else 0
     fp = int(100 * fhp / foe_max) if foe_max else 0
     if raid:

@@ -444,7 +444,7 @@ def test_a_hostile_peer_card_is_clamped_to_legal_ranges():
                                  "energy": 10 ** 9, "energy_max": 10 ** 9,
                                  "battles": -5, "wins": 10 ** 9,
                                  "hit_type": "nuclear", "hp": 999999})
-    assert c["hp"] == 5, "everyone fights from 5 in the HP race"
+    assert c["hp"] <= 6, "trained HP adds at most +1 to the 5-HP race (battle call #21 = B)"
     assert c["strength"] <= c["strength_max"] <= 9
     assert c["energy"] <= c["energy_max"] <= 2000
     assert c["battles"] == 0 and c["wins"] == 0

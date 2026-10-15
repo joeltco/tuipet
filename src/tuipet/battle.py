@@ -31,6 +31,13 @@ ROUNDS_LOCAL = 20
 ROUNDS_ONLINE = ROUNDS_LOCAL
 ROUNDS_RAID = 10
 RAID_PLAYER_HP = 10
+# BATTLE CALL #21 = B (Joel 2026-10-15 "Sounds good"): the attribute powers
+# and the trained HP finally FIGHT.  Measured on even same-stage bouts (50%):
+# the power cap alone -> 56%, the HP step alone -> 63%, both -> 69% (max
+# drilling, for scale, is 80%).  A +2 HP step measured 74% and was dropped.
+POWER_HIT_PER_POINT = 0.002     # hit chance per point of power in the FOE's attribute
+POWER_HIT_CAP = 0.05            # ...capped (25 points)
+TRAINED_HP_STEP = 20            # full_health at which a pet fights with +1 HP
 
 # battle stage ranks on the CLASSIC growth ladder (the clone's Baby I..
 # Super Ultimate names mapped to this roster's Fresh..Mega; no Armor/
@@ -56,8 +63,12 @@ class Side:
                  strength=4, strength_max=4, hunger=4, hunger_max=4,
                  energy=5, energy_max=5, weight=None, base_weight=10,
                  trainings_cur=0, trainings_total=0,
-                 battles=0, wins=0, hit_type="normal", boss=False):
+                 battles=0, wins=0, hit_type="normal", boss=False,
+                 powers=None, hp=None):
         self.num = num
+        # {attribute: power} -- the experience vs each attribute (+1 per win)
+        self.powers = dict(powers or {})
+        self.hp = HP if hp is None else hp
         self.name = name or (data.record_for(num).get("name", "?") if num >= 0 else "?")
         self.stage = stage
         self.attribute = attribute
@@ -83,7 +94,10 @@ class Side:
                    trainings_cur=pet.stage_trainings,
                    trainings_total=getattr(pet, "total_trainings", 0),
                    battles=pet.battles, wins=pet.wins,
-                   hit_type=getattr(pet, "saved_hit_type", "normal"))
+                   hit_type=getattr(pet, "saved_hit_type", "normal"),
+                   powers={"Vaccine": pet.vaccine, "Data": pet.data_power,
+                           "Virus": pet.virus},
+                   hp=trained_hp(getattr(pet, "full_health", HP)))
 
     @classmethod
     def wild(cls, num, boss=False):
@@ -114,7 +128,8 @@ class Side:
                    trainings_cur=card.get("trainings_cur", 0),
                    trainings_total=card.get("trainings_total", 0),
                    battles=card.get("battles", 0), wins=card.get("wins", 0),
-                   hit_type=card.get("hit_type", "normal"))
+                   hit_type=card.get("hit_type", "normal"),
+                   powers=card.get("powers"), hp=card.get("hp", HP))
 
     def _rank(self):
         return _RANK.get(self.stage, 3)
@@ -151,8 +166,14 @@ class Side:
              # was the one mechanic left that could betray a player who
              # did everything right.)
              + (0.10 if self.hit_type == "mega" else 0.0)
-             + (-0.10 if other.hit_type == "mega" else 0.0))
+             + (-0.10 if other.hit_type == "mega" else 0.0)
+             + self.power_edge(other))
         return min(1.0, max(0.0, p))
+
+    def power_edge(self, other):
+        """Battle call #21 = B: power earned against the FOE's attribute."""
+        pts = max(0, int(self.powers.get(other.attribute, 0) or 0))
+        return min(POWER_HIT_CAP, pts * POWER_HIT_PER_POINT)
 
     def roll_damage(self, rng):
         # Pen20 shake ruling: a miss deals the plain 50% tier, same as
@@ -183,7 +204,7 @@ def generate(me, foe, rounds=ROUNDS_LOCAL, rng=None, me_first=True):
     it to the player.  `me_first` names who strikes first this bout; the
     callers flip it (Battle, the lobby's seeded duel, the NPC cup)."""
     rng = rng or random.random
-    my_hp, foe_hp = HP, HP
+    my_hp, foe_hp = getattr(me, "hp", HP), getattr(foe, "hp", HP)
     p_me, p_foe = me.hit_chance(foe), foe.hit_chance(me)
     seq = []
     for _ in range(rounds):
@@ -289,8 +310,8 @@ class Battle:
         self.player_first = rng() < 0.5
         self.seq, self._my_end, self._foe_end = generate(
             self.me, self.foe, rounds=rounds, rng=rng, me_first=self.player_first)
-        self.pet_hp, self.enemy_hp = HP, HP
-        self.pet_max = self.enemy_max = HP
+        self.pet_hp = self.pet_max = self.me.hp
+        self.enemy_hp = self.enemy_max = self.foe.hp
         self.round = 0
         self.over = False
         self.won = False
@@ -436,6 +457,15 @@ def pick_enemy(pet, boss=False):
             "stage": rec["stage"], "attribute": rec["attribute"]}
 
 
+def trained_hp(full_health):
+    """Battle HP from the TRAINED HP (battle call #21 = B): +1 once it
+    reaches TRAINED_HP_STEP."""
+    try:
+        return HP + (1 if int(full_health) >= TRAINED_HP_STEP else 0)
+    except (TypeError, ValueError):
+        return HP
+
+
 def battle_card(pet):
     """The stats card a lobby host/challenger relays (clamped by the peer)."""
     s = Side.of_pet(pet)
@@ -449,7 +479,7 @@ def battle_card(pet):
             "trainings_total": s.trainings_total,
             "battles": s.battles, "wins": s.wins, "hit_type": s.hit_type,
             # proto 4: the LIVE lock rides the commit, not this card
-            "proto": 4, "hp": HP}
+            "proto": 4, "hp": s.hp, "powers": dict(s.powers)}
 
 
 # plausible_card is gone (audit 2026-07-15): it was never called, and the

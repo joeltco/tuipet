@@ -251,7 +251,9 @@ class BattlePanel:
         self.won = None
         self.ran_away = False
         from .battle import RAID_PLAYER_HP
-        self.hud_php = RAID_PLAYER_HP if raid else 5   # raids fight from 10
+        from .battle import trained_hp
+        # raids fight from 10; a bout from the trained battle HP (call #21 = B)
+        self.hud_php = RAID_PLAYER_HP if raid else trained_hp(getattr(pet, "full_health", 5))
         self.hud_fhp = 5
         self.hud_note = "Battle start!"
         self.phase = "intro"
@@ -668,7 +670,9 @@ class BattlePanel:
         text-glyph page was the one bar that looked nothing like it).  The
         strip carries SPACE/ESC; the status card carries the coaching."""
         from .battle import RAID_PLAYER_HP
-        self.hud_php = RAID_PLAYER_HP if self.raid else 5
+        from .battle import trained_hp
+        self.hud_php = (RAID_PLAYER_HP if self.raid
+                        else trained_hp(getattr(self.pet, "full_health", 5)))
         self.hud_fhp = 5
         # the pre-fight read (Pen20 honesty 2026-07-23): the card names
         # THIS pet's actual biggest drag before the bell -- "weight 10g

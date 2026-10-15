@@ -63,6 +63,11 @@ def _clamp_card(card):
     card["trainings_total"] = _n(card.get("trainings_total"), 0, 0, 9999)
     card["battles"] = _n(card.get("battles"), 0, 0, 10 ** 6)
     card["wins"] = _n(card.get("wins"), 0, 0, card["battles"])
+    # battle call #21 = B: trained HP and attribute powers ride the card --
+    # bounded to what the game can award (+1 HP; powers past the cap add nothing)
+    card["hp"] = _n(card.get("hp"), 5, 5, 6)
+    raw = card.get("powers") if isinstance(card.get("powers"), dict) else {}
+    card["powers"] = {a: _n(raw.get(a), 0, 0, 25) for a in ("Vaccine", "Data", "Virus")}
     if card.get("hit_type") not in ("mega", "normal", "miss"):
         card["hit_type"] = "miss"
     card["num"] = _n(card.get("num"), 0, 0, 10 ** 6)
@@ -85,7 +90,7 @@ def _clamp_card(card):
             card["stage"] = "Rookie"
         if card.get("attribute") not in ("Vaccine", "Virus", "Data", "Free"):
             card["attribute"] = "Free"
-    card["hp"] = 5
+    # (the old `card["hp"] = 5` pin left: hp is bounded above, battle call #21)
     return card
 
 
@@ -194,7 +199,11 @@ class BoutMixin:
         host_first = rng() < 0.5
         seq, hhp, ghp = battle.generate(host, guest, rounds=battle.ROUNDS_ONLINE,
                                         rng=rng, me_first=host_first)
-        self.battle = {"seq": seq, "host_hp": 5, "guest_hp": 5, "i": 0,
+        if self.bshow is not None:           # the duel card's HP maxima (call #21 = B)
+            self.bshow.hp_max = ((host.hp, guest.hp) if self.is_host
+                                 else (guest.hp, host.hp))
+            self.bshow.hud_php, self.bshow.hud_fhp = self.bshow.hp_max
+        self.battle = {"seq": seq, "host_hp": host.hp, "guest_hp": guest.hp, "i": 0,
                        "host_first": host_first}
         self.bphase = "fight"
         self._play_next_round()

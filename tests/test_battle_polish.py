@@ -220,3 +220,30 @@ def test_a_home_battle_rolls_initiative():
                           rng=_r.Random(s).random)
         seen.add(b.player_first)
     assert seen == {True, False}
+
+
+def test_powers_and_trained_hp_fight_now():
+    """Battle call #21 = B (Joel 2026-10-15): power vs the FOE's attribute
+    adds hit (+0.2%/pt, cap +5%); trained HP 20+ fights with +1 HP."""
+    from tuipet.pet import Pet
+    p = Pet(num=29, stage="Rookie", attribute="Vaccine")
+    foe = battle.Side.wild(29)
+    base = battle.Side.of_pet(p).hit_chance(foe)
+    setattr(p, {"Vaccine": "vaccine", "Data": "data_power", "Virus": "virus"}[foe.attribute], 10)
+    assert abs(battle.Side.of_pet(p).hit_chance(foe) - base - 0.02) < 1e-9
+    setattr(p, {"Vaccine": "vaccine", "Data": "data_power", "Virus": "virus"}[foe.attribute], 500)
+    assert abs(battle.Side.of_pet(p).hit_chance(foe) - base - 0.05) < 1e-9   # capped
+    assert battle.Side.of_pet(p).hp == 5
+    p.full_health = 20
+    b = battle.Battle(p)
+    assert b.pet_hp == b.pet_max == 6 and b.enemy_max == 5
+
+
+def test_a_forged_card_cannot_claim_more_hp_or_power_than_the_game_awards():
+    card = _clamp_card({"num": 29, "hp": 99, "powers": {"Virus": 10 ** 6, "Data": -4}})
+    assert card["hp"] == 6
+    assert card["powers"] == {"Vaccine": 0, "Data": 0, "Virus": 25}
+    side = battle.Side.of_card(card)
+    assert side.hp == 6 and side.power_edge(battle.Side.wild(29)) <= battle.POWER_HIT_CAP
+    old = _clamp_card({"num": 29})                  # a pre-0.6.20 peer: no bonus
+    assert old["hp"] == 5 and not any(old["powers"].values())
