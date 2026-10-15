@@ -843,6 +843,18 @@ def digimental_open(key, prog=None):
 EGG_STOCK_PER_TOWN = 6
 
 
+# PRESTIGE EGGS ARE EARNED, NEVER BOUGHT (eggs call #30 = B, Joel 2026-10-15):
+# the achievement IS the egg.  Matched by the egg's hatch name so a bank
+# reorder can't silently put one back on a shelf.
+EARN_ONLY_EGGS = frozenset({"Godzilla Egg", "Draco Egg", "Volcanic Beat Egg",
+                            "Digitama X3"})
+
+
+def _earn_only(idx):
+    from . import egg as egg_mod
+    return egg_mod.hatch_name(idx) in EARN_ONLY_EGGS
+
+
 def _sellable_eggs():
     """The digitama a town may stock: every egg that ISN'T a free starter
     (the five START babies you already own) and CAN be owned.  A can_perm
@@ -855,7 +867,8 @@ def _sellable_eggs():
     rules = data.load_egg_unlock()
     return [i for i in range(egg_mod.count())
             if not (rules.get(i) or {}).get("start")
-            and (rules.get(i) or {}).get("can_perm", True)]
+            and (rules.get(i) or {}).get("can_perm", True)
+            and not _earn_only(i)]
 
 
 def town_egg_stock(town_id, count=EGG_STOCK_PER_TOWN):
@@ -1444,6 +1457,8 @@ def town_egg_buy(pet, idx):
         # the single buy path guards what the shelf filter promises: a
         # lineage egg is never permanently ownable (egg audit 2026-07-25)
         return ("A lineage egg — it hatches for those who earn it.", "error")
+    if _earn_only(idx):
+        return ("This egg is earned, never sold.", "error")
     if rule is not None and rule["start"]:
         # a starter is free and always yours: never charge for it or spend
         # the day's purchase on it (shop-egg audit 2026-10-15)

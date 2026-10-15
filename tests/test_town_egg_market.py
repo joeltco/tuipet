@@ -114,3 +114,18 @@ def test_after_the_days_egg_the_other_shelf_eggs_read_sold_out(tmp_path, monkeyp
     pan.msg_t = 0
     plain = pan.text().plain
     assert "sold out" in plain and "10000b" not in plain
+
+
+def test_prestige_eggs_are_earned_never_bought(tmp_path, monkeypatch):
+    """Eggs call #30 = B (Joel 2026-10-15)."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    names = {egg_mod.hatch_name(i): i for i in range(egg_mod.count())}
+    prestige = [names[n] for n in shop.EARN_ONLY_EGGS]
+    assert len(prestige) == 4
+    shelved = {i for t in range(30) for i in shop.town_egg_stock(t)}
+    assert not shelved & set(prestige)
+    p = _pet(bits=50_000)
+    for i in prestige:
+        msg, sfx = shop.town_egg_buy(p, i)
+        assert sfx == "error" and p.bits == 50_000
+    assert len(shop._sellable_eggs()) == 34
