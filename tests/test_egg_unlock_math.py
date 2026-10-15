@@ -78,13 +78,15 @@ def test_dormant_columns_are_empty_in_the_corpus():
     # obedience/mood woke up 2026-07-10: the Lalamon lineage egg gates on the
     # previous generation's devotion (Meicoomon's mood row left with the
     # fake-egg cut). Nothing else may.
+    from tuipet import egg, lines
+    road_eggs = {egg.hatch_name(i) for i in range(egg.count())
+                 if egg.hatch_line(i) in lines.load_lines()}
     for r in data.load_egg_unlock().values():
         if r["name"] not in ("Lalamon Egg",):
             assert r["obedience"] is None and r["mood"] is None
         assert r["food"] is None and r["item"] is None and r["habitat"] is None
         # the zone slot woke up 2026-10-15: one adventure map cleared (Volcanic Beat)
-        if r["name"] not in ("Volcanic Beat Egg", "Infinite Tide Egg", "Nu Metal Empire Egg",
-                             "Blizzard Fang Egg", "Hermit in the Jungle Egg",
-                             "Mad Black Roar Egg", "True Shadow Howl Egg",
-                             "Impulse City Egg", "Godzilla Egg", "Gammamon Egg"):
+        # the zone slot = one road cleared: only the card eggs (and Godzilla's
+        # Monster Island) use it -- every one of them names its own line
+        if r["name"] not in road_eggs:
             assert r["zone"] is None

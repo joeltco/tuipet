@@ -121,7 +121,11 @@ def test_prestige_eggs_are_earned_never_bought(tmp_path, monkeypatch):
     monkeypatch.setenv("HOME", str(tmp_path))
     names = {egg_mod.hatch_name(i): i for i in range(egg_mod.count())}
     prestige = [names[n] for n in shop.EARN_ONLY_EGGS]
-    assert len(prestige) == 12
+    from tuipet import lines
+    cards = {egg_mod.hatch_name(i) for i in range(egg_mod.count())
+             if egg_mod.hatch_line(i) in lines.load_lines()}
+    assert cards <= set(shop.EARN_ONLY_EGGS)            # every card egg is earn-only
+    assert len(prestige) == len(shop.EARN_ONLY_EGGS)
     shelved = {i for t in range(30) for i in shop.town_egg_stock(t)}
     assert not shelved & set(prestige)
     p = _pet(bits=50_000)
