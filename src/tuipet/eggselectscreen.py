@@ -78,9 +78,8 @@ class EggSelectPanel:
             return menu.hints(("ESC", "back"))
         if self.msg:
             return self.msg
-        if (self.locked > 0 and self.hint
-                and self.frame_i % (2 * TEASE_BEAT) >= TEASE_BEAT):
-            return f"{self.locked} more out there · {self.hint}"
+        # (the unlock hint left the strip's marquee for the card, wrapped in
+        #  full -- menus call #14 = A, 2026-10-15)
         return menu.hints(("←→", "pick"), ("ENTER", "hatch"), ("E", "guide"))
 
     def key(self, k):

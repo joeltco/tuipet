@@ -373,6 +373,7 @@ def title(app):
 
 
 def eggselect(app):
+    from rich.markup import escape
     m = app.mode
     # carousel = hatchable eggs ONLY (Joel 2026-07-12: no silhouettes,
     # no goals); the badge/shown branches below stay defensive in case a
@@ -404,8 +405,13 @@ def eggselect(app):
                           f"[b]{ename[:22]}[/]", "",
                           "Destined to hatch", f"  [b]{shown}[/]",
                           f"  {badge}", "",
-                          f"Home   {scene[:18]}", "",
-                          "[dim]←→ pick  ENTER hatch[/]"])
+                          f"Home   {scene[:18]}", ""]
+         # the next unlock, WRAPPED in full (menus call #14 = A, 2026-10-15:
+         # it used to scroll past in the message strip)
+         + ([f"[dim]{escape(ln)}[/]" for ln in
+             textwrap.wrap(f"Next: {m.hint}", CARD_W)[:4]] + [""]
+            if m.locked > 0 and getattr(m, "hint", "") else [])
+         + ["[dim]←→ pick  ENTER hatch[/]"])
 
 
 def scenes(app):

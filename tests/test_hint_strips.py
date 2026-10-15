@@ -92,21 +92,31 @@ def test_the_remaining_screens_strips_fit_too():
     #                                    sweep's verb, both surfaces (round 35)
 
 
-def test_the_egg_tease_rides_the_strip_whole():
-    """The unlock tease moved to the message strip (carousel redo
-    2026-07-19) -- the strip's OWN hud marquee carries over-wide lines,
-    so the widest eggUnlock desc still reads through whole (the 0.5.63
-    law: the tease never clips)."""
-    from tuipet import data
+def test_the_egg_tease_rides_the_card_whole_and_wrapped(monkeypatch):
+    """Menus call #14 = A (Joel 2026-10-15): the widest eggUnlock desc reads
+    WHOLE on the New Egg card, wrapped -- no marquee to wait for -- and the
+    strip keeps its keys."""
+    import re
+    import textwrap
+    from tuipet import data, statusbox
     from tuipet.eggselectscreen import EggSelectPanel, TEASE_BEAT
     descs = [r["desc"] for r in data.load_egg_unlock().values() if r.get("desc")]
     worst = max(descs, key=len)
     pan = EggSelectPanel()
     pan.hint, pan.locked, pan.msg = worst, 22, ""
-    pan.frame_i = TEASE_BEAT                       # the tease beat
-    strip = pan.strip()
-    assert worst in strip                          # the WHOLE hint is in the line;
-    #                                                the #msg hud marquees it
+    pan.frame_i = TEASE_BEAT
+    assert worst not in pan.strip() and "hatch" in pan.strip()
+    seen = {}
+
+    class _App:
+        mode, pet = pan, None
+    monkeypatch.setattr(statusbox, "card",
+                        lambda app, title, lines, **kw: seen.setdefault("lines", lines))
+    statusbox.eggselect(_App())
+    body = " ".join(re.sub(r"\[/?[^\[\]]*\]", "", ln) for ln in seen["lines"])
+    assert " ".join(textwrap.wrap("Next: " + worst, statusbox.CARD_W)) in body
+    assert all(len(re.sub(r"\[/?[^\[\]]*\]", "", ln)) <= statusbox.CARD_W
+               for ln in seen["lines"])
 
 
 def test_options_strip_covers_menu_and_confirm():

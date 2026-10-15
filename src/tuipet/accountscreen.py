@@ -95,9 +95,12 @@ class AccountPanel:
         t.append("  password: ", style=DIM)
         t.append(pw + "\n\n", style=INK_B if self.field == "pw" else INK)
         # keys ride the strip (round 35: the in-LCD hint line doubled it)
-        # the note MARQUEES when over-wide (QOL sweep 2026-07-23: the hard
-        # [:38] clip ate the actionable tail of long server rejections)
-        t.append_text(menu.footer_note("  " + self.note, tick=self.frame_i))
+        # the note WRAPS, never scrolls (menus call #14 = A, 2026-10-15): a
+        # server's words are the ones you must read -- the old marquee made
+        # you wait for the actionable tail of a long rejection
+        import textwrap
+        lines = textwrap.wrap(self.note, menu.W - 2) or [""]
+        t.append("\n".join("  " + ln for ln in lines[:6]), style=DIM)
         return t
 
 

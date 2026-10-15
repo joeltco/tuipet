@@ -464,15 +464,19 @@ def test_a_stalled_ladder_fetch_says_so_and_tab_retries():
 
 # ---- O7/O8: the account panel -----------------------------------------------
 
-def test_login_note_marquees_instead_of_clipping():
+def test_login_note_wraps_whole_instead_of_clipping():
+    """Menus call #14 = A (Joel 2026-10-15): a server note wraps in full,
+    readable at once -- no marquee to wait out, no clipped tail."""
     from tuipet.accountscreen import AccountPanel
     long_note = ("That name is already registered — pick another one "
                  "or type its password to log in.")
     pan = AccountPanel(note=long_note)
     first = pan.text().plain
-    for _ in range(120):                       # let the marquee walk
+    assert " ".join(first.split()).endswith(" ".join(long_note.split()))
+    assert all(len(ln) <= 40 for ln in first.splitlines())
+    for _ in range(120):
         pan.anim()
-    assert pan.text().plain != first, "an over-wide note must scroll"
+    assert pan.text().plain == first                     # holds still
 
 
 def test_password_peeks_its_last_char_only_while_typing():
