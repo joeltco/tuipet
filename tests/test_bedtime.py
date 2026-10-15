@@ -71,21 +71,21 @@ def test_midnight_bedtime_wraps():
     assert p.asleep and not p.nap
 
 
-def test_lit_sleep_mistakes_repeat_on_the_canon_cadence():
-    """Care-mistake audit 2026-07-05: AfterMistakeMinutesPostponed is -60, NOT
-    a once-per-night latch -- the lit mistake lands at 60 lit minutes and
-    REPEATS every 120 after (a fully lit night is ~4); the obedience ding
-    (LightsOnMistakeObedienceChange -1) lands once per night."""
+def test_a_lit_sleep_books_one_mistake_after_ten_minutes():
+    """Care call #15 = A (Joel 2026-10-15): the lights call gets the same ten
+    real minutes as hunger/effort and books at most ONE mistake a night
+    (the canon 60s + repeat-every-120 cadence cost a lit night five)."""
     p = _line_pet()
     p.world_seconds = 20 * 60 + 59.0
     _run(p, 3)
     assert p.asleep and p.lights
     cm0 = p.care_mistakes
-    _run(p, 70)                           # the first lit hour
+    _run(p, 70)                           # the old first-mistake mark: graced now
+    assert p.care_mistakes == cm0
+    _run(p, 540)                          # past ten lit minutes
     assert p.care_mistakes == cm0 + 1
-    # (the obedience ding left with the discipline system)
-    _run(p, 120)                          # ...and the canon repeat
-    assert p.care_mistakes == cm0 + 2
+    _run(p, 60)                           # ...and no repeat that night
+    assert p.care_mistakes == cm0 + 1
     # a dutiful night: lights off inside the grace -> no mistake
     q = _line_pet()
     q.world_seconds = 20 * 60 + 59.0

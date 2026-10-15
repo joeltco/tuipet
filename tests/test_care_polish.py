@@ -10,6 +10,8 @@ from tuipet.deathscreen import _age_str
 from tuipet.disciplinescreen import DisciplinePanel
 from tuipet.pet import Pet
 
+from tuipet.petbase import LIGHTS_MISTAKE_SEC
+
 
 def _pet(**kw):
     p = Pet(num=100, stage="Champion", obedience=100)
@@ -80,6 +82,7 @@ def test_each_real_sleep_gets_its_own_lights_obedience_penalty():
     p = _pet()
     for _ in range(2):
         p._fall_asleep()
+        p._lights_t = LIGHTS_MISTAKE_SEC - 30.0   # deep into the ten-minute grace
         p._tick_asleep(60)
         p._wake()
     assert p.obedience == 98

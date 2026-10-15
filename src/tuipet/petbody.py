@@ -175,14 +175,14 @@ class BodyMixin:
     def _tick_asleep(self, dt):
         """The sleep branch: lights neglect, deep-sleep regen, the awakeLapse
         clock with the restless jitter, asleep death checks, desperate poop."""
-        # lightsCall (DVPet): sleeping with the room light ON is neglect.
-        # AfterMistakeMinutesPostponed is -60, NOT a latch: the mistake REPEATS
-        # every 120 lit minutes (a fully lit night is ~4 mistakes); the
-        # obedience ding lands ONCE per night (_lightsOffMistake flag).
+        # lightsCall: sleeping with the room light ON is neglect -- ten real
+        # minutes of grace like every call, then ONE mistake for the night
+        # (care call #15 = A, 2026-10-15): the -inf latch holds until the
+        # next sleep resets the clock (_fall_asleep)
         if self.lights:
             self._lights_t = getattr(self, "_lights_t", 0.0) + dt
             if self._lights_t >= LIGHTS_MISTAKE_SEC:
-                self._lights_t = LIGHTS_MISTAKE_POSTPONE
+                self._lights_t = float("-inf")
                 if not getattr(self, "_lit_obed_hit", False):
                     self._lit_obed_hit = True
                     self._set_obedience(self.obedience + LIGHTS_MISTAKE_OBED)

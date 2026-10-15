@@ -240,7 +240,8 @@ def test_a_lit_night_is_the_dominant_mistake_source():
 
     lit = day(True)
     dark = day(False)
-    assert lit.count("the lights left on") >= 4, lit
+    # care call #15 = A (2026-10-15): a lit night books ONE mistake, not five
+    assert lit.count("the lights left on") == 1, lit
     assert "the lights left on" not in dark, dark
     assert len(lit) > len(dark), (lit, dark)
 

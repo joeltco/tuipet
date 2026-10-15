@@ -27,7 +27,7 @@ def test_canon_cadences_are_ported_as_real_seconds():
     accumulator, so the value must equal the canon number.  (The weather
     cadences left with the weather system; BASIC VPET 2026-07-16.)"""
     assert P.FILTH_MOOD_DEC_MIN == 5.0     # FilthMoodDecMin=5   (was 300 = 5 game HOURS)
-    assert P.LIGHTS_MISTAKE_SEC == 60.0    # MinutesToMistakeLights=60
+    assert P.LIGHTS_MISTAKE_SEC == 600.0   # ten real minutes, like every call (care call #15 = A)
     assert P.SICK_LAPSE_MIN == 29          # SickLapseMin=29
     assert P.DEPRESSED_LAPSE_MIN == 59.0   # DepressedLapseMin=59
     assert P.GIFT_CHANCE_MIN == 57.0       # GiftChanceMin=57

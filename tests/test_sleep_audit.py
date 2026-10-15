@@ -271,9 +271,9 @@ def test_lights_out_before_bedtime_is_a_doze_not_the_night():
 
 # ---- S2: the lit night --------------------------------------------------
 
-def test_a_lit_night_books_a_mistake_every_two_game_hours():
-    """LINES_SPEC §5 said 'once-per-night' until this measured it.  The
-    -60 postpone is not a latch — the mistake REPEATS."""
+def test_a_lit_night_books_one_mistake():
+    """Care call #15 = A (Joel 2026-10-15): once per night again, after a
+    ten-minute grace (the canon cadence booked ~5 a lit night)."""
     p = _liner(hour=20.5)
     p.lights = True
     hits, slept = [], False
@@ -287,9 +287,7 @@ def test_a_lit_night_books_a_mistake_every_two_game_hours():
         slept = slept or p.asleep
         if slept and was and not p.asleep:
             break                             # the night, and only the night
-    assert len(hits) >= 4, f"a fully lit night should cost ~5, saw {hits}"
-    gaps = [round(b - a, 1) for a, b in zip(hits, hits[1:])]
-    assert all(g == 2.0 for g in gaps), f"every 120 lit minutes: {gaps}"
+    assert len(hits) == 1, f"a fully lit night costs one, saw {hits}"
 
 
 def test_the_obedience_ding_lands_once_per_night():

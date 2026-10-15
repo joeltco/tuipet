@@ -212,13 +212,18 @@ def test_every_care_mistake_has_exactly_one_source(monkeypatch):
         if p.care_mistakes:
             break
     assert p.care_mistakes == 1
-    # filth left standing
-    q = _pet(poop=4, poop_sizes=[1, 1, 1, 1])
-    for _ in range(int(DAY_LENGTH)):
+    # the lights left on through a night (this door was labelled "filth"
+    # but the slip it caught was always the lit night -- filth books none;
+    # measured 2026-10-15 when the lights call took its ten-minute grace)
+    q = _pet()
+    q.lights, slips = True, []
+    _inc = q._inc_mistake
+    q._inc_mistake = lambda why="", *a, **k: (slips.append(why), _inc(why, *a, **k))
+    for _ in range(int(DAY_LENGTH) * 2):
         q.tick(1.0)
         if q.care_mistakes:
             break
-    assert q.care_mistakes >= 1
+    assert slips == ["the lights left on"]
     # stuffing a full belly
     r = _pet(hunger=4)
     before = r.care_mistakes

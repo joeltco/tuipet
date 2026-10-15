@@ -685,7 +685,11 @@ LIGHTS_MISTAKE_POSTPONE = -60.0         # AfterMistakeMinutesPostponed: the NEXT
 LIGHTS_MISTAKE_OBED = -1                # LightsOnMistakeObedienceChange (once per night)
 HUNGER_MISTAKE_OBED = 1                 # HungerMistakeObedienceChange (canon: +1!)
 HUNGER_MISTAKE_OBED_GLUTTON = -1        # ...ChangeGlutton
-LIGHTS_MISTAKE_SEC = 60.0               # MinutesToMistakeLights(60): the FIRST lit mistake
+# CARE CALL #15 = A (Joel 2026-10-15): the lights call gets the SAME ten real
+# minutes as hunger/effort, and books at most ONE mistake a night (the canon
+# 60s window + a repeat every 120 below cost a lit night five mistakes)
+LIGHTS_MISTAKE_SEC = 600.0
+# (history) MinutesToMistakeLights(60) was: the FIRST lit mistake
 #                                         lands 60 game-min into the sleep, then every 120
 #                                         (LIGHTS_MISTAKE_POSTPONE).  ⚠ THE OLD TAIL HERE
 #                                         CLAIMED "~6-min night -- one mistake/night" AND IT
