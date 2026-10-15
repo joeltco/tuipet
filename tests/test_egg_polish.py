@@ -185,3 +185,23 @@ def test_blizzard_fang_egg_hatches_yukimibotamon_into_its_line_on_frozen_peak():
     line = lines.load_lines()["bfa"]
     assert len(line["members"]) == 17 and 696 in line["members"]
     assert shop.town_egg_buy(Pet(num=29), idx)[1] == "error"
+
+
+def test_hermit_in_the_jungle_egg_hatches_yuramon_into_its_line_on_the_jungle_road():
+    """Joel 2026-10-15: the official Hermit in the Jungle DIM card as an egg
+    line, earned on the Jungle road (map 10, index 9)."""
+    from tuipet import data, egg, lines, shop
+    idx = next(i for i in range(egg.count()) if egg.hatch_name(i) == "Hermit in the Jungle Egg")
+    rule = data.load_egg_unlock()[idx]
+    prog = dict(persistence.get_progress(), maps=set(), maps_cleared=set(), raids=0)
+    assert not egg._conditions_met(rule, prog)
+    prog["maps_cleared"] = {9}
+    assert egg._conditions_met(rule, prog)
+    p = Pet.new_egg(egg_type=idx)
+    p._hatch_into_fresh()
+    assert p.num == 1414 and p.line_id == "hju"
+    q = Pet.new_egg(egg_type=3)                          # the Yuramon starter egg
+    q._hatch_into_fresh()
+    assert q.num == 1414 and q.line_id == "ver4"         # the shared baby keeps its line
+    assert len(lines.load_lines()["hju"]["members"]) == 17
+    assert shop.town_egg_buy(Pet(num=29), idx)[1] == "error"

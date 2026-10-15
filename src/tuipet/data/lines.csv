@@ -1182,3 +1182,20 @@ bfa,Mega,914,627;391,"TR 20+, LV 7+, BTL 20+, WIN 14/20",23:00,Hexeblaumon
 bfa,Mega,1047,269;391;696,"TR 15+, LV 6+, BTL 15+, WIN 11/15",23:00,Fros Velgrmon
 bfa,Mega,290,201;269;696,"TR 10+, LV 6+, BTL 15+, WIN 8/15",23:00,Skull Mammon
 bfa,Mega,914,1284,"TR 10+, LV 6+, BTL 15+, WIN 8/15",23:00,Hexeblaumon
+hju,Fresh,1414,egg,TIME,20:00,"Yuramon (official Hermit in the Jungle DIM card, humulos vbdm/vol)"
+hju,InTraining,18,1414,TIME,21:00,Tanemon
+hju,Rookie,44,18,TIME,21:00,Palmon
+hju,Champion,675,44,"TR 10+, LV 4+, BTL 8+",22:00,Snimon
+hju,Champion,170,44,"TR 8+, LV 3+, BTL 5+",22:00,Sunflowmon
+hju,Champion,894,44,"TR 5+, LV 2+, BTL 3+",22:00,Parasaurmon
+hju,Champion,109,44,TIME,22:00,Vegimon
+hju,Ultimate,1045,894;109,"TR 12+, LV 6+, BTL 15+, WIN 11/15",23:00,Ajatarmon
+hju,Ultimate,613,675;170,"TR 12+, LV 6+, BTL 15+, WIN 11/15",23:00,Jewelbeemon
+hju,Ultimate,218,170;894,"TR 10+, LV 5+, BTL 10+, WIN 5/10",23:00,Lilimon
+hju,Ultimate,235,675;109,"TR 10+, LV 5+, BTL 10+, WIN 5/10",23:00,Blossomon
+hju,Ultimate,896,170;894,"TR 8+, LV 4+, BTL 10+, WIN 5/10",23:00,Toropiamon
+hju,Ultimate,474,675;109,"TR 8+, LV 4+, BTL 10+, WIN 5/10",23:00,Arachnemon
+hju,Mega,1067,235;896;474,"TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",23:00,Hydramon
+hju,Mega,1046,1045;613;218,"TR 20+, LV 7+, BTL 20+, WIN 14/20",23:00,Bloom Lordmon
+hju,Mega,619,1045;235;896,"TR 15+, LV 6+, BTL 15+, WIN 11/15",23:00,Spinomon
+hju,Mega,508,613;218;474,"TR 10+, LV 6+, BTL 15+, WIN 8/15",23:00,Rafflesimon

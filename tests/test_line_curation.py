@@ -13,6 +13,9 @@ STAGES = ["Fresh", "InTraining", "Rookie", "Champion", "Ultimate", "Mega"]
 # design; ver1's Betamon road + the ver2-verE canon rewrite, 2026-07-07 --
 # every device line now matches its humulos DM20 chart)
 DECLARED_EDGES = {
+    # hju -- the official Hermit in the Jungle DIM card's connectors the corpus
+    # graph never carried (humulos vbdm/vol; Joel approved the line 2026-10-15)
+    (1414, 18), (44, 675), (44, 894), (675, 613), (170, 613), (894, 218), (675, 235), (170, 896), (675, 474), (109, 474), (613, 508), (218, 508), (474, 508), (235, 619), (896, 619),
     # bfa -- the official Blizzard Fang DIM card's connectors the corpus graph
     # never carried (humulos vbdm/vol; Joel approved the line 2026-10-15)
     (628, 547), (547, 391), (136, 696), (547, 696), (696, 290), (696, 1047), (201, 649), (627, 649), (1284, 649),

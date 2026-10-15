@@ -1,0 +1,1858 @@
+{
+  "card": "HERMIT IN THE JUNGLE",
+  "line_id": "hju",
+  "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+  "source_kind": "Saved Humulos HTML is authoritative for this proposal; live page opened 2026-10-15",
+  "digitama": {
+    "image_name": "digitama_yura.gif",
+    "title_quote": "Yuramon Digitama",
+    "source_image": "//humulos.com/digimon/images/dot/vbdm/digitama_yura.gif",
+    "status": "Colour source only; no art conversion authorized"
+  },
+  "requirements_scope": "Each listed icon is AND; N/A means no constraint. No icons on I-II-III. No attribute Jogress inferred as connector edges.",
+  "source_hashes": {
+    "_astra/vbdm_vol.html": "281985d9690c848254c015a041f6422dabe5aedec78181b7a0fbdb3ff6394eb1",
+    "_astra/list_vbdm.html": "43acd3463364054c1396811a24f2eb61ccace9bbbceca5532caee2adb9692b95",
+    "src/tuipet/data/digimon.csv": "445e7c04bcb13e3fe3106ca8d75591aac6484c244a819d64f6929ed1de0e9f25",
+    "src/tuipet/data/sprites.json.gz": "e275515239cd5a278dadf9deef5cf7a50d0e6fab3c7c3eee5724ffed3d6b354d",
+    "src/tuipet/data/lines.csv": "06fa464d60dba826e032e3674fbcdfb76c336b60d741828efefa711577f30d4d",
+    "LINES_SPEC.md": "5ec2c2aabfba16dc11e0e3ed6aa83b9f4a127a8804d2ae7cf7e96e1455a8b6f6",
+    "src/tuipet/data/eggs.json.gz": "a31f271142ab014f5b72cd5be229a5175c008de770f10b4180e2c790c5e6fdc4",
+    "src/tuipet/egg.py": "65f2d5580f92259bd3325827c49c3018d1555bd791881eeff437f12727b15b46",
+    "src/tuipet/pet.py": "50d7f3fb8344cda89495faaf12098bfd12099a8e4945525f624af561aaa62833",
+    "src/tuipet/lines.py": "e8bf28695524d7f47334d6ba214c428df19900683f0c23d2f576894d384c1082",
+    "src/tuipet/digicore.py": "59c676855513204f6cf9cd8713659dd77802b6f7d587e6e636a141fa661e1fd0",
+    "src/tuipet/evolution.py": "26aac233383d52e666e66ed4b788b7610dfb3ce1ad07fc8bab9182626c40f8e9",
+    "tests/test_line_curation.py": "3c1270ad438b1edf35f83013cb6f515ebf3e3d3629f669f73cef0dcd40227402"
+  },
+  "node_count": 17,
+  "edge_count": 30,
+  "nodes": [
+    {
+      "slug": "yura",
+      "name": "Yuramon",
+      "stage": "I",
+      "tuipet_stage": "Fresh",
+      "attribute": "None",
+      "parents": [],
+      "connector_classes": [],
+      "requirements": [],
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "source_locator": "#hju baby column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "I",
+      "list_attribute_quote": "Free",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "dex_num": 1414,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [],
+          "requirements": [],
+          "proposed_rule": "TIME"
+        }
+      ],
+      "proposed_rule": "TIME"
+    },
+    {
+      "slug": "tane",
+      "name": "Tanemon",
+      "stage": "II",
+      "tuipet_stage": "InTraining",
+      "attribute": "None",
+      "parents": [
+        "yura"
+      ],
+      "connector_classes": [
+        "hju_yura_lineOut"
+      ],
+      "requirements": [],
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "source_locator": "#hju_tane_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "II",
+      "list_attribute_quote": "Free",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "connector_note": "Unbranched adjacent stage columns; preceding horizontal lineOut, no requirement text.",
+      "dex_num": 18,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "yura"
+          ],
+          "requirements": [],
+          "proposed_rule": "TIME"
+        }
+      ],
+      "proposed_rule": "TIME"
+    },
+    {
+      "slug": "pal",
+      "name": "Palmon",
+      "stage": "III",
+      "tuipet_stage": "Rookie",
+      "attribute": "Data",
+      "parents": [
+        "tane"
+      ],
+      "connector_classes": [
+        "hju_tane_lineOut"
+      ],
+      "requirements": [],
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "source_locator": "#hju child column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "III",
+      "list_attribute_quote": "Data",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "connector_note": "Unbranched adjacent stage columns; preceding horizontal lineOut, no requirement text.",
+      "dex_num": 44,
+      "mapping_status": "ATTRIBUTE_CONFLICT",
+      "requirement_groups": [
+        {
+          "parents": [
+            "tane"
+          ],
+          "requirements": [],
+          "proposed_rule": "TIME"
+        }
+      ],
+      "proposed_rule": "TIME"
+    },
+    {
+      "slug": "sni",
+      "name": "Snimon",
+      "stage": "IV",
+      "tuipet_stage": "Champion",
+      "attribute": "Vaccine",
+      "parents": [
+        "pal"
+      ],
+      "connector_classes": [
+        "hju_pal_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "1,300+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "source_locator": "#hju_sni_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "IV",
+      "list_attribute_quote": "Vaccine",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "dex_num": 675,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "pal"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "10+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "1,300+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "8+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "N/A"
+            }
+          ],
+          "proposed_rule": "TR 10+, LV 4+, BTL 8+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 4+, BTL 8+"
+    },
+    {
+      "slug": "sunflow",
+      "name": "Sunflowmon",
+      "stage": "IV",
+      "tuipet_stage": "Champion",
+      "attribute": "Data",
+      "parents": [
+        "pal"
+      ],
+      "connector_classes": [
+        "hju_pal_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "900+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "5+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "source_locator": "#hju_sunflow_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "IV",
+      "list_attribute_quote": "Data",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "dex_num": 170,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "pal"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "8+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "900+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "5+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "N/A"
+            }
+          ],
+          "proposed_rule": "TR 8+, LV 3+, BTL 5+"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 3+, BTL 5+"
+    },
+    {
+      "slug": "parasaur",
+      "name": "Parasaurmon",
+      "stage": "IV",
+      "tuipet_stage": "Champion",
+      "attribute": "Virus",
+      "parents": [
+        "pal"
+      ],
+      "connector_classes": [
+        "hju_pal_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "5+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "600+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "3+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "source_locator": "#hju_parasaur_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "IV",
+      "list_attribute_quote": "Virus",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "dex_num": 894,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "pal"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "5+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "600+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "3+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "N/A"
+            }
+          ],
+          "proposed_rule": "TR 5+, LV 2+, BTL 3+"
+        }
+      ],
+      "proposed_rule": "TR 5+, LV 2+, BTL 3+"
+    },
+    {
+      "slug": "vegi",
+      "name": "Vegimon",
+      "stage": "IV",
+      "tuipet_stage": "Champion",
+      "attribute": "Virus",
+      "parents": [
+        "pal"
+      ],
+      "connector_classes": [
+        "hju_pal_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "source_locator": "#hju_vegi_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "IV",
+      "list_attribute_quote": "Virus",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "dex_num": 109,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "pal"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "N/A"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "N/A"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "N/A"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "N/A"
+            }
+          ],
+          "proposed_rule": "TIME"
+        }
+      ],
+      "proposed_rule": "TIME"
+    },
+    {
+      "slug": "ajatar",
+      "name": "Ajatarmon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Vaccine",
+      "parents": [
+        "parasaur",
+        "vegi"
+      ],
+      "connector_classes": [
+        "hju_parasaur_line",
+        "hju_vegi_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "source_locator": "#hju_ajatar_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "V",
+      "list_attribute_quote": "Vaccine",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "dex_num": 1045,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "parasaur",
+            "vegi"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "12+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "3,000+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "15+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "70%+"
+            }
+          ],
+          "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15"
+        }
+      ],
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15"
+    },
+    {
+      "slug": "jewelbee",
+      "name": "Jewelbeemon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Vaccine",
+      "parents": [
+        "sni",
+        "sunflow"
+      ],
+      "connector_classes": [
+        "hju_sni_line",
+        "hju_sunflow_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "source_locator": "#hju_jewelbee_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "V",
+      "list_attribute_quote": "Vaccine",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "dex_num": 613,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "sni",
+            "sunflow"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "12+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "3,000+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "15+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "70%+"
+            }
+          ],
+          "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15"
+        }
+      ],
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15"
+    },
+    {
+      "slug": "lili",
+      "name": "Lilimon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Data",
+      "parents": [
+        "sunflow",
+        "parasaur"
+      ],
+      "connector_classes": [
+        "hju_sunflow_line",
+        "hju_parasaur_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "source_locator": "#hju_lili_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "V",
+      "list_attribute_quote": "Data",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "dex_num": 218,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "sunflow",
+            "parasaur"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "10+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "2,500+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "10+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "50%+"
+            }
+          ],
+          "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10"
+    },
+    {
+      "slug": "blosso",
+      "name": "Blossomon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Data",
+      "parents": [
+        "sni",
+        "vegi"
+      ],
+      "connector_classes": [
+        "hju_sni_line",
+        "hju_vegi_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "source_locator": "#hju_blosso_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "V",
+      "list_attribute_quote": "Data",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "dex_num": 235,
+      "mapping_status": "ATTRIBUTE_CONFLICT",
+      "requirement_groups": [
+        {
+          "parents": [
+            "sni",
+            "vegi"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "10+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "2,500+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "10+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "50%+"
+            }
+          ],
+          "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10"
+    },
+    {
+      "slug": "toropia",
+      "name": "Toropiamon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Virus",
+      "parents": [
+        "sunflow",
+        "parasaur"
+      ],
+      "connector_classes": [
+        "hju_sunflow_line",
+        "hju_parasaur_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "source_locator": "#hju_toropia_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "V",
+      "list_attribute_quote": "Virus",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "dex_num": 896,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "sunflow",
+            "parasaur"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "8+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "2,000+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "10+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "50%+"
+            }
+          ],
+          "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10"
+    },
+    {
+      "slug": "archne",
+      "name": "Arachnemon",
+      "stage": "V",
+      "tuipet_stage": "Ultimate",
+      "attribute": "Virus",
+      "parents": [
+        "sni",
+        "vegi"
+      ],
+      "connector_classes": [
+        "hju_sni_line",
+        "hju_vegi_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "source_locator": "#hju_archne_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "V",
+      "list_attribute_quote": "Virus",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "dex_num": 474,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "sni",
+            "vegi"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "8+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "2,000+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "10+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "50%+"
+            }
+          ],
+          "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10"
+    },
+    {
+      "slug": "bloomlord",
+      "name": "Bloom Lordmon",
+      "stage": "VI",
+      "tuipet_stage": "Mega",
+      "attribute": "Vaccine",
+      "parents": [
+        "ajatar",
+        "jewelbee",
+        "lili"
+      ],
+      "connector_classes": [
+        "hju_ajatar_line",
+        "hju_jewelbee_line",
+        "hju_lili_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "5,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "source_locator": "#hju_bloomlord_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "VI",
+      "list_attribute_quote": "Vaccine",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "dex_num": 1046,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "ajatar",
+            "jewelbee",
+            "lili"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "20+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "5,000+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "20+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "70%+"
+            }
+          ],
+          "proposed_rule": "TR 20+, LV 7+, BTL 20+, WIN 14/20"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 7+, BTL 20+, WIN 14/20"
+    },
+    {
+      "slug": "rafflesi",
+      "name": "Rafflesimon",
+      "stage": "VI",
+      "tuipet_stage": "Mega",
+      "attribute": "Data",
+      "parents": [
+        "jewelbee",
+        "lili",
+        "archne"
+      ],
+      "connector_classes": [
+        "hju_jewelbee_line",
+        "hju_lili_line",
+        "hju_archne_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "source_locator": "#hju_rafflesi_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "VI",
+      "list_attribute_quote": "Data",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "dex_num": 508,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "jewelbee",
+            "lili",
+            "archne"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "10+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "4,500+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "15+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "50%+"
+            }
+          ],
+          "proposed_rule": "TR 10+, LV 6+, BTL 15+, WIN 8/15"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 6+, BTL 15+, WIN 8/15"
+    },
+    {
+      "slug": "spino",
+      "name": "Spinomon",
+      "stage": "VI",
+      "tuipet_stage": "Mega",
+      "attribute": "Virus",
+      "parents": [
+        "ajatar",
+        "blosso",
+        "toropia"
+      ],
+      "connector_classes": [
+        "hju_ajatar_line",
+        "hju_blosso_line",
+        "hju_toropia_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "source_locator": "#hju_spino_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "VI",
+      "list_attribute_quote": "Virus",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "dex_num": 619,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "ajatar",
+            "blosso",
+            "toropia"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "15+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "4,500+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "15+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "70%+"
+            }
+          ],
+          "proposed_rule": "TR 15+, LV 6+, BTL 15+, WIN 11/15"
+        }
+      ],
+      "proposed_rule": "TR 15+, LV 6+, BTL 15+, WIN 11/15"
+    },
+    {
+      "slug": "hydra",
+      "name": "Hydramon",
+      "stage": "VI",
+      "tuipet_stage": "Mega",
+      "attribute": "Virus",
+      "parents": [
+        "blosso",
+        "toropia",
+        "archne"
+      ],
+      "connector_classes": [
+        "hju_blosso_line",
+        "hju_toropia_line",
+        "hju_archne_line"
+      ],
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "7,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "25+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        },
+        {
+          "label_quote": "Special unlock",
+          "value_quote": "Stage 15 Cleared"
+        }
+      ],
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "source_locator": "#hju_hydra_Req_column",
+      "attribute_source": "_astra/list_vbdm.html",
+      "list_stage_quote": "VI",
+      "list_attribute_quote": "Virus",
+      "requirements_note": "Each connector group has AND requirements; different groups apply only to their listed parents. N/A is no gate.",
+      "dex_num": 1067,
+      "mapping_status": "OK",
+      "requirement_groups": [
+        {
+          "parents": [
+            "blosso",
+            "toropia",
+            "archne"
+          ],
+          "requirements": [
+            {
+              "label_quote": "Trophies",
+              "value_quote": "20+"
+            },
+            {
+              "label_quote": "Vital Values",
+              "value_quote": "7,000+"
+            },
+            {
+              "label_quote": "Battles",
+              "value_quote": "25+"
+            },
+            {
+              "label_quote": "Win Ratio",
+              "value_quote": "70%+"
+            },
+            {
+              "label_quote": "Special unlock",
+              "value_quote": "Stage 15 Cleared"
+            }
+          ],
+          "proposed_rule": "TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14"
+    }
+  ],
+  "edges": [
+    {
+      "parent": "yura",
+      "child": "tane",
+      "connector_class": "hju_yura_lineOut",
+      "requirements": [],
+      "proposed_rule": "TIME",
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 lineBlue hju_yura_lineOut reqToggle\"></div>"
+    },
+    {
+      "parent": "tane",
+      "child": "pal",
+      "connector_class": "hju_tane_lineOut",
+      "requirements": [],
+      "proposed_rule": "TIME",
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 lineBlue hju_tane_lineOut reqToggle\"></div>"
+    },
+    {
+      "parent": "pal",
+      "child": "sni",
+      "connector_class": "hju_pal_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "1,300+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 4+, BTL 8+",
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 lineGreen hju_pal_line\"></div>"
+    },
+    {
+      "parent": "pal",
+      "child": "sunflow",
+      "connector_class": "hju_pal_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "900+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "5+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 3+, BTL 5+",
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 lineGreen hju_pal_line\"></div>"
+    },
+    {
+      "parent": "pal",
+      "child": "parasaur",
+      "connector_class": "hju_pal_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "5+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "600+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "3+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "proposed_rule": "TR 5+, LV 2+, BTL 3+",
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 lineGreen hju_pal_line\"></div>"
+    },
+    {
+      "parent": "pal",
+      "child": "vegi",
+      "connector_class": "hju_pal_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "N/A"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "N/A"
+        }
+      ],
+      "proposed_rule": "TIME",
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 lineGreen hju_pal_line\"></div>"
+    },
+    {
+      "parent": "parasaur",
+      "child": "ajatar",
+      "connector_class": "hju_parasaur_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "connector_element_quote": "<div class=\"line_hor40 linePurple hju_parasaur_line\"></div>"
+    },
+    {
+      "parent": "vegi",
+      "child": "ajatar",
+      "connector_class": "hju_vegi_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 lineIndigo hju_vegi_line\"></div>"
+    },
+    {
+      "parent": "sni",
+      "child": "jewelbee",
+      "connector_class": "hju_sni_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "connector_element_quote": "<div class=\"line_hor60 lineRed hju_sni_line\"></div>"
+    },
+    {
+      "parent": "sunflow",
+      "child": "jewelbee",
+      "connector_class": "hju_sunflow_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "12+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "3,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 12+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "connector_element_quote": "<div class=\"line_hor50 lineGreen hju_sunflow_line\"></div>"
+    },
+    {
+      "parent": "sunflow",
+      "child": "lili",
+      "connector_class": "hju_sunflow_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "connector_element_quote": "<div class=\"line_hor50 lineGreen hju_sunflow_line\"></div>"
+    },
+    {
+      "parent": "parasaur",
+      "child": "lili",
+      "connector_class": "hju_parasaur_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "connector_element_quote": "<div class=\"line_hor40 linePurple hju_parasaur_line\"></div>"
+    },
+    {
+      "parent": "sni",
+      "child": "blosso",
+      "connector_class": "hju_sni_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "connector_element_quote": "<div class=\"line_hor60 lineRed hju_sni_line\"></div>"
+    },
+    {
+      "parent": "vegi",
+      "child": "blosso",
+      "connector_class": "hju_vegi_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 5+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 lineIndigo hju_vegi_line\"></div>"
+    },
+    {
+      "parent": "sunflow",
+      "child": "toropia",
+      "connector_class": "hju_sunflow_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "connector_element_quote": "<div class=\"line_hor50 lineGreen hju_sunflow_line\"></div>"
+    },
+    {
+      "parent": "parasaur",
+      "child": "toropia",
+      "connector_class": "hju_parasaur_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "connector_element_quote": "<div class=\"line_hor40 linePurple hju_parasaur_line\"></div>"
+    },
+    {
+      "parent": "sni",
+      "child": "archne",
+      "connector_class": "hju_sni_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "connector_element_quote": "<div class=\"line_hor60 lineRed hju_sni_line\"></div>"
+    },
+    {
+      "parent": "vegi",
+      "child": "archne",
+      "connector_class": "hju_vegi_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "8+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "2,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 8+, LV 4+, BTL 10+, WIN 5/10",
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 lineIndigo hju_vegi_line\"></div>"
+    },
+    {
+      "parent": "ajatar",
+      "child": "bloomlord",
+      "connector_class": "hju_ajatar_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "5,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 7+, BTL 20+, WIN 14/20",
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "connector_element_quote": "<div class=\"line_hor50 lineRed hju_ajatar_line\"></div>"
+    },
+    {
+      "parent": "jewelbee",
+      "child": "bloomlord",
+      "connector_class": "hju_jewelbee_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "5,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 7+, BTL 20+, WIN 14/20",
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "connector_element_quote": "<div class=\"line_hor40 lineYellow hju_jewelbee_line\"></div>"
+    },
+    {
+      "parent": "lili",
+      "child": "bloomlord",
+      "connector_class": "hju_lili_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "5,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 7+, BTL 20+, WIN 14/20",
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 lineGreen hju_lili_line\"></div>"
+    },
+    {
+      "parent": "jewelbee",
+      "child": "rafflesi",
+      "connector_class": "hju_jewelbee_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 6+, BTL 15+, WIN 8/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "connector_element_quote": "<div class=\"line_hor40 lineYellow hju_jewelbee_line\"></div>"
+    },
+    {
+      "parent": "lili",
+      "child": "rafflesi",
+      "connector_class": "hju_lili_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 6+, BTL 15+, WIN 8/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 lineGreen hju_lili_line\"></div>"
+    },
+    {
+      "parent": "archne",
+      "child": "rafflesi",
+      "connector_class": "hju_archne_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "10+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "50%+"
+        }
+      ],
+      "proposed_rule": "TR 10+, LV 6+, BTL 15+, WIN 8/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "connector_element_quote": "<div class=\"line_hor40 lineIndigo hju_archne_line\"></div>"
+    },
+    {
+      "parent": "ajatar",
+      "child": "spino",
+      "connector_class": "hju_ajatar_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 15+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "connector_element_quote": "<div class=\"line_hor50 lineRed hju_ajatar_line\"></div>"
+    },
+    {
+      "parent": "blosso",
+      "child": "spino",
+      "connector_class": "hju_blosso_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 15+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "connector_element_quote": "<div class=\"line_hor50 lineTeal hju_blosso_line\"></div>"
+    },
+    {
+      "parent": "toropia",
+      "child": "spino",
+      "connector_class": "hju_toropia_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "4,500+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "15+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        }
+      ],
+      "proposed_rule": "TR 15+, LV 6+, BTL 15+, WIN 11/15",
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 linePurple hju_toropia_line\"></div>"
+    },
+    {
+      "parent": "blosso",
+      "child": "hydra",
+      "connector_class": "hju_blosso_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "7,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "25+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        },
+        {
+          "label_quote": "Special unlock",
+          "value_quote": "Stage 15 Cleared"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "connector_element_quote": "<div class=\"line_hor50 lineTeal hju_blosso_line area1\" area=\"1\"></div>"
+    },
+    {
+      "parent": "toropia",
+      "child": "hydra",
+      "connector_class": "hju_toropia_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "7,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "25+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        },
+        {
+          "label_quote": "Special unlock",
+          "value_quote": "Stage 15 Cleared"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "connector_element_quote": "<div class=\"line_hor30 linePurple hju_toropia_line area1\" area=\"1\"></div>"
+    },
+    {
+      "parent": "archne",
+      "child": "hydra",
+      "connector_class": "hju_archne_line",
+      "requirements": [
+        {
+          "label_quote": "Trophies",
+          "value_quote": "20+"
+        },
+        {
+          "label_quote": "Vital Values",
+          "value_quote": "7,000+"
+        },
+        {
+          "label_quote": "Battles",
+          "value_quote": "25+"
+        },
+        {
+          "label_quote": "Win Ratio",
+          "value_quote": "70%+"
+        },
+        {
+          "label_quote": "Special unlock",
+          "value_quote": "Stage 15 Cleared"
+        }
+      ],
+      "proposed_rule": "TR 20+, LV 8+, BTL 25+, WIN 18/25, AREA 14",
+      "source": "https://humulos.com/digimon/vbdm/vol/#hju_anchor",
+      "connector_element_quote": "<div class=\"line_hor40 lineIndigo hju_archne_line area1\" area=\"1\"></div>"
+    }
+  ]
+}
