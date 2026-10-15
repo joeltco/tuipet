@@ -84,6 +84,16 @@ class TournamentPanel(menu.SubHost):
         return self._intro.get("beats", (INTRO_OPP_T, INTRO_PET_T, INTRO_HOLD_T))
 
     def _start_intro(self):
+        # EVERY round checks the body, not just the entry (battle call #22 =
+        # A, Joel 2026-10-15): a pet drained or hurt mid-cup can't fight on --
+        # it withdraws, the same elimination as walking out
+        why = self.pet.battle_condition()
+        if why and not self.tourney.over:
+            self.tourney.record(False)
+            self.tourney.last = f"{why} Withdrawn from the cup."
+            self.tree_view = True
+            self.sfx = "error"
+            return
         beats = ((INTRO_OPP_T, INTRO_PET_T, INTRO_HOLD_T)
                  if first_show("cup_intro") or not INTRO_REPEAT_T
                  else (INTRO_REPEAT_T,) * 3)

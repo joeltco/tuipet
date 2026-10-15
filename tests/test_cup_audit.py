@@ -245,3 +245,20 @@ def test_B_never_lands_on_the_empty_faceoff_mid_cup():
     assert not pan.tree_view                     # over: toggle to the result...
     pan.key("b")
     assert pan.tree_view                         # ...and back
+
+
+def test_a_pet_drained_or_hurt_mid_cup_withdraws_before_the_next_round():
+    """Battle call #22 = A (Joel 2026-10-15): the body is checked EVERY round,
+    not just at entry."""
+    for state in ({"energy": 0}, {"injured": True}):
+        p, pan = _entered()
+        pan.tree_view = True
+        for k, v in state.items():
+            setattr(p, k, v)
+        pan._start_intro()                       # "fight on" walks in here
+        assert pan.sub is None and pan._intro is None
+        assert pan.tourney.over and not pan.tourney.champion
+        assert "Withdrawn" in pan.tourney.last
+    p, pan = _entered()                          # a fit pet still walks in
+    pan._start_intro()
+    assert pan._intro is not None and not pan.tourney.over
