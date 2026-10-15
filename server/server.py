@@ -41,6 +41,13 @@ BUGS_PATH = os.environ.get(
 HOLDERS_PATH = os.environ.get(
     "TUIPET_HOLDERS",
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "holders.json"))
+# account -> wall-clock of its last Erase all data (saves call #27 = A,
+# Joel 2026-10-15): a save whose pet was BORN before it is the erased pet
+# coming back from a device that was still signed in -- refused, never stored
+ERASE_CLOCK_SLACK = 6 * 3600.0  # a device clock this far behind still hatches fresh
+WIPED_PATH = os.environ.get(
+    "TUIPET_WIPED",
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "wiped.json"))
 MAX_BUG_TEXT = 2000
 MAX_BUGS_PER_CONN = 5           # a real player files one or two, not a firehose
 MAX_BUGS_PER_IP = 6             # ...and a reconnect must not hand out a fresh five
@@ -125,6 +132,41 @@ def _load_holders():
 
 
 HOLDERS = _load_holders()
+
+
+def _load_wiped():
+    try:
+        with open(WIPED_PATH, encoding="utf-8") as f:
+            d = json.load(f)
+        return {str(k): float(v) for k, v in d.items()} if isinstance(d, dict) else {}
+    except Exception:
+        return {}
+
+
+WIPED = _load_wiped()
+
+
+def _save_wiped():
+    try:
+        tmp = WIPED_PATH + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(WIPED, f)
+        os.replace(tmp, WIPED_PATH)
+    except OSError:
+        LOG.warning("wiped: disk refused %s", WIPED_PATH)
+
+
+def _erased_pet(key, save):
+    """Is this save the pet the account ERASED?  Born before the erase (a
+    pre-0.6.20 save carries no birth stamp: it predates every erase too)."""
+    at = WIPED.get(key)
+    if at is None:
+        return False
+    try:
+        born = float((save or {}).get("born_at") or 0)
+    except (TypeError, ValueError):
+        born = 0.0
+    return born < at - ERASE_CLOCK_SLACK
 
 
 def _save_holders():
@@ -328,6 +370,8 @@ async def _wipe_account(key):
     for c in CLIENTS.values():
         if c.name.lower() == key:
             c.lease = None
+    WIPED[key] = time.time()             # saves call #27 = A: the erased pet stays erased
+    _save_wiped()
     had = SAVES.pop(key, None) is not None
     if had:
         async with _saves_lock:
@@ -1268,6 +1312,11 @@ async def handler(ws):
                     why = "holder"
                     LOG.info("non-holder save dropped: %s conn=%s dev=%s",
                              client.name, client.id, client.device[:8] or "-")
+                elif isinstance(m.get("save"), dict) and _erased_pet(key, m.get("save")):
+                    # the account erased THIS pet; a device still signed in
+                    # must not bring it back (saves call #27 = A)
+                    why = "erased"
+                    LOG.info("erased-pet save dropped: %s conn=%s", client.name, client.id)
                 elif _lease_ok(client, key):
                     ok = await _store_save(key, m.get("save"))
                     if not ok:

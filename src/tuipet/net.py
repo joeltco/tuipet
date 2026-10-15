@@ -198,6 +198,7 @@ class SyncClient(_WsClient):
         self.save_too_big = False             # our own pre-send size refusal
         self.not_holder = None                # {'device','label'}: the CARTRIDGE
         #                                       lives elsewhere, pushes are forks
+        self.pet_erased = False               # the server refused this pet as ERASED (call #27)
         self.last_error = ""                  # last server error frame (e.g. full)
         self.uri = uri
         self.name = name
@@ -275,6 +276,10 @@ class SyncClient(_WsClient):
             why = m.get("why")
             self.cloud_dropped = (not ok) and why in (None, "lease")
             self.save_invalid = (not ok) and why == "invalid"
+            if (not ok) and why == "erased":
+                # saves call #27 = A: this account ERASED this pet elsewhere;
+                # the server refuses it for good -- the app says so and stops
+                self.pet_erased = True
             if (not ok) and why == "holder":
                 # THE CARTRIDGE: the pet is checked out to another device, so
                 # every push from here is a fork the server won't take.  .313

@@ -36,9 +36,9 @@ def relay(tmp_path, monkeypatch):
     async def inline(fn, *args):
         return fn(*args)
     monkeypatch.setattr(server.asyncio, "to_thread", inline)
-    for attr in ("ACCOUNTS", "SAVES", "HOLDERS", "LEASES", "BOOT_SEEN", "CLIENTS"):
+    for attr in ("ACCOUNTS", "SAVES", "HOLDERS", "LEASES", "BOOT_SEEN", "CLIENTS", "WIPED"):
         monkeypatch.setattr(server, attr, {})
-    for attr in ("ACCOUNTS_PATH", "SAVES_PATH", "HOLDERS_PATH"):
+    for attr in ("ACCOUNTS_PATH", "SAVES_PATH", "HOLDERS_PATH", "WIPED_PATH"):
         monkeypatch.setattr(server, attr, str(tmp_path / (attr + ".json")))
     monkeypatch.setattr(server, "_make_account", lambda name, pw: {"name": name})
     monkeypatch.setattr(server, "_verify", lambda pw, acc: True)
@@ -234,14 +234,20 @@ def test_concurrent_registration_cannot_replace_first_password(relay, monkeypatc
     assert any(m["t"] == "login_failed" for m in sb.sent)
 
 
-def test_design_repro_erased_device_can_reconnect_and_reupload(relay):
-    """Decision evidence: current login protocol cannot identify erased generations."""
+def test_an_erased_device_cannot_reconnect_and_reupload(relay):
+    """Saves call #27 = A (Joel 2026-10-15): this was the decision evidence --
+    the erased pet came back from a device still signed in.  Now refused."""
+    import time
     first = Socket([login(), {"t": "save", "save": {"stage": "Egg", "bits": 4321}}])
     asyncio.run(relay.handler(first))
     asyncio.run(relay._wipe_account("owner"))
     zombie = Socket([login(), {"t": "save", "save": {"stage": "Egg", "bits": 4321}}])
     asyncio.run(relay.handler(zombie))
-    assert relay.SAVES["owner"]["bits"] == 4321
+    assert "owner" not in relay.SAVES
+    fresh = Socket([login(), {"t": "save", "save": {"stage": "Egg", "bits": 1,
+                                                    "born_at": time.time()}}])
+    asyncio.run(relay.handler(fresh))
+    assert relay.SAVES["owner"]["bits"] == 1
 
 
 def test_design_repro_reconnect_queue_keeps_old_peer_id():

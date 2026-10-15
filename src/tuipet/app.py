@@ -571,10 +571,24 @@ class TuiPetApp(ActionsMixin, App):
         persistence.save(self.pet)
         self._start_sync()              # idempotent: picks up a re-enabled cloud toggle
         self._warn_if_unsaveable()
+        self._warn_if_erased()          # the most precise cause of all
         self._warn_if_not_holder()      # BEFORE the drop warn: a more precise cause
         self._warn_if_cloud_dropped()
         self._note_progress()
         self._push_cloud()              # mirror the autosave up to the cloud
+
+    def _warn_if_erased(self):
+        """The server refused this pet as the one the account ERASED on
+        another device (saves call #27 = A).  Say so once, and stop pushing
+        it -- it plays on here, saved locally only."""
+        sync = getattr(self, "_sync", None)
+        if not getattr(sync, "pet_erased", False) or getattr(self, "_erased_warned", False):
+            return
+        self._erased_warned = True
+        persistence.set_holder_cache(False)      # pushes stop being attempted
+        self.beep("alarm")
+        self.flash(f"[{theme.NEG}]⚠ This pet was erased from your account on "
+                   f"another device — it saves on this device only now.[/]")
 
     def _warn_if_not_holder(self):
         """THE CARTRIDGE, told at last (2026-07-30).  The server answers a

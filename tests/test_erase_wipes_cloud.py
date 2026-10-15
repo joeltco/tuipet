@@ -15,6 +15,8 @@ def _srv(tmp_path):
     server.HOLDERS_PATH = str(tmp_path / "holders.json")
     server.SAVES = {}
     server.HOLDERS = {}
+    server.WIPED_PATH = str(tmp_path / "wiped.json")   # never the repo's server dir
+    server.WIPED = {}
     return server
 
 
@@ -68,3 +70,31 @@ def test_an_unreachable_cloud_still_erases_the_device_and_says_so(tmp_path, monk
     order, new_game, hud = _erase(tmp_path, monkeypatch, False)
     assert order and new_game
     assert "cloud still has your pet" in hud
+
+
+def test_an_erased_pet_cannot_come_back_from_a_signed_in_device(tmp_path):
+    """Saves call #27 = A (Joel 2026-10-15): after Erase all data, a device
+    still signed in must not upload the erased pet back; a pet hatched
+    after the erase syncs normally."""
+    import time
+    srv = _srv(tmp_path)
+    srv.SAVES["joel"] = {"num": 29}
+    asyncio.run(srv._wipe_account("joel"))
+    old = {"num": 29, "born_at": time.time() - 30 * 86400}
+    legacy = {"num": 29}                                  # pre-stamp save
+    fresh = {"num": -1, "born_at": time.time()}
+    assert srv._erased_pet("joel", old) and srv._erased_pet("joel", legacy)
+    assert not srv._erased_pet("joel", fresh)
+    assert not srv._erased_pet("someone_else", old)       # only the erased account
+    assert srv._load_wiped()["joel"] > 0                  # survives a restart
+
+
+def test_the_client_hears_the_erased_verdict():
+    """A new reason code needs an ear: the SyncClient flags it, so the app
+    warns and stops pushing (feedback: new reason code needs an ear)."""
+    import json
+    from tuipet import net
+    c = net.SyncClient("ws://127.0.0.1:1", "joel", "pw")
+    assert c.pet_erased is False
+    c._handle(json.dumps({"t": "saved", "ok": False, "why": "erased"}))
+    assert c.pet_erased and not c.cloud_dropped

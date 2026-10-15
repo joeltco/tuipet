@@ -6,6 +6,7 @@ Tier-5 split (2026-07-17): the constants + pure helpers live in petbase
 from __future__ import annotations
 import math  # noqa: F401
 import random  # noqa: F401
+import time
 from dataclasses import dataclass, field as _dcf
 from . import data  # noqa: F401
 from . import shop  # noqa: F401
@@ -47,6 +48,7 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
     care_mistakes: int = 0
     dna_owned: dict = _dcf(default_factory=lambda: {f: 0 for f in data.DNA_FIELDS})    # banked
     dna_applied: dict = _dcf(default_factory=lambda: {f: 0 for f in data.DNA_FIELDS})  # charged
+    born_at: float = 0.0            # wall-clock birth (saves call #27: an erased pet stays erased)
     dna_wager_pending: int = 0      # a paid mash in flight -- settled spoiled on relaunch (S2)
     food_ranks: dict = _dcf(default_factory=lambda: {c: 0 for c in data.FOOD_CATEGORIES})
     # the ATTRIBUTE taste ledger (taste/rank audit 2026-07-06): drills warm the
@@ -321,7 +323,8 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
         if egg_type is None:
             egg_type = random.randrange(egg_mod.count())
         pet = cls(num=-1, name="Digitama", stage="Egg",
-                  egg_type=egg_type, generation=generation)
+                  egg_type=egg_type, generation=generation,
+                  born_at=time.time())
         if generation == 1:
             # the tamer's pocket money (gameplay polish #23, 2026-07-22): a
             # first-generation pet started at 0 bits with every faucet
