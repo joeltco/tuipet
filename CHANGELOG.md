@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.23 — GAMMAMON + KAIJU. The Gammamon card is a new egg line (Mount (2026-10-15)
+
+GAMMAMON + KAIJU. The Gammamon card is a new egg line (Mountains road), the Godzilla Egg is now earned on Monster Island, and every VB egg's hatch was redrawn from the classic eggs.
+
 ## 0.6.22 — IMPULSE CITY. A new Vital Bracelet egg line (Dokimon to Shro (2026-10-15)
 
 IMPULSE CITY. A new Vital Bracelet egg line (Dokimon to Shroudmon), earned on the City Sunset road -- and every VB egg now bounces with the same shape as the classic eggs.
