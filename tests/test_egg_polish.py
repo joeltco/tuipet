@@ -248,3 +248,36 @@ def test_true_shadow_howl_egg_hatches_punimon_into_its_line_on_moonlit_meadow():
     line = lines.load_lines()["tsh"]
     assert len(line["members"]) == 17 and 570 in line["members"]
     assert shop.town_egg_buy(Pet(num=29), idx)[1] == "error"
+
+
+def test_every_vb_card_egg_sits_on_the_shared_egg_grid():
+    """Joel 2026-10-15: "The shape on the bounce isnt the same shape as the
+    other eggs bounce" -- every VB egg sat a row high (still + wobble), and the
+    hatch shells were cut from that shifted shell.  A card egg's still and
+    wobble OUTLINES must be the shapes the original eggs share."""
+    import gzip
+    import json
+    import os
+    from collections import Counter
+    from tuipet import egg, lines
+    path = os.path.join(os.path.dirname(egg.__file__), "data", "eggs.json.gz")
+    with gzip.open(path, "rt", encoding="utf-8") as fh:
+        bank = json.load(fh)
+
+    def outline(fr):
+        rows = []
+        for r in fr:
+            ink = [i for i, c in enumerate(r) if c == "1"]
+            rows.append((ink[0], ink[-1]) if ink else None)
+        return tuple(rows)
+    # (older eggs keep a provenance NOTE in hatch_line; a card egg names a line)
+    cards = [e for e in bank if e.get("hatch_line") in lines.load_lines()
+             and e["hatch_line"] != "godzilla"]
+    originals = [e for e in bank if e not in cards]
+    assert len(cards) >= 7
+    for k in (0, 1):
+        shared = Counter(outline(e["frames"][k]) for e in originals).most_common(1)[0][0]
+        for e in cards:
+            assert outline(e["frames"][k]) == shared, (e["hatch_name"], k)
+    for e in cards:                                      # the hatch keeps its own shell
+        assert e["frames"][2][11:] == e["frames"][0][11:], e["hatch_name"]
