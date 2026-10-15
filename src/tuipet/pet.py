@@ -616,7 +616,10 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
         if self.dead or self.stage == "Egg":
             return False
         if self.asleep:
-            return bool(self.lights)             # lightsCall: it wants the dark
+            # lightsCall: it wants the dark -- and a sick or HURT sleeper calls
+            # too (care call #16 = A, 2026-10-15): the death rolls run all
+            # night, and the pill / H heal both work on a sleeper (it wakes)
+            return bool(self.lights) or bool(self.sick) or self.is_injured()
         return (self.hunger == 0 or self.strength == 0 or self.sick
                 or self.injured or self.poop >= 3 or self.energy <= 0)
 

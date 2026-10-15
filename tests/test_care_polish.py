@@ -148,3 +148,27 @@ def test_discipline_status_card_does_not_advertise_unset_praise():
     captured = []
     statusbox.discipline(SimpleNamespace(pet=_pet(world_seconds=0), stats_w=card))
     assert 'proud moment' not in captured[0]
+
+
+def test_a_sick_or_hurt_sleeper_calls_in_the_dark():
+    """Joel 2026-10-15 (care call #16 = A): death rolls run all night, so a
+    sick or hurt pet asleep in the dark calls -- with a remedy that works."""
+    p = _pet()
+    p._fall_asleep()
+    p.lights = False
+    assert not p.needs_care()
+    p.sick = True
+    assert p.needs_care()
+    app = TuiPetApp(pet=p)
+    assert "([b]F[/]" in app._need_message(p)
+    p.poop, p.poop_sizes = 1, [1]
+    assert "([b]C[/])" in app._need_message(p)
+    p.clean()
+    assert not p.asleep                                   # C wakes it...
+    p.clean()
+    assert p.poop == 0                                    # ...C again cleans
+    q = _pet()
+    q._fall_asleep()
+    q.lights = False
+    q.injured = True
+    assert q.needs_care() and "([b]H[/]" in TuiPetApp(pet=q)._need_message(q)

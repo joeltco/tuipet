@@ -1615,6 +1615,14 @@ class TuiPetApp(ActionsMixin, App):
         # panicked player to the bag (Joel caught it 2026-07-22)
         # care audit 2026-10-14: name a usable remedy, including its
         # prerequisites; a dark sleeper only needs the frailty warning.
+        elif p.asleep and p.sick and p.poop:
+            # (care call #16 = A) the pill refuses beside filth and a sleeper
+            # can't be cleaned until it's up: C wakes it, C again cleans
+            msg = f"{name} is sick — wake it to clean! ([b]C[/])"
+        elif p.asleep and p.sick:
+            msg = f"{name} is sick in its sleep! ([b]F[/] — the pill)"
+        elif p.asleep and p.is_injured():
+            msg = f"{name} is hurt in its sleep! ([b]H[/] — patch it up)"
         elif p.asleep:
             if not p.is_frail():
                 return ""
