@@ -114,20 +114,28 @@ def donor_hatch(still, donor):
     return dh[:11] + bottom
 
 
-def seated_hatch(dex):
-    """rows 0-10 from the baby's own frame 0, feet on row 10, nothing clipped."""
+def seated_hatch(dex, still):
+    """No original hatches this baby: its own frame 0, WHOLE, feet on row 10
+    over the still's shell (rows 11-15).  A baby taller than the 11 rows above
+    the shell sinks into it (its body replaces the shell behind it), never
+    clipped -- Jyarimon is 15 rows (VB batch 2026-10-15)."""
     _, by_num = data.load_sprites()
     baby = by_num[dex]["frames"][0]
     ink = [y for y, r in enumerate(baby) if "1" in r]
-    if ink[-1] - ink[0] > 10:
-        raise SystemExit(f"#{dex} is {ink[-1] - ink[0] + 1} rows tall -- taller than the 11-row breakout")
-    lift = ink[-1] - 10
-    g = [["0"] * 16 for _ in range(11)]
+    height = ink[-1] - ink[0] + 1
+    feet = max(10, height - 1)                     # tall babies sink into the shell
+    lift = ink[-1] - feet
+    g = [["0"] * 16 for _ in range(11)] + [list(r) for r in still[11:]]
     body = set()
     for y in ink:
-        for x, c in enumerate(baby[y]):
-            if c == "1":
+        row = baby[y]
+        xs = [x for x, c in enumerate(row) if c == "1"]
+        for x in range(xs[0], xs[-1] + 1):
+            if y - lift > 10:                      # inside the shell: body replaces it
+                g[y - lift][x] = row[x]
+            elif row[x] == "1":
                 g[y - lift][x] = "1"
+            if row[x] == "1":
                 body.add((y - lift, x))
     for y in (9, 10):                              # the shell rim rising at the sides
         for x in (2, 13):
@@ -148,7 +156,7 @@ def build(still, dex):
     still = stamp(still, 0)
     wobble = squash(still)
     donor = donor_egg(dex)
-    hatch = donor_hatch(still, donor) if donor else seated_hatch(dex) + still[11:]
+    hatch = donor_hatch(still, donor) if donor else seated_hatch(dex, still)
     assert on_grid(wobble, WOBBLE)
     return [still, wobble, hatch]
 

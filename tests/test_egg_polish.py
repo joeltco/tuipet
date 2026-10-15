@@ -351,7 +351,7 @@ def test_the_egg_template_builds_on_grid_frames_for_every_card_egg():
             shipped = e["frames"][k]                       # ...and the shipped egg too
             assert all(shipped[y][x] == "1" for y, x in ink), (e["hatch_name"], k)
     # a baby no egg hatches is seated whole: every pixel of Curimon survives
-    top = tmpl.seated_hatch(1137)
+    top = tmpl.seated_hatch(1137, ["0" * 16] * 16)[:11]
     _, by_num = data.load_sprites()
     baby = [r for r in by_num[1137]["frames"][0] if "1" in r]
     assert sum(r.count("1") for r in top) >= sum(r.count("1") for r in baby)
