@@ -65,6 +65,16 @@ def holiday(today=None):
     return HOLIDAYS.get((d.month, d.day))
 
 
+def holiday_season(today=None):
+    return {10: "halloween", 12: "christmas"}.get((today or _today()).month)
+
+
+def festival(today=None):
+    """Month-long festival fun; holiday() alone authorizes double bits/credit."""
+    season = holiday_season(today)
+    return holiday(today) or (season.title() + " Festival" if season else None)
+
+
 def is_weekend(today=None):
     return (today or _today()).weekday() >= 5
 
@@ -285,7 +295,7 @@ def eligibility_at(pet, t, slot):
     run = getattr(pet, "fought_hours", None) or []
     if slot in run:
         return "That cup has run."
-    if slot != _hour(pet) and not holiday():
+    if slot != _hour(pet) and not festival():
         return "That cup is closed — only the %02d:00 one runs now." % _hour(pet)
     return (_eligibility_rest(pet, t) or _stake_check(pet, t)
             or pet.battle_condition())   # the ONE bout condition gate (audit 2026-07-19)

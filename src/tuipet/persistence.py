@@ -783,7 +783,7 @@ def get_progress():
 _PROG_SETS = ("album", "eggs_owned", "titles_owned", "connections", "maps", "maps_cleared",
               "wilds_beaten", "raids_paid",
               "tourneys", "festivals", "eggs_announced", "ladder_claimed",
-              "shop_unlocks")
+              "shop_unlocks", "holiday_notice_seen")
 _PROG_MAXES = ("wins", "mega_kills", "armor_evos", "raids",
                "max_gen", "max_stage")
 

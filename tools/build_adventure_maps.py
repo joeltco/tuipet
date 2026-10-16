@@ -34,6 +34,8 @@ SAND = ["tuna", "vitamin", "yellow_pepper", "orange"]
 TOWN = ["cheese_burger", "bread", "food_pill"]
 WIRE = ["green_pepper", "food_pill", "med"]
 
+SEASONAL = {'halloween': {'moonmeadow': [30, 32, 59], 'tealhollow': [121, 99, 601, 181], 'city': [479, 216, 230], 'factorynight': [1031]}, 'christmas': {'lakeside': [26, 39], 'cove': [26, 39], 'greenhills': [991], 'goldenwood': [175], 'tealhollow': [136]}}
+
 # (scene, tier, fields, finds) in ROAD ORDER -- map 1 first
 MAPS = [
     ("islandsea", "Rookie", [DR], ISLAND),
@@ -113,6 +115,7 @@ def main():
             reward.append("grow_capsule")
         out.append({"id": scene, "name": NAME_OVERRIDE.get(scene, backgrounds.NAMES[scene]),
                     "scene": scene, "tier": tier,
+                    "seasonal": {s: maps[scene] for s, maps in SEASONAL.items() if scene in maps},
                     "fields": "Godzilla kaiju" if fields == GZ else fields,
                     "wilds": wilds, "boss": boss, "finds": finds + ["life_recovery", "rest_kit"],
                     "wild_drops": finds, "reward": reward})

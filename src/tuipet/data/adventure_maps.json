@@ -4,6 +4,7 @@
   "name": "Island Day",
   "scene": "islandsea",
   "tier": "Rookie",
+  "seasonal": {},
   "fields": [
    "DragonsRoar"
   ],
@@ -54,6 +55,7 @@
   "name": "Green Hollow",
   "scene": "forestgate",
   "tier": "Rookie",
+  "seasonal": {},
   "fields": [
    "JungleTrooper"
   ],
@@ -90,6 +92,7 @@
   "name": "Flower Field",
   "scene": "flowerfield",
   "tier": "Rookie",
+  "seasonal": {},
   "fields": [
    "WindGuardian"
   ],
@@ -130,6 +133,12 @@
   "name": "Lakeside",
   "scene": "lakeside",
   "tier": "Rookie",
+  "seasonal": {
+   "christmas": [
+    26,
+    39
+   ]
+  },
   "fields": [
    "DeepSaver"
   ],
@@ -180,6 +189,11 @@
   "name": "Green Hills",
   "scene": "greenhills",
   "tier": "Rookie",
+  "seasonal": {
+   "christmas": [
+    991
+   ]
+  },
   "fields": [
    "NatureSpirit"
   ],
@@ -276,6 +290,12 @@
   "name": "Beach",
   "scene": "cove",
   "tier": "Rookie",
+  "seasonal": {
+   "christmas": [
+    26,
+    39
+   ]
+  },
   "fields": [
    "DeepSaver",
    "NatureSpirit"
@@ -392,6 +412,13 @@
   "name": "Moonlit Meadow",
   "scene": "moonmeadow",
   "tier": "Rookie",
+  "seasonal": {
+   "halloween": [
+    30,
+    32,
+    59
+   ]
+  },
   "fields": [
    "NightmareSoldier"
   ],
@@ -439,6 +466,7 @@
   "name": "Seafloor",
   "scene": "underwater",
   "tier": "Champion",
+  "seasonal": {},
   "fields": [
    "DeepSaver"
   ],
@@ -505,6 +533,7 @@
   "name": "Bay Bridge",
   "scene": "baybridge",
   "tier": "Champion",
+  "seasonal": {},
   "fields": [
    "WindGuardian",
    "JungleTrooper"
@@ -593,6 +622,11 @@
   "name": "Golden Hollow",
   "scene": "goldenwood",
   "tier": "Champion",
+  "seasonal": {
+   "christmas": [
+    175
+   ]
+  },
   "fields": [
    "NatureSpirit"
   ],
@@ -707,6 +741,7 @@
   "name": "City Sunset",
   "scene": "citysunset",
   "tier": "Champion",
+  "seasonal": {},
   "fields": [
    "MetalEmpire"
   ],
@@ -787,6 +822,7 @@
   "name": "Boulevard",
   "scene": "boulevard",
   "tier": "Champion",
+  "seasonal": {},
   "fields": [
    "None"
   ],
@@ -834,6 +870,7 @@
   "name": "White City",
   "scene": "cityday",
   "tier": "Champion",
+  "seasonal": {},
   "fields": [
    "VirusBuster"
   ],
@@ -890,6 +927,7 @@
   "name": "Flower Field Sunset",
   "scene": "blossom",
   "tier": "Champion",
+  "seasonal": {},
   "fields": [
    "WindGuardian"
   ],
@@ -952,6 +990,17 @@
   "name": "Teal Hollow",
   "scene": "tealhollow",
   "tier": "Champion",
+  "seasonal": {
+   "halloween": [
+    121,
+    99,
+    601,
+    181
+   ],
+   "christmas": [
+    136
+   ]
+  },
   "fields": [
    "NightmareSoldier"
   ],
@@ -1041,6 +1090,7 @@
   "name": "Mountains",
   "scene": "mountains",
   "tier": "Ultimate",
+  "seasonal": {},
   "fields": [
    "DragonsRoar"
   ],
@@ -1087,6 +1137,7 @@
   "name": "Desert",
   "scene": "desert",
   "tier": "Ultimate",
+  "seasonal": {},
   "fields": [
    "None"
   ],
@@ -1134,6 +1185,7 @@
   "name": "Island Sunset",
   "scene": "fileisland",
   "tier": "Ultimate",
+  "seasonal": {},
   "fields": [
    "NatureSpirit",
    "JungleTrooper"
@@ -1219,6 +1271,7 @@
   "name": "Seafloor Sunset",
   "scene": "sunsetshore",
   "tier": "Ultimate",
+  "seasonal": {},
   "fields": [
    "DeepSaver"
   ],
@@ -1274,6 +1327,7 @@
   "name": "Jungle",
   "scene": "jungle",
   "tier": "Ultimate",
+  "seasonal": {},
   "fields": [
    "JungleTrooper"
   ],
@@ -1324,6 +1378,13 @@
   "name": "City",
   "scene": "city",
   "tier": "Ultimate",
+  "seasonal": {
+   "halloween": [
+    479,
+    216,
+    230
+   ]
+  },
   "fields": [
    "MetalEmpire"
   ],
@@ -1429,6 +1490,7 @@
   "name": "Boulevard Dusk",
   "scene": "boulevardusk",
   "tier": "Ultimate",
+  "seasonal": {},
   "fields": [
    "VirusBuster"
   ],
@@ -1477,6 +1539,7 @@
   "name": "Monster Island",
   "scene": "islandnight",
   "tier": "Ultimate",
+  "seasonal": {},
   "fields": "Godzilla kaiju",
   "wilds": [
    1626,
@@ -1524,6 +1587,7 @@
   "name": "Factory",
   "scene": "factory",
   "tier": "Mega",
+  "seasonal": {},
   "fields": [
    "MetalEmpire"
   ],
@@ -1608,6 +1672,7 @@
   "name": "Frozen Peak",
   "scene": "frozenpeak",
   "tier": "Mega",
+  "seasonal": {},
   "fields": [
    "WindGuardian"
   ],
@@ -1662,6 +1727,7 @@
   "name": "Volcano",
   "scene": "volcano",
   "tier": "Mega",
+  "seasonal": {},
   "fields": [
    "DragonsRoar"
   ],
@@ -1729,6 +1795,7 @@
   "name": "Bay Bridge Night",
   "scene": "bridgenight",
   "tier": "Mega",
+  "seasonal": {},
   "fields": [
    "DragonsRoar"
   ],
@@ -1792,6 +1859,7 @@
   "name": "Seafloor Deep",
   "scene": "seafloor",
   "tier": "Mega",
+  "seasonal": {},
   "fields": [
    "DeepSaver"
   ],
@@ -1844,6 +1912,11 @@
   "name": "Factory Night",
   "scene": "factorynight",
   "tier": "Mega",
+  "seasonal": {
+   "halloween": [
+    1031
+   ]
+  },
   "fields": [
    "NightmareSoldier"
   ],
@@ -1921,6 +1994,7 @@
   "name": "Data Tunnel",
   "scene": "datatunnel",
   "tier": "Mega",
+  "seasonal": {},
   "fields": [
    "DarkArea"
   ],

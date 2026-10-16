@@ -138,7 +138,26 @@ def x_sample_wild(enemy):
 
 def spawn_weight(enemy, holiday=False):
     weight = max(1, enemy.get("chance", 100))
-    return min(8, weight * 2) if holiday and weight < 8 else weight
+    base = min(8, weight * 2) if holiday and weight < 8 else weight
+    if enemy.get("season_target"):
+        from . import tournament
+        return max(base, 24 if tournament.holiday() else 16)
+    return base
+
+
+def season_targets(zone, today=None):
+    from . import tournament
+    return zone.get("seasonal", {}).get(tournament.holiday_season(today), ())
+
+
+def effective_pool(zone):
+    pool = [dict(e) for e in zone.get("randoms", ()) if not e.get("boss")]
+    targets = season_targets(zone)
+    present = {e["num"] for e in pool}
+    pool.extend(_enemy(n) for n in targets if n not in present)
+    for e in pool:
+        e["season_target"] = e["num"] in targets
+    return pool
 
 
 def hunt_targets(zone, prog=None):
@@ -147,13 +166,15 @@ def hunt_targets(zone, prog=None):
     if prog is None:
         prog = persistence.get_progress()
     zi = zone_index(zone)
-    pool = {e["num"] for e in zone.get("randoms", ())}
+    pool = {e["num"] for e in effective_pool(zone)}
     targets = {}
     for r in data.load_egg_unlock().values():
         zp = egg._zone_parts(r["zone"]) if r["zone"] is not None else None
         if (zp and zp[0] == zi and zp[1] in pool
                 and f"{zi}:{zp[1]}" not in prog.get("wilds_beaten", ())):
             targets[zp[1]] = egg.wild_goal(r["zone"])
+    for n in season_targets(zone):
+        targets.setdefault(n, "Seasonal hunt: " + data.record_for(n).get("name", str(n)))
     return targets
 
 
@@ -194,6 +215,7 @@ def _load_maps():
             "id": m["id"],
             "name": m["name"],
             "scene": m["scene"],
+            "seasonal": m.get("seasonal", {}),
             "tier": m["tier"],
             "steps": INTERACTIVE_STEPS,
             "randoms": [_enemy(n) for n in m["wilds"] if n in by],
@@ -325,7 +347,6 @@ class Adventure:
         self.drops = 0                   # battle drops bagged this run (2026-07-26)
         self.streak = 0                  # chained wins alive RIGHT NOW (run-local)
         self.best_streak = 0             # the run's longest chain (the summary line)
-        self.holiday = active_holiday()  # a festival today? double bits + more finds
         zi = zone_index(self.zone)
         self.replay = zi is not None and is_conquered(pet, zi)   # a VETERAN road
         self._vboss = None               # the veteran gate boss, built once
@@ -374,9 +395,25 @@ class Adventure:
         return "".join(cells)
 
     # -- wild encounters ------------------------------------------------------
+    @property
+    def holiday(self):
+        from . import tournament
+        override = getattr(self, "_holiday_override", None)
+        return override[1] if override and override[0] == tournament._today() else active_holiday()
+
+    @holiday.setter
+    def holiday(self, value):
+        from . import tournament
+        self._holiday_override = (tournament._today(), value)
+
+    @property
+    def festival(self):
+        from . import tournament
+        return self.holiday or tournament.festival()
+
     def _wild_pool(self):
         """The road's wild mons: THIS map's own pool."""
-        return [e for e in self.zone.get("randoms", ()) if not e.get("boss")]
+        return effective_pool(self.zone)
 
     def _in_town(self, loc):
         """Is this leg inside a town waypoint span (rest + no encounters)?"""
@@ -411,9 +448,10 @@ class Adventure:
         pool = self._wild_pool()
         if not pool:
             return None
-        weights = [spawn_weight(e, self.holiday) for e in pool]
-        if self.hunt is not None and random.randrange(8) == 0:
-            e = next(e for e in pool if e["num"] == self.hunt)
+        weights = [spawn_weight(e, self.festival) for e in pool]
+        target = next((e for e in pool if e["num"] == self.hunt), None)
+        if target is not None and random.randrange(8) == 0:
+            e = target
         else:
             e = random.choices(pool, weights=weights, k=1)[0]
         return _veteran(e) if self.replay else e
@@ -479,12 +517,12 @@ class Adventure:
         pool = find_pool(self.zone)
         if not pool or self._in_town(self.loc):
             return None
-        chance = FIND_CHANCE * (HOLIDAY_FIND_MULT if self.holiday else 1)
+        chance = FIND_CHANCE * (HOLIDAY_FIND_MULT if self.festival else 1)
         if random.random() >= chance:
             return None
         # a FESTIVAL road present is a capsule: the wrapped box lands in the
         # bag and is opened for its roll (petcare._capsule)
-        if self.holiday and random.random() < FESTIVAL_PRESENT_CHANCE:
+        if self.festival and random.random() < FESTIVAL_PRESENT_CHANCE:
             return (random.choice(_FESTIVAL_CAPSULES), True)
         # TIERED FIND RARITY (D1, 2026-07-24): the pool used to be a flat
         # random.choice, so a zone's legendary signature turned up exactly as
@@ -507,7 +545,7 @@ class Adventure:
             return None
         # the zone's authored AppearanceChance weights, same as the walk
         # and warp picks -- this was the one unweighted draw (audit 2026-07-25)
-        weights = [spawn_weight(e, self.holiday) for e in pool]
+        weights = [spawn_weight(e, self.festival) for e in pool]
         return random.choices(pool, weights=weights, k=1)[0]
 
     def score(self):

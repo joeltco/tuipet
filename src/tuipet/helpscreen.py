@@ -9,6 +9,11 @@ VIS = 8                                   # lines shown at once in the box
 
 # (text, kind): 2 = section head (bold), 1 = a control line, 0 = prose (dim)
 HELP = [
+    ("HOLIDAYS", 2),
+    ("October: Halloween; December: Xmas", 0),
+    ("Hunts and festival fun all", 0),
+    ("month. 2x road bits Oct 31 / Dec 25.", 0),
+    ("A road; seasonal colors in Options", 0),
     ("CARE", 2),
     # claims audit 2026-07-25; re-truthed 2026-07-26 with the bandage's
     # final door, the H key ("bits/hour" was half the assistant's bill)
@@ -136,7 +141,7 @@ HELP = [
     ("  titles that ride your status card", 0),
     # the expansion (2026-07-26): the one line the capsules need
     ("  a CAPSULE opens into a surprise,", 0),
-    ("  finer on festival days", 0),
+    ("  finer during festival months", 0),
     ("g options   i report a bug   q quit", 1),
     ("  themes, sound, cloud sync, your", 0),
     ("  account, updates, every key", 0),

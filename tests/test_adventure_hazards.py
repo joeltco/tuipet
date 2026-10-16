@@ -5,7 +5,11 @@ Pins the ambush: a marched step may spring one of the zone's own wilds
 clean, eating it costs the small engine-applied energy toll — and the march
 resumes either way (the beat never hangs).
 """
-from tuipet import adventure
+import datetime
+
+import pytest
+
+from tuipet import adventure, tournament
 from tuipet.adventure import Adventure, ZONES, HAZARD_ENERGY
 from tuipet.adventurescreen import (AdventurePanel, TELE_LEAVE_T, TELE_ARRIVE_T,
                                     HZ_TELE_T, HZ_LUNGE_T, HZ_END_T)
@@ -35,7 +39,9 @@ def _at_the_ambush(monkeypatch):
     raise AssertionError("no ambush sprang")
 
 
-def test_the_engine_rolls_the_zones_own_wilds_and_towns_are_safe(monkeypatch):
+@pytest.mark.parametrize("month", [3, 10, 12])
+def test_the_engine_rolls_the_zones_own_wilds_and_towns_are_safe(monkeypatch, month):
+    monkeypatch.setattr(tournament, "_today", lambda: datetime.date(2026, month, 16))
     monkeypatch.setattr(adventure, "ENCOUNTER_CHANCE", 0.0)
     monkeypatch.setattr(adventure, "FIND_CHANCE", 0.0)
     monkeypatch.setattr(adventure, "HAZARD_CHANCE", 1.0)
@@ -43,7 +49,7 @@ def test_the_engine_rolls_the_zones_own_wilds_and_towns_are_safe(monkeypatch):
     a = Adventure(_pet(), zone=z)
     r = a.travel()
     assert isinstance(r, tuple) and r[0] == "hazard"
-    assert r[1] in z["randoms"]                        # a REAL zone wild pounces
+    assert r[1] in adventure.effective_pool(z)                        # a REAL zone wild pounces
     a.loc = z["town_legs"][0][0]
     assert a._in_town(a.loc) and a._roll_hazard() is None   # town ground is safe
 

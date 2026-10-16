@@ -1356,7 +1356,7 @@ class CareMixin:
             prize = random.choice(self._PRANK_POOL)
         else:
             from . import tournament
-            prize = self._pick_gift(festival=bool(tournament.holiday()))
+            prize = self._pick_gift(festival=bool(tournament.festival()))
         while prize in self._CAPSULE_KEYS or prize in self._PRANK_CAPSULES:
             prize = self._pick_gift()        # never a box inside a box
         self.add_item(prize)

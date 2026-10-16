@@ -16,7 +16,7 @@ from functools import lru_cache
 from math import gcd as _gcd
 from typing import NamedTuple
 
-from . import data
+from . import data, tournament
 
 
 class Item(NamedTuple):
@@ -1374,7 +1374,7 @@ def home_stock(today=None, pet=None):
             # unlimited 100b boxes worth ~487b each)
             out.append(dict(e, left=_global_left(k, taken), town_id=HOME_SHOP_ID))
             continue
-        if k == deal:
+        if k == deal or (tournament.holiday_season(today) and deal_ok(k)):
             base = e["price"]
             left = min(_ration_left(HOME_SHOP_ID, k, taken), _deal_left(k, taken))
             e = (dict(e, deal=True, base_price=base, left=left,
@@ -1401,10 +1401,10 @@ def _town_taken(pet, today=None):
 
 def town_stock(town_id, today=None, pet=None):
     """Tier shelf with daily deals, festival discounts and purchase rations."""
-    from . import adventure, persistence
+    from . import persistence
     prog = persistence.get_progress()
     deal = town_deal_sid(town_id, today, prog)
-    fest = bool(adventure.active_holiday(today))
+    fest = bool(tournament.festival(today))
     taken = _town_taken(pet, today) if pet is not None else {}
     out = []
     for sid, k, o, local in _open_rows(town_id, prog):

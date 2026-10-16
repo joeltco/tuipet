@@ -1408,9 +1408,19 @@ class ZonePickPanel:
         self.frame_i = 0
         self.indices = adventure.unlocked_indices(pet)   # unlocked zone indices, in order
         self.cursor = len(self.indices) - 1              # default: the frontier (newest)
-        self.holiday = adventure.active_holiday()        # festival banner + double rewards
         self.hunts = {}
         self.bests = persistence.zone_bests()            # standing run scores per zone
+
+    @property
+    def holiday(self):
+        from . import tournament
+        override = getattr(self, "_holiday_override", None)
+        return override[1] if override and override[0] == tournament._today() else tournament.festival()
+
+    @holiday.setter
+    def holiday(self, value):
+        from . import tournament
+        self._holiday_override = (tournament._today(), value)
 
     def anim(self):
         self.frame_i += 1
@@ -1456,6 +1466,7 @@ class ZonePickPanel:
         return led.get("day") == shop._today_ordinal() and led.get(str(zi))
 
     def text(self):
+        from . import tournament
         right = "★ FESTIVAL" if self.holiday else f"{len(self.indices)}/{len(ZONES)}"
         out = menu.header("ADVENTURE", right)
         self.cursor = menu.list_window(out, self.indices, self.cursor, self.VIS, self._fmt)
@@ -1463,6 +1474,12 @@ class ZonePickPanel:
         if (adventure.is_conquered(self.pet, self.indices[self.cursor])
                 and self._bounty_claimed(self.indices[self.cursor])):
             out.append_text(menu.note("✓ veteran — bounty claimed today"))
+        elif tournament.holiday():
+            out.append_text(menu.note(f"★ {tournament.holiday()}: 2x road bits"))
+        elif tournament.holiday_season():
+            text = ("Ghost trail: Moonlit → Teal Hollow" if tournament.holiday_season() == "halloween"
+                    else "Winter hunts: SnowAgumon, Frigimon, Icemon")
+            out.append_text(menu.note(text))
         elif self.holiday:
             out.append_text(menu.note(f"★ {self.holiday}: hunts 1→2,2→4,4→8"))
         elif adventure.is_conquered(self.pet, self.indices[self.cursor]):
@@ -1480,8 +1497,9 @@ class ZonePickPanel:
         z = ZONES[self.indices[self.cursor]]
         zi = adventure.zone_index(z)
         prog = persistence.get_progress()
-        nums = {data.canonical_num(e["num"]) for e in z["randoms"]}
-        beaten = {data.canonical_num(e["num"]) for e in z["randoms"]
+        wilds = adventure.effective_pool(z)
+        nums = {data.canonical_num(e["num"]) for e in wilds}
+        beaten = {data.canonical_num(e["num"]) for e in wilds
                   if f"{zi}:{e['num']}" in prog["wilds_beaten"]}
         # the HUNT BOARD (map fun #1, 2026-10-15) in three rows -- the phone LCD
         # has 12 (tests/test_render_budgets): the list shows VIS=5 to make room
@@ -1491,7 +1509,8 @@ class ZonePickPanel:
         out.append_text(menu.note(f"beaten {len(beaten)}/{len(nums)} · H hunt: {hunt}"))
         goal = targets.get(target) or next(iter(targets.values()), "")
         goal = goal.split(" on the ")[0] if goal else "no egg target here"
-        out.append_text(menu.note("egg: " + goal[:1].lower() + goal[1:] if goal != "no egg target here" else goal))
+        note = goal if goal.startswith("Seasonal hunt:") or goal == "no egg target here" else "egg: " + goal[:1].lower() + goal[1:]
+        out.append_text(menu.note(note))
         pool = adventure.find_pool(z, prog)
         rare = [shop.CATALOG[k].name for k in pool if shop.tier_weight(k) <= 2]
         mult = adventure.HOLIDAY_FIND_MULT if self.holiday else 1

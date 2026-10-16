@@ -46,7 +46,7 @@ class TournamentPanel(menu.SubHost):
         self.tourney = None
         self.sched = tournament.schedule(pet)      # today's 24 hourly cups
         self.cursor = tournament._hour(pet)        # start the list on NOW
-        fest = tournament.holiday()
+        fest = tournament.festival()
         self.msg = (f"{fest} — every cup runs today!" if fest
                     else "One cup per hour — F fights today's featured.")
         self.phase = "select"
@@ -454,7 +454,7 @@ class TournamentPanel(menu.SubHost):
             # -- and the shown purse carries the weekend x1.5 the payout
             # does (cup review 2026-07-18)
             tr_line = tournament.open_now(self.pet)
-            if tournament.holiday() and 0 <= self.cursor < len(self.sched) \
+            if tournament.festival() and 0 <= self.cursor < len(self.sched) \
                     and self.sched[self.cursor] >= 0:
                 tr_line = tournament.trophy_by_id(self.sched[self.cursor]) or tr_line
             if tr_line:

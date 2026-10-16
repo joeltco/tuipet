@@ -241,7 +241,8 @@ def festival_line():
     bugs.  THIS BANNER IS NOW THE ONLY ON-SCREEN SIGN A FESTIVAL IS RUNNING --
     do not let it rot.  (The road card names it too, in statusbox.road.)"""
     from . import tournament
-    return tournament.holiday()
+    season = tournament.holiday_season()
+    return tournament.holiday() or (f"{season.title()} · {'Oct' if season == 'halloween' else 'Dec'} 1–31" if season else None)
 
 
 def home_lines(pet):
@@ -1026,7 +1027,7 @@ def options(app):
         lines += wrap(m.msg, 4)
         lines.append("")
     # menus audit 2026-10-14: confirmations and doors do not toggle.
-    action = {"theme": "open", "sound": "open", "account": "open",
+    action = {"colors": "toggle", "theme": "open", "sound": "open", "account": "open",
               "cloud": "toggle", "update": "check", "keys": "open",
               "new": "retire", "erase": "confirm"}[row]
     if getattr(m, "confirm", False):

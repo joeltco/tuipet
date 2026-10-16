@@ -259,6 +259,9 @@ class ChatMixin:
         room = str(getattr(s, "room", None) or "") if s else ""
         right = (f"▲{self.scroll} back" if self.scroll
                  else (f"/{room}" if room else ""))
+        from . import tournament
+        if not right and tournament.holiday_season():
+            right = tournament.holiday_season().title()
         mw = w - ROSTW
         t.append(_fit(marquee(me_line, mw, mq), mw) if cell_len(me_line) > mw
                  else _fit(me_line, mw), style=INK_B)

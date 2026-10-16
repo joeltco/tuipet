@@ -18,7 +18,7 @@ if is_browser():
 else:
     from textual.widgets import Static
 
-from . import statusbox
+from . import statusbox, holidays
 from .appactions import ActionsMixin
 from .appboot import (  # noqa: F401  (re-export: tuipet.app.X keeps resolving)
     MIN_COLS, MIN_ROWS, _load_sound, _lobby_uri, _preflight, _save_sound,
@@ -170,7 +170,8 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("PLAY IN YOUR BROWSER. tuipet now runs at ff3mmo.com/tuipet -- same account, same online lobby as the terminal game, with a Termux-style key bar on phones. Tell a friend!")
+    WHATS_NEW = ("October is ghost season. Follow the trail and enjoy festival fun all month. Oct 31 doubles road bits. December brings winter hunts; Dec 25 doubles road bits. "
+                 "PLAY IN YOUR BROWSER. tuipet now runs at ff3mmo.com/tuipet -- same account, same online lobby as the terminal game, with a Termux-style key bar on phones. Tell a friend!")
 
 
     BINDINGS = [
@@ -1506,6 +1507,8 @@ class TuiPetApp(ActionsMixin, App):
             self._hud(self._need_message(p))
             self._showing_need = True
             self._showing_update = False
+        elif (season_notice := holidays.notice()):
+            self.flash(season_notice)
         elif p.tourney_alert:
             self._hud("ALERT — Tournament open! [b]U[/] to enter")
             self._showing_need = True           # reuse the clear-on-resolve flag
