@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.27 — MAPS WORTH GRINDING. The map picker shows what you've beaten (2026-10-15)
+
+MAPS WORTH GRINDING. The map picker shows what you've beaten and the egg you can earn there; press H to hunt one monster (1 in 8 fights). Rare X-Antibody and hidden forms now spawn rarely, wild wins can drop food, and Rest Kits + Life Recoveries turn up on the road. Scene picker grouped by family.
+
 ## 0.6.26 — EGG POLISH. Seven card eggs redrawn to match their official  (2026-10-15)
 
 EGG POLISH. Seven card eggs redrawn to match their official Vital Bracelet eggs: Blizzard Fang, Terriermon EX, Ryudamon, Louwemon EX, Espimon, Blitzmon EX and Agnimon EX.
