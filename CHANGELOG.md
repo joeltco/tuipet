@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.26 — EGG POLISH. Seven card eggs redrawn to match their official  (2026-10-15)
+
+EGG POLISH. Seven card eggs redrawn to match their official Vital Bracelet eggs: Blizzard Fang, Terriermon EX, Ryudamon, Louwemon EX, Espimon, Blitzmon EX and Agnimon EX.
+
 ## 0.6.25 — 8 MORE VB EGGS. Renamon GP + EX, Monodramon GP, Dynasty of t (2026-10-15)
 
 8 MORE VB EGGS. Renamon GP + EX, Monodramon GP, Dynasty of the Evil, Chackmon EX, Ancient + Primeval Warriors, Titan of Dust -- 36 official lines, with new forms like Sakuyamon: Miko Mode and Justimon's Accel + Critical Arms. Most of these eggs unlock by beating the card's partner in the wild on an adventure road.
