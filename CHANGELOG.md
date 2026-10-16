@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.28 — A NEW ROAD. The 30 adventure maps are re-ordered (2026-10-15)
+
+A NEW ROAD. The 30 adventure maps are re-ordered: bright, gentle places early, dark and dangerous ones late, ending in the Data Tunnel -- and no more look-alike maps back to back. Your cleared maps, egg progress and bests move with them.
+
 ## 0.6.27 — MAPS WORTH GRINDING. The map picker shows what you've beaten (2026-10-15)
 
 MAPS WORTH GRINDING. The map picker shows what you've beaten and the egg you can earn there; press H to hunt one monster (1 in 8 fights). Rare X-Antibody and hidden forms now spawn rarely, wild wins can drop food, and Rest Kits + Life Recoveries turn up on the road. Scene picker grouped by family.
