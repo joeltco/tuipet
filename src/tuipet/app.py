@@ -162,7 +162,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("MORE TO HUNT. Beating a wild X-Antibody form can drop an X-Program (1 in 40, once a run), the first veteran boss win on each map each day can pay that tier's power item (1 in 8), and on festival days rare monsters show up twice as often.")
+    WHATS_NEW = ("TWO NEW THEMES. Forest (moss green in the deep woods) and Dusk (violet twilight) replace Game Boy and Paper -- if you used one of those, you're moved to its replacement automatically.")
 
 
     BINDINGS = [
