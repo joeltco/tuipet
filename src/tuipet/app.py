@@ -162,7 +162,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("MAPS WORTH GRINDING. The map picker shows what you've beaten and the egg you can earn there; press H to hunt one monster (1 in 8 fights). Rare X-Antibody and hidden forms now spawn rarely, wild wins can drop food, and Rest Kits + Life Recoveries turn up on the road. Scene picker grouped by family.")
+    WHATS_NEW = ("A NEW ROAD. The 30 adventure maps are re-ordered: bright, gentle places early, dark and dangerous ones late, ending in the Data Tunnel -- and no more look-alike maps back to back. Your cleared maps, egg progress and bests move with them.")
 
 
     BINDINGS = [
