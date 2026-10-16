@@ -11,7 +11,7 @@ A terminal virtual pet — Digimon V-Pet style — rendered with halfblock Unico
 sprites and animated in the terminal. It builds on the work of the Digimon V-Pet
 fan community — see [Credits & acknowledgments](#credits--acknowledgments).
 
-![tuipet 0.6 trailer — the Godzilla line: 28 new kaiju, the G-Cell meter, and real gameplay](https://raw.githubusercontent.com/joeltco/tuipet/main/demo.gif)
+![tuipet trailer — 1,250 monsters, the Godzilla line, 83 eggs, a 30-map adventure, shops, online multiplayer, and play in your browser](https://raw.githubusercontent.com/joeltco/tuipet/main/demo.gif)
 
 **Status: live and actively developed** — see the
 [changelog](CHANGELOG.md) for what each release brought. tuipet is its own game: the core

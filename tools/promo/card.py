@@ -23,7 +23,14 @@ def widest(art):
 def wrap(text, font):
     """Greedy word-wrap so every figlet line fits the terminal width."""
     lines, cur = [], ""
-    for word in text.split():
+    words = []
+    for word in text.split():             # an unbreakable URL breaks after its "/"
+        while widest(fig(word, font)) > cols - 2 and "/" in word[1:]:
+            i = word.index("/", 1)
+            words.append(word[:i])
+            word = word[i:]
+        words.append(word)
+    for word in words:
         trial = (cur + " " + word).strip()
         if widest(fig(trial, font)) <= cols - 2 or not cur:
             cur = trial
