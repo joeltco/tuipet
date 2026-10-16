@@ -165,7 +165,7 @@ class BattleMixin:
         if (g := self._guard(asleep_blocks=False)) is not None:
             return g
         if self.stage == "Fresh":
-            return "Too young for the road."
+            return "Too young! In-Training · D: CORE growth"
         if self.asleep:
             return self._disturbed()
         if self.hunger <= 0:
@@ -249,7 +249,7 @@ class BattleMixin:
         if self.dead:
             return "It rests now — press N for a new egg."
         if self.stage in ("Egg", "Fresh"):
-            return "Too young to battle."
+            return "Too young! In-Training · D: CORE growth"
         if self.asleep:
             return self._disturbed()
         self._calm_discipline_call()                         # canBattle placates the tantrum

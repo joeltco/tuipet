@@ -92,4 +92,4 @@ def test_egg_picker_offers_the_guide():
 def test_fresh_egg_flash_points_at_help():
     import inspect
     src = inspect.getsource(TuiPetApp._after_egg_pick)
-    assert "? = help" in src                       # the one-time nudge on a new egg
+    assert "? help" in src                         # the one-time nudge on a new egg (first-5 #9 wording)

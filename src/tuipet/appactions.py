@@ -70,7 +70,7 @@ class ActionsMixin:
         note = getattr(self, "_boot_notice", "")   # a quarantined save's warning
         self._boot_notice = ""                     # rides THIS flash (title audit
         self.flash((note + "  ·  " if note else "")  # 2026-07-19) -- it marquees
-                   + "Take good care of your egg!  (? = help)")
+                   + "Egg hatches on its own. ? help; F feed after hatch.")
         self.repaint()
 
     # ---- multiplayer lobby ----------------------------------------------

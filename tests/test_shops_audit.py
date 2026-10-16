@@ -438,3 +438,12 @@ def test_every_dossier_fits_its_four_rows():
             assert len(rows) == 4, key
             assert all(len(str(r)) <= 26 for r in rows), key
             assert len(textwrap.wrap(shop.effect_line(e), 26)) <= 2, key
+
+
+def test_fish_says_why_it_beats_free_meat():
+    """First-5 audit #10 (2026-10-16): Fish cost 50b and read 'hunger +1' --
+    the same as free Meat -- so newcomers saw no reason to buy it.  Its real
+    edge (no weight gain; Meat adds 2g) is now on the shelf."""
+    from tuipet import shop
+    line = shop.effect_line({"key": "fish", "category": "Feed"})
+    assert "no weight gain" in line and "Meat" in line

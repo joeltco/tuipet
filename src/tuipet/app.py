@@ -1149,6 +1149,10 @@ class TuiPetApp(ActionsMixin, App):
         return out
 
     def repaint(self):
+        # The panel's own strip names the active controls.
+        if getattr(self, "keys_w", None) is not None:
+            owned = self.mode is not None or self.pet.stage == "Egg"
+            self.keys_w.styles.opacity = 0.4 if owned else 1.0
         if self.mode is not None:
             self.screen_w.update(self._center(self.mode.text()))
             self._mode_strip()

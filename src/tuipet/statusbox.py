@@ -332,8 +332,9 @@ def egg_lines(pet):
         # real incubation clock.
         _hatch_line(pet),
         "",
-        "[dim]keep it cosy — it[/]",
         "[dim]hatches on its own[/]",
+        "[dim]? help · F feed on hatch[/]",
+        "[dim]C clean · O night lights[/]",
     ]
 
 
@@ -1086,7 +1087,7 @@ def account(app):
     # menus audit 2026-10-14: describe the active field without echoing secrets.
     lines = [f"Name    {escape(_fit_cells(m.name_buf or '—', CARD_W - 8))}",
              f"Field   {m.field}", ""]
-    lines += [escape(ln) for ln in wrap(m.note, 4)]
+    lines += [escape(ln) for ln in wrap(m.note, 5)]
     lines += ["", "[dim]TAB field  ENTER go[/]", "[dim]ESC back[/]"]
     card(app, "Account", lines)
 
@@ -1402,7 +1403,7 @@ def training(app):
         lines = [f"[b]{p.name[:14]}[/] [dim]· train[/]", DIV,
                  "[b]the strike[/]", "",
                  f"Grade    {tp.grade or ''}",
-                 f"Energy   {energy}", DIV, ""]
+                 f"Energy   {energy}", DIV, "[b]SPACE to skip[/]"]
     app.stats_w.update("\n".join(lines))
 
 

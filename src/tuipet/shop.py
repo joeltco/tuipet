@@ -71,7 +71,7 @@ class Item(NamedTuple):
 # gets named fields.  Keep the alignment: this table is meant to be read.
 _AUTHORED = {
     # ---- FOOD (eaten on the LCD through their own 4-frame strips) ----------
-    "fish":            ("Fish",            "f:1",  50,   "Feed", "hunger +1", "the everyday catch"),
+    "fish":            ("Fish",            "f:1",  50,   "Feed", "hunger +1 · no weight gain", "lighter than free Meat"),   # first-5 audit #10: it read as a paid Meat
     "vegetable":       ("Vegetable",       "f:3",  150,  "Feed", "hunger +1 · weight -1", "crunchy diet fare"),
     "tuna":            ("Tuna",            "f:14", 400,  "Feed", "hunger +2 · energy +1", "a hearty catch"),
     "cake":            ("Cake",            "f:6",  300,  "Feed", "hunger +1 · energy +2 · weight +2", "a celebration slice"),

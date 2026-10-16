@@ -46,7 +46,7 @@ class AccountPanel:
     def strip(self):
         # "field", the grammar sweep's verb -- the lobby's login strip and
         # this one said different words for the same key (round 35)
-        return menu.hints(("TAB", "field"), ("ENTER", "sign in"), ("ESC", "back"))
+        return menu.hints(("TAB", "field"), ("ENTER", "continue"), ("ESC", "back"))
 
     def key(self, k):
         if k == "escape":
@@ -110,7 +110,7 @@ class AccountPanel:
         return t
 
 
-FIRST_RUN_NOTE = "Have an account? Sign in to bring your pet. ESC: new pet."
+FIRST_RUN_NOTE = "New? Choose a name and password to create an account. Returning? Use your account. ESC: play locally."
 
 
 class CloudWaitPanel:

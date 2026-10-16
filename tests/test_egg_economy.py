@@ -238,7 +238,7 @@ def test_the_carousel_is_pure_scene_with_neighbour_peeks():
     assert len(plain.rstrip("\n").split("\n")) == 12   # header 2 + scene 10
     # the strip speaks keys (the unlock tease rides the card, wrapped --
     # menus call #14 = A, 2026-10-15), msg first
-    assert "pick" in pan.strip() and "hatch" in pan.strip()
+    assert "pick" in pan.strip() and "start egg" in pan.strip()   # first-5 audit #9 relabel
     pan.frame_i = 130
     assert "more out there" not in pan.strip()
     pan.msg = "verdict!"

@@ -9,6 +9,14 @@ VIS = 8                                   # lines shown at once in the box
 
 # (text, kind): 2 = section head (bold), 1 = a control line, 0 = prose (dim)
 HELP = [
+    ("FIRST STEPS", 2),
+    ("F feed: filled Hunger circles = fed.", 1),
+    ("C clean; lights O; sleep at night.", 1),
+    ("Fresh = stage; None = no attribute.", 0),
+    ("DP diamonds: full to jogress.", 0),
+    ("Power V/D/Vi: Vaccine/Data/Virus.", 0),
+    ("Quest: next road map. D CORE: growth.", 0),
+    ("Battle/road open at In-Training.", 0),
     ("HOLIDAYS", 2),
     ("October: Halloween; December: Xmas", 0),
     ("Hunts and festival fun all", 0),

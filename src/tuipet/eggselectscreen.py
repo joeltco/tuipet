@@ -80,7 +80,7 @@ class EggSelectPanel:
             return self.msg
         # (the unlock hint left the strip's marquee for the card, wrapped in
         #  full -- menus call #14 = A, 2026-10-15)
-        return menu.hints(("←→", "pick"), ("ENTER", "hatch"), ("E", "guide"))
+        return menu.hints(("←→", "pick"), ("ENTER", "start egg"), ("E", "guide"))
 
     def key(self, k):
         if k in ("right", "l", "down", "j"):

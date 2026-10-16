@@ -105,7 +105,7 @@ def test_the_egg_tease_rides_the_card_whole_and_wrapped(monkeypatch):
     pan = EggSelectPanel()
     pan.hint, pan.locked, pan.msg = worst, 22, ""
     pan.frame_i = TEASE_BEAT
-    assert worst not in pan.strip() and "hatch" in pan.strip()
+    assert worst not in pan.strip() and "start egg" in pan.strip()   # first-5 audit #9 relabel
     seen = {}
 
     class _App:
