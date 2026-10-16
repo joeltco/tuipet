@@ -171,7 +171,6 @@ class TuiPetApp(ActionsMixin, App):
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
     WHATS_NEW = ("HALLOWEEN ALL OCTOBER. The whole month is a festival: more road finds and present capsules, rarer monsters, a ghost trail of Candlemon, Bakemon and Pumpmon, and a spooky tint at home -- with double bits on Oct 31. December does the same for Christmas.")
-                 "PLAY IN YOUR BROWSER. tuipet now runs at ff3mmo.com/tuipet -- same account, same online lobby as the terminal game, with a Termux-style key bar on phones. Tell a friend!")
 
 
     BINDINGS = [
