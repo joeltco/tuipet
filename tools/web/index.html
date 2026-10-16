@@ -11,8 +11,16 @@
 #screen{position:fixed;overflow:hidden;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);touch-action:none}
 #terminal{height:100%;width:100%;overflow:hidden}.xterm-viewport{overflow:hidden!important}
 #status{position:fixed;inset:0;background:#121212;z-index:20;white-space:pre-wrap;font:16px monospace;padding:16px}#status:empty{display:none}
+#xkeys{display:none;flex-direction:column;position:fixed;left:0;right:0;bottom:0;height:76px;padding:0 2px env(safe-area-inset-bottom);background:#121212;z-index:10}
+#xkeys div{display:flex;flex:1;gap:2px}
+#xkeys button{flex:1;min-width:0;margin:2px 0;background:#2a2a2a;color:#ddd;border:0;border-radius:3px;font:13px monospace;touch-action:manipulation;padding:0}
+#xkeys button.on{background:#3a6ea5;color:#fff}
+#xkeys button:active{background:#444}
+@media (pointer:coarse){#xkeys{display:flex}}
 #keyboard{position:absolute;left:0;top:0;width:1px;height:1px;opacity:.01;border:0;padding:0;font-size:16px;resize:none}
 </style></head><body><main id="screen"><div id="terminal"></div><textarea id="keyboard" aria-label="Terminal keyboard" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="text"></textarea></main>
+<!-- Termux's default two-row extra keys, touch screens only (Joel: "we need a full termux bar") (players: "need arrow keys" -- phone keyboards have no arrows or Esc) -->
+<nav id="xkeys"><div><button data-k="escape">ESC</button><button data-c="/">/</button><button data-c="-">-</button><button data-k="home">HOME</button><button data-k="up">↑</button><button data-k="end">END</button><button data-k="pageup">PGUP</button></div><div><button data-k="tab">TAB</button><button data-m="ctrl">CTRL</button><button data-m="alt">ALT</button><button data-k="left">←</button><button data-k="down">↓</button><button data-k="right">→</button><button data-k="pagedown">PGDN</button></div></nav>
 <div id="status" role="status">Loading tuipet…</div>
 <script>const ASSET_ROOT='@ASSETS@';</script><script src="@ASSETS@vendor/xterm.js"></script>
 <script src="@ASSETS@vendor/addon-canvas.js"></script>

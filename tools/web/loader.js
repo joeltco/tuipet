@@ -50,7 +50,7 @@ window.key = (name, char = null) => {
 const keyboard = document.querySelector('#keyboard');
 const names = {Enter:'enter',Escape:'escape',ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',' ':'space',Tab:'tab',Backspace:'backspace','?':'question_mark',PageUp:'pageup',PageDown:'pagedown',Delete:'delete',Home:'home',End:'end'};
 // A printable keyboard-only Escape for stock phone keyboards with no Esc key.
-const sendText = text => { for (const c of text) key(c === '~' || c === '\x1b' ? 'escape' : c === '\n' ? 'enter' : names[c] || c, c === '~' || c === '\x1b' ? null : c); };
+const sendText = text => { for (const c of text) { const n = c === '~' || c === '\x1b' ? 'escape' : c === '\n' ? 'enter' : names[c] || c; key(...(window.withMods ? withMods(n, n === c ? c : null) : [n, c === '~' || c === '\x1b' ? null : c])); } };
 const resetInput = () => { keyboard.value = ' '; keyboard.setSelectionRange(1,1); };
 resetInput();
 keyboard.addEventListener('keydown', e => {
@@ -74,6 +74,27 @@ keyboard.addEventListener('input', e => {
 });
 keyboard.addEventListener('compositionend', e => { sendText(e.data); resetInput(); });
 const focusKeyboard = () => keyboard.focus({preventScroll:true});
+// Termux-style extra keys (touch screens only, see index.html): fire on pointerdown and keep the
+// soft keyboard's focus so a tap never closes it.
+const xkeys = document.querySelector('#xkeys');
+const mods = {ctrl:false, alt:false};   // Termux: a tapped CTRL/ALT applies to the NEXT key, then clears
+const setMod = (m, on) => { mods[m] = on; xkeys.querySelector(`[data-m=${m}]`).classList.toggle('on', on); };
+const withMods = (name, char) => {
+  if (!mods.ctrl && !mods.alt) return [name, char];
+  const out = (mods.ctrl ? 'ctrl+' : '') + (mods.alt ? 'alt+' : '') + name;
+  setMod('ctrl', false); setMod('alt', false);
+  return [out, null];
+};
+xkeys.addEventListener('pointerdown', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  e.preventDefault(); e.stopPropagation();
+  if (b.dataset.m) setMod(b.dataset.m, !mods[b.dataset.m]);
+  else if (b.dataset.c) key(...withMods(b.dataset.c, b.dataset.c));
+  else key(...withMods(b.dataset.k, null));
+  focusKeyboard();
+});
+window.withMods = withMods;
+const xkeysHeight = () => getComputedStyle(xkeys).display === 'none' ? 0 : xkeys.getBoundingClientRect().height;
 document.addEventListener('pointerup', e => { if (e.isPrimary) focusKeyboard(); });
 // Touch compatibility mousedown can blur the input after pointerup.
 document.addEventListener('click', focusKeyboard);
@@ -86,7 +107,8 @@ function fitTerminal() {
   fitting = true;
   const v = window.visualViewport;
   const screen = document.querySelector('#screen');
-  Object.assign(screen.style, {left:(v?.offsetLeft || 0)+'px',top:(v?.offsetTop || 0)+'px',width:(v?.width || innerWidth)+'px',height:(v?.height || innerHeight)+'px'});
+  Object.assign(screen.style, {left:(v?.offsetLeft || 0)+'px',top:(v?.offsetTop || 0)+'px',width:(v?.width || innerWidth)+'px',height:((v?.height || innerHeight) - xkeysHeight())+'px'});
+  xkeys.style.bottom = Math.max(0, innerHeight - (v ? v.offsetTop + v.height : innerHeight))+'px';
   const box = document.querySelector('#terminal');
   // Measure the renderer's actual rounded cells, rather than assume font metrics.
   const fits = size => {
