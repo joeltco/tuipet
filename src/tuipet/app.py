@@ -162,7 +162,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("EGG POLISH. Seven card eggs redrawn to match their official Vital Bracelet eggs: Blizzard Fang, Terriermon EX, Ryudamon, Louwemon EX, Espimon, Blitzmon EX and Agnimon EX.")
+    WHATS_NEW = ("MAPS WORTH GRINDING. The map picker shows what you've beaten and the egg you can earn there; press H to hunt one monster (1 in 8 fights). Rare X-Antibody and hidden forms now spawn rarely, wild wins can drop food, and Rest Kits + Life Recoveries turn up on the road. Scene picker grouped by family.")
 
 
     BINDINGS = [
