@@ -185,6 +185,24 @@ if [ "$PUBLISH" = 1 ]; then
       sleep 10
     fi
   done
+
+  # --- the WEB build follows every release (Joel 2026-10-16: the browser game at
+  # https://ff3mmo.com/tuipet/ must never lag pip).  AFTER the twine upload:
+  # the build above wipes dist/ and twine uploads everything in it, so dist/web
+  # must not exist yet.  Old versioned asset dirs stay on the server so a tab
+  # already loading the previous build can finish.  A web failure warns loudly
+  # but never un-publishes the PyPI release.
+  echo "==> web build + publish (ff3mmo.com/tuipet)"
+  if python3 tools/build_web.py \
+     && tar czf /tmp/tuipet-web-$NEXT.tgz -C dist/web . \
+     && scp -q /tmp/tuipet-web-$NEXT.tgz root@68.183.59.19:/tmp/tuipet-web.tgz \
+     && ssh root@68.183.59.19 'tar xzf /tmp/tuipet-web.tgz -C /var/www/tuipet-web && chmod -R a+rX /var/www/tuipet-web' \
+     && curl -fsS https://ff3mmo.com/tuipet/ | grep -q "assets/$NEXT-"; then
+    echo "==> web live — https://ff3mmo.com/tuipet/ serves $NEXT"
+  else
+    echo "⚠ WEB PUBLISH FAILED -- pip $NEXT is live but the browser game is not; rerun:" >&2
+    echo "  python3 tools/build_web.py && (upload dist/web to /var/www/tuipet-web/)" >&2
+  fi
 else
   echo "==> done; watch the release workflow at https://github.com/joeltco/tuipet/actions"
 fi
