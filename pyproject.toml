@@ -29,6 +29,7 @@ dev = ["ruff~=0.15.20", "bandit~=1.9.4", "mypy~=2.1.0", "pytest~=9.1.1"]
 
 [project.urls]
 Homepage = "https://github.com/joeltco/tuipet"
+"Play in browser" = "https://ff3mmo.com/tuipet/"
 Repository = "https://github.com/joeltco/tuipet"
 Issues = "https://github.com/joeltco/tuipet/issues"
 

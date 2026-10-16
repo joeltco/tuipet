@@ -5,6 +5,8 @@
 [![Python](https://img.shields.io/pypi/pyversions/tuipet)](https://pypi.org/project/tuipet/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
+**▶ Play in your browser: [ff3mmo.com/tuipet](https://ff3mmo.com/tuipet/)** — no install, same online lobby as the terminal game.
+
 A terminal virtual pet — Digimon V-Pet style — rendered with halfblock Unicode
 sprites and animated in the terminal. It builds on the work of the Digimon V-Pet
 fan community — see [Credits & acknowledgments](#credits--acknowledgments).

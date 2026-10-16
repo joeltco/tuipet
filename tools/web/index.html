@@ -3,7 +3,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#121212"><title>tuipet</title>
+<meta name="theme-color" content="#121212"><title>tuipet -- play the virtual pet in your browser</title>
+<meta name="description" content="tuipet is a free Digimon-style virtual pet you raise, battle and evolve. Play it right in your browser or install it with pip install tuipet for your terminal -- one shared online lobby.">
+<link rel="canonical" href="https://ff3mmo.com/tuipet/">
+<meta property="og:type" content="website"><meta property="og:url" content="https://ff3mmo.com/tuipet/">
+<meta property="og:title" content="tuipet -- a virtual pet you raise, battle and evolve">
+<meta property="og:description" content="tuipet is a free Digimon-style virtual pet you raise, battle and evolve. Play it right in your browser or install it with pip install tuipet for your terminal -- one shared online lobby.">
+<meta property="og:image" content="https://ff3mmo.com/tuipet/icon-512.png">
+<meta name="twitter:card" content="summary">
 <link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icon-192.png">
 <link rel="stylesheet" href="@ASSETS@vendor/xterm.css">
 <style>
@@ -22,6 +29,7 @@
 <!-- Termux's default two-row extra keys, touch screens only (Joel: "we need a full termux bar") (players: "need arrow keys" -- phone keyboards have no arrows or Esc) -->
 <nav id="xkeys"><div><button data-k="escape">ESC</button><button data-c="/">/</button><button data-c="-">-</button><button data-k="home">HOME</button><button data-k="up">↑</button><button data-k="end">END</button><button data-k="pageup">PGUP</button></div><div><button data-k="tab">TAB</button><button data-m="ctrl">CTRL</button><button data-m="alt">ALT</button><button data-k="left">←</button><button data-k="down">↓</button><button data-k="right">→</button><button data-k="pagedown">PGDN</button></div></nav>
 <div id="status" role="status">Loading tuipet…</div>
+<noscript><h1>tuipet</h1><p>A Digimon-style virtual pet: hatch eggs from 36 official Vital Bracelet lines, raise and evolve your pet, explore a 30-map adventure, and battle other players online. This page runs the real game in your browser and needs JavaScript. Or play in your terminal: <code>pip install tuipet</code> (<a href="https://pypi.org/project/tuipet/">PyPI</a>, <a href="https://github.com/joeltco/tuipet">GitHub</a>).</p></noscript>
 <script>const ASSET_ROOT='@ASSETS@';</script><script src="@ASSETS@vendor/xterm.js"></script>
 <script src="@ASSETS@vendor/addon-canvas.js"></script>
 <script src="@ASSETS@vendor/pyodide.js"></script><script src="@ASSETS@loader.js"></script></body></html>
