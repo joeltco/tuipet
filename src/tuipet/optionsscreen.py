@@ -233,6 +233,10 @@ class OptionsPanel(menu.SubHost):
 
     # ---- the update check (threaded: latest_if_newer blocks up to 4s) ----
     def _check_updates(self):
+        from .web import is_browser
+        if is_browser():
+            self.msg = "Reload the page to get the latest web version."
+            return
         if self._upd == "…":
             return                      # one probe at a time
         self._upd = "…"
@@ -252,6 +256,10 @@ class OptionsPanel(menu.SubHost):
         at launch -- so a success always ends in "restart tuipet".  We never
         pretend the swap happened live.
         """
+        from .web import is_browser
+        if is_browser():
+            self.msg = "Reload the page to get the latest web version."
+            return
         if self._installing:
             return
         self._installing = True

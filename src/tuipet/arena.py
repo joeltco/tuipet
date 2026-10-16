@@ -23,7 +23,11 @@ from . import grid
 from . import theme
 from .theme import LCD_ON, LCD_BG, SIL_SCENE, SIL_LIGHTSOFF, VOID
 from .pet import Pet
-from .render import render_screen
+from .web import is_browser
+if is_browser():
+    from .web.render import render_screen
+else:
+    from .render import render_screen
 
 # the fx engine + shared geometry live in arenafx (tier-2 split 2026-07-17);
 # every old name stays importable from here (and via app.py's re-export)
@@ -84,6 +88,20 @@ class Screen(FxMixin, Static):
     #                           -0.05/tick = a ~20-tick dissolve; 15 of our 10Hz
     #                           ticks = 1.5s (background audit 2026-07-15)
 
+    def update(self, content="", *, layout=True):
+        from .web import is_browser
+        if is_browser():
+            from .web.render import update_raster
+            if update_raster(self, content):
+                return
+        super().update(content, layout=False if is_browser() else layout)
+
+    def render_line(self, y):
+        lines = getattr(self, "_web_lines", None)
+        if lines is not None and 0 <= y < len(lines):
+            return lines[y]
+        return super().render_line(y)
+
     def on_mount(self):
         self.frame_i = 0      # interval counter (10 Hz; 1 tick == 0.1s == one DVPet _interval)
         self.anim_key = None  # last anim state, so cadences restart on a state change
@@ -92,6 +110,13 @@ class Screen(FxMixin, Static):
         self._idle_expr = None    # DVPet stepFrame mood-pose held for the current idle step (None = walk toggle)
 
     def paint(self, pet: Pet):
+        if is_browser() and not self.fx:
+            # The shared simulation still advances at 10 Hz; only idle pixels are capped.
+            import time
+            now = time.monotonic()
+            if now - getattr(self, "_web_paint_at", -1.0) < 0.2:
+                return
+            self._web_paint_at = now
         if self.fx:
             return self._paint_fx(pet)
         # (the per-phase LCD tint left with the day/night system -- BASIC

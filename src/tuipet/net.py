@@ -12,7 +12,11 @@ import asyncio
 import json
 import re as _re
 
-import websockets
+from .web import is_browser
+if is_browser():
+    from .web import socket as websockets
+else:
+    import websockets
 
 CHAT_CAP = 200
 ANNOUNCE = "📢"          # the dev's speaker: never a peer, never blockable

@@ -12,7 +12,11 @@ if not _os.environ.get("COLORTERM"):
 from rich.cells import cell_len, set_cell_size
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical
-from textual.widgets import Static
+from .web import is_browser
+if is_browser():
+    from .web.widgets import FixedStatic as Static
+else:
+    from textual.widgets import Static
 
 from . import statusbox
 from .appactions import ActionsMixin
@@ -61,6 +65,10 @@ async def _to_thread(fn, *args):
     a worker on launch, so it killed the game before the egg hatched.
     run_in_executor on the default pool is the same thing on every version."""
     import asyncio
+    from .web import is_browser
+    if is_browser():
+        from .web import cloud
+        return await getattr(cloud, fn.__name__)(*args)
     return await asyncio.get_running_loop().run_in_executor(None, fn, *args)
 
 
@@ -196,6 +204,13 @@ class TuiPetApp(ActionsMixin, App):
         ("enter,space", "gift", "Accept gift"),
     ]
 
+    def get_driver_class(self):
+        from .web import is_browser
+        if is_browser():
+            from .web.driver import BrowserDriver
+            return BrowserDriver
+        return super().get_driver_class()
+
     def __init__(self, pet: Pet | None = None):
         super().__init__()
         try:                       # the version THIS process runs (see _bug_meta)
@@ -273,9 +288,9 @@ class TuiPetApp(ActionsMixin, App):
         self._announce_eggs()
         self.repaint()
         self._open_mode(titlescreen.TitlePanel(), self._after_title)   # the panel's strip() carries PRESS ENTER
-        self.set_interval(0.1, self.on_frame)    # single DVPet interval clock: 1 tick == 0.1s (main view AND sub-screens)
-        self.set_interval(1.0, self.on_tick)
-        self.set_interval(10.0, self.autosave)
+        self._frame_timer = self.set_interval(0.1, self.on_frame)    # single DVPet interval clock: 1 tick == 0.1s (main view AND sub-screens)
+        self._life_timer = self.set_interval(1.0, self.on_tick)
+        self._save_timer = self.set_interval(10.0, self.autosave)
         self.run_worker(self._check_update(), name="update", exclusive=False)
         self.run_worker(self._flush_bugs(), name="bugflush", exclusive=False)
         self._start_sync()
@@ -394,6 +409,9 @@ class TuiPetApp(ActionsMixin, App):
         command.  A failed install says so and hands the command over too; it
         never pretends the update happened.
         """
+        from .web import is_browser
+        if is_browser():
+            return
         latest = await _to_thread(update_check.latest_if_newer)
         if not latest:
             return
@@ -682,6 +700,9 @@ class TuiPetApp(ActionsMixin, App):
         """Best-effort blocking push so the final state is captured cloud-side.
         Same holder gate as _push_cloud -- the quit flush was the GPD
         incident's poison vector (2026-07-29)."""
+        from .web import is_browser
+        if is_browser():
+            return                      # web.entry awaits the final push and IDBFS flush
         if self._sync is None or persistence.holder_cache() is False:
             return
         try:
@@ -1161,6 +1182,11 @@ class TuiPetApp(ActionsMixin, App):
         statusbox.card(self, title, lines)
 
     def on_frame(self):                        # single DVPet interval clock (10 Hz, 0.1s): main view AND sub-screens
+        from .web import is_browser
+        if is_browser():
+            from .web.entry import hidden
+            if hidden:
+                return
         menu.TICK += 1                         # the shared note marquee clock: no screen clips a message
         self._drain_beep_q()                   # the alarm-pattern tail (#8): extra rings land here
         self._hud_marquee()                    # scroll any over-long HUD message (independent of the LCD)
@@ -1304,6 +1330,11 @@ class TuiPetApp(ActionsMixin, App):
             sc.paint(self.pet)
 
     def on_tick(self):
+        from .web import is_browser
+        if is_browser():
+            from .web.entry import hidden
+            if hidden:
+                return
         # the sim's proxy for "an animation is playing": the poop deferral
         # (canon startPoop state-machine block, restored 2026-07-19) holds
         # the squat through the whole VISIBLE fx, not just the anim ttl
@@ -1568,8 +1599,17 @@ class TuiPetApp(ActionsMixin, App):
         loop = self._hud_scroll + HUD_GAP
         # the window is cropped in CELLS (see _hud_fits) -- a char slice with a
         # wide glyph inside would spill the box and wrap-clip the tail
-        self.msg_w.update(_hud_esc(set_cell_size(
-            (loop + loop)[self._hud_off:self._hud_off + HUD_W], HUD_W)))
+        draw = True
+        if is_browser():
+            # Keep scroll speed, but coalesce browser paints of this passive text.
+            import time
+            now = time.monotonic()
+            draw = now - getattr(self, "_web_hud_at", -1.0) >= 0.4
+            if draw:
+                self._web_hud_at = now
+        if draw:
+            self.msg_w.update(_hud_esc(set_cell_size(
+                (loop + loop)[self._hud_off:self._hud_off + HUD_W], HUD_W)))
         self._hud_off += 1
         if self._hud_off >= len(loop):
             self._hud_off = 0

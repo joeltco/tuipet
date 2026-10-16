@@ -65,6 +65,8 @@ def _atomic_write_json(path, data, keep_bak=False):
         if keep_bak and os.path.exists(path):
             os.replace(path, path + ".bak")   # keep one generation back
         os.replace(tmp, path)
+        from .web.storage import checkpoint
+        checkpoint()
         # a transient refusal used to stick forever -- the exit banner
         # printed "couldn't save" over a pet that had been saving fine
         # every 10s since (persistence audit 2026-07-18).  Clear it only
