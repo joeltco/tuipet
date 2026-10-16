@@ -170,7 +170,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("TWO NEW THEMES. Forest (moss green in the deep woods) and Dusk (violet twilight) replace Game Boy and Paper -- if you used one of those, you're moved to its replacement automatically.")
+    WHATS_NEW = ("PLAY IN YOUR BROWSER. tuipet now runs at ff3mmo.com/tuipet -- same account, same online lobby as the terminal game, with a Termux-style key bar on phones. Tell a friend!")
 
 
     BINDINGS = [
