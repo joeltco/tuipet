@@ -149,12 +149,13 @@ def test_gameboy_render_reserves_the_sprite_ink_for_sprites():
     from tuipet.render import render_scene
     dark = ["000000" * 12] * 8
     try:
-        theme.apply("gameboy")
+        theme.apply("forest")                         # (gameboy retired 2026-10-15)
+        ink = theme.SIL_SCENE
         t = render_scene([], 12, 4, theme.SIL_SCENE, theme.LCD_BG, bgimg=dark)
-        assert "#0f380f" not in str(t.markup), "background art wore the sprite ink"
+        assert ink not in str(t.markup), "background art wore the sprite ink"
         t = render_scene([(["111", "111"], 5, False)], 12, 4,
                          theme.SIL_SCENE, theme.LCD_BG, bgimg=dark)
-        assert "#0f380f" in str(t.markup)             # the sprite itself still inks
+        assert ink in str(t.markup)                   # the sprite itself still inks
     finally:
         theme.apply("grey")
 
@@ -216,7 +217,7 @@ def test_the_background_quantizer_is_gone():
     import inspect
     assert not hasattr(theme, "themed_bg")
     assert not hasattr(theme, "_quant_frame")
-    for name in ("gameboy", "paper"):
+    for name in theme.THEMES:
         assert "bg_ramp" not in theme.THEMES[name]
     assert "themed_bg" not in inspect.getsource(render)
 
@@ -320,3 +321,15 @@ def test_amber_stays_a_single_phosphor_for_positives():
     t = theme.THEMES["amber"]
     r, g, b = (int(t["pos"][i:i + 2], 16) for i in (1, 3, 5))
     assert r >= g >= b, t["pos"]
+
+
+def test_retired_gameboy_and_paper_choices_land_on_forest_and_dusk(tmp_path, monkeypatch):
+    """Joel 2026-10-15: "replace gameboy and paper themes with something else.
+    Forest and something" -- a saved old name maps to its replacement instead
+    of silently dropping the player back to grey."""
+    from tuipet import persistence
+    monkeypatch.setattr(persistence, "SAVE_DIR", str(tmp_path))
+    assert "gameboy" not in theme.THEMES and "paper" not in theme.THEMES
+    for old, new in (("gameboy", "forest"), ("paper", "dusk")):
+        theme.save_choice(old)
+        assert theme.load_choice() == new

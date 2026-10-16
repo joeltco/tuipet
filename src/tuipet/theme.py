@@ -56,28 +56,22 @@ THEMES = {
         "heart": "#e0884a", "energy": "#6fb0e0", "care": "#9a8fe0", "life": "#5fc7b0", "coin": "#e0c060",
         "void": "#000000", "flash": ("#dce8f8", "#101826", "#c8d8f0"),
     },
-    # the classic 4-shade DMG pea-soup LCD (the default stays grey; this is
-    # an option).  NB the v0.2.284 putty-shell chrome experiment was REVERTED
-    # (Joel 2026-07-05: "this looks bad") -- gameboy rides the fallbacks.
-    "gameboy": {
-        "on": "#0f380f", "bg": "#9bbc0f", "mid": "#306230",
-        "accent": "#7a3a22", "pos": "#2a5a8a", "neg": "#8a3a2a", "border": "#4a5a28",
-        "sil_scene": "#0f380f", "sil_lightsoff": "#d8e8a0",
-        "heart": "#8a4a2a", "energy": "#2a6a8a", "care": "#6a4a8a", "life": "#306230",
-        "coin": "#3a4406",   # was #8a7a1a: 1.97:1 on the pea LCD (theme audit 2026-07-22)
-        "void": "#0f380f", "flash": ("#e0f0c0", "#0f380f", "#d8e8a0"),
-        # (the bg_ramp background quantizer is GONE -- Joel 2026-07-18:
-        # "get rid of the green and white background pallet switcher in
-        # gameboy and paper. it looks like shit".  Backdrops render full
-        # colour like every theme; the DMG shades stay for chrome+sprites.)
+    # FOREST + DUSK replaced gameboy + paper (Joel 2026-10-15: "replace gameboy
+    # and paper themes with something else. Forest and something"); a saved
+    # choice of either old name maps over in load_choice (_RENAMED).
+    "forest": {
+        "on": "#b8d8a0", "bg": "#0f1a10", "mid": "#5f8054",
+        "accent": "#e0a050", "pos": "#8ac0e8", "neg": "#e07a5a", "border": "#24382a",
+        "sil_scene": "#142016", "sil_lightsoff": "#d8f0c0",
+        "heart": "#e08a6a", "energy": "#7ac0d8", "care": "#b09ae0", "life": "#8ad08a", "coin": "#e0c860",
+        "void": "#000000", "flash": ("#e8f8e0", "#0f1a10", "#d0e8c0"),
     },
-    "paper": {
-        "on": "#2a2620", "bg": "#efe9dc", "mid": "#8a8274",
-        "accent": "#a04a2a", "pos": "#3a6a8a", "neg": "#a03a2a", "border": "#b8ac97",
-        "sil_scene": "#2a2620", "sil_lightsoff": "#f4efe4",
-        "heart": "#a04a2a", "energy": "#3a6a8a", "care": "#7a5a92", "life": "#567a68", "coin": "#967a2a",
-        "void": "#000000", "flash": ("#ffffff", "#2a2620", "#faf6ec"),
-        # (bg_ramp removed with gameboy's -- 2026-07-18, see above)
+    "dusk": {
+        "on": "#d0b8f0", "bg": "#1a1426", "mid": "#7e6ea0",
+        "accent": "#f0a060", "pos": "#8ac0f0", "neg": "#f07a7a", "border": "#3a2c50",
+        "sil_scene": "#201830", "sil_lightsoff": "#e8dcf8",
+        "heart": "#f08aa0", "energy": "#8ac8f0", "care": "#c8a0f0", "life": "#7ad8b8", "coin": "#f0d070",
+        "void": "#000000", "flash": ("#f4ecfc", "#1a1426", "#e4d8f4"),
     },
     "sakura": {
         "on": "#f0b8c8", "bg": "#241820", "mid": "#8a5a6c",
@@ -95,6 +89,7 @@ THEMES = {
     },
 }
 _DEFAULT = "grey"
+_RENAMED = {"gameboy": "forest", "paper": "dusk"}   # retired 2026-10-15
 _ORDER = list(THEMES)
 _current = _DEFAULT
 
@@ -224,6 +219,7 @@ def save_choice(name):
 def load_choice():
     try:
         n = open(_conf_path(), encoding="utf-8").read().strip()
+        n = _RENAMED.get(n, n)
         return n if n in THEMES else _DEFAULT
     except OSError:
         return _DEFAULT

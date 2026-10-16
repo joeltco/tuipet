@@ -14,8 +14,8 @@ _NOTES = {
     "mono": "pure 1-bit terminal",
     "amber": "vintage phosphor glow",
     "midnight": "deep blue after-hours",
-    "gameboy": "the 4-shade DMG green",
-    "paper": "dark ink on warm paper",
+    "forest": "moss green in the deep woods",
+    "dusk": "violet twilight",
     "sakura": "petals on dusk",
     "ocean": "abyssal teal",
 }
