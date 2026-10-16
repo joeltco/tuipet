@@ -194,8 +194,22 @@ EGG_BG = {
 # named scene except the arena is a FREE pick, the clone's final ruling
 # ("get rid of the price walls" -- Joel 2026-07-16).  The egg still decides
 # the DEFAULT scene; a pick merely overrides it (pet.bg_pick).
-PICKS = tuple(sorted((k for k in NAMES if k != "tourneyBack"),
-                     key=lambda k: NAMES[k]))
+# ...in FAMILY + THEME order, not A-Z (Joel 2026-10-15: "Shouldn't they at least
+# be more organized?"): every recolour sits beside its base (structural
+# correlation, measured: Green/Golden Hollow 0.98, Boulevard/Dusk 0.96, Flower
+# Field/Sunset 0.96, City/Sunset 0.95, Island 0.85, Bay Bridge 0.85, Seafloor
+# 0.72, Factory 0.70; Teal Hollow is the same path redrawn), and the families
+# run land -> water -> city -> digital.
+PICKS = ("greenhills", "moonmeadow", "lakeside",
+         "flowerfield", "blossom",
+         "forestgate", "goldenwood", "tealhollow",
+         "jungle", "mountains", "frozenpeak", "desert", "volcano",
+         "cove", "islandsea", "fileisland", "islandnight",
+         "underwater", "seafloor", "sunsetshore",
+         "city", "citysunset", "cityday", "boulevard", "boulevardusk",
+         "baybridge", "bridgenight", "factory", "factorynight",
+         "datatunnel")
+assert sorted(PICKS) == sorted(k for k in NAMES if k != "tourneyBack")
 
 
 def scene_for_egg(egg_type):
