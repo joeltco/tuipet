@@ -114,7 +114,8 @@ def main():
         out.append({"id": scene, "name": NAME_OVERRIDE.get(scene, backgrounds.NAMES[scene]),
                     "scene": scene, "tier": tier,
                     "fields": "Godzilla kaiju" if fields == GZ else fields,
-                    "wilds": wilds, "boss": boss, "finds": finds, "reward": reward})
+                    "wilds": wilds, "boss": boss, "finds": finds + ["life_recovery", "rest_kit"],
+                    "wild_drops": finds, "reward": reward})
     path = os.path.join(os.path.dirname(__file__), "..", "src", "tuipet", "data",
                         "adventure_maps.json")
     with open(path, "w", encoding="utf-8") as f:

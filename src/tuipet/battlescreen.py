@@ -633,6 +633,9 @@ class BattlePanel:
                     "reveal": f"{self.enemy['name'][:12]} appears!",
                     "windup": "...", "fire_out": "Fire!", "fire_in": "Incoming!",
                     "dodge": "Dodge!", "flinch": "Hit!", "result": ""}.get(m, "")
+            rarity = self.enemy.get("rarity", "ordinary")
+            if m == "reveal" and self.wild and not self.enemy.get("boss") and rarity != "ordinary":
+                note = f"{rarity}: {self.enemy['name'][:12]} appears!"
             if m == "result":
                 note = self._result_note()
         self.hud_php, self.hud_fhp, self.hud_note = ph, fh, note

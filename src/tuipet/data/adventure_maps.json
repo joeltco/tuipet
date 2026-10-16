@@ -80,6 +80,15 @@
    "vegetable",
    "candy",
    "cupcake",
+   "meat",
+   "life_recovery",
+   "rest_kit"
+  ],
+  "wild_drops": [
+   "fish",
+   "vegetable",
+   "candy",
+   "cupcake",
    "meat"
   ],
   "reward": [
@@ -107,6 +116,15 @@
   ],
   "boss": 97,
   "finds": [
+   "vegetable",
+   "candy",
+   "cookie",
+   "honey",
+   "fruit",
+   "life_recovery",
+   "rest_kit"
+  ],
+  "wild_drops": [
    "vegetable",
    "candy",
    "cookie",
@@ -153,6 +171,14 @@
    "fish",
    "tuna",
    "vegetable",
+   "cookie",
+   "life_recovery",
+   "rest_kit"
+  ],
+  "wild_drops": [
+   "fish",
+   "tuna",
+   "vegetable",
    "cookie"
   ],
   "reward": [
@@ -180,6 +206,13 @@
   ],
   "boss": 109,
   "finds": [
+   "poison_mushroom",
+   "vegetable",
+   "candy",
+   "life_recovery",
+   "rest_kit"
+  ],
+  "wild_drops": [
    "poison_mushroom",
    "vegetable",
    "candy"
@@ -290,6 +323,14 @@
    "fish",
    "tuna",
    "vegetable",
+   "cookie",
+   "life_recovery",
+   "rest_kit"
+  ],
+  "wild_drops": [
+   "fish",
+   "tuna",
+   "vegetable",
    "cookie"
   ],
   "reward": [
@@ -332,6 +373,14 @@
    "tuna",
    "fish",
    "cupcake",
+   "orange",
+   "life_recovery",
+   "rest_kit"
+  ],
+  "wild_drops": [
+   "tuna",
+   "fish",
+   "cupcake",
    "orange"
   ],
   "reward": [
@@ -365,6 +414,15 @@
   ],
   "boss": 91,
   "finds": [
+   "fish",
+   "vegetable",
+   "candy",
+   "cupcake",
+   "meat",
+   "life_recovery",
+   "rest_kit"
+  ],
+  "wild_drops": [
    "fish",
    "vegetable",
    "candy",
@@ -419,6 +477,15 @@
   ],
   "boss": 196,
   "finds": [
+   "vegetable",
+   "candy",
+   "cookie",
+   "honey",
+   "fruit",
+   "life_recovery",
+   "rest_kit"
+  ],
+  "wild_drops": [
    "vegetable",
    "candy",
    "cookie",
@@ -530,6 +597,13 @@
   "finds": [
    "poison_mushroom",
    "vegetable",
+   "candy",
+   "life_recovery",
+   "rest_kit"
+  ],
+  "wild_drops": [
+   "poison_mushroom",
+   "vegetable",
    "candy"
   ],
   "reward": [
@@ -577,6 +651,13 @@
   ],
   "boss": 209,
   "finds": [
+   "poison_mushroom",
+   "vegetable",
+   "candy",
+   "life_recovery",
+   "rest_kit"
+  ],
+  "wild_drops": [
    "poison_mushroom",
    "vegetable",
    "candy"
@@ -661,6 +742,13 @@
   "finds": [
    "poison_mushroom",
    "vegetable",
+   "candy",
+   "life_recovery",
+   "rest_kit"
+  ],
+  "wild_drops": [
+   "poison_mushroom",
+   "vegetable",
    "candy"
   ],
   "reward": [
@@ -719,6 +807,15 @@
    "cheese",
    "bread",
    "red_pepper",
+   "vitamin",
+   "life_recovery",
+   "rest_kit"
+  ],
+  "wild_drops": [
+   "steak",
+   "cheese",
+   "bread",
+   "red_pepper",
    "vitamin"
   ],
   "reward": [
@@ -757,6 +854,14 @@
   ],
   "boss": 252,
   "finds": [
+   "tuna",
+   "vitamin",
+   "yellow_pepper",
+   "orange",
+   "life_recovery",
+   "rest_kit"
+  ],
+  "wild_drops": [
    "tuna",
    "vitamin",
    "yellow_pepper",
@@ -815,6 +920,14 @@
   ],
   "boss": 193,
   "finds": [
+   "fish",
+   "tuna",
+   "vegetable",
+   "cookie",
+   "life_recovery",
+   "rest_kit"
+  ],
+  "wild_drops": [
    "fish",
    "tuna",
    "vegetable",
@@ -891,6 +1004,13 @@
   "finds": [
    "cheese_burger",
    "bread",
+   "food_pill",
+   "life_recovery",
+   "rest_kit"
+  ],
+  "wild_drops": [
+   "cheese_burger",
+   "bread",
    "food_pill"
   ],
   "reward": [
@@ -938,6 +1058,14 @@
    "fish",
    "tuna",
    "vegetable",
+   "cookie",
+   "life_recovery",
+   "rest_kit"
+  ],
+  "wild_drops": [
+   "fish",
+   "tuna",
+   "vegetable",
    "cookie"
   ],
   "reward": [
@@ -980,6 +1108,15 @@
   ],
   "boss": 292,
   "finds": [
+   "steak",
+   "cheese",
+   "bread",
+   "red_pepper",
+   "vitamin",
+   "life_recovery",
+   "rest_kit"
+  ],
+  "wild_drops": [
    "steak",
    "cheese",
    "bread",
@@ -1081,6 +1218,13 @@
   "finds": [
    "cheese_burger",
    "bread",
+   "food_pill",
+   "life_recovery",
+   "rest_kit"
+  ],
+  "wild_drops": [
+   "cheese_burger",
+   "bread",
    "food_pill"
   ],
   "reward": [
@@ -1121,6 +1265,13 @@
   "finds": [
    "cheese_burger",
    "bread",
+   "food_pill",
+   "life_recovery",
+   "rest_kit"
+  ],
+  "wild_drops": [
+   "cheese_burger",
+   "bread",
    "food_pill"
   ],
   "reward": [
@@ -1159,6 +1310,13 @@
   "finds": [
    "cheese_burger",
    "bread",
+   "food_pill",
+   "life_recovery",
+   "rest_kit"
+  ],
+  "wild_drops": [
+   "cheese_burger",
+   "bread",
    "food_pill"
   ],
   "reward": [
@@ -1192,6 +1350,15 @@
   ],
   "boss": 282,
   "finds": [
+   "steak",
+   "cheese",
+   "bread",
+   "red_pepper",
+   "vitamin",
+   "life_recovery",
+   "rest_kit"
+  ],
+  "wild_drops": [
    "steak",
    "cheese",
    "bread",
@@ -1274,6 +1441,14 @@
    "tuna",
    "fish",
    "cupcake",
+   "orange",
+   "life_recovery",
+   "rest_kit"
+  ],
+  "wild_drops": [
+   "tuna",
+   "fish",
+   "cupcake",
    "orange"
   ],
   "reward": [
@@ -1309,6 +1484,14 @@
   ],
   "boss": 1644,
   "finds": [
+   "tuna",
+   "fish",
+   "cupcake",
+   "orange",
+   "life_recovery",
+   "rest_kit"
+  ],
+  "wild_drops": [
    "tuna",
    "fish",
    "cupcake",
@@ -1353,6 +1536,14 @@
   ],
   "boss": 288,
   "finds": [
+   "fish",
+   "tuna",
+   "vegetable",
+   "cookie",
+   "life_recovery",
+   "rest_kit"
+  ],
+  "wild_drops": [
    "fish",
    "tuna",
    "vegetable",
@@ -1420,6 +1611,13 @@
   ],
   "boss": 285,
   "finds": [
+   "cheese_burger",
+   "bread",
+   "food_pill",
+   "life_recovery",
+   "rest_kit"
+  ],
+  "wild_drops": [
    "cheese_burger",
    "bread",
    "food_pill"
@@ -1539,6 +1737,13 @@
   "finds": [
    "cheese_burger",
    "bread",
+   "food_pill",
+   "life_recovery",
+   "rest_kit"
+  ],
+  "wild_drops": [
+   "cheese_burger",
+   "bread",
    "food_pill"
   ],
   "reward": [
@@ -1593,6 +1798,13 @@
   ],
   "boss": 313,
   "finds": [
+   "cheese_burger",
+   "bread",
+   "food_pill",
+   "life_recovery",
+   "rest_kit"
+  ],
+  "wild_drops": [
    "cheese_burger",
    "bread",
    "food_pill"
@@ -1672,6 +1884,13 @@
   "finds": [
    "green_pepper",
    "food_pill",
+   "med",
+   "life_recovery",
+   "rest_kit"
+  ],
+  "wild_drops": [
+   "green_pepper",
+   "food_pill",
    "med"
   ],
   "reward": [
@@ -1740,6 +1959,13 @@
   ],
   "boss": 278,
   "finds": [
+   "green_pepper",
+   "food_pill",
+   "med",
+   "life_recovery",
+   "rest_kit"
+  ],
+  "wild_drops": [
    "green_pepper",
    "food_pill",
    "med"
@@ -1838,6 +2064,13 @@
   ],
   "boss": 274,
   "finds": [
+   "green_pepper",
+   "food_pill",
+   "med",
+   "life_recovery",
+   "rest_kit"
+  ],
+  "wild_drops": [
    "green_pepper",
    "food_pill",
    "med"

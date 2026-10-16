@@ -55,10 +55,11 @@ def test_every_boss_is_unique_and_outranks_or_matches_its_road():
     assert MAPS[-1]["bosses"][0]["parade_msg"]           # the last gate ends the road
 
 
-def test_road_finds_are_food_and_care_only():
+def test_road_finds_are_food_care_and_approved_tools():
     for m in MAPS:
         assert m["find_keys"]
-        for k in m["find_keys"]:
+        assert set(m["find_keys"]) - set(m["wild_drops"]) == {"life_recovery", "rest_kit"}
+        for k in m["wild_drops"]:
             assert shop.CATALOG[k].category in ("Feed", "Cure"), (m["name"], k)
 
 

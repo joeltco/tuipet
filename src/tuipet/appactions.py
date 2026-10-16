@@ -447,7 +447,8 @@ class ActionsMixin:
         if not zone:
             self.repaint(); return          # backed out of Adventure
         from . import adventurescreen
-        self._open_mode(adventurescreen.AdventurePanel(self.pet, zone=zone),
+        zone, hunt = zone if isinstance(zone, tuple) else (zone, None)
+        self._open_mode(adventurescreen.AdventurePanel(self.pet, zone=zone, hunt=hunt),
                         self._after_adventure)
 
     def _after_adventure(self, msg):
