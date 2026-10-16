@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.31 — PLAY IN YOUR BROWSER. tuipet now runs at ff3mmo.com/tuipet - (2026-10-16)
+
+PLAY IN YOUR BROWSER. tuipet now runs at ff3mmo.com/tuipet -- same account, same online lobby as the terminal game, with a Termux-style key bar on phones. Tell a friend!
+
 ## 0.6.30 — TWO NEW THEMES. Forest (moss green in the deep woods) and Du (2026-10-15)
 
 TWO NEW THEMES. Forest (moss green in the deep woods) and Dusk (violet twilight) replace Game Boy and Paper -- if you used one of those, you're moved to its replacement automatically.
