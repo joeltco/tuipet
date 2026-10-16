@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.29 — MORE TO HUNT. Beating a wild X-Antibody form can drop an X-P (2026-10-15)
+
+MORE TO HUNT. Beating a wild X-Antibody form can drop an X-Program (1 in 40, once a run), the first veteran boss win on each map each day can pay that tier's power item (1 in 8), and on festival days rare monsters show up twice as often.
+
 ## 0.6.28 — A NEW ROAD. The 30 adventure maps are re-ordered (2026-10-15)
 
 A NEW ROAD. The 30 adventure maps are re-ordered: bright, gentle places early, dark and dangerous ones late, ending in the Data Tunnel -- and no more look-alike maps back to back. Your cleared maps, egg progress and bests move with them.
