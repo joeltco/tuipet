@@ -59,6 +59,12 @@ class AccountPanel:
                 self.field = "pw"
                 return None
             name = self.name_buf.strip()
+            if name and not any(c.isalnum() for c in name):
+                # a lone "-" became a real account (2026-10-16: the phone key
+                # bar's "-" sits beside ESC); the server refuses new ones too
+                self.note = "Names need a letter or number."
+                self.sfx = "error"
+                return None
             if name and self.pw_buf:
                 return ("done", (name, self.pw_buf))
             # a missing field used to fail SILENTLY (round 35)

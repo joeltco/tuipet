@@ -1080,3 +1080,50 @@ def test_the_fight_header_shows_both_locks():
     pan.bt_log = ""
     text = pan._text_battle().plain
     assert "lock: mega vs normal" in text
+
+
+def test_a_new_name_needs_a_letter_or_number(tmp_path):
+    """2026-10-16: a lone "-" was claimed as a live account (the phone key
+    bar's "-" sits beside ESC).  The server refuses NEW punctuation-only names;
+    an ordinary name still claims fine."""
+    port = _free_port()
+    proc = _spawn(port, tmp_path)
+
+    async def scenario():
+        bad = LobbyClient(f"ws://127.0.0.1:{port}/", "-", "secret", {"name": "Gato"})
+        task = asyncio.create_task(bad.run())
+        try:
+            assert await _wait(lambda: bad.state.login_failed), "punctuation name was accepted"
+            assert "letter or number" in bad.state.login_failed
+        finally:
+            task.cancel()
+        ok = LobbyClient(f"ws://127.0.0.1:{port}/", "Gato-1", "secret", {"name": "Gato"})
+        task = asyncio.create_task(ok.run())
+        try:
+            assert await _wait(lambda: ok.state.connected), "a normal name was refused"
+            assert not ok.state.login_failed
+        finally:
+            task.cancel()
+
+    try:
+        asyncio.run(scenario())
+    finally:
+        proc.terminate()
+        proc.wait(timeout=3)
+
+
+def test_the_login_card_refuses_a_punctuation_only_name():
+    from tuipet.accountscreen import AccountPanel
+    p = AccountPanel()
+    for k in "-":
+        p.key(k)
+    p.key("tab")
+    for k in "pw":
+        p.key(k)
+    assert p.key("enter") is None
+    assert "letter or number" in p.note
+    p.key("tab")
+    for k in "x":
+        p.key(k)
+    p.key("tab")
+    assert p.key("enter") == ("done", ("-x", "pw"))

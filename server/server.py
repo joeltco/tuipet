@@ -1187,6 +1187,12 @@ async def handler(ws):
                         return
                     name = acc["name"]                    # canonical capitalisation
                 else:                                     # new name -> claim it
+                    if not any(c.isalnum() for c in name):
+                        # 2026-10-16: "-" was claimed as an account; a NEW name must
+                        # carry a letter or digit (existing names keep working)
+                        await _send(client, {"t": "login_failed",
+                                             "msg": "Names need a letter or number."})
+                        return
                     if not pw:
                         await _send(client, {"t": "login_failed", "msg": "Pick a password to claim this name."})
                         return
