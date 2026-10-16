@@ -167,6 +167,8 @@ def test_web_build_version_cache_busting_and_reproducibility(tmp_path, monkeypat
     monkeypatch.setattr(module, 'ROOT', tmp_path)
     (tmp_path/'src/tuipet').mkdir(parents=True)
     (tmp_path/'src/tuipet/__init__.py').write_text('', encoding='utf-8')
+    (tmp_path/'src/tuipet/data').mkdir()
+    (tmp_path/'src/tuipet/data/eggs.json.gz').write_bytes((root/'src/tuipet/data/eggs.json.gz').read_bytes())
     (tmp_path/'tools/web').mkdir(parents=True)
     (tmp_path/'tools/web/loader.js').write_text('loader', encoding='utf-8')
     (tmp_path/'tools/web/index.html').write_text('@ASSETS@loader.js', encoding='utf-8')
@@ -176,6 +178,11 @@ def test_web_build_version_cache_busting_and_reproducibility(tmp_path, monkeypat
     first = (tmp_path/'dist/web/manifest.json').read_bytes()
     manifest = json.loads(first)
     assert manifest['version'] == '1.2.3'
+    assert manifest['display'] == 'fullscreen'
+    assert manifest['start_url'] == './'
+    assert manifest['theme_color'] == '#121212'   # the game's own screen colour (seamless page)
+    assert (tmp_path/'dist/web/icon-192.png').read_bytes().startswith(b'\x89PNG')
+    assert (tmp_path/'dist/web/icon-512.png').read_bytes().startswith(b'\x89PNG')
     with zipfile.ZipFile(tmp_path/'build/web-game.zip') as z:
         assert b'Version: 1.2.3' in z.read('tuipet-1.2.3.dist-info/METADATA')
     module.build()
@@ -250,3 +257,18 @@ def test_browser_update_buttons_never_start_threads(monkeypatch):
     assert 'Reload' in panel.msg
     panel._install_update()
     assert 'Reload' in panel.msg
+
+
+def test_browser_resize_reuses_terminal_warning(monkeypatch):
+    from tuipet.web import entry
+    from tuipet.appboot import terminal_size_warning
+    messages, notices = [], []
+    app = SimpleNamespace(post_message=messages.append,
+                          notify=lambda text, **kw: notices.append((text, kw)))
+    monkeypatch.setattr(entry, 'app', app)
+    entry.browser_resize(60, 20)
+    entry.browser_resize(60, 20)
+    assert messages[0].size.width == 60
+    assert notices == [(terminal_size_warning(60, 20), {'timeout': 2.5})]
+    entry.browser_resize(80, 30)
+    assert len(notices) == 1

@@ -1,8 +1,19 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>tuipet</title><link rel="stylesheet" href="@ASSETS@vendor/xterm.css">
-<style>body{background:#111;color:#ddd;font:14px monospace;margin:8px}#terminal{width:max-content}#status{white-space:pre-wrap}button{margin:8px}</style></head>
-<body><div id="status" role="status">Loading tuipet…</div><div id="terminal"></div>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#121212"><title>tuipet</title>
+<link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="@ASSETS@vendor/xterm.css">
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#121212;color:#ddd}
+#screen{position:fixed;overflow:hidden;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);touch-action:none}
+#terminal{height:100%;width:100%;overflow:hidden}.xterm-viewport{overflow:hidden!important}
+#status{position:fixed;inset:0;background:#121212;z-index:20;white-space:pre-wrap;font:16px monospace;padding:16px}#status:empty{display:none}
+#keyboard{position:absolute;left:0;top:0;width:1px;height:1px;opacity:.01;border:0;padding:0;font-size:16px;resize:none}
+</style></head><body><main id="screen"><div id="terminal"></div><textarea id="keyboard" aria-label="Terminal keyboard" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="text"></textarea></main>
+<div id="status" role="status">Loading tuipet…</div>
 <script>const ASSET_ROOT='@ASSETS@';</script><script src="@ASSETS@vendor/xterm.js"></script>
 <script src="@ASSETS@vendor/addon-canvas.js"></script>
 <script src="@ASSETS@vendor/pyodide.js"></script><script src="@ASSETS@loader.js"></script></body></html>

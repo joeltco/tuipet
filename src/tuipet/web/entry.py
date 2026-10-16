@@ -13,6 +13,18 @@ def browser_key(key, char=None):
         app.post_message(key_event(key, char))
 
 
+def browser_resize(cols, rows):
+    if app is not None:
+        from textual import events
+        from textual.geometry import Size
+        size = Size(cols, rows)
+        app.post_message(events.Resize(size, size))
+        from ..appboot import MIN_COLS, MIN_ROWS, terminal_size_warning
+        if (cols < MIN_COLS or rows < MIN_ROWS) and size != getattr(app, '_web_warn_size', None):
+            app.notify(terminal_size_warning(cols, rows), timeout=2.5)
+        app._web_warn_size = size
+
+
 async def visibility(value):
     global hidden
     hidden = bool(value)

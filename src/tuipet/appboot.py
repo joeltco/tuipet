@@ -13,6 +13,12 @@ from . import persistence
 MIN_COLS, MIN_ROWS = 77, 24     # the fixed layout: #left 44 + #stats 30 + chrome
 
 
+def terminal_size_warning(cols, rows):
+    return (f"⚠ tuipet lays out for {MIN_COLS}×{MIN_ROWS}; this terminal is "
+            f"{cols}×{rows} — expect clipping.\n  (Enlarge the window, shrink "
+            f"the font, or rotate the phone.)")
+
+
 def host_platform():
     """The platform name for bug reports (hostinfo owns the detection so the
     sound backend and the bug feed can never disagree about the host)."""
@@ -91,9 +97,7 @@ def _preflight():
     warn = []
     cols, rows = shutil.get_terminal_size()
     if cols < MIN_COLS or rows < MIN_ROWS:
-        warn.append(f"⚠ tuipet lays out for {MIN_COLS}×{MIN_ROWS}; this terminal is "
-                    f"{cols}×{rows} — expect clipping.\n  (Enlarge the window, shrink "
-                    f"the font, or rotate the phone.)")
+        warn.append(terminal_size_warning(cols, rows))
     enc = (getattr(sys.stdout, "encoding", "") or "").lower()
     if enc and "utf" not in enc:
         warn.append(f"⚠ tuipet draws with Unicode but this terminal reports '{enc}'.\n"

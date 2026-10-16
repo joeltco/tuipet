@@ -1,7 +1,7 @@
 const started = performance.now();
 window.metrics = {}; window.errors = [];
 const status = document.querySelector('#status');
-const term = window.term = new Terminal({cols:80, rows:30, fontSize:16, theme:{background:'#101010'}});
+const term = window.term = new Terminal({cols:80, rows:30, fontSize:16, scrollback:0, theme:{background:'#121212'}});
 term.open(document.querySelector('#terminal'));
 term.loadAddon(new CanvasAddon.CanvasAddon());
 // Only the LCD's existing half-block pixel colors use this canvas; all game
@@ -38,20 +38,87 @@ window.bridgeWrite = s => {
 };
 window.storageError = e => { errors.push(String(e)); status.textContent = 'Save failed: ' + e; };
 window.persist = () => new Promise((resolve, reject) => pyodide.FS.syncfs(false, e => e ? reject(e) : resolve()));
+let takeAnswer = null;
 window.askTake = label => new Promise(resolve => {
-  status.textContent = `Your pet is on ${label}. Take it onto this device? `;
-  for (const [text, value] of [['Take pet', true], ['Leave there', false]]) {
-    const b = document.createElement('button'); b.textContent = text;
-    b.onclick = () => { status.replaceChildren(); resolve(value); }; status.append(b);
+  status.textContent = `Your pet is on ${label}. Take it onto this device? (y/n)`;
+  takeAnswer = value => { status.textContent = ''; takeAnswer = null; resolve(value); };
+});
+window.key = (name, char = null) => {
+  if (takeAnswer) { if (name === 'y' || name === 'n') takeAnswer(name === 'y'); return; }
+  if (window.browserKey) browserKey(name, char);
+};
+const keyboard = document.querySelector('#keyboard');
+const names = {Enter:'enter',Escape:'escape',ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',' ':'space',Tab:'tab',Backspace:'backspace','?':'question_mark',PageUp:'pageup',PageDown:'pagedown',Delete:'delete',Home:'home',End:'end'};
+// A printable keyboard-only Escape for stock phone keyboards with no Esc key.
+const sendText = text => { for (const c of text) key(c === '~' || c === '\x1b' ? 'escape' : c === '\n' ? 'enter' : names[c] || c, c === '~' || c === '\x1b' ? null : c); };
+const resetInput = () => { keyboard.value = ' '; keyboard.setSelectionRange(1,1); };
+resetInput();
+keyboard.addEventListener('keydown', e => {
+  if (e.isComposing || e.key === 'Process' || e.key === 'Unidentified') return;
+  e.preventDefault();
+  if (e.key.length === 1 && !e.ctrlKey && !e.altKey) sendText(e.key);
+  else key(e.ctrlKey ? 'ctrl+' + e.key.toLowerCase() : names[e.key] || e.key, null);
+  resetInput();
+});
+keyboard.addEventListener('beforeinput', e => {
+  if (e.isComposing) return;
+  if (e.inputType === 'deleteContentBackward' || e.inputType === 'insertLineBreak' || e.inputType === 'insertParagraph') {
+    e.preventDefault(); key(e.inputType === 'deleteContentBackward' ? 'backspace' : 'enter'); resetInput();
   }
 });
-window.key = (key, char = null) => { if (window.browserKey) browserKey(key, char); };
-term.onKey(({domEvent:e}) => {
-  e.preventDefault();
-  const map = {Enter:'enter',Escape:'escape',ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',' ':'space',Tab:'tab',Backspace:'backspace','?':'question_mark',PageUp:'pageup',PageDown:'pagedown',Delete:'delete',Home:'home',End:'end'};
-  const k = map[e.key] || (e.ctrlKey ? 'ctrl+' + e.key.toLowerCase() : e.key);
-  key(k, e.key.length === 1 ? e.key : null);
+keyboard.addEventListener('input', e => {
+  if (e.isComposing || e.inputType === 'insertFromComposition' || e.inputType === 'insertCompositionText') return;
+  if (e.inputType === 'deleteContentBackward') key('backspace');
+  else sendText(e.data ?? keyboard.value.replace(/^ /, ''));
+  resetInput();
 });
+keyboard.addEventListener('compositionend', e => { sendText(e.data); resetInput(); });
+const focusKeyboard = () => keyboard.focus({preventScroll:true});
+document.addEventListener('pointerup', e => { if (e.isPrimary) focusKeyboard(); });
+// Touch compatibility mousedown can blur the input after pointerup.
+document.addEventListener('click', focusKeyboard);
+let zoom = 1;
+try { zoom = Number(localStorage.getItem('tuipet-font-scale')) || 1; } catch {}
+zoom = Math.max(.5, Math.min(4, zoom));
+let fitting = false;
+function fitTerminal() {
+  if (fitting) return;
+  fitting = true;
+  const v = window.visualViewport;
+  const screen = document.querySelector('#screen');
+  Object.assign(screen.style, {left:(v?.offsetLeft || 0)+'px',top:(v?.offsetTop || 0)+'px',width:(v?.width || innerWidth)+'px',height:(v?.height || innerHeight)+'px'});
+  const box = document.querySelector('#terminal');
+  // Measure the renderer's actual rounded cells, rather than assume font metrics.
+  const fits = size => {
+    term.options.fontSize = size;
+    const cell = term._core._renderService.dimensions.css.cell;
+    return cell.width*80 <= box.clientWidth && cell.height*30 <= box.clientHeight;
+  };
+  let low=1, high=128;
+  while (low < high) { const mid=Math.ceil((low+high)/2); if (fits(mid)) low=mid; else high=mid-1; }
+  term.options.fontSize = Math.max(1, Math.round(low*zoom));
+  const cell = term._core._renderService.dimensions.css.cell;
+  const cols=Math.max(2,Math.min(80,Math.floor(box.clientWidth/cell.width)));
+  const rows=Math.max(2,Math.min(30,Math.floor(box.clientHeight/cell.height)));
+  term.resize(cols,rows);
+  if (window.browserResize) browserResize(cols,rows);
+  if (lastRaster) bridgeRaster(...lastRaster,lastRaster[2].map((_,i)=>i));
+  fitting = false;
+}
+function changeZoom(value) {
+  zoom=Math.max(.5,Math.min(4,value));
+  try { localStorage.setItem('tuipet-font-scale',String(zoom)); } catch {}
+  fitTerminal();
+}
+window.addEventListener('resize',fitTerminal);
+window.visualViewport?.addEventListener('resize',fitTerminal);
+window.visualViewport?.addEventListener('scroll',fitTerminal);
+document.addEventListener('wheel',e => { if (e.ctrlKey) { e.preventDefault(); changeZoom(zoom*Math.exp(-e.deltaY*.002)); } },{passive:false,capture:true});
+let pinch = null;
+document.addEventListener('touchstart',e => { if(e.touches.length===2) { pinch=[Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY),zoom]; e.preventDefault(); } },{passive:false,capture:true});
+document.addEventListener('touchmove',e => { if(pinch && e.touches.length===2) { e.preventDefault(); changeZoom(pinch[1]*Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY)/pinch[0]); } },{passive:false,capture:true});
+document.addEventListener('touchend',() => { pinch=null; });
+fitTerminal();
 document.addEventListener('visibilitychange', () => {
   if (window.browserVisibility) browserVisibility(document.hidden).catch(storageError);
 });
@@ -83,6 +150,7 @@ from js import storageError
 from pyodide.ffi import create_proxy
 browser_key = entry.browser_key
 browser_visibility = create_proxy(entry.visibility)
+browser_resize = entry.browser_resize
 game_task = asyncio.create_task(entry.run())
 def game_finished(task):
     if not task.cancelled() and task.exception(): storageError(str(task.exception()))
@@ -90,7 +158,9 @@ game_task.add_done_callback(game_finished)
 `);
   window.browserKey = pyodide.globals.get('browser_key');
   window.browserVisibility = pyodide.globals.get('browser_visibility');
+  window.browserResize = pyodide.globals.get('browser_resize');
+  fitTerminal();
   metrics.launchMs = performance.now()-started;
-  status.textContent = 'tuipet '+manifest.version+' · keyboard edition'; term.focus();
+  status.textContent = ''; focusKeyboard();
   if (navigator.storage?.persist) await navigator.storage.persist();
 } catch(e) { storageError(e); console.error(e); } })();

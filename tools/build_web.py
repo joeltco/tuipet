@@ -6,6 +6,9 @@ Optional deployment hook (Claude may enable before existing publish steps):
 Then publish dist/web/ under /tuipet/; index.html must revalidate on navigation.
 No deploy script is executed or modified here.
 """
+import gzip
+import struct
+import zlib
 import hashlib
 import json
 from pathlib import Path
@@ -19,6 +22,22 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def digest(data):
     return hashlib.sha256(data).hexdigest()
+
+
+def catalog_icon(size):
+    # Scale the first catalog egg's first frame without changing its pixels.
+    eggs = json.loads(gzip.decompress((ROOT / 'src/tuipet/data/eggs.json.gz').read_bytes()))
+    frame = eggs[0]['frames'][0]
+    def chunk(kind, payload):
+        return struct.pack('>I', len(payload)) + kind + payload + struct.pack('>I', zlib.crc32(kind + payload))
+    pixels = bytearray()
+    for y in range(size):
+        pixels.append(0)
+        for x in range(size):
+            ink = frame[y * len(frame) // size][x * len(frame[0]) // size] == '1'
+            pixels.extend((220, 220, 220) if ink else (0, 0, 0))
+    return (b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', size, size, 8, 2, 0, 0, 0))
+            + chunk(b'IDAT', zlib.compress(bytes(pixels))) + chunk(b'IEND', b''))
 
 
 def build():
@@ -69,7 +88,13 @@ def build():
                          **{'vendor/'+name:spec['sha256'] for name,spec in lock.items()}}}
     encoded = json.dumps(manifest, indent=2)+'\n'
     (target / 'manifest.json').write_text(encoded, encoding='utf-8')
-    (out / 'manifest.json').write_text(encoded, encoding='utf-8')
+    pwa = {'name':'tuipet', 'short_name':'tuipet', 'start_url':'./', 'scope':'./',
+           'display':'fullscreen', 'background_color':'#121212', 'theme_color':'#121212',
+           'icons':[{'src':f'icon-{size}.png', 'sizes':f'{size}x{size}', 'type':'image/png'} for size in (192, 512)]}
+    pwa.update(manifest)
+    (out / 'manifest.json').write_text(json.dumps(pwa, indent=2)+'\n', encoding='utf-8')
+    for size in (192, 512):
+        (out / f'icon-{size}.png').write_bytes(catalog_icon(size))
     html = (ROOT / 'tools/web/index.html').read_text(encoding='utf-8').replace('@ASSETS@', assets)
     (out / 'index.html').write_text(html, encoding='utf-8')
     for old in (out / 'assets').iterdir():

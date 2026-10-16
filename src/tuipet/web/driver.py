@@ -15,7 +15,9 @@ class BrowserDriver(Driver):
 
     def start_application_mode(self):
         self.write("\x1b[?25l")
-        self._app.post_message(events.Resize(Size(80, 30), Size(80, 30)))
+        from js import term
+        size = Size(term.cols, term.rows)
+        self._app.post_message(events.Resize(size, size))
 
     def disable_input(self):
         pass

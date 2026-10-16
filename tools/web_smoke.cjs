@@ -5,7 +5,73 @@
 const {chromium} = require(process.env.PLAYWRIGHT_MODULE || '/tmp/flattill-staging-tools/node_modules/playwright-core');
 const fs = require('fs');
 const out = process.env.WEB_EVIDENCE || '_astra/web_build';
+async function phase2() {
+  fs.mkdirSync(out, {recursive:true});
+  const browser = await chromium.launch({executablePath:process.env.CHROMIUM || '/usr/bin/chromium',headless:true,args:['--no-sandbox']});
+  const report = {viewports:[],errors:[]};
+  try {
+    for (const [name,width,height] of [['phone-portrait',390,844],['phone-landscape',844,390],['tablet',768,1024],['desktop',1100,800]]) {
+      console.log('Checking '+name);
+      const context = await browser.newContext({viewport:{width,height},hasTouch:true});
+      const page = await context.newPage();
+      page.on('pageerror',e=>report.errors.push(String(e)));
+      await page.goto(process.env.WEB_URL || 'http://localhost:8098');
+      await page.waitForFunction(()=>window.browserKey || window.errors?.length,null,{timeout:90000});
+      const mode = n => page.waitForFunction(n=>pyodide.runPython('type(entry.app.mode).__name__')===n,n,{timeout:30000});
+      const soft = text => page.locator('#keyboard').evaluate((el,text)=>{
+        el.focus(); el.value=' '+text;
+        el.dispatchEvent(new InputEvent('input',{bubbles:true,inputType:'insertText',data:text}));
+      },text);
+      const enter = () => page.locator('#keyboard').evaluate(el=>el.dispatchEvent(new InputEvent('beforeinput',{bubbles:true,cancelable:true,inputType:'insertLineBreak'})));
+      await page.waitForTimeout(2000);
+      await enter(); await mode('AccountPanel');
+      await soft('abc');
+      await page.waitForFunction(()=>pyodide.runPython('entry.app.mode.name_buf')==='abc');
+      await page.locator('#keyboard').evaluate(el=>el.dispatchEvent(new InputEvent('beforeinput',{bubbles:true,cancelable:true,inputType:'deleteContentBackward'})));
+      await page.waitForFunction(()=>pyodide.runPython('entry.app.mode.name_buf')==='ab');
+      await soft('~'); await mode('EggSelectPanel');
+      await enter(); await mode('NoneType');
+      await page.waitForTimeout(15000);
+      await page.screenshot({path:`${out}/${name}-home.png`});
+      await soft('g'); await mode('OptionsPanel');
+      await page.waitForTimeout(500);
+      await page.screenshot({path:`${out}/${name}-menu.png`});
+      await soft('g'); await mode('NoneType');
+      await page.tap('body', {position:{x:width-5,y:height-5}});
+      if(await page.locator('#keyboard').evaluate(el=>document.activeElement!==el)) throw Error('Tap did not focus keyboard');
+      await page.setViewportSize({width,height:Math.max(200,Math.floor(height*.6))});
+      await page.waitForTimeout(300);
+      if(await page.evaluate(()=>term.cols!==80 || term.rows!==30)) throw Error('Keyboard-sized viewport did not refit');
+      await page.setViewportSize({width,height});
+      await page.waitForTimeout(300);
+      const layout = await page.evaluate(()=>({cols:term.cols,rows:term.rows,font:term.options.fontSize,status:document.querySelector('#status').textContent,scroll:document.documentElement.scrollWidth>innerWidth || document.documentElement.scrollHeight>innerHeight,focus:document.activeElement.id,errors}));
+      if(layout.status || layout.scroll || layout.errors.length || layout.cols!==80 || layout.rows!==30) throw Error(JSON.stringify(layout));
+      const cdp=await context.newCDPSession(page); await cdp.send('Performance.enable');
+      const metric=async()=>(await cdp.send('Performance.getMetrics')).metrics.find(m=>m.name==='TaskDuration').value;
+      const before=await metric(), start=Date.now(); await page.waitForTimeout(10000);
+      const cpuPercent=((await metric())-before)/((Date.now()-start)/1000)*100;
+      report.viewports.push({name,width,height,...layout,cpuPercent});
+      fs.writeFileSync(out+'/phase2-smoke.json',JSON.stringify(report,null,2));
+      if(cpuPercent>=15) throw Error(`${name} CPU ${cpuPercent} >= 15%`);
+      await page.keyboard.down('Control'); await page.mouse.wheel(0,-400); await page.keyboard.up('Control');
+      await page.waitForTimeout(500);
+      const zoom=await page.evaluate(()=>({scale:localStorage.getItem('tuipet-font-scale'),cols:term.cols,rows:term.rows}));
+      if(Number(zoom.scale)<=1 || zoom.cols>=77 && zoom.rows>=24) throw Error('Zoom did not resize terminal: '+JSON.stringify(zoom));
+      await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:50,y:100},{x:150,y:100}]});
+      await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:40,y:100},{x:160,y:100}]});
+      await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+      const pinched=await page.evaluate(()=>localStorage.getItem('tuipet-font-scale'));
+      if(Number(pinched)<=Number(zoom.scale)) throw Error('Pinch did not zoom');
+      zoom.scale=pinched;
+      await page.reload(); await page.waitForFunction(()=>window.browserKey,null,{timeout:90000});
+      if(await page.evaluate(()=>localStorage.getItem('tuipet-font-scale'))!==zoom.scale) throw Error('Zoom not remembered');
+      await context.close();
+    }
+    if(report.errors.length) throw Error(report.errors.join('\n'));
+  } finally { fs.writeFileSync(out+'/phase2-smoke.json',JSON.stringify(report,null,2)); await browser.close(); }
+}
 (async () => {
+  if (process.env.WEB_PHASE2) { await phase2(); return; }
   if (!process.env.WEB_TEST_NAME || !process.env.WEB_TEST_PASSWORD) throw Error('Set throwaway WEB_TEST_NAME and WEB_TEST_PASSWORD');
   fs.mkdirSync(out, {recursive:true});
   const browser = await chromium.launch({executablePath:process.env.CHROMIUM || '/usr/bin/chromium', headless:true, args:['--no-sandbox']});
