@@ -809,17 +809,17 @@ DIGIMENTAL_GATES = {
 # longer sells them; each crest is stocked in the two towns that fit its
 # virtue/element, and its unlock wave (DIGIMENTAL_GATES) still decides when.
 CREST_TOWNS = {
-    "egg_of_courage": (20, 12),       # Volcano, Desert -- fire
-    "egg_of_friendship": (11, 27),    # Mountains, Factory -- thunder
-    "egg_of_love": (1, 7),            # Flower Field, Flower Field Sunset -- sky
-    "egg_of_knowledge": (10, 14),     # Teal Hollow, City Sunset
-    "egg_of_sincerity": (13, 4),      # Seafloor, Beach -- water
-    "egg_of_reliability": (9, 8),     # Jungle, Golden Hollow -- forest
-    "egg_of_hope": (5, 6),            # Island Day, Moonlit Meadow
-    "egg_of_light": (18, 19),         # White City, Boulevard
-    "egg_of_kindness": (2, 0),        # Lakeside, Green Hills
+    "egg_of_courage": (25, 16),       # Volcano, Desert -- fire
+    "egg_of_friendship": (15, 23),    # Mountains, Factory -- thunder
+    "egg_of_love": (2, 13),            # Flower Field, Flower Field Sunset -- sky
+    "egg_of_knowledge": (14, 10),     # Teal Hollow, City Sunset
+    "egg_of_sincerity": (7, 5),      # Seafloor, Beach -- water
+    "egg_of_reliability": (19, 9),     # Jungle, Golden Hollow -- forest
+    "egg_of_hope": (0, 6),            # Island Day, Moonlit Meadow
+    "egg_of_light": (12, 11),         # White City, Boulevard
+    "egg_of_kindness": (3, 4),        # Lakeside, Green Hills
     "egg_of_miracles": (26, 28),      # Bay Bridge Night, Factory Night -- late
-    "egg_of_destiny": (29, 21),       # Data Tunnel, Island Sunset -- late
+    "egg_of_destiny": (29, 17),       # Data Tunnel, Island Sunset -- late
 }
 
 

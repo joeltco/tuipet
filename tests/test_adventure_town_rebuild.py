@@ -105,7 +105,7 @@ def test_every_crest_sells_in_two_adventure_towns_and_never_at_home():
                for t in shop.CREST_TOWNS.values())
     assert not any(e["category"] == shop.ARMOR_CATEGORY
                    for e in shop.home_stock(pet=Pet(num=100, stage="Champion")))
-    courage = {e["key"] for e in shop.town_stock(20)}
+    courage = {e["key"] for e in shop.town_stock(25)}
     assert "egg_of_courage" in courage                   # open from day one
     late = {e["key"] for e in shop.town_stock(29)}
     assert "egg_of_destiny" not in late                  # sealed until max_gen 5

@@ -206,8 +206,8 @@ def _conditions_met(rule, prog):
         return False
     # the ZoneEnemyBeat slot = ONE adventure map's boss cleared (0-based index
     # into the 30-map world; Volcanic Beat egg, 2026-10-14).  A cleared AREA
-    # implies its maps too (maps unlock in order), so saves from before the
-    # per-map record still count.  Anything non-numeric stays locked.
+    # implied its old scenes; persistence expands those during migration.
+    # Versioned history must never infer clears from the new slot numbers.
     # "MAP:DEX" instead = that species beaten as a wild on that map (the
     # persistence.wild_beaten_add record; nothing older implies it).
     if rule["zone"] is not None:
@@ -221,7 +221,8 @@ def _conditions_met(rule, prog):
         else:
             areas = prog.get("maps", ()) or ()
             if mi not in (prog.get("maps_cleared", ()) or ()) \
-                    and not any(6 * (a + 1) > mi for a in areas):
+                    and not (not prog.get("road_order_v")
+                             and any(6 * (a + 1) > mi for a in areas)):
                 return False
     return True
 

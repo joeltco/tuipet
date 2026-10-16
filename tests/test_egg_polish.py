@@ -103,17 +103,17 @@ def test_retirement_cannot_reset_profile_daily_egg_limit():
 
 def test_volcanic_beat_egg_hatches_its_own_line_and_opens_on_the_volcano_road():
     """Joel 2026-10-15: the official Volcanic Beat DIM card as an egg line,
-    earned by clearing the Volcano road (map 21, index 20)."""
+    earned by clearing the Volcano road (map 26, index 25)."""
     from tuipet import adventure, data, egg, lines
     idx = next(i for i in range(egg.count()) if egg.hatch_name(i) == "Volcanic Beat Egg")
-    assert adventure.MAPS[20]["scene"] == "volcano"
+    assert adventure.MAPS[25]["scene"] == "volcano"
     rule = data.load_egg_unlock()[idx]
     base = {"maps": set(), "maps_cleared": set(), "raids": 0}
     prog = dict(persistence.get_progress(), **base)
     assert not egg._conditions_met(rule, prog)
-    prog["maps_cleared"] = {20}
+    prog["maps_cleared"] = {25}
     assert egg._conditions_met(rule, prog)
-    prog.update(maps_cleared=set(), maps={3})          # area 4 cleared = maps 19-24
+    prog.update(persistence.migrate_road({"maps": [3]}))  # old area includes Volcano
     assert egg._conditions_met(rule, prog)
     p = Pet.new_egg(egg_type=idx)
     p._hatch_into_fresh()
@@ -124,16 +124,15 @@ def test_volcanic_beat_egg_hatches_its_own_line_and_opens_on_the_volcano_road():
 
 def test_infinite_tide_egg_hatches_its_own_line_and_opens_on_seafloor_deep():
     """Joel 2026-10-15: the official Infinite Tide DIM card as an egg line,
-    earned by clearing the Seafloor Deep road (map 16, index 15) -- the road
-    whose boss is the line's own Plesiomon."""
+    earned by clearing the Seafloor Deep road (map 28, index 27)."""
     from tuipet import adventure, data, egg, lines, shop
     idx = next(i for i in range(egg.count()) if egg.hatch_name(i) == "Infinite Tide Egg")
     rule = data.load_egg_unlock()[idx]
     prog = dict(persistence.get_progress(), maps=set(), maps_cleared=set(), raids=0)
     assert not egg._conditions_met(rule, prog)
-    prog["maps_cleared"] = {15}
+    prog["maps_cleared"] = {27}
     assert egg._conditions_met(rule, prog)
-    assert data.record_for(adventure.ZONES[15]["bosses"][0]["num"])["name"] == "Plesiomon"
+    assert adventure.ZONES[27]["scene"] == "seafloor"
     p = Pet.new_egg(egg_type=idx)
     p._hatch_into_fresh()
     assert p.num == 1602 and p.line_id == "iti"
@@ -147,16 +146,16 @@ def test_infinite_tide_egg_hatches_its_own_line_and_opens_on_seafloor_deep():
 
 def test_nu_metal_empire_egg_hatches_bommon_into_its_line_on_the_factory_road():
     """Joel 2026-10-15: the official Nu Metal Empire DIM card as an egg line,
-    earned on the Factory road (map 28, index 27) -- Machinedramon's road,
+    earned on the Factory road (map 24, index 23) -- Machinedramon's road,
     the line's own Mugendramon."""
     from tuipet import adventure, data, egg, lines, shop
     idx = next(i for i in range(egg.count()) if egg.hatch_name(i) == "Nu Metal Empire Egg")
     rule = data.load_egg_unlock()[idx]
     prog = dict(persistence.get_progress(), maps=set(), maps_cleared=set(), raids=0)
     assert not egg._conditions_met(rule, prog)
-    prog["maps_cleared"] = {27}
+    prog["maps_cleared"] = {23}
     assert egg._conditions_met(rule, prog)
-    assert adventure.ZONES[27]["bosses"][0]["num"] == 276      # Mugendramon/Machinedramon
+    assert adventure.ZONES[23]["bosses"][0]["num"] == 276      # Mugendramon/Machinedramon
     p = Pet.new_egg(egg_type=idx)
     p._hatch_into_fresh()
     assert p.num == 960 and p.line_id == "nme"
@@ -166,14 +165,14 @@ def test_nu_metal_empire_egg_hatches_bommon_into_its_line_on_the_factory_road():
 
 def test_blizzard_fang_egg_hatches_yukimibotamon_into_its_line_on_frozen_peak():
     """Joel 2026-10-15: the official Blizzard Fang DIM card as an egg line,
-    earned on the Frozen Peak road (map 17, index 16); Daipenmon keeps the
+    earned on the Frozen Peak road (map 25, index 24); Daipenmon keeps the
     card's Ultimate slot while playing as its global Mega."""
     from tuipet import data, egg, lines, shop
     idx = next(i for i in range(egg.count()) if egg.hatch_name(i) == "Blizzard Fang Egg")
     rule = data.load_egg_unlock()[idx]
     prog = dict(persistence.get_progress(), maps=set(), maps_cleared=set(), raids=0)
     assert not egg._conditions_met(rule, prog)
-    prog["maps_cleared"] = {16}
+    prog["maps_cleared"] = {24}
     assert egg._conditions_met(rule, prog)
     p = Pet.new_egg(egg_type=idx)
     p._hatch_into_fresh()
@@ -189,13 +188,13 @@ def test_blizzard_fang_egg_hatches_yukimibotamon_into_its_line_on_frozen_peak():
 
 def test_hermit_in_the_jungle_egg_hatches_yuramon_into_its_line_on_the_jungle_road():
     """Joel 2026-10-15: the official Hermit in the Jungle DIM card as an egg
-    line, earned on the Jungle road (map 10, index 9)."""
+    line, earned on the Jungle road (map 20, index 19)."""
     from tuipet import data, egg, lines, shop
     idx = next(i for i in range(egg.count()) if egg.hatch_name(i) == "Hermit in the Jungle Egg")
     rule = data.load_egg_unlock()[idx]
     prog = dict(persistence.get_progress(), maps=set(), maps_cleared=set(), raids=0)
     assert not egg._conditions_met(rule, prog)
-    prog["maps_cleared"] = {9}
+    prog["maps_cleared"] = {19}
     assert egg._conditions_met(rule, prog)
     p = Pet.new_egg(egg_type=idx)
     p._hatch_into_fresh()
@@ -209,16 +208,16 @@ def test_hermit_in_the_jungle_egg_hatches_yuramon_into_its_line_on_the_jungle_ro
 
 def test_mad_black_roar_egg_hatches_botamon_into_its_line_on_teal_hollow():
     """Joel 2026-10-15: the official Mad Black Roar DIM card as an egg line,
-    earned on the Teal Hollow road (map 11, index 10) -- SkullGreymon's road,
+    earned on the Teal Hollow road (map 15, index 14) -- SkullGreymon's road,
     one of the line's own Ultimates."""
     from tuipet import adventure, data, egg, lines, shop
     idx = next(i for i in range(egg.count()) if egg.hatch_name(i) == "Mad Black Roar Egg")
     rule = data.load_egg_unlock()[idx]
     prog = dict(persistence.get_progress(), maps=set(), maps_cleared=set(), raids=0)
     assert not egg._conditions_met(rule, prog)
-    prog["maps_cleared"] = {10}
+    prog["maps_cleared"] = {14}
     assert egg._conditions_met(rule, prog)
-    assert adventure.ZONES[10]["bosses"][0]["num"] in lines.load_lines()["mbr"]["members"]
+    assert adventure.ZONES[14]["bosses"][0]["num"] in lines.load_lines()["mbr"]["members"]
     p = Pet.new_egg(egg_type=idx)
     p._hatch_into_fresh()
     assert p.num == 1411 and p.line_id == "mbr"
@@ -285,13 +284,13 @@ def test_every_vb_card_egg_sits_on_the_shared_egg_grid():
 
 def test_impulse_city_egg_hatches_dokimon_into_its_line_on_city_sunset():
     """Joel 2026-10-15: the official Impulse City DIM card as an egg line,
-    earned on the City Sunset road (map 15, index 14)."""
+    earned on the City Sunset road (map 11, index 10)."""
     from tuipet import data, egg, lines, shop
     idx = next(i for i in range(egg.count()) if egg.hatch_name(i) == "Impulse City Egg")
     rule = data.load_egg_unlock()[idx]
     prog = dict(persistence.get_progress(), maps=set(), maps_cleared=set(), raids=0)
     assert not egg._conditions_met(rule, prog)
-    prog["maps_cleared"] = {14}
+    prog["maps_cleared"] = {10}
     assert egg._conditions_met(rule, prog)
     p = Pet.new_egg(egg_type=idx)
     p._hatch_into_fresh()
@@ -359,13 +358,13 @@ def test_the_egg_template_builds_on_grid_frames_for_every_card_egg():
 
 def test_gammamon_egg_hatches_curimon_into_its_line_on_the_mountains_road():
     """Joel 2026-10-15: the official Gammamon DIM card as an egg line,
-    earned on the Mountains road (map 12, index 11) -- dragon Wingdramon's."""
+    earned on the Mountains road (map 16, index 15) -- dragon Wingdramon's."""
     from tuipet import data, egg, lines, shop
     idx = next(i for i in range(egg.count()) if egg.hatch_name(i) == "Gammamon Egg")
     rule = data.load_egg_unlock()[idx]
     prog = dict(persistence.get_progress(), maps=set(), maps_cleared=set(), raids=0)
     assert not egg._conditions_met(rule, prog)
-    prog["maps_cleared"] = {11}
+    prog["maps_cleared"] = {15}
     assert egg._conditions_met(rule, prog)
     p = Pet.new_egg(egg_type=idx)
     p._hatch_into_fresh()

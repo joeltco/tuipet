@@ -17,6 +17,7 @@ import os
 import time
 from dataclasses import MISSING, asdict, fields
 
+from .roadmigrate import ROAD_ORDER_V, migrate_road
 from .pet import Pet
 from .petbase import (FRESH_OBEDIENCE, IN_TRAINING_OBEDIENCE,
                       ROOKIE_OBED_DEFAULT, MAX_DNA_INVENTORY, MAX_DNA_WAGER)
@@ -59,9 +60,18 @@ def load_settings(path=None):
                 k in d and d[k] is not None and not isinstance(d[k], dict)
                 for k in ("progress", "account")):
             continue
-        if _migrate_v401_settings(d):        # .400/.401 egg indices -> .402 bank
-            save_settings(d, path)
+        eggs_changed = _migrate_v401_settings(d)
         _bind_progress(d)
+        buckets = d["progress_by_account"]
+        buckets[d[_OWNER]] = d["progress"]
+        changed = any(isinstance(p, dict) and p.get("road_order_v", 0) < ROAD_ORDER_V
+                      for p in buckets.values())
+        for key, prog in list(buckets.items()):
+            if isinstance(prog, dict):
+                buckets[key] = migrate_road(prog)
+        d["progress"] = buckets[d[_OWNER]]
+        if changed or eggs_changed:
+            save_settings(d, path)
         return d
     return {}
 
@@ -151,6 +161,7 @@ def save_settings(d, path=None):
     # settings file created THIS session would look like a pre-migration
     # (.400/.401) file on the next load and get wrongly re-translated
     d["egg_order_v"] = EGG_ORDER_V
+    d.setdefault("progress", {}).setdefault("road_order_v", ROAD_ORDER_V)
     out = dict(d)                               # the caller's dict stays bound
     _file_progress(out)
     _atomic_write_json(path or SETTINGS_PATH, out, keep_bak=True)
@@ -737,6 +748,7 @@ def get_progress():
         "max_gen": int(prog.get("max_gen", 1)),
         "max_stage": int(prog.get("max_stage", 0)),
         "xanti_ever": bool(prog.get("xanti_ever", False)),
+        "road_order_v": ROAD_ORDER_V,
         "maps": set(prog.get("maps", [])),
         "maps_cleared": set(prog.get("maps_cleared", [])),
         "wilds_beaten": set(prog.get("wilds_beaten", [])),
@@ -796,6 +808,8 @@ def progress_for_sync():
     bests = prog.get("map_bests") or {}
     if isinstance(bests, dict) and bests:
         out["map_bests"] = dict(bests)
+    if out:
+        out["road_order_v"] = ROAD_ORDER_V
     return out
 
 
@@ -805,6 +819,7 @@ def merge_progress(incoming):
     must never cost the local profile its history."""
     if not isinstance(incoming, dict) or not incoming:
         return False
+    incoming = migrate_road(incoming)
     d = load_settings()
     prog = d.setdefault("progress", {})
     changed = False
@@ -1047,6 +1062,7 @@ def to_save_dict(pet):
     for offline catch-up AND last-write-wins cloud merge."""
     data = asdict(pet)
     data["_saved_at"] = time.time()
+    data["road_order_v"] = ROAD_ORDER_V
     data["egg_order_v"] = EGG_ORDER_V   # marks post-.402 egg indices (migration guard)
     # the account's earned history rides along, or a cartridge take lands the
     # pet on a device with no egg progress at all (GoingUnder 2026-08-11).
@@ -1107,7 +1123,7 @@ def pet_from_save(data, strict=False):
     becomes a playable pet rather than a silent fresh-egg wipe."""
     if not isinstance(data, dict):
         return None, ""
-    data = dict(data)                            # don't mutate the caller's dict
+    data = migrate_road(data)                    # daily ledgers follow their scenes
     try:
         data.update(_dna_save_fields(data))
     except (ValueError, OverflowError):
