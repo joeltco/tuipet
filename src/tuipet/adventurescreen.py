@@ -1464,7 +1464,7 @@ class ZonePickPanel:
                 and self._bounty_claimed(self.indices[self.cursor])):
             out.append_text(menu.note("✓ veteran — bounty claimed today"))
         elif self.holiday:
-            out.append_text(menu.note(f"★ {self.holiday}: 2× bits · more loot!"))
+            out.append_text(menu.note(f"★ {self.holiday}: hunts 1→2,2→4,4→8"))
         elif adventure.is_conquered(self.pet, self.indices[self.cursor]):
             # the VETERAN ROAD tease (replay scaling 2026-07-21) -- the
             # festival note owns the slot when the bounty is still available

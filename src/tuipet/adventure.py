@@ -131,6 +131,16 @@ def wild_rarity(num):
         r.get("xantibody"), ("ordinary", 8))
 
 
+def x_sample_wild(enemy):
+    return (not enemy.get("boss") and data.load_requirements().get(
+        enemy.get("num"), {}).get("xantibody") in ("Natural", "Induced"))
+
+
+def spawn_weight(enemy, holiday=False):
+    weight = max(1, enemy.get("chance", 100))
+    return min(8, weight * 2) if holiday and weight < 8 else weight
+
+
 def hunt_targets(zone, prog=None):
     """Unbeaten exact-ID egg goals already roaming this map."""
     from . import egg, persistence
@@ -306,6 +316,8 @@ class Adventure:
         self._drain_acc = 0              # marched-legs accumulator toward a drain tick
         self._resting = False            # currently standing inside a town span
         self.bits_earned = 0             # bits won this run (wild bounties + the boss)
+        self._rematch_drop = []
+        self._x_sample = False
         self.bounty_spent = False        # the replay boss bounty was already claimed today
         self.fights = 0                  # fights entered this run (wild + boss)
         self.wins = 0                    # ...of those, won
@@ -399,7 +411,7 @@ class Adventure:
         pool = self._wild_pool()
         if not pool:
             return None
-        weights = [max(1, e.get("chance", 100)) for e in pool]
+        weights = [spawn_weight(e, self.holiday) for e in pool]
         if self.hunt is not None and random.randrange(8) == 0:
             e = next(e for e in pool if e["num"] == self.hunt)
         else:
@@ -495,7 +507,7 @@ class Adventure:
             return None
         # the zone's authored AppearanceChance weights, same as the walk
         # and warp picks -- this was the one unweighted draw (audit 2026-07-25)
-        weights = [max(1, e.get("chance", 100)) for e in pool]
+        weights = [spawn_weight(e, self.holiday) for e in pool]
         return random.choices(pool, weights=weights, k=1)[0]
 
     def score(self):
@@ -587,6 +599,14 @@ class Adventure:
                         amt, self.bounty_spent = 0, True
                     else:
                         led[str(zi)] = 1
+                        # Settle the prize with the paid bounty: a miss spends
+                        # the same daily ledger entry, including after reload.
+                        base = next((k for k in self.zone.get("reward", ())
+                                     if k in ("vitamin", "hp_chip", "hp_chip_g", "omni_chip_g")), None)
+                        if base and random.randrange(8) == 0:
+                            self.pet.add_item(base)
+                            self.drops += 1
+                            self._rematch_drop.append(base)
                     self.pet.road_bounty = led
         if amt:
             self.pet.bits += amt
@@ -594,22 +614,23 @@ class Adventure:
         return amt
 
     def award_drop(self, enemy):
-        """THE BOSS REWARD (rebuild 2026-10-14): a map's boss hands over the
-        map's reward items -- once, on the FIRST conquest (a replayed map
-        pays bits only, so the deep maps' spirits and chips can't be
-        farmed).  Wild wins roll one original food/care item at FIND_CHANCE.
-        Returns the granted catalog keys (possibly empty)."""
+        """Grant independent wild loot/sample rolls or the gate's reward keys."""
         if not enemy.get("boss"):
             from . import shop
+            got = []
             pool = self.zone.get("wild_drops") or ()
-            if not pool or random.random() >= FIND_CHANCE:
-                return []
-            key = random.choices(pool, weights=[shop.tier_weight(k) for k in pool], k=1)[0]
-            self.pet.add_item(key)
-            self.drops += 1
-            return [key]
+            if pool and random.random() < FIND_CHANCE:
+                got.append(random.choices(pool, weights=[shop.tier_weight(k) for k in pool], k=1)[0])
+            if not self._x_sample and x_sample_wild(enemy) and random.randrange(40) == 0:
+                got.append("x_program")
+                self._x_sample = True
+            for key in got:
+                self.pet.add_item(key)
+                self.drops += 1
+            return got
         if self.replay:
-            return []
+            got, self._rematch_drop = self._rematch_drop, []
+            return got
         got = []
         for key in self.zone.get("reward") or ():
             self.pet.add_item(key)
@@ -678,6 +699,8 @@ class Adventure:
             rarity = enemy.get("rarity", "ordinary")
             mark = f" ({rarity})" if rarity != "ordinary" else ""
             self.last = f"A wild {enemy['name']}{mark} blocks the road!"
+            if x_sample_wild(enemy) and not self._x_sample:
+                self.last += " X-Program: 1/40 on win (one/run)."
             return ("encounter", enemy)
         self.loc += 1
         self._march_drain()              # the leg's toll: energy / calories / effort
