@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.30 — TWO NEW THEMES. Forest (moss green in the deep woods) and Du (2026-10-15)
+
+TWO NEW THEMES. Forest (moss green in the deep woods) and Dusk (violet twilight) replace Game Boy and Paper -- if you used one of those, you're moved to its replacement automatically.
+
 ## 0.6.29 — MORE TO HUNT. Beating a wild X-Antibody form can drop an X-P (2026-10-15)
 
 MORE TO HUNT. Beating a wild X-Antibody form can drop an X-Program (1 in 40, once a run), the first veteran boss win on each map each day can pay that tier's power item (1 in 8), and on festival days rare monsters show up twice as often.
