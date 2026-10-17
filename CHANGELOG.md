@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.37 — FAIRER CUPS. U now shows each cup's bracket, rules, prize an (2026-10-17)
+
+FAIRER CUPS. U now shows each cup's bracket, rules, prize and price before you pay, warns before a bracket above your stage, won't let you enter without energy for all three bouts, and the daily featured cup is always one your pet can enter.
+
 ## 0.6.36 — A BETTER HELP. Press ? for a rewritten guide (2026-10-17)
 
 A BETTER HELP. Press ? for a rewritten guide: first steps and phone controls up top, fixed mistakes, and the essentials on hunts, towns, raids, the lobby and DNA. PGUP/PGDN leaps through it.
