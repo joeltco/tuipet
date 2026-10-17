@@ -171,7 +171,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("HALLOWEEN, CLEANER. The muddy seasonal tint is gone -- your scenes keep their real colors. The ghost trail, festival finds and Oct 31 double bits are all still on.")
+    WHATS_NEW = ("A BETTER HELP. Press ? for a rewritten guide: first steps and phone controls up top, fixed mistakes, and the essentials on hunts, towns, raids, the lobby and DNA. PGUP/PGDN leaps through it.")
 
 
     BINDINGS = [
