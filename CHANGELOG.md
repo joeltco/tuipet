@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.41 — THE ACTION BAR IS BACK in menus -- dimmed instead of hidden, (2026-10-17)
+
+THE ACTION BAR IS BACK in menus -- dimmed instead of hidden, so the screen no longer jumps when a menu opens.
+
 ## 0.6.40 — POLISHED MENUS. One consistent style for headers, selections (2026-10-17)
 
 POLISHED MENUS. One consistent style for headers, selections and key hints across every screen, a clearer status card, cleaner DNA and cup pages, and warnings that look like warnings.
