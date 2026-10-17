@@ -110,18 +110,21 @@ function fitTerminal() {
   Object.assign(screen.style, {left:(v?.offsetLeft || 0)+'px',top:(v?.offsetTop || 0)+'px',width:(v?.width || innerWidth)+'px',height:((v?.height || innerHeight) - xkeysHeight())+'px'});
   xkeys.style.bottom = Math.max(0, innerHeight - (v ? v.offsetTop + v.height : innerHeight))+'px';
   const box = document.querySelector('#terminal');
+  const targetRows = matchMedia('(pointer:coarse)').matches && box.clientWidth > box.clientHeight ? 24 : 30;
   // Measure the renderer's actual rounded cells, rather than assume font metrics.
   const fits = size => {
     term.options.fontSize = size;
     const cell = term._core._renderService.dimensions.css.cell;
-    return cell.width*80 <= box.clientWidth && cell.height*30 <= box.clientHeight;
+    return cell.width*80 <= box.clientWidth && cell.height*targetRows <= box.clientHeight;
   };
   let low=1, high=128;
   while (low < high) { const mid=Math.ceil((low+high)/2); if (fits(mid)) low=mid; else high=mid-1; }
   term.options.fontSize = Math.max(1, Math.round(low*zoom));
   const cell = term._core._renderService.dimensions.css.cell;
   const cols=Math.max(2,Math.min(80,Math.floor(box.clientWidth/cell.width)));
-  const rows=Math.max(2,Math.min(30,Math.floor(box.clientHeight/cell.height)));
+  const rows=Math.max(2,Math.min(targetRows,Math.floor(box.clientHeight/cell.height)));
+  term.element.style.width = (cell.width*cols)+'px';
+  term.element.style.margin = '0 auto';
   term.resize(cols,rows);
   if (window.browserResize) browserResize(cols,rows);
   if (lastRaster) bridgeRaster(...lastRaster,lastRaster[2].map((_,i)=>i));

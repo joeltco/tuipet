@@ -176,7 +176,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("SAFER RAIDS. Raid rewards can't get lost anymore, hits count once even on a bad connection, bosses are sized so the community can actually beat them, and R shows your claim and connection status. Update to keep throwing!")
+    WHATS_NEW = ("A CLEANER LOOK. Brighter status colors in every theme, readable cup terms, the action list steps aside while a menu is open, a tidier account card, and the web game sits centered on phones.")
 
 
     BINDINGS = [
