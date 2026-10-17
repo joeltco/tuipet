@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.42 — SAFER LOBBY (2026-10-17)
+
+SAFER LOBBY: spam limits, cleaner names, challenges expire after 60s, private rooms stay private through reconnects, and the lobby help now covers chat, PMs and scrolling.
+
 ## 0.6.41 — THE ACTION BAR IS BACK in menus -- dimmed instead of hidden, (2026-10-17)
 
 THE ACTION BAR IS BACK in menus -- dimmed instead of hidden, so the screen no longer jumps when a menu opens.
