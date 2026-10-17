@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.39 — A CLEANER LOOK. Brighter status colors in every theme, reada (2026-10-17)
+
+A CLEANER LOOK. Brighter status colors in every theme, readable cup terms, the action list steps aside while a menu is open, a tidier account card, and the web game sits centered on phones.
+
 ## 0.6.38 — SAFER RAIDS. Raid rewards can't get lost anymore, hits count (2026-10-17)
 
 SAFER RAIDS. Raid rewards can't get lost anymore, hits count once even on a bad connection, bosses are sized so the community can actually beat them, and R shows your claim and connection status. Update to keep throwing!
