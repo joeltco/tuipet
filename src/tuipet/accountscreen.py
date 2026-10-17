@@ -98,17 +98,17 @@ class AccountPanel(CueQueue):
         pw = (stars + ("_" if self.field == "pw" else ""))[-_FIELD_W:]
         t.append_text(menu.row("Name      " + nm, self.field == "name"))
         t.append_text(menu.row("Password  " + pw, self.field == "pw"))
-        t.append_text(menu.blanks(2))
         # keys ride the strip (round 35: the in-LCD hint line doubled it)
         # the note WRAPS, never scrolls (menus call #14 = A, 2026-10-15): a
         # server's words are the ones you must read -- the old marquee made
         # you wait for the actionable tail of a long rejection
         import textwrap
         lines = textwrap.wrap(self.note, menu.W - 2) or [""]
-        t.append("\n".join("  " + ln for ln in lines[:5]), style=DIM)
-        while t.plain.count("\n") < 11:
-            t.append("\n", style=INK)
-        t.append(" ", style=INK)
+        lines = lines[:5]
+        t.append_text(menu.blanks(max(1, 7 - len(lines))))
+        t.append("\n".join("  " + ln for ln in lines),
+                 style=INK_B if self.note in ("Name and password both, please.",
+                                             "Names need a letter or number.") else DIM)
         return t
 
 
@@ -129,7 +129,7 @@ class CloudWaitPanel(CueQueue):
         self.frame_i += 1
 
     def strip(self):
-        return "[dim]checking the cloud…[/]"
+        return menu.feedback("checking the cloud…")
 
     def key(self, k):
         return None
@@ -138,8 +138,6 @@ class CloudWaitPanel(CueQueue):
         t = menu.header("ACCOUNT", "SIGN IN")
         t.append_text(menu.blanks(1))
         t.append("  " + _tail(self.name, _FIELD_W) + "\n\n", style=INK)
+        t.append_text(menu.blanks(6))
         t.append("  checking the cloud" + "." * (1 + (self.frame_i // 4) % 3), style=DIM)
-        while t.plain.count("\n") < 11:
-            t.append("\n", style=INK)
-        t.append(" ", style=INK)
         return t

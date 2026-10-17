@@ -1,3 +1,4 @@
+from rich.text import Text
 """The album SCREEN — the browsable bestiary over the persistence album
 (built 2026-07-21).  The count on digicore TROPHIES fronted a book that
 didn't exist; these pins hold the book and its scoreboard to ONE source
@@ -91,7 +92,7 @@ def test_trophies_page_opens_the_album_and_space_still_pages():
     EVOLVES enter-picks/space-pages split).  The page teaches its door."""
     dc = DigiCorePanel(_pet(), start="TROPHIES")
     assert dc.pages[dc.i][0] == "TROPHIES"
-    assert "ENTER: the album" in dc.text().plain
+    assert "ENTER album" in Text.from_markup(dc.strip()).plain
     assert dc.key("enter") == ("done", ("album",))
     dc2 = DigiCorePanel(_pet(), start="TROPHIES")
     assert dc2.key("space") is None                 # paged, no sentinel

@@ -51,7 +51,6 @@ from .arena import (  # noqa: F401  (full re-export: preserve tuipet.app.* for c
     _HIDDEN_STATUS_ICONS, _effect_overlay, _sick_mark_up,
 )
 
-import re as _re
 # navigation keys: pressing one in a sub-screen plays the scroll blip (unless the
 # screen sets its own sfx) — every list cursor-move beeps, V-Pet style
 # (page jumps joined the scrollers 2026-07-18; they blip like any cursor move)
@@ -79,10 +78,10 @@ HUD_W = 40              # message-box content width (CSS #msg: 44 - 2 border - 2
 HUD_GAP = "      "      # blank run between marquee wraps so the looped text reads cleanly
 HUD_STEP = 2            # advance the marquee every N frames (10 Hz clock -> ~0.2 s/char)
 HUD_HOLD = 8            # marquee steps to hold on the message head before scrolling (~1.6 s)
-_HUD_MARKUP = _re.compile(r"\[/?[^\]]*\]")
 def _hud_plain(t):
     """Visible text of a Rich-markup string (tags stripped) for width measurement."""
-    return _HUD_MARKUP.sub("", t)
+    from rich.text import Text
+    return Text.from_markup(t).plain
 def _hud_esc(t):
     """Escape '[' so a plain marquee window is never parsed as Rich markup."""
     return t.replace("[", "\\[")
@@ -1028,9 +1027,9 @@ class TuiPetApp(ActionsMixin, App):
                 w.styles.border = ("round", theme.SHELL)
                 w.styles.border_title_color = theme.LABEL
             self.screen_w.styles.border = ("thick", theme.BEZEL)
-            self.screen_w.styles.border_subtitle_color = theme.ACCENT
+            self.screen_w.styles.border_subtitle_color = theme.MID
             self.screen_w.styles.background = theme.LCD_BG
-            self.msg_w.styles.color = theme.LABEL
+            self.msg_w.styles.color = theme.shell_feedback(theme.LCD_ON)
             self.keys_w.styles.color = theme.LABEL
             self.keys_w.update(keys_markup())   # the shortcut letters re-tint too
         except Exception:
@@ -1155,6 +1154,8 @@ class TuiPetApp(ActionsMixin, App):
 
     def _center(self, text):
         from rich.text import Text
+        if "─" * menu.W in text.plain.split("\n")[:2]:
+            return text
         n = text.plain.count("\n") + 1
         pad = max(0, (SCREEN_ROWS - n) // 2)
         if not pad:
@@ -1588,6 +1589,7 @@ class TuiPetApp(ActionsMixin, App):
         fit render as-is with their Rich markup.  Re-sending the SAME text is a
         no-op: on_tick re-asserts persistent messages every second, and resetting
         the hold each time froze the marquee on its first window (audit 2026-07)."""
+        markup = theme.shell_feedback(markup)
         if markup == getattr(self, "_hud_text", None):
             return
         self._hud_text = markup
@@ -1595,11 +1597,17 @@ class TuiPetApp(ActionsMixin, App):
             self._hud_scroll = None
             self.msg_w.update(markup)
         else:
-            self._hud_scroll = _hud_plain(markup)   # scroll plain text (overflow msgs carry no markup)
+            self._hud_scroll = _hud_plain(markup)
+            from rich.console import Console
+            from rich.text import Text
+            rich_message = Text.from_markup(markup)
+            # Plain callers keep string frames; explicit feedback keeps its role.
+            self._hud_style = rich_message.get_style_at_offset(Console(), 0) if rich_message.spans else None
             self._hud_off = 0
             self._hud_hold = HUD_HOLD
             self._hud_tick = 0
-            self.msg_w.update(_hud_esc(set_cell_size(self._hud_scroll, HUD_W)))
+            window = set_cell_size(self._hud_scroll, HUD_W)
+            self.msg_w.update(Text(window, style=self._hud_style) if self._hud_style else _hud_esc(window))
 
     def _hud_marquee(self):
         """Advance the message marquee one step.  Called from the 10 Hz frame clock;
@@ -1624,8 +1632,10 @@ class TuiPetApp(ActionsMixin, App):
             if draw:
                 self._web_hud_at = now
         if draw:
-            self.msg_w.update(_hud_esc(set_cell_size(
-                (loop + loop)[self._hud_off:self._hud_off + HUD_W], HUD_W)))
+            from rich.text import Text
+            window = set_cell_size((loop + loop)[self._hud_off:self._hud_off + HUD_W], HUD_W)
+            style = getattr(self, "_hud_style", None)
+            self.msg_w.update(Text(window, style=style) if style else _hud_esc(window))
         self._hud_off += 1
         if self._hud_off >= len(loop):
             self._hud_off = 0

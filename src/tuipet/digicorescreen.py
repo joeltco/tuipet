@@ -21,7 +21,7 @@ from . import digicore as core
 from . import grid, evolution, lines  # noqa: F401  (the gaze + checklists read them)
 from .render import render_scene
 
-from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, SIL_SCENE, SIL_LIGHTSOFF, VOID  # noqa: F401  (theme.apply propagation)
+from .theme import LCD_ON, LCD_BG, INK, INK_B, DIM, LIFE, POS, NEG, SIL_SCENE, SIL_LIGHTSOFF, VOID  # noqa: F401  (theme.apply propagation)
 from . import menu
 
 SCENE_ROWS = 12                    # the core/teaser pages own the WHOLE arena now --
@@ -43,9 +43,12 @@ def _data_lines(rows):
     out = []
     for label, val in rows:
         gutter = max(10, min(menu.W - 2, cell_len(label) + 2))
+        role = {"Vaccine": LIFE, "Data": POS, "Virus": NEG}.get(label)
+        value_style = f"bold {role} on {LCD_BG}" if role else INK_B
         for i, part in enumerate(_wrapped(val, menu.W - gutter)):
             text = Text(set_cell_size(" " + label if i == 0 else "", gutter), style=DIM)
-            text.append(part.plain + "\n", style=INK_B)
+            text.append((menu.set_cell_size("", max(0, menu.W - gutter - part.cell_len)) + part.plain
+                         if str(val).isdigit() else part.plain) + "\n", style=value_style)
             out.append(text)
     return out
 
@@ -331,7 +334,7 @@ class DigiCorePanel(CueQueue):
             report = (lines.requirement_report(self.pet, num) if lines.active(self.pet)
                       else evolution.requirement_report(self.pet, num))
         vis = DET_VIS
-        out = menu.header(f"DIGICORE  {name[:16].upper()}", "req")
+        out = menu.header(f"DIGICORE  {menu.ellipsis(name.upper(), 16)}", "req")
         # DigiCore audit 2026-10-14: scroll every wrapped checklist fragment.
         report = [(met, part.plain) for met, txt in report
                   for part in _wrapped(txt, menu.W - 3)]
@@ -351,7 +354,6 @@ class DigiCorePanel(CueQueue):
         return out
 
     def _evolves_scene(self, rows, dots):
-        from rich.text import Text
         out = menu.header("DIGICORE  EVOLVES", dots)
         if isinstance(rows, str):                      # "(final form)"
             out.append(f" {rows}\n", style=DIM)
@@ -371,16 +373,13 @@ class DigiCorePanel(CueQueue):
             tag = (chr(0x2713) + (" armed" if len(options) == 1 else " road") if num in options
                    else core.route_tag(self.pet, num)
                    or (chr(0x2713) + " ready" if ready else f"{unmet} to go"))
-            t = Text()
-            t.append(("▸" if cur else " ") + " " + set_cell_size(name, 21), style=INK_B if cur else INK)
-            t.append(f"{tag:>10}\n", style=INK_B if ready else DIM)
-            return t
+            return menu.row(set_cell_size(menu.ellipsis(name, 21), 21)
+                            + f"{tag:>10}", cur)
 
         self.evo_sel = menu.list_window(out, rows, self.evo_sel, 8, fmt)
-        out.append_text(menu.note("ENTER: what it takes"))
+        out.append_text(menu.blanks(1))
         self._keys = [("↑↓", "pick"), ("ENTER", "req"), ("←→", "page"), ("ESC", "back")]
-        out.append_text(menu.footer(""))
-        return out
+        return menu.page(out)
 
     def text(self):
         if self.teaser:
@@ -404,17 +403,17 @@ class DigiCorePanel(CueQueue):
         if title == "TROPHIES":
             # the Album row fronts a browsable book (2026-07-21): teach the
             # door the way EVOLVES teaches its checklist
-            out.append_text(menu.note("ENTER: the album"))
+            out.append_text(menu.blanks(1))
             self._keys = ([("↑↓", "scroll")] if scroll else []) + [("ENTER", "album")] \
                 + ([] if scroll else [("←→", "page")]) + [("ESC", "back")]
             out.append_text(menu.footer(""))
         elif title == "LEGACY":
             # the headstones front their room now too (2026-07-26)
-            out.append_text(menu.note("ENTER: the hall of memory"))
+            out.append_text(menu.blanks(1))
             self._keys = ([("↑↓", "scroll")] if scroll else []) + [("ENTER", "hall")] \
                 + ([] if scroll else [("←→", "page")]) + [("ESC", "back")]
-            out.append_text(menu.footer(""))
+            out.append_text(menu.footer("the hall of memory"))
         else:
             self._keys = ([("↑↓", "scroll")] if scroll else []) + [("←→", "page"), ("ESC", "back")]
             out.append_text(menu.footer(""))
-        return out
+        return menu.page(out)

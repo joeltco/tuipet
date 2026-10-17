@@ -17,6 +17,7 @@ across five different doors into one engine.  These pins hold the seams:
   * THE CONDITION GATE holds on every CHOSEN fight.
   * THE LOCK is pure upside and reaches the fight it was locked for.
 """
+from rich.text import Text
 import random
 
 import pytest
@@ -319,7 +320,8 @@ def test_a_refused_gate_is_never_a_dead_end():
     p.add_item("shortcut")
     pan = _road(p)
     pan._start_boss(pan.adv.boss)
-    assert "ESC leave" in pan.strip() and "T item" in pan.strip()
+    strip = Text.from_markup(pan.strip()).plain
+    assert "ESC leave" in strip and "T item" in strip
     pan.key("t")
     assert pan._transport == ["shortcut"]
 

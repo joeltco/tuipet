@@ -424,7 +424,7 @@ class BattlePanel(CueQueue):
     def strip(self):
         """The message-box hint line."""
         if self.phase == "duelwait":
-            return "[dim]waiting for rival… · ESC forfeit[/]"
+            return menu.feedback("waiting for rival…") + " · " + menu.hints(("ESC", "forfeit"))
         if self.phase == "ready":
             return menu.hints(("SPACE", "lock the bar"),
                               ("ESC", "forfeit" if self.duel

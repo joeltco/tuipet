@@ -6,6 +6,7 @@ frames, a sleeping traveller halts the whole journey as the roadside nap,
 and a pet pushed PAST EMPTY plants its feet (today's deliberately-soft
 calibration: negative energy only — never chance-based).
 """
+from rich.text import Text
 from tuipet import adventure
 from tuipet.adventure import Adventure, ZONES
 from tuipet.adventurescreen import AdventurePanel, REFUSE_T, TRAVEL_TICKS
@@ -105,7 +106,7 @@ def test_the_panel_plants_its_feet_and_space_re_issues(monkeypatch):
     # honest outs only (energy audit 2026-07-23): no false "rest refills"
     # promise -- energy cannot rise on the road, town warp or home are it
     assert "Refuses" in pan.strip() and "spent" in pan.strip()
-    assert "ESC leave" in pan.strip()
+    assert "ESC leave" in Text.from_markup(pan.strip()).plain
     assert "rest refills" not in pan.strip()
     pan.key("space")                                   # urge it on: still spent
     assert pan._refused and pan._refuse_t == REFUSE_T  # ...it refuses again

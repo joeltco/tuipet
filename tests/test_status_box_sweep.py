@@ -283,6 +283,7 @@ def test_dna_card_bills_energy_not_dead_systems():
     from tuipet.dnascreen import DNAPanel
     app = _app()
     app.mode = DNAPanel(app.pet)
+    app.mode.phase = "charge"
     statusbox.dna(app)
     txt = app.stats_w.txt
     assert "energy -" in txt

@@ -184,7 +184,7 @@ def test_dna_card_has_road_progress_instead_of_fake_unlocks():
     panel.phase, panel.cursor = "charge", panel.charge_fields.index("DeepSaver")
     text = card(panel)
     assert "Unlocks" not in text
-    assert "Armed Deep Saver" in text and "Road 8/8 · 1 forms" in text
+    assert "Armed Deep Saver" in text and "Road 8 / 8 · 1 forms" in text
 
 
 def test_dna_conditions_are_informational_bonuses_not_unmet_requirements():
@@ -238,10 +238,10 @@ def test_charge_cost_uses_actual_bank_and_explains_existing_penalties():
     panel = DNAPanel(p)
     panel.phase, panel.cursor, panel.amount = "charge", panel.charge_fields.index("DeepSaver"), 99
     text = panel.text().plain
-    assert "x3/99 energy -6" in text
+    assert "x3 / 99 · energy -6" in text
     assert "Charges clear at every evolution" in text and "ties disarm" in text
     text = card(panel)
-    assert "Charge x3/99: energy -6" in text
+    assert "Charge x3 / 99: -6" in text
     assert "Effort +1/ea, up to 3" in text and "Stops at empty energy" in text
     from tuipet import helpscreen
     guide = "\n".join(text for text, _ in helpscreen.HELP)
@@ -272,7 +272,7 @@ def test_roads_browse_every_destination_and_mask_hidden_names(monkeypatch):
     panel = DNAPanel(p)
     panel.phase = "roads"
     panel.road_i = sorted(panel._roads).index("DragonsRoar")
-    assert "ENTER lists all forms" in panel.text().plain
+    assert "ENTER open" in Text.from_markup(panel.strip()).plain
     panel.key("enter")
     assert panel.phase == "road_detail"
     targets = sorted(set(panel._roads["DragonsRoar"]))

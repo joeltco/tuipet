@@ -134,6 +134,14 @@ def shell_markup(markup):
     return re.sub(r"#[0-9a-fA-F]{6}", lambda m: mapping.get(m[0], m[0]), markup)
 
 
+def shell_feedback(markup):
+    """Translate LCD feedback roles for the dark shell message box."""
+    t = THEMES[_current]
+    ink = t["sil_lightsoff"] if _current == "grey" else t["on"]
+    return (shell_markup(markup).replace(f" on {t['bg']}", "")
+            .replace(t["on"], ink))
+
+
 def _derive(t):
     on, bg, mid = t["on"], t["bg"], t["mid"]
     return {
@@ -151,7 +159,7 @@ def _derive(t):
         # (the DMG shell polish, 2026-07-05)
         "BEZEL": t.get("bezel", t["border"]),
         "SHELL": t.get("shell", t["border"]),
-        "LABEL": t.get("label", t["mid"]),
+        "LABEL": t.get("label", "#7d8186" if t is THEMES["grey"] else t["on"]),
         "KEY": t.get("key", "cyan"),   # cyan is PINNED design (the shell-revert
         #                                ruling, test_theme) -- the 2026-07-22
         #                                theme audit flagged it as terminal-

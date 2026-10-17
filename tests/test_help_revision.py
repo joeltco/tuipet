@@ -27,7 +27,7 @@ def test_help_order_and_render_budget():
     for t, _ in HELP:
         assert cell_len(t) <= 38
         assert Text.from_markup(t).plain == t
-    assert Text.from_markup(pan.strip()).plain == '↑↓ scroll  PGUP/PGDN leap  ESC back'
+    assert Text.from_markup(pan.strip()).plain == '↑↓ scroll · PgUp/Dn page · ESC back'
 
 
 @pytest.mark.parametrize('claim', [
@@ -108,8 +108,10 @@ def test_dna_mash_hint(monkeypatch):
         pan.phase = phase
         statusbox.dna(app)
         text = captured[0]
-        assert ('Mash SPACE until time up.' in text) == (phase == 'mash')
-        assert ('ESC steps back out' in text) == (phase != 'mash')
+        assert 'Mash SPACE until time up.' not in text
+        assert 'ESC steps back out' not in text
+        assert ('SPACE' in Text.from_markup(pan.strip()).plain) == (phase == 'mash')
+        assert ('ESC' in Text.from_markup(pan.strip()).plain) == (phase != 'mash')
 
 
 @pytest.mark.parametrize('essential', [
@@ -130,8 +132,8 @@ def test_help_status_hint_and_noise(monkeypatch):
     captured = []
     monkeypatch.setattr(statusbox, 'card', lambda app, title, rows: captured.extend(rows))
     statusbox.help_(SimpleNamespace(sound=False, pet=Pet(num=100)))
-    assert '[dim]↑↓ scroll  PGUP/PGDN leap[/]' in captured
-    assert '[dim]ESC back[/]' in captured
+    assert not any('PGUP/PGDN' in line for line in captured)
+    assert '[dim]ESC back[/]' not in captured
     body = '\n'.join(t for t, _ in HELP)
     for stale in ('TIPS', 'whisper to death', 'every 3rd', 'sharpens aim',
                   'unique leader arms', 'Each egg has its own line'):
@@ -141,4 +143,8 @@ def test_help_status_hint_and_noise(monkeypatch):
 def test_ladder_score_copy():
     pan = LobbyPanel(Pet(num=100), on_connect=lambda *args: None)
     pan.client = SimpleNamespace(ladder={'top': [], 'rank': 0, 'wins': 0})
-    assert 'online wins set your ladder score' in pan._text_ladder().plain
+    captured = []
+    app = SimpleNamespace(mode=pan, stats_w=SimpleNamespace(
+        update=lambda text: captured.append(text), border_subtitle=""))
+    statusbox._lobby_ladder(app, pan)
+    assert 'online wins set your ladder score' in ' '.join(Text.from_markup(captured[0]).plain.split())

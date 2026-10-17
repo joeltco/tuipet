@@ -378,7 +378,7 @@ class TournamentPanel(menu.SubHost):
                 s = self.pet.name or "YOU"
             else:                              # the rival wears its grudge mark
                 s = ("!" if e.get("rival") else "") + e["name"]
-            return menu._clip(s, w)
+            return menu.ellipsis(s, w)
 
         out = menu.bar(t.name, "BRACKET")
         champ = tree[3][0] if len(tree) > 3 else None
@@ -522,10 +522,10 @@ class TournamentPanel(menu.SubHost):
 
             def fmt(tid, i):
                 tr = tournament.trophy_by_id(tid) if tid >= 0 else None
-                name = tournament.trophy_label(tr)[:22] if tr else "\u2014"
+                name = menu.ellipsis(tournament.trophy_label(tr), 22) if tr else "\u2014"
                 if tr and tid in (getattr(self.pet, "trophies_won", None) or {}):
                     # a cup you HOLD: entering again is a title defense
-                    name = ("\u265b" + name)[:22]
+                    name = menu.ellipsis("\u265b" + tournament.trophy_label(tr), 22)
                 # ONE tag per row, dominant state first (menu polish
                 # 2026-07-22: the 10-cell tag slot hard-cut every combo --
                 # "+item OPEN" clipped mid-word).  OPEN beats alarm (an
@@ -569,15 +569,15 @@ class TournamentPanel(menu.SubHost):
                 # ran the row to 44 and clipped)
                 tag = "run today" if done else "F \u00b7 any hour"
                 out.append("  \u2605 %s \u00b7 %s\n"
-                           % (tournament.trophy_label(ftr)[:20], tag),
+                           % (menu.ellipsis(tournament.trophy_label(ftr), 20), tag),
                            style=DIM if done else INK_B)
             nw = tournament.next_winnable(self.pet)
             if nw and (nw[0] == hour or tournament.festival()):
-                out.append("  \u2713 %s is open NOW\n" % tournament.trophy_label(nw[1])[:24],
+                out.append("  \u2713 %s is open NOW\n" % menu.ellipsis(tournament.trophy_label(nw[1]), 24),
                            style=INK_B)
             elif nw:
                 out.append("  next winnable %02d:00 %s\n"
-                           % (nw[0], tournament.trophy_label(nw[1])[:16]), style=DIM)
+                           % (nw[0], menu.ellipsis(tournament.trophy_label(nw[1]), 16)), style=DIM)
             else:
                 out.append("  no cup left you can enter today\n", style=DIM)
             out.append_text(menu.note(self.msg, tick=self.frame_i))

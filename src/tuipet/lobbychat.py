@@ -153,7 +153,7 @@ class ChatMixin:
         me = (s.me_name or "you") if s else "you"
         w = CHATW + ROSTW + 1
         t = Text()
-        t.append(_fit(f"✉ {peer}", w) + "\n", style=INK_B)
+        t.append(_fit("✉ " + menu.ellipsis(peer, w - 2), w) + "\n", style=INK_B)
         rows = []
         for frm, tx in (s.dms.get(peer, []) if s else []):
             mine = frm == me
@@ -177,7 +177,7 @@ class ChatMixin:
             view[body // 2] = ("— no messages yet — say hi —"[:w], DIM)
         for ln, sty in view:
             t.append(_fit(ln, w) + "\n", style=sty)
-        label = f"→{peer[:8]}: "
+        label = f"→{menu.ellipsis(peer, 8)}: "
         # CELLS, like the main composer 120 lines down -- this line was the one
         # input in the file still measuring characters, so the cell-width law
         # in the module header held everywhere except the DM box (2026-08-12)
@@ -274,7 +274,7 @@ class ChatMixin:
         for ln, sty in view:
             t.append(_fit(ln, w) + "\n", style=sty)
         if self.pm_to is not None:                           # the input line is a PM compose
-            label = f"✉{self.pm_to[1][:8]}: "
+            label = f"✉{menu.ellipsis(self.pm_to[1], 8)}: "
         else:
             label = "say: "
         t.append(label, style=INK_B)

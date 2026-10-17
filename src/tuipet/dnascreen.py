@@ -44,16 +44,11 @@ _HOME = (("charge", "Charge"), ("generate", "Generate"),
 
 
 def _field_word(f, w):
-    """pretty_field fitted to `w` at a WORD boundary: a column too narrow for
-    the full name shows whole words only -- "Nightmare", never the mid-word
-    run-off "Nightmare Sold" the old char-slices printed (menu audit
-    2026-07-21).  Every field's first word is unique, so a one-word tag
-    still names it."""
+    """Fit a static Field name, marking any omitted tail explicitly."""
     s = data.pretty_field(f)
     if len(s) <= w:
         return s
-    cut = s[:w]
-    return cut.rsplit(" ", 1)[0] if " " in cut else cut
+    return menu.ellipsis(s, w)
 
 
 class DNAPanel(CueQueue):
@@ -283,13 +278,10 @@ class DNAPanel(CueQueue):
 
     def _text_home(self):
         p = self.pet
-        out = menu.bar("DNA", "%db" % p.bits)
+        out = menu.header("DNA", "%db" % p.bits)
         for i, (key, label) in enumerate(_HOME):
             out.append_text(menu.row("%-13s%s" % (label, self._home_tag(key)), i == self.home_i))
-        out.append_text(menu.blanks(1))
-        out.append_text(menu.row("[%s]" % (self.last or "")[:34], False))
-        out.append_text(menu.footer(""))
-        return out
+        return menu.page(out, self.last, self.frame_i)
 
     def _text_charge(self):
         p = self.pet
@@ -297,7 +289,7 @@ class DNAPanel(CueQueue):
         amt = min(self.amount, p.dna_owned.get(self.field, 0),
                   p.dna_affordable(self.field))
         cost = amt * (1 if self.field == p.field else 2)
-        out = menu.bar("DNA · CHARGE", "x%d/%d energy -%d" % (amt, self.amount, cost))
+        out = menu.header("DNA · CHARGE", "x%d / %d · energy -%d" % (amt, self.amount, cost))
         # DNA audit 2026-10-14: costs and wipe law fit without a scrolling tail.
         need = evolution.DIVERGE_NEED.get(p.stage)
         note = ("ARMED: next growth takes the road" if self._armed() else
@@ -318,13 +310,11 @@ class DNAPanel(CueQueue):
             return label
 
         self.cursor = menu.list_window(out, self.charge_fields, self.cursor, 6, fmt)
-        out.append_text(menu.note("* own Field  ▸ road  ties disarm"))
-        out.append_text(menu.footer(""))
-        return out
+        return menu.page(out, "* own Field  ▸ road  ties disarm")
 
     def _text_stats(self):
         p = self.pet
-        out = menu.bar("DNA · STATS", "%d charged" % p.dna_total())
+        out = menu.header("DNA · STATS", "%d charged" % p.dna_total())
         for i, f in enumerate(self.fields):
             pct = p.dna_percent(f)
             bar = "█" * (pct * 12 // 100)
@@ -337,7 +327,7 @@ class DNAPanel(CueQueue):
     def _text_roads(self):
         p = self.pet
         need = evolution.DIVERGE_NEED.get(p.stage)
-        out = menu.bar("DNA · DIVERGENCE",
+        out = menu.header("DNA · DIVERGENCE",
                        "need %dc" % need if need is not None else "top stage")
         if not self._roads or need is None:
             out.append_text(menu.blanks(1))
@@ -357,13 +347,11 @@ class DNAPanel(CueQueue):
         def fmt(f, i):
             chg = p.dna_applied.get(f, 0)
             mark = "▶" if f == armed else " "
-            return "%s%-17s %2d/%-2d %d forms" % (mark, _field_word(f, 17),
+            return "%s%-17s %2d / %-2d %d forms" % (mark, _field_word(f, 17),
                                                    chg, need, len(self._roads[f]))
 
         self.road_i = menu.list_window(out, flds, self.road_i, 6, fmt)
-        out.append_text(menu.note("Ties disarm; ENTER lists all forms"))
-        out.append_text(menu.footer(""))
-        return out
+        return menu.page(out, "Ties disarm; need a road")
 
     def _target_name(self, num):
         # DNA audit 2026-10-14: roads obey the same reveal rule as DigiCore.
@@ -375,8 +363,8 @@ class DNAPanel(CueQueue):
     def _text_road_detail(self):
         targets = sorted(set(self._roads[self.field]))
         self.target_i %= len(targets)
-        out = menu.bar(data.pretty_field(self.field),
-                       "%d/%d forms" % (self.target_i + 1, len(targets)))
+        out = menu.header(data.pretty_field(self.field),
+                       "%d / %d forms" % (self.target_i + 1, len(targets)))
         # The selected name wraps in full; no destination vanishes after two names.
         name = Text(self._target_name(targets[self.target_i]))
         wrapped = name.wrap(Console(width=menu.W), menu.W)
@@ -391,7 +379,7 @@ class DNAPanel(CueQueue):
 
     def _text_bet(self):
         p = self.pet
-        out = menu.bar("DNA · GENERATE", "%db" % p.bits)
+        out = menu.header("DNA · GENERATE", "%db" % p.bits)
         out.append_text(menu.note("Wager bits, then mash for DNA."))
         out.append_text(menu.blanks(1))
         out.append_text(menu.row("wager: %4d b" % self.bet, True))
@@ -462,7 +450,7 @@ class DNAPanel(CueQueue):
         field, wager, rate, banked, refund = self.won
         show = self.blink >= 8 or (self.blink // 2) % 2 == 0  # reveal, then hold readable
         name = data.pretty_field(field)
-        out = menu.bar("DNA · GENERATE", "rate %d" % rate)
+        out = menu.header("DNA · GENERATE", "rate %d" % rate)
         out.append_text(menu.blanks(1))
         got = ("✗ Spoiled mash" if field == "None"
                else "✓ Got %d %s DNA" % (banked, name))

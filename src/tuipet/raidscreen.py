@@ -445,7 +445,7 @@ class RaidPanel(menu.SubHost):
         if not v or not b:
             out = menu.header("RAID", "…")
             out.append_text(menu.blanks(5))
-            out.append_text(menu.note(self.msg, tick=self.frame_i))
+            out.append_text(menu.note(self.msg, tick=self.frame_i, style=INK))
             # keys ride the STRIP here like every other state of this
             # screen -- the in-LCD footer was the family's one stray
             # (raid round 2026-07-19)
@@ -501,6 +501,10 @@ class RaidPanel(menu.SubHost):
             # priority msg > waiting purse > the weekly cadence; every
             # number (pool, standing, tries, top) lives on the CARD
             note = self._context_line(v, b)
-        out.append_text(menu.note(note, tick=self.frame_i))
+        st = getattr(self.client, "state", None)
+        warning = st is not None and (getattr(st, "login_failed", None)
+                                      or not getattr(st, "connected", False))
+        style = NEG if warning else INK_B if v.get("award") else INK
+        out.append_text(menu.note(note, tick=self.frame_i, style=style))
         out.right_crop(1)          # 12 rows exactly, no trailing 13th
         return out

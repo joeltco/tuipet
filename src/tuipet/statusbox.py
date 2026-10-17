@@ -131,17 +131,8 @@ def _fit_cells(text, budget):
     """`text` clipped to `budget` TERMINAL CELLS, ellipsised when it does not
     fit.  Cells, never len(): a 2-cell glyph passes a char budget and blows
     the render (THE CELL LAW, bug report #32)."""
-    from rich.cells import cell_len
-    if budget <= 0:
-        return ""
-    if cell_len(text) <= budget:
-        return text
-    out = ""
-    for ch in text:
-        if cell_len(out + ch) > budget - 1:
-            break
-        out += ch
-    return out.rstrip() + "…"
+    from .menu import ellipsis
+    return ellipsis(text, budget)
 
 
 def compact_count(value, width=4):
@@ -193,7 +184,7 @@ def card(app, title, lines, subtitle=""):
 def _zone_display(name, avail):
     """A map's name clipped to `avail` visible cols (map names are places,
     19 cols at most)."""
-    return name[:avail]
+    return _fit_cells(name, avail)
 
 
 def _frontier_name(pet, avail):
@@ -222,11 +213,11 @@ def adventure_line(pet):
     total = len(adventure.ZONES)
     prog = max(0, min(int(getattr(pet, "adv_progress", 0) or 0), total))
     if prog >= total:
-        return f"Quest   [{theme.POS}]★ all {total} cleared[/]"
+        return f"[dim]Quest   [/][{theme.POS}]★ all {total} cleared[/]"
     if prog <= 0:
-        return f"Quest   [dim]▸ {_frontier_name(pet, 16)}[/]"
-    count = f"{prog}/{total} "
-    return f"Quest   {count}[dim]▸ {_frontier_name(pet, 16 - len(count))}[/]"
+        return f"[dim]Quest   [/][dim]▸ {_frontier_name(pet, 16)}[/]"
+    count = f"{prog} / {total} "
+    return f"[dim]Quest   [/][b]{count}[/][dim]▸ {_frontier_name(pet, 16 - len(count))}[/]"
 
 
 def festival_line():
@@ -254,17 +245,20 @@ def home_lines(pet):
     xm = f" [b {T.ACCENT}]X[/]" if pet.x_antibody != "None" else ""
     lvl = _lines._pet_level(pet)
     fest = festival_line()
-    battle_row = f"Battle  {pet.wins}W/{pet.battles} Lv{lvl} ★{pet.trophies}"
-    if cell_len_(battle_row) > CARD_W:
-        battle_row = (f"Battle {compact_count(pet.wins)}W/{compact_count(pet.battles)}"
-                      f"[dim]Lv[/]{lvl}[{T.COIN}]★{compact_count(pet.trophies)}[/]")
-    else:
-        battle_row = f"Battle  {pet.wins}W/{pet.battles} [dim]Lv[/]{lvl} [{T.COIN}]★{pet.trophies}[/]"
+    record = f"{pet.wins}W / {pet.battles}"
+    suffix = f" Lv{lvl} ★{pet.trophies}"
+    if cell_len_("Battle  " + record + suffix) > CARD_W:
+        record = f"{compact_count(pet.wins)}W/{compact_count(pet.battles)}"
+    battle_row = (f"[dim]Battle  [/][b]{record}[/] [dim]Lv[/][b]{lvl}[/] "
+                  f"[b {T.COIN}]★{compact_count(pet.trophies)}[/]")
+    if cell_len_("Battle  " + record + suffix) > CARD_W:
+        battle_row = (f"[dim]Battle [/][b]{record}[/][dim]Lv[/][b]{lvl}[/]"
+                      f"[b {T.COIN}]★{compact_count(pet.trophies)}[/]")
     bits = str(pet.bits)
     if cell_len_(f"Weight  {pet.weight}g · {bits}b") > CARD_W:
         bits = compact_count(pet.bits, 8)
     return [
-        f"[b]{pet.name[:22]}[/]{xm}",
+        f"[b]{_fit_cells(pet.name, 22)}[/]{xm}",
         f"[dim]{pet.stage}{(' · ' + pet.attribute) if pet.attribute else ''}[/]",
     ] + ([f"[{T.COIN}]★ {fest[:24]}[/]"] if fest else []) + [
         DIV,
@@ -277,13 +271,13 @@ def home_lines(pet):
         # Level, once DigiCore-only, now ride the two battle rows below --
         # both were live progression the main card never showed, home-card
         # surfacing 2026-07-24 "evaluate what we can fit".)
-        f"Weight  {pet.weight}g · [{T.COIN}]{bits}b[/]",
+        f"[dim]Weight  [/][b]{pet.weight:>3}g[/] · [b {T.COIN}]{bits:>6}b[/]",
         # care mistakes decide the evolution road (every line's CM gates)
         # and 20 is lethal.  Stage-scoped: they reset on evolve.
-        (f"Care    [{T.POS}]spotless[/]" if pet.care_mistakes == 0 else
-         f"Care    [{T.NEG if pet.care_mistakes >= 10 else T.CARE}]"
+        (f"[dim]Care    [/][b {T.POS}]spotless[/]" if pet.care_mistakes == 0 else
+         f"[dim]Care    [/][b {T.NEG if pet.care_mistakes >= 10 else T.CARE}]"
          f"✗{pet.care_mistakes} this stage[/]"),
-        f"DP      [{T.ACCENT}]{'◆' * getattr(pet, 'dp', 0)}[/][dim]{'◇' * (4 - getattr(pet, 'dp', 0))}[/]",
+        f"[dim]DP      [/][b {T.ACCENT}]{'◆' * getattr(pet, 'dp', 0)}[/][dim]{'◇' * (4 - getattr(pet, 'dp', 0))}[/]",
         # battle progression, once DigiCore-only: wins/level/trophies on one
         # row, the Va/Da/Vi attribute powers on the next.  Level folds in free
         # (DMX 1-10, capped by stage); the powers colour by attribute --
@@ -294,8 +288,8 @@ def home_lines(pet):
         # IS the neg hex on mono and amber -- Data and Virus rendered as
         # literal twins there, near-twins on grey (both red-family).
         battle_row,
-        f"Power   [{T.LIFE}]V{compact_count(pet.vaccine)}[/] [{T.POS}]D{compact_count(pet.data_power)}[/] "
-        f"[{T.NEG}]Vi{compact_count(pet.virus)}[/]",
+        f"[dim]Power   [/][b {T.LIFE}]V{compact_count(pet.vaccine):>4}[/] [b {T.POS}]D{compact_count(pet.data_power):>4}[/] "
+        f"[b {T.NEG}]Vi{compact_count(pet.virus):>4}[/]",
         adventure_line(pet),
         # the @ line is WHERE THE MON STANDS (liveness law, Joel 2026-07-21
         # "shouldnt the @ say what zone the mon is in during adventure?"):
@@ -347,7 +341,7 @@ def _hatch_line(pet):
 
 def grave_lines(pet):
     return [
-        f"[b]{pet.name[:16]}[/] [dim]· rest[/]",
+        f"[b]{_fit_cells(pet.name, 16)}[/] [dim]· rest[/]",
         DIV,
         "[dim]a life remembered[/]",
         "",
@@ -404,10 +398,10 @@ def eggselect(app):
     ename = "???" if state == "locked" else egg_mod.hatch_name(idx)
     scene = backgrounds.name(backgrounds.scene_for_egg(idx))
     card(app, "New Egg", [f"[dim]{m.i + 1} of {m.n} · {m.locked} locked[/]",
-                          f"[b]{ename[:22]}[/]", "",
+                          f"[b]{_fit_cells(ename, 22)}[/]", "",
                           "Destined to hatch", f"  [b]{shown}[/]",
                           f"  {badge}", "",
-                          f"Home   {scene[:18]}", ""]
+                          f"Home   {_fit_cells(scene, 18)}", ""]
          # the next unlock, WRAPPED in full (menus call #14 = A, 2026-10-15:
          # it used to scroll past in the message strip)
          + ([f"[dim]{escape(ln)}[/]" for ln in
@@ -428,7 +422,7 @@ def scenes(app):
     # it hangs behind the mon" (38) and "Back to the egg's own scene." (28)
     # were sliced at [:26], losing the tail.
     sc_lines = [f"[dim]{m.cursor + 1} of {len(m.rows)}[/]", "",
-                "On the wall", f"  [b]{name[:24]}[/]",
+                "On the wall", f"  [b]{_fit_cells(name, 24)}[/]",
                 f"  [dim]{state}[/]", ""]
     sc_lines += wrap(m.msg or "", 2)
     sc_lines.append("[dim]↑↓ pick  ENTER hang[/]")
@@ -478,7 +472,7 @@ def eat(app):
     full = getattr(p, "full_until", 0.0)
     sated = full and p.world_seconds < full
     lines = [
-        f"[b]{p.name[:14]}[/] [dim]· feeding[/]", DIV,
+        f"[b]{_fit_cells(p.name, 14)}[/] [dim]· feeding[/]", DIV,
         f"Hunger   {hearts(p.hunger)}",
         DIV,
         f"Weight   {p.weight}g",
@@ -599,10 +593,7 @@ def album(app):
         # the route only earns its separator when there IS a route (a found
         # form has none, and two blank rows in a row is wasted budget --
         # the all-cards audit's own trailing-blank finding)
-        + ([""] + tail if tail else [])
-        # menus audit 2026-10-14: Enter opens the book only from its list.
-        + ["", "[dim]←→ page  ESC back[/]" if m.detail
-                 else "[dim]ENTER open  ↑↓ pick[/]"],
+        + ([""] + tail if tail else []),
         subtitle=gen_subtitle(app.pet) if app.pet else "")
 
 
@@ -659,42 +650,38 @@ def eggguide(app):
     rule = m.rules.get(m.i)
     keeps = ("this gen only" if rule is not None and not rule["can_perm"]
              else "forever")
-    hints = ("←→ next egg  ESC back" if m.detail
-             else "ENTER open  ↑↓ pick")     # phase-true (round 34)
     # the goal WRAPS to two card lines -- the one-slice clip froze the dual
     # map gate mid-word ("clear adventure map 1 (or", Joel 2026-07-28)
     goal = wrap(live, 2) if live and state == "locked" else [""]
     card(app, "Digitama", [
         f"[dim]{m.i + 1} of {m.n}[/]", "",
         # menus audit 2026-10-14: this is the egg's name, not its hatchling.
-        f"Egg      [b]{name[:16]}[/]",
+        f"Egg      [b]{_fit_cells(name, 16)}[/]",
         f"State    {state}",
         f"Keeps    {keeps}", ""]
-        + [f"[b]{g}[/]" if g else "" for g in goal]
-        + [f"[dim]{hints}[/]"])
+        + [f"[b]{g}[/]" if g else "" for g in goal])
 
 
 def digicore(app):
     """DIGICORE: which data page is up, and whose core it is."""
-    from rich.cells import set_cell_size
     from rich.markup import escape
     from .digicorescreen import _wrapped
     p, m = app.pet, app.mode
     page = m.pages[min(m.i, len(m.pages) - 1)][0]
     # DigiCore audit 2026-10-14: the card teaches the active subview's keys.
     if getattr(m, "teaser", False):
-        page, hints = "GAZE", "SPACE / ESC back"
+        page = "GAZE"
     elif getattr(m, "detail", None) is not None:
-        page, hints = "REQUIREMENTS", "↑↓ scroll  ESC back"
-    else:
-        hints = "←→ pages  SPACE " + ("gaze" if m.i == 0 else "page")
+        page = "REQUIREMENTS"
     dc_lines = [
-        f"[b]{escape(set_cell_size(p.name, CARD_W).rstrip())}[/]",
+        f"[b]{escape(_fit_cells(p.name, CARD_W))}[/]",
         f"[dim]{p.stage} · {p.attribute}[/]", "",
         f"Page   [b]{page[:18]}[/]",
         f"[dim]{m.i + 1} of {len(m.pages)}[/]", ""]
     dc_lines += [escape(part.plain) for part in _wrapped(m.note or "", CARD_W)][:6]
-    dc_lines.append(f"[dim]{hints}[/]")
+    if getattr(m, "teaser", False):
+        from . import menu
+        dc_lines.append(menu.hints(("SPACE", "back"), ("ESC", "back")))
     card(app, "DigiCore", dc_lines, subtitle=gen_subtitle(p))
 
 
@@ -723,7 +710,7 @@ def raid(app):
         damage = _fmt_dmg(top[0][1])
         lead = _esc(_fit_cells(str(top[0][0]), CARD_W - 10 - cell_len_(damage))) + f" · {damage}"
     card(app, "Raid", [
-        f"[b]{b.get('name', '?')[:18]}[/]",
+        f"[b]{_fit_cells(b.get('name', '?'), 18)}[/]",
         (f"Pool   {bar(pct, 11, theme.NEG)} {pct}%" if standing
          else "[dim]incoming boss[/]"),
         (f"[dim]{when} left[/]" if standing else f"[dim]in {when}[/]"),
@@ -881,7 +868,8 @@ def _lobby_action(app, m, st):
         verbs = verbs + [("D", "clear thread")]
     lines += [f"[b]{k}[/]  {_esc(word)}" for k, word in verbs]
     lines += [""] * max(0, 13 - len(lines))
-    lines.append("[dim]ESC  back[/]")
+    from . import menu
+    lines.append(menu.hints(("ESC", "back")))
     card(app, "Tamer", lines[:14])
 
 
@@ -903,7 +891,6 @@ def _lobby_thread(app, m, st):
     lines.append("[dim]they read it now[/]" if here
                  else "[dim]queued till they log in[/]")
     lines += [""] * max(0, 13 - len(lines))
-    lines.append("[dim]ESC  back to the room[/]")
     card(app, "Thread", lines[:14])
 
 
@@ -924,7 +911,7 @@ def _lobby_ladder(app, m):
         lead = f"{_fit_cells(str(top[0][0]), min(12, CARD_W - 10 - cell_len_(lead_w)))} · {lead_w}"
     card(app, "Ladder", [
         f"[b]season {_esc(str(lad.get('season', '?')))}[/]",
-        "[dim]online wins only[/]", "",
+        "[dim]online wins set your[/]", "[dim]ladder score[/]",
         (f"You    #{rank} · {compact_count(int(wins or 0), 6)}W" if rank
          else "You    [dim]unranked[/]"),
         f"Top    {_esc(lead)}",
@@ -1007,9 +994,7 @@ def help_(app):
         f"Sound  {snd}",
         f"Gen    {app.pet.generation}", "",
         "[dim]the guide scrolls[/]",
-        "[dim]on the display[/]", "",
-        "[dim]↑↓ scroll  PGUP/PGDN leap[/]",
-        "[dim]ESC back[/]"])
+        "[dim]on the display[/]"])
 
 
 def options(app):
@@ -1084,8 +1069,7 @@ def keys(app):
     m = app.mode
     n = len(m.rows)
     card(app, "Keys", [f"Rows    {min(m.top + 1, n)}-{min(m.top + m.VISIBLE, n)}/{n}",
-                       "", "[dim]home-screen bindings[/]", "",
-                       "[dim]↑↓ scroll  ESC back[/]"])
+                       "", "[dim]home-screen bindings[/]"])
 
 
 def account(app):
@@ -1095,7 +1079,6 @@ def account(app):
     lines = [f"Name    {escape(_fit_cells(m.name_buf or '—', CARD_W - 8))}",
              f"Field   {m.field}", ""]
     lines += [escape(ln) for ln in wrap(m.note, 5)]
-    lines += ["", "[dim]TAB field  ENTER go[/]", "[dim]ESC back[/]"]
     card(app, "Account", lines)
 
 
@@ -1139,7 +1122,7 @@ def death(app):
     days = int(getattr(p, "age_seconds", 0) // 86400)
     cause = getattr(p, "death_cause", "") or "old age"
     card(app, "In Memory", [
-        f"[b]{p.name[:18]}[/]",
+        f"[b]{_fit_cells(p.name, 18)}[/]",
         f"[dim]{p.stage} · gen {p.generation}[/]", "",
         f"Lived  {days} day" + ("s" if days != 1 else ""),
         f"Of     {cause[:20]}", "",
@@ -1295,7 +1278,7 @@ def road(app):
     # the road's own energy law, D3 ruling), so the card cannot drift from it.
     cond = p.battle_condition(check_energy=False)
     lines = [
-        f"[b]{p.name[:14]}[/] [dim]· road[/]", DIV,
+        f"[b]{_fit_cells(p.name, 14)}[/] [dim]· road[/]", DIV,
         f"[b]{_zone_display(a.name, 26)}[/]",
         gauge,
         f"Lives  {hp}",
@@ -1332,15 +1315,15 @@ def tournament(app):
         card(app, "Cup", lines, subtitle=gen_subtitle(p))
         return
     if t.over and t.champion:
-        lines = [f"[b]{p.name[:14]}[/] [dim]· cup[/]", DIV,
-                 f"[b]{t.name[:24]}[/]", "",
+        lines = [f"[b]{_fit_cells(p.name, 14)}[/] [dim]· cup[/]", DIV,
+                 f"[b]{_fit_cells(t.name, 24)}[/]", "",
                  f"[{T.POS}]★ CHAMPION ★[/]", "",
                  f"Trophy   [{T.COIN}]★{p.trophies}[/]",
                  f"Reward   [{T.COIN}]+{t.reward_bits}b[/]", DIV,
                  "[dim]you took the cup![/]"]
     elif t.over:
-        lines = [f"[b]{p.name[:14]}[/] [dim]· cup[/]", DIV,
-                 f"[b]{t.name[:24]}[/]", "",
+        lines = [f"[b]{_fit_cells(p.name, 14)}[/] [dim]· cup[/]", DIV,
+                 f"[b]{_fit_cells(t.name, 24)}[/]", "",
                  f"[{T.NEG}]eliminated[/]",
                  f"[dim]in the {t.round_name}[/]", "",
                  f"Trophy   [{T.COIN}]★{p.trophies}[/]", DIV,
@@ -1353,11 +1336,11 @@ def tournament(app):
         # where a fight's context lives (the battle card's own law), so the
         # foe lives here now.
         opp = t.current_opponent() if not t.over else None
-        foe = (f"vs [b]{opp['name'][:12]}[/][dim][{opp['attribute'][:2]}][/]"
+        foe = (f"vs [b]{_fit_cells(opp['name'], 12)}[/][dim][{opp['attribute'][:2]}][/]"
                if isinstance(opp, dict) else "")
         lines = [
-            f"[b]{p.name[:14]}[/] [dim]· cup[/]", DIV,
-            f"[b]{t.name[:24]}[/]",
+            f"[b]{_fit_cells(p.name, 14)}[/] [dim]· cup[/]", DIV,
+            f"[b]{_fit_cells(t.name, 24)}[/]",
             f"Match    {t.round + 1} / 3",
             foe,
             f"Trophy   [{T.COIN}]★{p.trophies}[/]",
@@ -1384,7 +1367,7 @@ def discipline(app):
         moment = f"[{T.POS}]a proud moment[/]"
     else:
         moment = "[dim]calm[/]"
-    lines = [f"[b]{p.name[:14]}[/] [dim]· lessons[/]", DIV,
+    lines = [f"[b]{_fit_cells(p.name, 14)}[/] [dim]· lessons[/]", DIV,
              # bar() takes a PERCENT -- the gauge is 0..MAX_OBEDIENCE (150,
              # canon), so scale it or a 100/150 pet reads as full
              f"Manners  {bar(p.obedience * 100 // _MAXOBED, 11, T.POS)}"
@@ -1408,14 +1391,14 @@ def training(app):
     window = tp.mega_hi - tp.mega_lo + 1
     form = getattr(p, "saved_hit_type", "normal")
     if tp.phase == "bar":
-        lines = [f"[b]{p.name[:14]}[/] [dim]· train[/]", DIV,
+        lines = [f"[b]{_fit_cells(p.name, 14)}[/] [dim]· train[/]", DIV,
                  "[b]time the strike[/]", "",
                  f"Window   {window}px",
                  f"Form     {form}",
                  f"Effort   {eff}", f"Energy   {energy}",
                  DIV, "[dim]SPACE locks the bar[/]"]
     else:
-        lines = [f"[b]{p.name[:14]}[/] [dim]· train[/]", DIV,
+        lines = [f"[b]{_fit_cells(p.name, 14)}[/] [dim]· train[/]", DIV,
                  "[b]the strike[/]", "",
                  f"Grade    {tp.grade or ''}",
                  f"Energy   {energy}", DIV, "[b]SPACE to skip[/]"]
@@ -1460,8 +1443,8 @@ def battle(app):
     else:
         foe_line = f"Foe  {bar(fp, 11, T.NEG)} {fhp}/{foe_max}"
     lines = [
-        f"[b]{p.name[:14]}[/] [dim]· {'raid' if raid else 'battle'}[/]", DIV,
-        f"vs [b]{enemy.get('name', '?')[:14]}[/]{tag}", "",
+        f"[b]{_fit_cells(p.name, 14)}[/] [dim]· {'raid' if raid else 'battle'}[/]", DIV,
+        f"vs [b]{_fit_cells(enemy.get('name', '?'), 14)}[/]{tag}", "",
         f"You  {bar(pp, 11, T.POS)} {php}/{pet_max}",
         foe_line,
         DIV,
@@ -1512,31 +1495,47 @@ def dna(app):
     amt = min(m.amount, own, p.dna_affordable(f))   # never past empty (DNA call #5)
     bill = amt * (1 if same else 2)
     road = ("Armed " + data.pretty_field(armed)) if armed else "DNA not armed"
-    progress = (f"Road {chg}/{need} · {len(roads[f])} forms" if f in roads and need
+    progress = (f"Road {chg} / {need} · {len(roads[f])} forms" if f in roads and need
                 else "No road in this Field")
     screen = {"home": "menu", "charge": "charge", "stats": "stats",
               "roads": "roads", "road_detail": "forms", "bet": "generate",
               "mash": "generate", "result": "generate"}.get(m.phase, "menu")
-    last_rows = [f"[dim]{s}[/]" for s in textwrap.wrap(m.last or "", 24)[:2]]
-    last_rows += [""] * (2 - len(last_rows))
-    lines = [
-        f"[b]{_fit_cells(p.name, max(4, CARD_W - 9 - len(screen)))}[/]"
-        f" [dim]· DNA · {screen}[/]", DIV,
-        f"Bits     [{T.COIN}]{p.bits}[/]",
-        f"Field    {_fit_cells(data.pretty_field(f), CARD_W - 9)}",
-        _fit_cells(f"Banked {own}  Charged {chg}", CARD_W),
-        f"Share    {p.dna_percent(f)}%",
-        _fit_cells(road, CARD_W),
-        _fit_cells(progress, CARD_W),
-        f"[dim]{cost}[/]",
-        f"Charge x{amt}/{m.amount}: energy -{bill}",
-        "[dim]Effort +1/ea, up to 3[/]",
-        "[dim]Stops at empty energy[/]",
-        *last_rows,
-        "[dim]Ties disarm; need a road[/]",
-        ("[dim]Mash SPACE until time up.[/]" if m.phase == "mash"
-         else "[dim]ESC steps back out[/]"),
-    ]
+    from rich.markup import escape
+    live = [f"[dim]Bits     [/][b {T.COIN}]{p.bits}[/]"]
+    explanation = []
+    if m.phase in ("charge", "stats", "roads", "road_detail"):
+        live += [f"[dim]Field    [/][b]{escape(_fit_cells(data.pretty_field(f), 17))}[/]",
+                 f"[dim]Banked   [/][b]{own:>4}[/]",
+                 f"[dim]Charged  [/][b]{chg:>4}[/]",
+                 f"[dim]Share    [/][b]{p.dna_percent(f):>3}%[/]",
+                 f"[b]{escape(_fit_cells(road, CARD_W))}[/]",
+                 f"[b]{escape(_fit_cells(progress, CARD_W))}[/]"]
+        if m.phase == "charge":
+            live += [f"[b]Charge x{amt} / {m.amount}: -{bill}[/]"]
+            explanation += [cost, "Effort +1/ea, up to 3", "Stops at empty energy"]
+        else:
+            explanation += ["Ties disarm; need a road", "Charges clear at growth"]
+    elif m.phase in ("bet", "mash"):
+        live += [f"[dim]Wager    [/][b]{m.bet:>4}b[/]"]
+        if m.phase == "mash":
+            live += [f"[dim]Hits     [/][b]{m.hits:>4}[/]",
+                     f"[dim]Rate     [/][b]{m._rate():>4}[/]"]
+        explanation += ["Mash rate selects a Field", "DNA banks before charging"]
+    elif m.phase == "result" and m.won:
+        field, wager, rate, banked, refund = m.won
+        live += [f"[b]{escape(_fit_cells(data.pretty_field(field), CARD_W))}[/]",
+                 f"[dim]Banked   [/][b]{banked:>4}[/]",
+                 f"[dim]Refund   [/][b]{refund:>4}b[/]",
+                 f"[dim]Rate     [/][b]{rate:>4}[/]"]
+        explanation += ["Banked DNA: open Charge"]
+    else:
+        live += [f"[dim]Banked   [/][b]{sum(p.dna_owned.values()):>4}[/]",
+                 f"[dim]Charged  [/][b]{p.dna_total():>4}[/]",
+                 f"[b]{escape(_fit_cells(road, CARD_W))}[/]"]
+        explanation += ["Generate, then charge ONE", "Field to steer growth", "Ties disarm; need a road"]
+    title = f"{_fit_cells(p.name, max(4, CARD_W - 9 - len(screen)))} · DNA · {screen}"
+    lines = [f"[b]{escape(title)}[/]"] + live + [DIV]
+    lines += [f"[dim]{escape(line)}[/]" for line in explanation]
     app.stats_w.update("\n".join(lines))
 
 

@@ -1,3 +1,4 @@
+from rich.text import Text
 """Theme propagation across screens (Workstream C).
 
 theme.apply() pushes the active palette into every module that imported colour
@@ -161,14 +162,11 @@ def test_gameboy_render_reserves_the_sprite_ink_for_sprites():
 
 
 def test_shell_chrome_keys_all_fall_back():
-    """bezel/shell/label/key are OPTIONAL chrome colours deriving from
-    border/mid/cyan.  The v0.2.284 putty-shell gameboy experiment was
-    REVERTED (Joel: "this looks bad") -- EVERY theme, gameboy included, must
-    ride the fallbacks so the chrome renders exactly as it did pre-shell."""
+    """Borders and cyan keys keep their fallbacks; Batch C owns caption ink."""
     for name in theme.THEMES:
         d = theme._derive(theme.THEMES[name])
         assert d["BEZEL"] == d["BORDER"] and d["SHELL"] == d["BORDER"], name
-        assert d["LABEL"] == d["MID"] and d["KEY"] == "cyan", name
+        assert d["LABEL"].startswith("#") and d["KEY"] == "cyan", name
 
 
 def test_action_bar_letters_keep_cyan_on_every_theme():
@@ -285,7 +283,7 @@ def test_the_powers_trio_is_distinct_on_every_theme():
         assert len(set(trio)) == 3, f"{name}: the V/D/Vi trio collapsed: {trio}"
     p = Pet(num=100, stage="Champion", attribute="Vaccine")
     p.world_seconds = 600.0
-    row = next(ln for ln in statusbox.home_lines(p) if ln.startswith("Power"))
+    row = next(ln for ln in statusbox.home_lines(p) if Text.from_markup(ln).plain.startswith("Power"))
     assert theme.LIFE in row and theme.POS in row and theme.NEG in row
     assert theme.ACCENT not in row or theme.ACCENT in (theme.LIFE, theme.POS, theme.NEG)
 

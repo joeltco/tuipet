@@ -115,19 +115,17 @@ class EggGuidePanel(CueQueue):
         return (rule["desc"] if rule else "") or egg_mod.unlock_progress(idx, self.prog)
 
     def _list_scene(self):
-        from rich.text import Text
         have = sum(1 for s in self.states.values() if s in ("owned", "temp"))
         out = menu.header("DIGITAMA GUIDE", f"{have}/{self.n}")
 
         def fmt(idx, j):
             cur = j == self.i
             state = self.states[idx]
-            t = Text()
-            t.append(("▸" if cur else " ") + _MARK[state] + " ",
-                     style=INK_B if cur else (DIM if state == "locked" else INK))
-            t.append(f"{egg_mod.hatch_name(idx)[:22]:<23}",
-                     style=INK_B if cur else (DIM if state == "locked" else INK))
-            t.append(f"{self._tag(idx)[:10]:>10}\n", style=INK_B if cur else DIM)
+            label = _MARK[state] + " " + menu.set_cell_size(menu.ellipsis(egg_mod.hatch_name(idx), 22), 22)
+            label += " " + menu.set_cell_size(menu.ellipsis(self._tag(idx), 9), 9)
+            t = menu.row(label, cur)
+            if not cur and state == "locked":
+                t.style = DIM
             return t
 
         self.i = menu.list_window(out, list(range(self.n)), self.i, VIS, fmt)
@@ -162,7 +160,7 @@ class EggGuidePanel(CueQueue):
 
     def _detail_scene(self):
         name = egg_mod.hatch_name(self.i)
-        out = menu.header(f"DIGITAMA  {name[:20].upper()}", f"{self.i + 1}/{self.n}")
+        out = menu.header(f"DIGITAMA  {menu.ellipsis(name.upper(), 20)}", f"{self.i + 1}/{self.n}")
         rows = self._detail_rows(self.i)
         for label, val in rows[:10]:
             out.append(f" {label:<9}", style=DIM)

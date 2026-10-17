@@ -872,12 +872,12 @@ class AdventurePanel(menu.SubHost):
         if self._at_gate:                      # knocked back before the boss
             hearts = "♥" * self.adv.lives + "[dim]♡[/]" * (MAX_LIVES - self.adv.lives)
             if self._heal_t > 0 and self._note:
-                return f"[b]{self._note}[/] {hearts}"   # the second wind speaks here too
+                return menu.feedback(self._note) + f" {hearts}"   # the second wind speaks here too
             if self._gate_refusal:             # the body said no: SAY WHICH
                 # single spacing: the hungriest clause + a held warp ran 41
                 # cells and put the outs on the marquee (audit 2026-07-25)
                 out = "T item · " if self.adv.held_transports() else ""
-                return f"[b]{self._gate_refusal.rstrip('.')}[/] [dim]· {out}ESC leave[/]"
+                return menu.feedback(self._gate_refusal.rstrip("."), warning=True) + " · " + menu.hints(*(([ ("T", "item")] if out else []) + [("ESC", "leave")]))
             # CELL BUDGET (audit 2026-07-25: ten boss names ran 41-45 cells
             # and scrolled the required keys off the box): the hints + hearts
             # are fixed, the NAME takes what remains, ellipsis-trimmed
@@ -890,7 +890,7 @@ class AdventurePanel(menu.SubHost):
             lost = MAX_LIVES - self.adv.lives
             hearts = "♥" * self.adv.lives + "[dim]♡[/]" * lost
             if self._town_prompt:
-                return "[b]⌂ A town[/]  [dim]ENTER visit · SPACE walk on[/]"
+                return menu.feedback("⌂ A town", action=True) + "  " + menu.hints(("ENTER", "visit"), ("SPACE", "walk on"))
             if self.pet.asleep:
                 # unreachable today (the door disturbs sleepers, the pill
                 # refuses on the road) -- but a waiting state must name its
@@ -903,7 +903,7 @@ class AdventurePanel(menu.SubHost):
                 # only (energy audit 2026-07-23): energy cannot rise on the
                 # road itself -- a town's rest or home are the ways out.
                 out = ("T item · " if self.adv.held_transports() else "")
-                return f"[b]Refuses — spent![/]  [dim]{out}ESC leave[/]"
+                return menu.feedback("Refuses — spent!", warning=True) + "  " + menu.hints(*(([ ("T", "item")] if out else []) + [("ESC", "leave")]))
             if self._scene is not None:
                 s, t = self._scene, self._scene["t"]
                 if s["grade"] is None and t >= INV_WALK_T:
@@ -918,24 +918,24 @@ class AdventurePanel(menu.SubHost):
                 h = self._hazard
                 if h["t"] < HZ_TELE_T:        # the warning: DON'T press yet
                     if h.get("spent"):
-                        return "[b]Jumped too soon![/]"
+                        return menu.feedback("Jumped too soon!", warning=True)
                     return "[b]! ! ![/]  [dim]wait for it…[/]"
                 if h["t"] < HZ_TELE_T + HZ_LUNGE_T:
                     if h["dodged"]:
                         return "[b]![/]  [dim]ducking...[/]"
                     if h.get("spent"):
-                        return "[b]Jumped too soon![/]"
-                    return "[b]NOW![/]  [dim]SPACE — duck![/]"
+                        return menu.feedback("Jumped too soon!", warning=True)
+                    return menu.feedback("NOW!", action=True) + "  " + menu.hints(("SPACE", "duck!"))
                 if h["dodged"]:
                     return "[b]Dodged the ambush![/]"
-                return f"[b]Ambushed![/]  ⚡-{adventure.HAZARD_ENERGY}"
+                return menu.feedback(f"Ambushed!  ⚡-{adventure.HAZARD_ENERGY}", warning=True)
             if self._find is not None:
                 # <= 40 plain (budget sweep 2026-07-21: the long line ran 45)
                 return "[b]✦ A glint![/]  [dim]ENTER dig · SPACE pass[/]"
             if self._heal_t > 0 or self._note_t > 0:
                 # the road-item / balk verdict (A3/A12; the ⚡ moved into the
                 # transport notes -- a balk's verdict is not an energy event)
-                return f"[b]{self._note}[/] {hearts}" if self._note else ""
+                return menu.feedback(self._note) + f" {hearts}" if self._note else ""
             # JUST THE KEYS, ALL OF THEM, HOLDING STILL (Joel's named order
             # 2026-07-30: "thin the strip to just the keys.  you should be
             # able to fit the whole thing without the message change

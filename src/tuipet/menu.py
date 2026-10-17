@@ -32,6 +32,52 @@ def _clip(s, w):
     return s if cell_len(s) <= w else chop_cells(s, w)[0]
 
 
+def ellipsis(value, width):
+    """Fit a static name in cells, reserving one cell for its end marker."""
+    value = str(value)
+    if width <= 0:
+        return ""
+    if cell_len(value) <= width:
+        return value
+    return _clip(value, width - 1).rstrip() + "…"
+
+
+def tabs(labels, active):
+    """Only the active tab wears the shared selection fill."""
+    out = Text()
+    for i, label in enumerate(labels):
+        out.append(" " + str(label) + " ", style=SEL if i == active else DIM)
+    out.truncate(W)
+    out.pad_right(max(0, W - out.cell_len))
+    out.append("\n")
+    return out
+
+
+def page(out, message="", tick=None):
+    """Anchor data at the top and its note on the LCD's last row."""
+    while out.plain.endswith("\n"):
+        out.right_crop(1)
+    rows = out.plain.count("\n") + 1
+    # Full data pages already own the last row.
+    if rows >= 12:
+        return out
+    out.append("\n" * (12 - rows), style=INK)
+    if message:
+        out.append_text(note(message, tick))
+        out.right_crop(1)
+    else:
+        out.append(" ", style=INK)
+    return out
+
+
+def feedback(message, *, warning=False, action=False):
+    """Style feedback without changing its lifetime or marquee cadence."""
+    from rich.markup import escape
+    from .theme import NEG
+    style = NEG if warning else INK_B if action else INK
+    return f"[{style}]{escape(str(message))}[/]"
+
+
 def header(title, right=""):
     """Title (left, bold) + optional right-aligned info, then a divider rule."""
     t = Text()
@@ -41,12 +87,12 @@ def header(title, right=""):
         # page / cost).  Clipping the title to what's left of the budget keeps
         # the line at W; the old max(1, ...) floor let a full-width title push
         # the pair to W + len(right) + 1 instead (2026-08-12)
-        title = _clip(title, max(0, W - cell_len(right) - 1))
+        title = ellipsis(title, max(0, W - cell_len(right) - 1))
         gap = max(1, W - cell_len(title) - cell_len(right))
         t.append(title + " " * gap, style=INK_B)
         t.append(right, style=DIM)
     else:
-        t.append(_clip(title, W), style=INK_B)
+        t.append(ellipsis(title, W), style=INK_B)
     t.append("\n")
     t.append("─" * W, style=DIM)
     t.append("\n")
@@ -59,19 +105,19 @@ def bar(title, right=""):
     t = Text()
     if right:
         right = _clip(right, W - 1)
-        title = _clip(title, max(0, W - cell_len(right) - 1))   # as in header()
+        title = ellipsis(title, max(0, W - cell_len(right) - 1))   # as in header()
         gap = max(1, W - cell_len(title) - cell_len(right))
         t.append(title + " " * gap, style=INK_B)
         t.append(right, style=DIM)
     else:
-        t.append(_clip(title, W), style=INK_B)
+        t.append(ellipsis(title, W), style=INK_B)
     t.append("\n")
     return t
 
 
 def row(label, selected=False):
     """A selectable list row with a ▸ cursor; selected rows render inverted."""
-    line = set_cell_size(("▸ " if selected else "  ") + str(label), W)
+    line = set_cell_size(("▸ " if selected else "  ") + ellipsis(label, W - 2), W)
     return Text(line + "\n", style=SEL if selected else INK)
 
 
@@ -100,14 +146,16 @@ def _scrolled(msg, tick):
     return set_cell_size((loop + loop)[off:off + W], W)
 
 
-def note(msg, tick=None):
-    """A status line (bold).  A message wider than the LCD used to CLIP silently
+def note(msg, tick=None, style=None):
+    """A feedback line, ordinary ink unless its caller requests emphasis.
+    A message wider than the LCD used to CLIP silently
     (the battle menu's 'It IGNORED you!' vanished off the end -- audit 2026-07-04;
     then the bag's futon gate lost its tail -- 2026-07-15).  Long messages ALWAYS
     marquee now: panels pass their frame counter or inherit the module TICK."""
+    style = style or INK
     if cell_len(msg) <= W:
-        return Text(msg + "\n", style=INK_B)
-    return Text(_scrolled(msg, tick) + "\n", style=INK_B)
+        return Text(msg + "\n", style=style)
+    return Text(_scrolled(msg, tick) + "\n", style=style)
 
 
 def footer(hint):
@@ -130,7 +178,8 @@ def hints(*pairs):
     labels dim, dot-separated -- '[b]KEY[/][dim] label[/] [dim]·[/] ...'.  One
     convention for every screen's strip(); keep the PLAIN text <= 40 cols so
     the line holds still (live hints never marquee)."""
-    return " [dim]·[/] ".join(f"[b]{k}[/][dim] {lbl}[/]" for k, lbl in pairs)
+    spellings = {"PGUP/PGDN": "PgUp/Dn", "PgUp/PgDn": "PgUp/Dn", "PgUp": "PgUp/Dn"}
+    return " [dim]·[/] ".join(f"[b]{spellings.get(k, k)}[/][dim] {lbl}[/]" for k, lbl in pairs)
 
 
 def blanks(n):
@@ -213,7 +262,7 @@ def icon_info(out, icon, info):
     for r in range(IC_ROWS):
         tx = info[r] if r < len(info) else ""
         out.append(icon[r] + "  ", style=INK)
-        out.append(_clip(tx, tw) + "\n", style=INK_B if r == 0 else INK)
+        out.append(ellipsis(tx, tw) + "\n", style=INK_B if r == 0 else INK)
 
 def list_window(out, rows, cursor, vis, fmt, empty=None):
     """The shared scrolling list body: a vis-row window centred on the cursor,

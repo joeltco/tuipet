@@ -16,6 +16,7 @@ persistence.get_album(); nothing here is guessed or drawn.
 Opened from the digicore TROPHIES page (where its count already lived)."""
 from __future__ import annotations
 from .sfx import CueQueue
+from rich.cells import set_cell_size
 from rich.text import Text
 from . import data
 from . import menu
@@ -128,14 +129,13 @@ class AlbumPanel(CueQueue):
         def fmt(num, j):
             cur = j == self.i
             seen = num in self.seen
-            body = INK_B if cur else (INK if seen else DIM)
-            t = Text()
-            t.append(("▸" if cur else " ")
-                     + ("✓" if seen else "✗") + " ", style=body)
             name = self._rec(num).get("name", "?") if seen else "???"
-            t.append(f"{name[:22]:<23}", style=body)
-            tag = self._rec(num).get("stage", "")[:10] if seen else ""
-            t.append(f"{tag:>10}\n", style=INK_B if cur else DIM)
+            tag = self._rec(num).get("stage", "") if seen else ""
+            label = ("✓ " if seen else "✗ ") + set_cell_size(menu.ellipsis(name, 22), 22)
+            label += " " + set_cell_size(menu.ellipsis(tag, 9), 9)
+            t = menu.row(label, cur)
+            if not cur and not seen:
+                t.style = DIM
             return t
 
         self.i = menu.list_window(out, self.roster, self.i, VIS, fmt)
@@ -151,7 +151,7 @@ class AlbumPanel(CueQueue):
         seen = num in self.seen
         rec = self._rec(num)
         name = rec.get("name", "?") if seen else "???"
-        out = menu.header(f"ALBUM  {name[:20].upper()}", f"#{num}")
+        out = menu.header(f"ALBUM  {menu.ellipsis(name.upper(), 20)}", f"#{num}")
         rows = (data.bob_frame(num, self.frame_i) if seen
                 else silhouette(data.frames_for(num)[0])) or []
         buf = [[0] * IMG_W for _ in range(IMG_H)]
@@ -182,9 +182,7 @@ class AlbumPanel(CueQueue):
             if num not in self._routes:
                 self._routes[num] = route_hint(num)
             info = f"not yet discovered — {self._routes[num]}"
-        out.append_text(menu.note(info, tick=self.frame_i))
-        out.right_crop(1)     # keys ride the strip (the egg-guide law)
-        return out
+        return menu.page(out, info, self.frame_i)
 
     def text(self):
         return self._detail_scene() if self.detail else self._list_scene()

@@ -212,7 +212,8 @@ def test_the_rival_reseeds_marked_and_announced():
     assert "your rival" in t.last              # announced at the gate
     pan = TournamentPanel(p)
     pan.tourney, pan.phase, pan.tree_view = t, "bracket", True
-    assert "!" + rec["name"][:9] in pan.text().plain[:400]   # the grudge mark
+    from tuipet import menu
+    assert menu.ellipsis("!" + rec["name"], 10) in pan.text().plain[:400]   # the grudge mark
 
 
 def test_a_mismatched_tier_keeps_the_rival_out():

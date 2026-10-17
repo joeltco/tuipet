@@ -1,3 +1,4 @@
+from rich.text import Text
 """The digitama guide (Joel 2026-07-12: "build the egg unlock guide screen").
 
 The carousel stays available-only; the GUIDE is where every egg in the game
@@ -193,10 +194,10 @@ def test_the_card_reveals_and_speaks_the_phase():
         statusbox.eggguide(_App(pan))
         assert egg_mod.hatch_name(locked)[:16] in "".join(seen["rows"])
         assert "???" not in "".join(seen["rows"])
-        assert any("ENTER open" in r for r in seen["rows"])
+        assert "ENTER open" in Text.from_markup(pan.strip()).plain
         pan.detail = True
         statusbox.eggguide(_App(pan))
-        assert any("next egg" in r for r in seen["rows"])
+        assert "←→ page" in Text.from_markup(pan.strip()).plain
     finally:
         statusbox.card = real
 

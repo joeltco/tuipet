@@ -345,7 +345,12 @@ def test_a13_book_detail_card_has_detail_keys(book):
         panel.n = 1
     panel.detail = True
     text = _card(p, panel)
-    assert "←→ page  ESC back" in text and "ENTER view" not in text and "ENTER page" not in text
+    if book == "album":
+        assert "←→ page · ESC back" in Text.from_markup(panel.strip()).plain
+        assert "ESC back" not in text
+    else:
+        assert "←→ page  ESC back" in text
+    assert "ENTER view" not in text and "ENTER page" not in text
 
 
 @pytest.mark.parametrize("owned,worn,verb", [(False, False, "buy"), (True, False, "wear"), (True, True, "remove")])

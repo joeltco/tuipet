@@ -267,16 +267,16 @@ def test_a8_full_trophy_and_legacy_pages_keep_note_and_footer_visible():
 
 def test_a9_strip_and_card_follow_page_gaze_and_requirements():
     pan = DigiCorePanel(pet())
-    assert "SPACE gaze" in card(pan)
+    assert "SPACE gaze" in Text.from_markup(pan.strip()).plain
     pan.key("space")
     assert "GAZE" in card(pan) and "ESC back" in card(pan)
     pan.key("escape")
     pan._back_t = 0
     pan.key("right")
-    assert "gaze" not in pan.strip() and "SPACE page" in card(pan)
+    assert "gaze" not in pan.strip() and "←→ page" in Text.from_markup(pan.strip()).plain
     pan = DigiCorePanel(pet(), start="EVOLVES")
     pan.key("enter")
-    assert "REQUIREMENTS" in card(pan) and "ESC back" in card(pan)
+    assert "REQUIREMENTS" in card(pan) and "ESC back" in Text.from_markup(pan.strip()).plain
     assert "scroll" in pan.strip() and "gaze" not in pan.strip()
 
 

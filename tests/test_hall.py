@@ -106,7 +106,9 @@ def test_the_legacy_pages_enter_opens_the_hall():
     from tuipet.digicorescreen import DigiCorePanel
     pan = DigiCorePanel(_elder(), start="LEGACY")
     assert pan.pages[pan.i][0] == "LEGACY"
-    assert "ENTER: the hall of memory" in pan.text().plain
+    from rich.text import Text
+    assert "the hall of memory" in pan.text().plain
+    assert "ENTER hall" in Text.from_markup(pan.strip()).plain
     assert pan.key("enter") == ("done", ("hall",))
 
 

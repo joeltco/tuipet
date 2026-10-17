@@ -162,7 +162,7 @@ class HelpPanel:
         self.frame_i += 1
 
     def strip(self):
-        return "↑↓ scroll  PGUP/PGDN leap  ESC back"
+        return menu.hints(("↑↓", "scroll"), ("PgUp/Dn", "page"), ("ESC", "back"))
 
     def _max_top(self):
         return max(0, len(HELP) - VIS)

@@ -133,9 +133,7 @@ class SoundPanel(CueQueue):
     def text(self):
         if is_browser():
             out = menu.header("SOUND", "web")
-            out.append_text(menu.note("Sound is unavailable on web"))
-            out.append_text(menu.blanks(7))
-            return out
+            return menu.page(out, "Sound is unavailable on web")
         out = menu.header("SOUND", sound.backend() or "bell")
         vol = sound.volume()
         if sound.available():
@@ -470,7 +468,7 @@ class OptionsPanel(menu.SubHost):
         if self.sub is not None:
             return self.sub.text()
         # menus audit 2026-10-14: keep the title beside a cell-bounded login.
-        out = menu.header("OPTIONS", menu._clip(persistence.get_account()[0] or "", 24))
+        out = menu.header("OPTIONS", menu.ellipsis(persistence.get_account()[0] or "", 24))
         if self.confirm_restart:
             out.append_text(menu.blanks(1))
             out.append_text(menu.note("Update installed."))
@@ -478,8 +476,7 @@ class OptionsPanel(menu.SubHost):
             out.append_text(menu.blanks(1))
             out.append_text(menu.note("Your save is already written."))
             out.append_text(menu.blanks(2))
-            out.right_crop(1)          # the strip owns the keys (QOL 2026-07-23)
-            return out
+            return menu.page(out)
         if self.confirm:
             out.append_text(menu.blanks(1))
             out.append_text(menu.note("This erases the pet, progress,"))
@@ -487,8 +484,7 @@ class OptionsPanel(menu.SubHost):
             out.append_text(menu.blanks(1))
             out.append_text(menu.row(f"type YES:  {self.buf}_", True))
             out.append_text(menu.blanks(2))
-            out.right_crop(1)          # the strip owns the keys (QOL 2026-07-23)
-            return out
+            return menu.page(out)
         for i, row in enumerate(_ROWS):
             out.append_text(menu.row(f"{_LABEL[row]:<16} {menu._clip(self._value(row), 18)}",
                                      i == self.cursor))

@@ -105,7 +105,4 @@ class TownPanel(menu.SubHost):
             return self.sub.text()
         out = menu.header("TOWN", "")
         menu.list_window(out, list(_MENU), self.cursor, 6, lambda row, _i: row[1])
-        out.append_text(menu.blanks(1))
-        out.append_text(menu.note(self.msg, tick=self.frame_i))
-        out.append_text(menu.footer(""))
-        return out
+        return menu.page(out, self.msg, self.frame_i)

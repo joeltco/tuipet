@@ -26,7 +26,6 @@ from __future__ import annotations
 
 import random          # (hashlib left with the commit -- lobbybout owns it now)
 
-from rich.text import Text
 from rich.cells import cell_len, set_cell_size
 
 import time
@@ -740,21 +739,18 @@ class LobbyPanel(BoutMixin, ChatMixin):
         """The monthly rankings: online PvP wins, top ten, your rank, and the
         days left in the season.  Data is the server's ladder message; a page
         opened before the reply shows a fetching line and fills in live."""
-        t = Text()
         lad = getattr(self.client, "ladder", None) if self.client else None
+        t = menu.header("LADDER", "season " + str(lad.get("season", "?")) if lad else "")
         if not lad:
-            t.append("  LADDER\n\n", style=INK_B)
             if self._ladder_stalled():
-                t.append("  couldn't reach the ladder —\n", style=DIM)
-                t.append("  TAB retry · ESC back\n", style=DIM)
+                t.append("  couldn't reach the ladder —\n  TAB retry\n", style=DIM)
             else:
                 t.append("  fetching the rankings…\n", style=DIM)
-            return t
-        t.append(f"  LADDER  season {lad.get('season', '?')}\n", style=INK_B)
+            return menu.page(t)
+
         # no blank separator rows: header + tagline + top-8 + you + season is
         # EXACTLY the 12-row LCD -- the old blanks pushed "you: rank" and
         # "season resets" (the page's whole point) off the box (round 30)
-        t.append("  online wins set your ladder score\n", style=DIM)
         top = list(lad.get("top") or [])[:8]
         you_rank, you_wins = (lad.get("you") or [0, 0])[:2]
         if not top:
@@ -769,7 +765,7 @@ class LobbyPanel(BoutMixin, ChatMixin):
             prefix = f"  {'▸' if mine else ' '}{i:>2}. "
             tail = f" {int(wins):>3}W"
             budget = max(0, min(16, COLS - cell_len(prefix + tail)))
-            name = set_cell_size(menu._clip(str(who), budget), budget)
+            name = set_cell_size(menu.ellipsis(who, budget), budget)
             t.append(prefix + name + tail + "\n",
                      style=INK_B if mine else INK)
         if you_rank:

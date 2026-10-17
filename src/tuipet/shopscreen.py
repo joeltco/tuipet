@@ -121,9 +121,10 @@ class ShopPanel(CueQueue):
         if self.msg_t > 0:
             self.msg_t -= 1
 
-    def _flash(self, text):
+    def _flash(self, text, *, warning=False, action=False):
         if text:
             self.msg, self.msg_t = text, 26
+            self.msg_warning, self.msg_action = warning, action
 
     def strip(self):
         """Verdict flash > the sealed-wave tease > mode-true hints -- the
@@ -131,7 +132,7 @@ class ShopPanel(CueQueue):
         keys the strip carried and squeezed the shelf; its row feeds the
         list now).  The #msg hud marquees any over-wide tease."""
         if self.msg_t > 0:
-            return self.msg
+            return menu.feedback(self.msg, warning=self.msg_warning, action=self.msg_action)
         if (self.mode == "shop" and self.sealed
                 and (self.frame_i // 40) % 2 == 1):
             return self.wave_hint
@@ -276,7 +277,7 @@ class ShopPanel(CueQueue):
         if p.num != old:                        # a crest egg fired the armor jump
             return ("done", ("evolve", old))
         if out is None:
-            self._flash("You don't have that.")
+            self._flash("You don't have that.", warning=True)
             self.sfx = "error"
             return None
         if out == "":
@@ -306,7 +307,7 @@ class ShopPanel(CueQueue):
             # the heir redeems the ancestor: the bag closes and the canon
             # inherit fx plays on the LCD (_after_shop's waiting route)
             return ("done", ("inherit", mem))
-        self._flash(out)
+        self._flash(out, warning=refused)
         self.sfx = "error" if refused else "confirm"   # a kept item is a NO
         return None
 
@@ -381,15 +382,15 @@ class ShopPanel(CueQueue):
                     # mash spends four times the bits it meant to
                     self._deal_guard = None
                     self._flash("deal's gone — ENTER again for %db"
-                                % e["price"])
+                                % e["price"], action=True)
                     self.sfx = "cancel"
                     return None
                 if e.get("title_id") is not None:
                     msg, self.sfx = self._buy_title(e)
-                    self._flash(msg)
+                    self._flash(msg, warning=self.sfx in ("error", "refuse"))
                 elif e.get("egg_idx") is not None:
                     msg, self.sfx = shop.town_egg_buy(self.pet, e["egg_idx"])
-                    self._flash(msg)
+                    self._flash(msg, warning=self.sfx in ("error", "refuse"))
                 elif (self.town is not None or e.get("deal")
                         or e.get("left") is not None):
                     # a RATIONED row is rationed wherever it stands: town
@@ -397,16 +398,16 @@ class ShopPanel(CueQueue):
                     # and the home capsule ration joined 2026-07-26 -- one
                     # buy path for all, so the ledger is written exactly once
                     msg, self.sfx = shop.town_buy(self.pet, e)
-                    self._flash(msg)
+                    self._flash(msg, warning=self.sfx in ("error", "refuse"))
                     if e.get("deal") and self.sfx == "confirm":
                         self._arm_deal_guard(e["key"])
                 else:
                     msg, self.sfx = shop.buy(self.pet, e)
-                    self._flash(msg)
+                    self._flash(msg, warning=self.sfx in ("error", "refuse"))
             else:
                 if self._retarget:
                     self._retarget = False
-                    self._flash(f"now on {e['name']} — press again")
+                    self._flash(f"now on {e['name']} — press again", action=True)
                     self.sfx = "cancel"
                     return None
                 r = self._use(e)
@@ -420,11 +421,11 @@ class ShopPanel(CueQueue):
                 return None
             if self._retarget:
                 self._retarget = False
-                self._flash(f"now on {e['name']} — press again")
+                self._flash(f"now on {e['name']} — press again", action=True)
                 self.sfx = "cancel"
                 return None
             msg, self.sfx = shop.sell(self.pet, e)
-            self._flash(msg)
+            self._flash(msg, warning=self.sfx in ("error", "refuse"))
             self._check_retarget(e)
         elif k in ("escape", "s", "b"):
             # the opening keys close (bar tidy 2026-07-18); s/b since the
@@ -482,12 +483,12 @@ class ShopPanel(CueQueue):
             state = ("worn now" if sel.get("worn")
                      else "owned" if sel.get("owned") else "%db" % sel["price"])
             desc = textwrap.wrap(sel.get("desc") or "a tamer honor", tw)[:2]
-            return [sel["name"][:tw], state] + desc + [""] * (2 - len(desc))
+            return [menu.ellipsis(sel["name"], tw), state] + desc + [""] * (2 - len(desc))
         if sel.get("egg_idx") is not None:     # the town digitama band
             state = ("owned" if sel.get("owned")
                      else "sold out today" if shop.egg_bought_today(self.pet)
                      else "%db" % sel["price"])
-            return [sel["name"][:tw], state,
+            return [menu.ellipsis(sel["name"], tw), state,
                     "a digitama, bought outright"[:tw],
                     "joins your hatch carousel"[:tw]]
         key = str(sel["key"])
@@ -512,17 +513,11 @@ class ShopPanel(CueQueue):
                                          shop.resell_price(sel))
         if key.startswith("egg_of_"):
             names = self._crest_answer(key)
-            tail = (("→ " + " / ".join(names))[:tw] if names
+            tail = (("→ " + " · ".join(names))[:tw] if names
                     else "nothing answers yet")
-            return [sel["name"][:tw], price[:tw], "armor evolution", tail]
+            return [menu.ellipsis(sel["name"], tw), price[:tw], "armor evolution", tail]
         eff = textwrap.wrap(shop.effect_line(sel), tw)[:2]
-        return [sel["name"][:tw], price[:tw]] + eff + [""] * (2 - len(eff))
-
-    def _bar_text(self, tabs):
-        bar = ""
-        for i, t in enumerate(tabs):
-            bar += ("[%s]" % t) if i == (self.tab % len(tabs)) else (" %s " % t)
-        return bar[:menu.W].ljust(menu.W) + "\n"
+        return [menu.ellipsis(sel["name"], tw), price[:tw]] + eff + [""] * (2 - len(eff))
 
     def text(self):
         p = self.pet
@@ -538,8 +533,8 @@ class ShopPanel(CueQueue):
             # over 5 visible (deep-state sweep 2026-07-22)
             held = sum(v for k, v in p.inventory.items() if k in shop.CATALOG)
             out = menu.header("BAG", f"{held} items · {p.bits}b")
-        # the classic tab bar: active bracketed, the rest breathing
-        out.append(self._bar_text(tabs), style=INK_B)
+        # Only the active tab carries selection fill.
+        out.append_text(menu.tabs(tabs, self.tab % len(tabs)))
 
         tw = menu.W - menu.IC_W - 2
         sel = rows[self.cursor] if rows else None
@@ -575,28 +570,28 @@ class ShopPanel(CueQueue):
                     # blank mark column so the price column holds still when
                     # tabbing Food/Items/Eggs <-> Honors (menu polish 2026-07-21)
                     if e.get("worn"):
-                        return "%-18s %3s %7s" % (("★ " + e["name"])[:18], "", "worn")
+                        return "%-18s %3s %7s" % (menu.ellipsis("★ " + e["name"], 18), "", "worn")
                     if e.get("owned"):
-                        return "%-18s %3s %7s" % (e["name"][:18], "", "owned")
+                        return "%-18s %3s %7s" % (menu.ellipsis(e["name"], 18), "", "owned")
                     return dim_if_short(
-                        "%-18s %3s %6db" % (e["name"][:18], "", e["price"]), e, i)
+                        "%-18s %3s %6db" % (menu.ellipsis(e["name"], 18), "", e["price"]), e, i)
                 if e.get("egg_idx") is not None:     # digitama: owned/price
                     if e.get("owned"):
-                        return "%-18s %3s %7s" % (e["name"][:18], "", "owned")
+                        return "%-18s %3s %7s" % (menu.ellipsis(e["name"], 18), "", "owned")
                     if shop.egg_bought_today(self.pet):    # one egg a day, spent
-                        return "%-18s %3s %7s" % (e["name"][:18], "", "sold out")
+                        return "%-18s %3s %7s" % (menu.ellipsis(e["name"], 18), "", "sold out")
                     return dim_if_short(
-                        "%-18s %3s %7s" % (e["name"][:18], "",
+                        "%-18s %3s %7s" % (menu.ellipsis(e["name"], 18), "",
                                            ("%6db" % e["price"]).strip()), e, i)
                 held = self.pet.inventory.get(e["key"], 0)
                 mark = ("x%d" % held) if held else ""
-                nm = ("▾" + e["name"][:17]) if e.get("deal") else e["name"][:18]
+                nm = ("▾" + menu.ellipsis(e["name"], 17)) if e.get("deal") else menu.ellipsis(e["name"], 18)
                 # menus audit 2026-10-14: home rations sell out too.
                 if e.get("left", 1) <= 0:
                     return "%-18s %3s %6s" % (nm, mark, "out")
                 return dim_if_short(
                     "%-18s %3s %6db" % (nm, mark, e["price"]), e, i)
-            return "%-18s x%-3d %5db" % (e["name"][:18], e.get("count", 1),
+            return "%-18s x%-3d %5db" % (menu.ellipsis(e["name"], 18), e.get("count", 1),
                                          shop.resell_price(e))
 
         # 5 shelf rows: the old footer's row (round 31) -- header 2 + tab

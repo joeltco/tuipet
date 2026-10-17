@@ -131,13 +131,13 @@ def test_citramon_is_reachable_by_timed_care_now():
 
 def test_the_classic_tab_bar_is_back():
     """v0.5.0 grammar restored (Joel 2026-07-17 "where are the tabs you had
-    like before?"): a visible bar, active tab bracketed, classic four."""
+    like before?"): a visible bar; Batch B selects with shared fill."""
     pan = ShopPanel(_pet())
     pan.msg_t = 0
     plain = pan.text().plain
-    assert "[Food] Items  Honors" in plain
+    assert " Food  Items  Honors " in plain and "[Food]" not in plain
     pan.key("right")
-    assert " Food [Items] Honors" in pan.text().plain
+    assert " Food  Items  Honors " in pan.text().plain and "[Items]" not in pan.text().plain
     # crests are adventure-town exclusives (Joel 2026-10-15): the home shop
     # never sells one; a town's Crests tab holds goods, never digitama
     assert not any(e["category"] == shop.ARMOR_CATEGORY

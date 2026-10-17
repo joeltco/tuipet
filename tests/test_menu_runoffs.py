@@ -63,8 +63,8 @@ def test_dna_field_columns_never_cut_a_word_in_half():
         for w in (9, 10, 13, 17):
             fit = _field_word(f, w)
             assert len(fit) <= w, (f, w, fit)
-            # whatever shows is a prefix of the real name made of whole words
-            assert full == fit or full.startswith(fit + " "), (f, w, fit)
+            # Truncated static names explicitly mark their omitted tail.
+            assert full == fit or (fit.endswith("…") and full.startswith(fit[:-1])), (f, w, fit)
 
 
 def test_dna_charge_and_stats_pages_fit_the_lcd():
