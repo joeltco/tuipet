@@ -171,7 +171,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("BETTER SOUND. Sounds no longer pile up or play over each other, skipping or muting stops them, your volume setting is respected everywhere, and battles and duels now end with a win or lose sound.")
+    WHATS_NEW = ("HALLOWEEN, CLEANER. The muddy seasonal tint is gone -- your scenes keep their real colors. The ghost trail, festival finds and Oct 31 double bits are all still on.")
 
 
     BINDINGS = [
