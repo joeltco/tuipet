@@ -123,6 +123,13 @@ class ActionsMixin:
 
     def action_quit(self):
         persistence.save(self.pet)
+        from .web import is_browser
+        if is_browser():
+            # a browser tab has no "after": exiting left a dead page (Joel
+            # 2026-10-17: "Pressing q in browser crashes game")
+            self.autosave()
+            self.notify("Saved. Close the tab to quit.", timeout=2.5)
+            return
         self.exit()
 
     def action_options(self):
