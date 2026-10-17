@@ -170,7 +170,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("HALLOWEEN ALL OCTOBER. The whole month is a festival: more road finds and present capsules, rarer monsters, a ghost trail of Candlemon, Bakemon and Pumpmon, and a spooky tint at home -- with double bits on Oct 31. December does the same for Christmas.")
+    WHATS_NEW = ("FRIENDLIER FIRST STEPS. A clearer sign-up card, a First Steps guide at the top of Help that explains your stats, tips while your egg warms up, and messages that say exactly when your pet can battle or take the road.")
 
 
     BINDINGS = [
