@@ -5,8 +5,30 @@ missing-asset failure mode is silence, which no one reports."""
 import glob
 import os
 import re
+from unittest.mock import Mock
+
+import pytest
 
 from tuipet import sound
+
+
+@pytest.fixture(autouse=True)
+def player_backend(monkeypatch):
+    playback = sound._Playback()
+    monkeypatch.setattr(sound, "_playback", playback)
+    proc = Mock()
+    proc.poll.return_value = 0
+    monkeypatch.setattr(sound.subprocess, "Popen", Mock(return_value=proc))
+    yield
+    if playback.worker is not None:
+        playback.worker.join(2)
+
+
+def _finish():
+    worker = sound._playback.worker
+    if worker is not None:
+        worker.join(2)
+        assert not worker.is_alive()
 
 
 # ---- player detection --------------------------------------------------------
@@ -50,7 +72,11 @@ def test_play_missing_wav_is_a_quiet_false(monkeypatch):
 
 def test_play_broken_player_never_raises(monkeypatch):
     monkeypatch.setattr(sound, "_PLAYER", ["/no/such/binary"])
-    assert sound.play("eat") is False            # Popen's FileNotFoundError is swallowed
+    monkeypatch.setattr(sound.subprocess, "Popen", Mock(side_effect=OSError("no fork")))
+    assert sound.play("eat", fallback=True) is True
+    _finish()
+    assert not sound.available()
+    assert sound.failed()
 
 
 def test_play_dispatches_when_everything_exists(monkeypatch):
@@ -62,10 +88,12 @@ def test_play_dispatches_when_everything_exists(monkeypatch):
 
 def _referenced_names():
     """Every sound name the code asks for by string literal."""
-    names = set()
+    from tuipet import strikefx
+    names = {strikefx.beat_sfx(marker, strong)
+             for marker in ("fire_out", "hit") for strong in (False, True)}
     src = os.path.join(os.path.dirname(sound.__file__))
     for f in glob.glob(os.path.join(src, "*.py")):
-        s = open(f).read()
+        s = open(f, encoding="utf-8").read()
         names.update(re.findall(r'\bbeep\(\s*"([a-zA-Z][a-zA-Z0-9]*)"', s))
         names.update(re.findall(r'sound\.play\(\s*"([a-zA-Z][a-zA-Z0-9]*)"', s))
         names.update(re.findall(r'\bsfx\s*=\s*"([a-zA-Z][a-zA-Z0-9]*)"', s))
@@ -157,21 +185,29 @@ def test_play_dispatches_the_scaled_copy(monkeypatch):
     """play() hands the PLAYER the attenuated file — the whole point."""
     sent = {}
     monkeypatch.setattr(sound, "_PLAYER", ["true"])
-    monkeypatch.setattr(sound.subprocess, "Popen",
-                        lambda argv, **kw: sent.setdefault("argv", argv))
+    proc = Mock()
+    proc.poll.return_value = 0
+    def spawn(argv, **kw):
+        sent["argv"] = argv
+        return proc
+    monkeypatch.setattr(sound.subprocess, "Popen", spawn)
     sound.set_volume(50)
     assert sound.play("confirm") is True
+    _finish()
     assert sound._cache_dir() in sent["argv"][-1]   # paths ride SAVE_DIR (shape sweep 2026-07-19)
 
 
-def test_scaling_failure_falls_back_to_the_original(monkeypatch):
-    """A cache dir that cannot be written must not silence the game: the
-    original full-strength wav still plays (loud beats mute)."""
+def test_scaling_failure_preserves_volume_by_staying_silent(monkeypatch):
     src = os.path.join(sound._DIR, "confirm.wav")
     sound.set_volume(50)
-    monkeypatch.setattr(sound.os, "makedirs",
-                        lambda *a, **k: (_ for _ in ()).throw(OSError("ro")))
-    assert sound._scaled(src, "confirm") is src
+    monkeypatch.setattr(sound.os, "makedirs", Mock(side_effect=OSError("ro")))
+    assert sound._scaled(src, "confirm") is None
+    monkeypatch.setattr(sound, "_PLAYER", ["mock-player"])
+    assert sound.play("confirm", fallback=True)
+    _finish()
+    sound.subprocess.Popen.assert_not_called()
+    assert sound.failed()
+    assert sound.available()
 
 
 def test_volume_clamps_and_persists():

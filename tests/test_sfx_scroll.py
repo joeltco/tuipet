@@ -14,11 +14,16 @@ class _Screen:
     """Minimal panel: optionally raises an sfx on a given key."""
     def __init__(self, sfx_on=None, sfx_name=None):
         self.sfx = None
+        self.cursor = 0
         self._sfx_on = sfx_on
         self._sfx_name = sfx_name
     def key(self, k):
         if k == self._sfx_on:
             self.sfx = self._sfx_name
+        if k in ("up", "down", "left", "right", "j", "k", "tab"):
+            self.cursor += 1
+        if k in ("enter", "escape"):
+            return ("done", None)
         return None
 
 
@@ -29,6 +34,7 @@ def _app(mode):
     a._played = []
     a.beep = lambda name=None, bell=True: a._played.append(name)
     a.repaint = lambda: None
+    a._close_mode = lambda value: None
     return a
 
 
@@ -64,3 +70,25 @@ def test_screen_sfx_wins_over_scroll():
     a._played.clear()
     a.on_key(_Event("down"))
     assert a._played == ["scroll"]
+
+
+def test_ignored_keys_do_not_claim_movement_or_success():
+    screen = _Screen()
+    screen.key = lambda k: None
+    a = _app(screen)
+    for key in ("down", "up", "enter", "escape"):
+        a.on_key(_Event(key))
+    assert a._played == []
+
+
+def test_passive_skip_has_no_generic_confirm(monkeypatch):
+    from tuipet import sound
+    screen = _Screen()
+    screen.phase = "intro"
+    screen.sfx = "startBattle"
+    a = _app(screen)
+    stopped = []
+    monkeypatch.setattr(sound, "stop", lambda: stopped.append(True))
+    a.on_key(_Event("enter"))
+    assert a._played == []
+    assert stopped == [True]

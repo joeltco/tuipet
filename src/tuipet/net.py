@@ -168,6 +168,7 @@ class LobbyState:
         self.login_failed: str | None = None   # server rejected the login (bad password / name taken)
         self.reconnecting = False              # dropped -> the client is retrying with backoff
         self.dms: dict = {}                    # peer_name -> [(from_name, text)] private threads
+        self.pm_received = 0                   # arrival edge survives capped/read threads
         self.unread: set = set()               # peer names with unread DMs
         self.blocked: set = set()              # muted peers (loaded from settings on connect)
         self.room: str | None = None           # current password room (None = main lobby)
@@ -476,6 +477,7 @@ class LobbyClient(_WsClient):
                 s.dms.setdefault(nm, []).append((nm, m.get("text", "")))
                 del s.dms[nm][:-CHAT_CAP]
                 s.unread.add(nm)
+                s.pm_received += 1
         elif t == "pm_ok":
             to = m.get("to_name", "?")
             s.dms.setdefault(to, []).append((s.me_name or "you", m.get("text", "")))

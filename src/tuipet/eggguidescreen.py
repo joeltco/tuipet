@@ -11,6 +11,7 @@ licence cut 2026-07-17: every egg is earned, none are sold.)
 ↑↓ browse the list, ENTER opens one egg's story (←→ pages between eggs
 without leaving it), ESC backs out."""
 from __future__ import annotations
+from .sfx import CueQueue
 from . import data
 from . import egg as egg_mod
 from . import menu
@@ -43,7 +44,7 @@ def _short_progress(line):
     return tail if "/" in tail else ""
 
 
-class EggGuidePanel:
+class EggGuidePanel(CueQueue):
     def __init__(self, pet=None):
         self.pet = pet
         self.prog = persistence.get_progress()

@@ -9,6 +9,7 @@ traps this pins:
     every single beep.
 """
 import importlib
+from unittest.mock import Mock
 
 from tuipet import hostinfo, sound
 
@@ -55,7 +56,10 @@ def test_an_unspawnable_player_retires_itself(monkeypatch):
 
         monkeypatch.setattr(sound.subprocess, "Popen", boom)
         assert sound.available()
+        assert sound.play("happy", fallback=True)
+        sound._playback.worker.join(2) if sound._playback.worker else None
         assert [sound.play("happy") for _ in range(3)] == [False, False, False]
+        assert sound.failed()
         assert len(calls) == 1, "it must retire the player, not retry every beep"
         assert not sound.available()
     finally:
@@ -70,7 +74,7 @@ def test_the_bell_still_carries_milestones_without_a_player(monkeypatch):
     app.sound = True
     rung = []
     app.bell = lambda: rung.append(1)
-    monkeypatch.setattr(appmod.sound, "play", lambda name: False)
+    monkeypatch.setattr(appmod.sound, "play", lambda name, **kw: False)
     appmod.TuiPetApp.beep(app, "hatch")            # a milestone
     assert rung == [1], "a milestone must ring the bell when there is no player"
     appmod.TuiPetApp.beep(app, "eat", bell=False)  # a routine sound stays quiet
@@ -85,8 +89,12 @@ def _termux(monkeypatch, rc=0, exc=None):
     sound._PLAYER = ["termux-media-player", "play"]
     sound._bridge_checked = False
     spawned = []
-    monkeypatch.setattr(sound.subprocess, "Popen",
-                        lambda *a, **k: spawned.append(1))
+    proc = Mock()
+    proc.poll.return_value = 0
+    def spawn(*a, **k):
+        spawned.append(1)
+        return proc
+    monkeypatch.setattr(sound.subprocess, "Popen", spawn)
 
     class _R:
         returncode = rc
@@ -100,61 +108,48 @@ def _termux(monkeypatch, rc=0, exc=None):
     return spawned
 
 
+def _finish_bridge():
+    worker = sound._playback.worker
+    if worker:
+        worker.join(6)
+        assert not worker.is_alive()
+
+
 def test_termux_bridge_without_the_app_falls_back_to_the_bell(monkeypatch):
-    """`pkg install termux-api` gives you the BINARY; without the Termux:API
-    APP it spawns cleanly and does nothing -- so Popen succeeded, play()
-    reported True, app.beep() returned early, and the bell never rang.  The
-    game went silent while Options read "on . termux".  A definite refusal
-    (non-zero exit) now retires the player."""
-    try:
-        spawned = _termux(monkeypatch, rc=1)       # bridge present, app absent
-        assert sound.play("hatch") is False, "must decline so the bell can ring"
-        assert sound.play("hatch") is False
-        assert not spawned, "never spawn into a dead bridge"
-        assert sound.backend() == "", "Options must stop advertising it"
-        assert not sound.available()
-    finally:
-        importlib.reload(sound)
+    spawned = _termux(monkeypatch, rc=1)
+    assert sound.play("hatch", fallback=True)
+    _finish_bridge()
+    assert sound.failed()
+    assert not spawned
+    assert not sound.available()
+    assert not sound.play("hatch")
 
 
 def test_a_working_termux_setup_still_plays(monkeypatch):
-    try:
-        spawned = _termux(monkeypatch, rc=0)       # package + Termux:API app
-        assert sound.play("hatch") is True
-        assert sound.play("hatch") is True
-        assert len(spawned) == 2
-        assert sound.backend() == "termux-media-player"
-    finally:
-        importlib.reload(sound)
+    spawned = _termux(monkeypatch, rc=0)
+    assert sound.play("hatch")
+    _finish_bridge()
+    assert spawned == [1]
+    assert sound.backend() == "termux-media-player"
 
 
 def test_a_slow_phone_keeps_its_sound(monkeypatch):
-    """A TIMEOUT is 'slow', not 'absent' -- it must never cost a real player."""
     import subprocess as sp
-    try:
-        spawned = _termux(monkeypatch, exc=sp.TimeoutExpired("termux-media-player", 4))
-        assert sound.play("hatch") is True
-        assert spawned, "a slow bridge still gets its sound"
-    finally:
-        importlib.reload(sound)
+    spawned = _termux(monkeypatch, exc=sp.TimeoutExpired("termux-media-player", 4))
+    assert sound.play("hatch")
+    _finish_bridge()
+    assert spawned
+    assert sound.available()
 
 
 def test_the_bridge_is_probed_once_not_every_beep(monkeypatch):
-    probes = []
-    try:
-        _termux(monkeypatch, rc=0)
-        real_run = sound.subprocess.run
-
-        def counting(*a, **k):
-            probes.append(1)
-            return real_run(*a, **k)
-
-        monkeypatch.setattr(sound.subprocess, "run", counting)
-        for _ in range(5):
-            sound.play("hatch")
-        assert len(probes) == 1, "probe lazily, once -- not on every sound"
-    finally:
-        importlib.reload(sound)
+    _termux(monkeypatch, rc=0)
+    probe = Mock(return_value=True)
+    monkeypatch.setattr(sound, "_termux_bridge_live", probe)
+    for cue in ("hatch", "confirm"):
+        assert sound.play(cue)
+        _finish_bridge()
+    assert probe.call_count == 1
 
 
 def test_volume_and_cache_ride_the_save_dir(tmp_path, monkeypatch):

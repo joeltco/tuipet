@@ -1,5 +1,6 @@
 """Memorial screen shown when the pet passes away."""
 from __future__ import annotations
+from .sfx import CueQueue
 from . import data, menu, grid, persistence
 from .theme import LCD_ON, LCD_BG, DIM, SIL_SCENE  # noqa: F401  (palette names bound for theme.apply propagation)
 
@@ -34,7 +35,7 @@ def _age_str(secs):
     return f"{m}m"
 
 
-class DeathPanel:
+class DeathPanel(CueQueue):
     def __init__(self, pet, new_mem=None, old_mem=None, hold=0, grade_kept=0,
                  banked_new=False):
         """new_mem: inheritance data the departed CAN etch (make_digimemory);

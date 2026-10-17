@@ -18,6 +18,7 @@ what the record knows; nothing here is guessed (the never-fake law).
 Opened from the digicore LEGACY page (where the headstones already lived),
 the TROPHIES→ALBUM door's exact grammar."""
 from __future__ import annotations
+from .sfx import CueQueue
 from rich.text import Text
 from . import data
 from . import menu
@@ -39,7 +40,7 @@ def _elders():
     return list(reversed(rows))
 
 
-class HallPanel:
+class HallPanel(CueQueue):
     def __init__(self, pet=None):
         self.pet = pet
         self.elders = _elders()

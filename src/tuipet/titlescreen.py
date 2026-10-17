@@ -1,5 +1,6 @@
 """Boot/title screen shown on launch (the device powering on)."""
 from __future__ import annotations
+from .sfx import CueQueue
 import random
 from rich.text import Text
 from . import data
@@ -86,7 +87,7 @@ def _fx_checker(buf, step):
 BOOT_FX = (_fx_dissolve, _fx_wipe, _fx_scan, _fx_blinds, _fx_iris, _fx_checker)
 
 
-class TitlePanel:
+class TitlePanel(CueQueue):
     """Shows a bobbing mascot + the TUIPET wordmark; any key starts the game (q quits)."""
 
     def __init__(self):

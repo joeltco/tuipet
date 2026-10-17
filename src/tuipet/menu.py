@@ -2,6 +2,7 @@
 bar, selectable rows with a cursor, and a footer hint. Keeps every menu
 looking the same and themed (colours come from theme via the INK/SEL names)."""
 from __future__ import annotations
+from .sfx import CueQueue, bubble
 from rich.cells import cell_len, chop_cells, set_cell_size
 from rich.text import Text
 from .theme import INK, INK_B, DIM, SEL
@@ -273,7 +274,7 @@ def scroll_window(out, rows, off, vis, fmt):
     return off
 
 
-class SubHost:
+class SubHost(CueQueue):
     """Mixin for panels that host a child panel in `self.sub` (battle inside
     adventure, town inside adventure, battle inside town/cup).  One home for
     the anim-delegate + sfx-bubble seam that was hand-rolled three ways --
@@ -289,9 +290,7 @@ class SubHost:
             return False
         if hasattr(self.sub, "anim"):
             self.sub.anim()
-        self.sfx = getattr(self.sub, "sfx", None) or getattr(self, "sfx", None)
-        if getattr(self.sub, "sfx", None):
-            self.sub.sfx = None
+        bubble(self, self.sub)
         return True
 
     def sub_key(self, k, on_done):
@@ -300,6 +299,7 @@ class SubHost:
         if self.sub is None:
             return False
         r = self.sub.key(k)
+        bubble(self, self.sub)
         if r is not None and r[0] == "done":
             self.sub = None
             on_done(r[1])

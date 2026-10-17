@@ -6,6 +6,7 @@ the selection.  ENTER buys the centred egg outright (bits -> egg_own); it
 joins your hatch carousel.  Eggs still unlock FREE by condition elsewhere;
 this is the road shortcut, priced.  ←→ ↑↓ browse, ENTER buy, ESC leave."""
 from __future__ import annotations
+from .sfx import CueQueue
 from rich.text import Text
 from . import egg as egg_mod, menu, shop
 from .render import downsample
@@ -15,7 +16,7 @@ GW, GH = 40, 16              # grid pixel area (8 character rows)
 PER_ROW, SHOWN = 4, 8        # 2 rows of 4 thumbnails
 
 
-class TownEggPanel:
+class TownEggPanel(CueQueue):
     def __init__(self, pet, town_id=0):
         self.pet = pet
         self.town_id = town_id

@@ -6,6 +6,7 @@ the LCD live-previews the pet standing in the browsed backdrop, the picker
 line rides the #msg strip, ENTER commits.  Row 0 is the egg's own scene
 (the default wiring stays the truth; a pick merely overrides it)."""
 from __future__ import annotations
+from .sfx import CueQueue
 from . import backgrounds as bgs
 from . import data, grid
 
@@ -15,7 +16,7 @@ from . import menu
 COLS, ROWS = 40, 12
 
 
-class BackgroundPanel:
+class BackgroundPanel(CueQueue):
     def __init__(self, pet):
         self.pet = pet
         self.rows = [""] + list(bgs.PICKS)          # "" = follow the egg

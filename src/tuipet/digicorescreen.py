@@ -12,6 +12,7 @@ the days toward the elder line (age-based since the DSprite mortality port
 The data-book pages after it are tuipet's own readout (kept adaptation).
 """
 from __future__ import annotations
+from .sfx import CueQueue
 from rich.console import Console
 from rich.text import Text
 from rich.cells import cell_len, set_cell_size
@@ -64,7 +65,7 @@ _legacy_rows = core._legacy_rows
 build_pages = core.build_pages
 
 
-class DigiCorePanel:
+class DigiCorePanel(CueQueue):
     def __init__(self, pet, start="CORE"):
         self.pet = pet
         self.pages = [("CORE", None)] + build_pages(pet)

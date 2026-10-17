@@ -27,6 +27,7 @@ the footer (they were beep-only before -- self.msg was never rendered);
 the sealed Digimental waves tease there on the egg-carousel cadence.
 """
 from __future__ import annotations
+from .sfx import CueQueue
 import textwrap
 
 from rich.text import Text
@@ -78,7 +79,7 @@ _HONOR_PLATE = ["╭" + "─" * (menu.IC_W - 2) + "╮",
 _LAST_POS: dict[str, tuple[int, int]] = {}
 
 
-class ShopPanel:
+class ShopPanel(CueQueue):
     def __init__(self, pet, start_mode="shop", bag_only=False, town_id=None,
                  start_tab=None):
         self.pet = pet

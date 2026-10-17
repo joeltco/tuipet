@@ -10,6 +10,7 @@ blast.  Before the fight a TIMING BAR sets your hit-type for the bout —
 good condition widens the mega window (care widens skill).
 """
 from __future__ import annotations
+from .sfx import CueQueue
 import json
 import os
 from . import data
@@ -217,7 +218,7 @@ def _full(frame):
 # keep the old module names as aliases so nothing downstream breaks.
 
 
-class BattlePanel:
+class BattlePanel(CueQueue):
     def __init__(self, pet, enemy=None, wild=False, scene=None, rounds=None,
                  raid=False, skip_intro=False, duel=False):
         from .battle import ROUNDS_LOCAL
@@ -341,12 +342,15 @@ class BattlePanel:
         self.phase = "anim"
 
     def _enter_result(self):
+        already = self.phase == "result"
         self.done_anim = True
         if self.duel and self.duel_result is not None:
             self.won = bool(self.duel_result.get("won"))
         else:
             self.won = bool(self.battle.won) if self.battle else False
         self.phase = "result"
+        if not already:
+            self.sfx = "win" if self.won else "lose"
 
     def duel_verdict(self, won, drawn, note=""):
         """The owner's verdict for an online bout: the seeded engine decided

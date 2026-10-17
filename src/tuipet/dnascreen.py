@@ -19,6 +19,7 @@ with it; this docstring lagged until the DNA review 2026-07-18.)
              armed state.  The door must be visible to be a choice.
 """
 from __future__ import annotations
+from .sfx import CueQueue
 import math
 from . import data, grid, menu, evolution, persistence
 from rich.console import Console
@@ -55,7 +56,7 @@ def _field_word(f, w):
     return cut.rsplit(" ", 1)[0] if " " in cut else cut
 
 
-class DNAPanel:
+class DNAPanel(CueQueue):
     def __init__(self, pet):
         self.pet = pet
         self.fields = list(data.DNA_FIELDS)

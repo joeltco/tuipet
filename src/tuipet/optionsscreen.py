@@ -12,9 +12,11 @@ home-screen binding), a New egg hand-off, and Erase all data (typed-YES
 confirm; wipes the local save dir -- the cloud copy stays with the account).
 """
 from __future__ import annotations
+from .sfx import CueQueue, bubble
 import threading
 
 from . import menu, persistence, sound, theme
+from .web import is_browser
 from . import update as update_check
 from .themescreen import ThemePanel
 
@@ -41,6 +43,8 @@ def _sound_value(on, with_volume=False):
     self-explains (the Termux no-player mystery).  First token only and capped
     so nothing clips mid-word in the 18-char value column; the volume rides
     along on the OPTIONS row when a real player exists (the bell has none)."""
+    if is_browser():
+        return "unavailable on web"
     if not on:
         return "off"
     b = sound.backend()
@@ -51,7 +55,7 @@ def _sound_value(on, with_volume=False):
     return "on · bell (iOS)" if hostinfo.is_ios() else "on · bell only"
 
 
-class SoundPanel:
+class SoundPanel(CueQueue):
     """The sound page: the on/off switch and a volume bar (Joel 2026-07-15:
     the full-scale chirps were piercing — "chop that sound volume in half").
     ←→ steps the volume by 10 and chirps at the NEW level so you hear what you
@@ -74,12 +78,19 @@ class SoundPanel:
         self.frame_i += 1              # heartbeat: over-wide notes marquee
 
     def strip(self):
+        if is_browser():
+            return menu.hints(("ESC", "back"))
         if self._ROWS[self.cursor] == "volume" and sound.available():
             return menu.hints(("←→", "volume"), ("ENTER", "hear it"),
                               ("ESC", "back"))
         return menu.hints(("↑↓", "pick"), ("ENTER", "toggle"), ("ESC", "back"))
 
     def key(self, k):
+        if is_browser():
+            if k in ("escape", "g"):
+                return ("done", None)
+            self.msg = "Sound is unavailable on web"
+            return None
         row = self._ROWS[self.cursor]
         if k in ("up", "k"):
             self.cursor = (self.cursor - 1) % len(self._ROWS)
@@ -113,6 +124,11 @@ class SoundPanel:
         return None
 
     def text(self):
+        if is_browser():
+            out = menu.header("SOUND", "web")
+            out.append_text(menu.note("Sound is unavailable on web"))
+            out.append_text(menu.blanks(7))
+            return out
         out = menu.header("SOUND", sound.backend() or "bell")
         vol = sound.volume()
         if sound.available():
@@ -215,9 +231,8 @@ class OptionsPanel(menu.SubHost):
 
     def anim(self):
         self.frame_i += 1
-        if self.sub is not None and getattr(self.sub, "sfx", None):
-            self.sfx = self.sub.sfx
-            self.sub.sfx = None
+        if self.sub is not None:
+            bubble(self, self.sub)
 
     def strip(self):
         """The message-box hint line (hint overhaul 2026-07-10)."""

@@ -1058,6 +1058,10 @@ def themes(app):
 
 
 def sound(app):
+    from .web import is_browser
+    if is_browser():
+        card(app, "Sound", ["Unavailable on web", "", "[dim]ESC back[/]"])
+        return
     from . import sound as snd
     m = app.mode
     enabled = bool(m.sound_get())

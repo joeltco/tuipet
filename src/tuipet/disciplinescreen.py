@@ -10,6 +10,7 @@ soft — discipline is the tantrum economy, not a leash.
 """
 from __future__ import annotations
 
+from .sfx import CueQueue
 from . import menu
 from .petbase import MAX_OBEDIENCE
 from .theme import INK, INK_B, DIM, SEL  # noqa: F401  (theme.apply propagation)
@@ -20,7 +21,7 @@ _ROWS = (
 )
 
 
-class DisciplinePanel:
+class DisciplinePanel(CueQueue):
     def __init__(self, pet):
         self.pet = pet
         self.cursor = 1 if pet.discipline_call else 0   # an open call preselects Scold

@@ -29,12 +29,15 @@ import random          # (hashlib left with the commit -- lobbybout owns it now)
 from rich.text import Text
 from rich.cells import cell_len, set_cell_size
 
+import time
+
 from . import data
 from . import grid
 from . import jogress
 from . import battle
 from . import jogressscreen
 from . import menu
+from .sfx import bubble
 from . import persistence
 from .net import CHAT_CAP
 from .render import render_scene
@@ -314,9 +317,7 @@ class LobbyPanel(BoutMixin, ChatMixin):
             # same tick would swallow it.
             spent = b.i >= len(b.timeline) - 1
             b.anim()                            # advances + emits the volley sfx
-            if getattr(b, "sfx", None):
-                self.sfx = b.sfx
-                b.sfx = None
+            bubble(self, b)
             if getattr(b, "duel", False):
                 # the bar locked itself (a tamer who walked away): bind it
                 if b.locked and not self.bt_my_commit_sent:
@@ -395,6 +396,10 @@ class LobbyPanel(BoutMixin, ChatMixin):
         s = self.state
         if not s:
             return
+        received = getattr(s, "pm_received", 0)
+        if received > getattr(self, "_pm_received", 0):
+            self._feedback("menu")
+        self._pm_received = received
         if self.phase == "dm" and self.dm_peer:
             # the thread is OPEN on screen: an arriving PM is read the moment
             # it lands -- net.py badges every PM blind, and the badge used to
@@ -449,16 +454,20 @@ class LobbyPanel(BoutMixin, ChatMixin):
                         self.client.relay(m.get("from_id"), {"kind": m.get("kind"), "abort": True})
                 elif m.get("busy"):
                     self.status = f"{m.get('from_name', '?')} is busy."
+                    self._feedback("refuse")
                 else:
                     self.status = f"{m.get('from_name', '?')} declined."
+                    self._feedback("refuse")
             elif t == "relay":
                 s.inbox.remove(m)
                 self._on_relay(m)
         if s.login_failed:
+            self._feedback("error")
             self.entry = AccountPanel(name=self._last_name, note=s.login_failed)
             self.phase = "login"
             s.login_failed = None
         elif s.error:
+            self._feedback("error")
             self.status = f"! {s.error}"
             s.error = None
         elif s.connected and self.status == "Connecting…":
@@ -516,6 +525,7 @@ class LobbyPanel(BoutMixin, ChatMixin):
 
     # ---- session orchestration ------------------------------------------
     def _enter_session(self, pid, pname, kind, host):
+        self._verdict_sounded = False
         if self.invite_prompt is not None:
             # a CROSSED invite (both players invited each other): entering the
             # session must consume the other prompt, or it survives the whole
@@ -669,7 +679,21 @@ class LobbyPanel(BoutMixin, ChatMixin):
                     self._maybe_build()
 
     # ---- battle ----------------------------------------------------------
+    def _feedback(self, cue):
+        now = time.monotonic()
+        if now - getattr(self, "_feedback_at", -1000) >= 1.0:
+            self._feedback_at = now
+            self.sfx = cue
+
     def key(self, k):
+        children = (self.entry, self.bshow)
+        result = self._key_inner(k)
+        for child in children:
+            if child is not None:
+                bubble(self, child)
+        return result
+
+    def _key_inner(self, k):
         if self.pshow is not None:
             self.pshow = None          # any key skips the ceremony (show idiom)
             return None
@@ -791,12 +815,14 @@ class LobbyPanel(BoutMixin, ChatMixin):
             if k in ("b", "B") and plive:
                 err = self.pet.can_battle()      # an egg was free to INVITE (egg-battle audit 2026-07-06)
                 if err:
+                    self._feedback("refuse")
                     self.status, self.action_for = err, None
                     return None
                 self.client.invite(pid, "battle"); self._sent_invites.add((pid, "battle")); self.status = f"Battle invite → {pname}"; self.action_for = None
             elif k in ("j", "J") and plive:
                 err = jogress.can_jogress(self.pet)
                 if err:
+                    self._feedback("refuse")
                     self.status, self.action_for = err, None
                     return None
                 self.client.invite(pid, "jogress"); self._sent_invites.add((pid, "jogress")); self.status = f"Jogress invite → {pname}"; self.action_for = None

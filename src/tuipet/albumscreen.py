@@ -15,6 +15,7 @@ persistence.get_album(); nothing here is guessed or drawn.
 ↑↓ pick, PgUp/PgDn leap, ENTER open, ←→ page inside the book, ESC back.
 Opened from the digicore TROPHIES page (where its count already lived)."""
 from __future__ import annotations
+from .sfx import CueQueue
 from rich.text import Text
 from . import data
 from . import menu
@@ -55,7 +56,7 @@ def route_hint(num):
     return "keep raising"
 
 
-class AlbumPanel:
+class AlbumPanel(CueQueue):
     def __init__(self, pet=None):
         self.pet = pet
         self.roster = data.album_roster()

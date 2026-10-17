@@ -22,6 +22,7 @@ wrong prop, Joel 2026-07-17).  Wall_1 stands through the whole volley;
 only a MEGA break crumbles it to Wall_2.
 """
 from __future__ import annotations
+from .sfx import CueQueue
 import json
 import os
 
@@ -54,7 +55,7 @@ with open(os.path.join(os.path.dirname(__file__), "data", "train_wall.json"), en
 from .battlescreen import mega_window  # noqa: E402
 
 
-class TrainingPanel:
+class TrainingPanel(CueQueue):
     def __init__(self, pet):
         self.pet = pet
         self.frame_i = 0

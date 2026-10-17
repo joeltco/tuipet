@@ -4,6 +4,7 @@ MAX_PVP_* clamp constants (_clamp_card in lobbybout owns the real bounds) --
 was cut; the cell-width law finally reached the name field.)"""
 from __future__ import annotations
 
+from .sfx import CueQueue
 from rich.cells import cell_len
 from rich.text import Text
 
@@ -26,7 +27,7 @@ def _tail(s, w):
     return s
 
 
-class AccountPanel:
+class AccountPanel(CueQueue):
     """Name + password entry. Tab/Up/Down switch fields; Enter on the password
     confirms when both are filled. Returns ("done", (name, password)), or
     ("done", None) on Esc. Used at first launch and to recover a failed login."""
@@ -113,7 +114,7 @@ class AccountPanel:
 FIRST_RUN_NOTE = "New? Choose a name and password to create an account. Returning? Use your account. ESC: play locally."
 
 
-class CloudWaitPanel:
+class CloudWaitPanel(CueQueue):
     """The few seconds the first-run sign-in spends asking the cloud: a card
     that holds the screen (no pet ticks underneath, no second Enter fires a
     second sign-in) until the app closes it with the verdict."""

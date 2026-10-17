@@ -313,6 +313,9 @@ class ActionsMixin:
                 # the feud's running score lands with the verdict
                 self.flash(f"[b]{rival.record_line(self.pet)}[/] all-time")
             self.screen_w.start_fx("cheer" if b.won else "losing")
+            # The arena already announced this verdict; retain the home poses.
+            if self.screen_w.fx:
+                self.screen_w.fx["snds"] = {}
         self.repaint()
 
     def action_tournament(self):

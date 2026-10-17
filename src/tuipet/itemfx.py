@@ -164,7 +164,7 @@ SCRIPTS = {
     # FLOOR-RELATIVE (state() does `row["iy"] + floor`), so the med
     # cannot climb out of the window by construction.
     "Bandaging": {"steps": 24, "end": "cheer", "layout": "beside",
-                  "snds": {0: "click", 8: "click", 13: "click",
+                  "snds": {1: "click", 8: "click", 13: "click",
                            18: "confirm"},
                   "rows": {0: {"i": 0, "p": 9, "iy": -4},
                            4: {"i": 0, "p": 9, "iy": 0},

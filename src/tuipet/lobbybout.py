@@ -8,6 +8,7 @@ wire card passes through it.
 """
 from __future__ import annotations
 
+from .sfx import CueQueue
 import hashlib
 import math
 import random
@@ -94,7 +95,7 @@ def _clamp_card(card):
     return card
 
 
-class BoutMixin:
+class BoutMixin(CueQueue):
     def _void_bout(self, why):
         """Kill a bout that cannot be trusted, and tell the peer."""
         self.bt_outcome = f"Battle void — {why}."
@@ -242,7 +243,6 @@ class BoutMixin:
         if not won and not draw and my_hp > opp_hp:
             won = True                     # rounds ran dry: higher HP stands
         self.bphase = "over"
-        self.sfx = "attack"
         if self.partner:                   # a finished bout is a connection
             persistence.record_connection(self.partner[1])
         # the ladder needs BOTH stories: the winner's claim only credits when
@@ -283,10 +283,16 @@ class BoutMixin:
         so an ending that only wrote lobby text would leave the player watching
         a volley loop forever -- which is exactly what an opponent's flight did
         the first time this panel was made to persist."""
+        if getattr(self, "_verdict_sounded", False):
+            return
+        self._verdict_sounded = True
+        self.sfx = "win" if won and not draw else "lose"
         if self.bshow is None:
             return
         try:
             self.bshow.duel_verdict(won, draw, note)
+            # The lobby owns all online endings, including a missing arena.
+            self.bshow.sfx = None
         except Exception:
             self.bshow = None            # fall back to the lobby's text card
     def _stage_volley(self, my0, opp0, dealt, taken):

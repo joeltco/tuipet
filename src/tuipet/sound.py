@@ -12,6 +12,9 @@ import os
 import shutil
 import subprocess  # nosec B404 - players run from a fixed allowlist, no shell, no user input
 import sys
+import threading
+import time
+from collections import deque
 import wave
 
 from . import hostinfo
@@ -71,6 +74,7 @@ def volume():
 def set_volume(v):
     """Clamp, remember and persist the playback volume (percent)."""
     global _volume
+    stop()
     _volume = max(10, min(100, int(v)))
     try:
         os.makedirs(_state_dir(), exist_ok=True)
@@ -82,15 +86,9 @@ def set_volume(v):
 
 
 def _scaled(f, name):
-    """The pre-attenuated copy of `f` for the current volume (built lazily,
-    one cache dir per level, atomic rename so a half-written wav is never
-    served).  Any failure falls back to the ORIGINAL file: a full-strength
-    chirp beats silence, and a state dir that can't hold a 40KB wav is
-    already failing loudly everywhere else (saves, theme).  Even 100% is a
-    scaled copy -- the piercing raw wavs are never played.  The q-prefix
-    versions the CURVE: the retired v-dirs held v1's linear scaling and must
-    not be served under the new mapping."""
-    dst = os.path.join(_cache_dir(), f"q{_volume}", name + ".wav")
+    """Cache the selected attenuation; cache failure must never play raw audio."""
+    level = _volume  # A slider change during scaling must not poison another level's cache.
+    dst = os.path.join(_cache_dir(), f"q{level}", name + ".wav")
     if os.path.exists(dst):
         return dst
     try:
@@ -98,12 +96,12 @@ def _scaled(f, name):
             params = w.getparams()
             frames = w.readframes(params.nframes)
         if params.sampwidth != 2:
-            return f               # every shipped wav is 16-bit PCM mono
+            return None            # unsupported samples must not bypass volume
         a = array.array("h")
         a.frombytes(frames)
         if sys.byteorder == "big":
             a.byteswap()
-        k = _amp(_volume)          # attenuation only (k <= 0.5): can never clip
+        k = _amp(level)          # attenuation only (k <= 0.5): can never clip
         for i in range(len(a)):
             a[i] = int(a[i] * k)
         if sys.byteorder == "big":
@@ -116,7 +114,7 @@ def _scaled(f, name):
         os.replace(tmp, dst)
         return dst
     except Exception:
-        return f
+        return None
 
 
 def _find_player():
@@ -127,7 +125,8 @@ def _find_player():
     # bell=False sounds) leave the pet SILENT with Options still claiming a
     # backend.  No player on iOS -> the terminal bell carries the milestones,
     # and Options honestly reads "bell only".  (Sound audit 2026-07-13.)
-    if hostinfo.is_ios():
+    from .web import is_browser
+    if is_browser() or hostinfo.is_ios():
         return None
     if shutil.which("termux-media-player"):
         return ["termux-media-player", "play"]      # Termux -> plays on the phone
@@ -182,30 +181,139 @@ def _termux_bridge_live():
         return False
 
 
-def play(name):
-    """Play data/sounds/<name>.wav non-blocking; True if a player was dispatched."""
-    global _PLAYER, _bridge_checked
-    if not _PLAYER:
+class _Playback:
+    """One audio channel, with bounded pending work and interruptible playback.
+
+    Scaling, bridge probes, process waits and stop commands run off the UI thread.
+    New cues interrupt long samples rather than mixing or building a stale backlog.
+    """
+
+    def __init__(self):
+        self.lock = threading.Lock()
+        self.pending = deque(maxlen=8)
+        self.recent = {}
+        self.generation = 0
+        self.failure = False
+        self.worker = None
+
+    def submit(self, name, fallback):
+        with self.lock:
+            now = time.monotonic()
+            gap = 0.08 if name in ("scroll", "menu", "select") else 0.25
+            if now - self.recent.get(name, -1000) < gap:
+                return True
+            self.recent[name] = now
+            self.pending.append((name, fallback, self.generation, now))
+            if self.worker is None or not self.worker.is_alive():
+                self.worker = threading.Thread(target=self.run, daemon=True)
+                self.worker.start()
+        return True
+
+    def stop(self):
+        with self.lock:
+            self.generation += 1
+            self.pending.clear()
+            self.recent.clear()
+            self.failure = False
+
+    def interrupted(self, generation):
+        with self.lock:
+            return generation != self.generation or bool(self.pending)
+
+    def run(self):
+        global _PLAYER, _bridge_checked
+        while True:
+            with self.lock:
+                if not self.pending:
+                    self.worker = None
+                    return
+                name, fallback, generation, queued = self.pending.popleft()
+            if time.monotonic() - queued > 0.75:
+                continue
+            proc = None
+            player = _PLAYER
+            try:
+                if not player:
+                    raise OSError("no audio backend")
+                if not _bridge_checked and player[0] == "termux-media-player":
+                    _bridge_checked = True
+                    if not _termux_bridge_live():
+                        raise OSError("Termux bridge unavailable")
+                path = _scaled(os.path.join(_DIR, name + ".wav"), name)
+                if not path:
+                    # A broken cache is not evidence of a broken player.
+                    with self.lock:
+                        self.failure |= fallback and generation == self.generation
+                    continue
+                if generation != self.generation:
+                    continue
+                with wave.open(path) as wav:
+                    duration = wav.getnframes() / wav.getframerate()
+                proc = subprocess.Popen(player + [path], stdout=subprocess.DEVNULL,  # nosec B603 - fixed allowlist, no shell
+                                        stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL)
+                deadline = time.monotonic() + duration + 1
+                remote = player[0] == "termux-media-player"
+                while True:
+                    rc = proc.poll()
+                    if rc is not None and rc != 0:
+                        raise OSError("audio player failed")
+                    if self.interrupted(generation):
+                        break
+                    if rc is not None and not remote:
+                        break
+                    if time.monotonic() >= deadline:
+                        if rc is None:
+                            raise OSError("audio player stalled")
+                        break
+                    time.sleep(0.02)
+                if remote:
+                    # The bridge process does not own Android's playback lifetime.
+                    try:
+                        subprocess.run([player[0], "stop"], timeout=1,  # nosec B603 - fixed command
+                                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                       stdin=subprocess.DEVNULL)
+                    except subprocess.TimeoutExpired:
+                        pass  # A slow bridge is not proof that Android audio is absent.
+            except Exception:
+                _PLAYER = None
+                with self.lock:
+                    self.failure |= fallback and generation == self.generation
+            finally:
+                if proc is not None:
+                    try:
+                        if proc.poll() is None:
+                            proc.terminate()
+                        proc.wait(timeout=0.2)
+                    except Exception:
+                        try:
+                            proc.kill()
+                            proc.wait(timeout=0.2)
+                        except Exception:
+                            pass
+
+
+_playback = _Playback()
+
+
+def stop():
+    """Cancel active/pending audio without waiting on an OS player."""
+    _playback.stop()
+
+
+def failed():
+    """Consume an asynchronous milestone failure for the UI's bell fallback."""
+    with _playback.lock:
+        failure, _playback.failure = _playback.failure, False
+        return failure
+
+
+def play(name, fallback=False):
+    """Queue optional audio without doing audio I/O on the UI thread."""
+    if not _PLAYER or not isinstance(name, str) or not name.isalnum():
         return False
-    if not _bridge_checked and _PLAYER[0] == "termux-media-player":
-        # probed LAZILY (never at import): startup must not pay for it, and a
-        # player that turns out to be a dead bridge retires like any other
-        _bridge_checked = True
-        if not _termux_bridge_live():
-            _PLAYER = None
-            return False
-    f = os.path.join(_DIR, name + ".wav")
-    if not os.path.exists(f):
+    if not os.path.exists(os.path.join(_DIR, name + ".wav")):
         return False
     try:
-        subprocess.Popen(_PLAYER + [_scaled(f, name)], stdout=subprocess.DEVNULL,   # nosec B603 - fixed player cmd, no shell, path is our own data file
-                         stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL)
-        return True
+        return _playback.submit(name, fallback)
     except Exception:
-        # A player we cannot actually SPAWN is no player at all (a locked-down
-        # host: no fork, a killed binary, an exhausted process table).  Retire
-        # it for good instead of raising on every single beep -- the caller's
-        # bell fallback then carries the sound, and Options stops advertising a
-        # backend that does nothing (sound audit 2026-07-13).
-        _PLAYER = None
         return False
