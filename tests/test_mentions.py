@@ -151,3 +151,16 @@ def test_no_offline_queue_and_clipped_text():
     asyncio.run(server.handler(Wire([login(), dict(t='chat', text='@Bob ' + 'x' * 600)])))
     alert = next(m for m in target.ws.sent if m['t'] == 'mention')
     assert len(alert['text']) == server.MAX_CHAT
+
+
+def test_dim_hint_shows_rest_of_name_and_right_accepts():
+    pan, st = _panel(buf='hey @jO')
+    assert pan._mention_hint() == 'el'
+    row = next(line for line in pan._text_lobby().plain.splitlines() if line.startswith('say: '))
+    assert row.startswith('say: hey @jOel')
+    pan.key('right')
+    assert pan.buf == 'hey @joel' and pan._mention_hint() == ''
+    pan.buf = 'hey @zz'
+    assert pan._mention_hint() == ''
+    pan.buf = 'mail@jo'
+    assert pan._mention_hint() == ''

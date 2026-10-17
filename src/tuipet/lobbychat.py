@@ -284,7 +284,13 @@ class ChatMixin:
         fw = w - cell_len(label)
         shown = self.buf if cell_len(self.buf) < fw else _tail_cells(self.buf, fw - 1)
         caret = "_" if (getattr(self, "_mq", 0) // 5) % 2 == 0 else " "
-        t.append(_fit(shown + caret, fw) + "\n", style=INK)
+        hint = self._mention_hint() if hasattr(self, "_mention_hint") else ""
+        if hint and cell_len(shown + hint) < fw:
+            # @g -> dim "abe": TAB or → accepts it (phones never find TAB alone)
+            t.append(shown, style=INK)
+            t.append(_fit(hint + caret, fw - cell_len(shown)) + "\n", style=DIM)
+        else:
+            t.append(_fit(shown + caret, fw) + "\n", style=INK)
         # THE LAST LINE HAS ONE JOB: say what just happened.  An invite is the
         # one thing allowed to take it -- it is a question the room is asking
         # you right now, and it expires.  (Text.append does not parse markup,

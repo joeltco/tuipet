@@ -175,8 +175,8 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("BROWSER FIXES: phone keys land the moment you tap them, the keyboard no longer "
-                 "scrambles the screen, and q saves instead of closing the game.")
+    WHATS_NEW = ("@ HINTS: type @g in the lobby and the rest of the name shows dim; "
+                 "TAB or → fills it in.")
 
 
     BINDINGS = [

@@ -892,7 +892,7 @@ class LobbyPanel(BoutMixin, ChatMixin):
             elif k == "escape":
                 self.action_for = None
             return None
-        if k == "tab" and self.pm_to is None and self._complete_mention():
+        if k in ("tab", "right") and self.pm_to is None and self._complete_mention():
             return None
         if k != "tab":
             self._mention_cycle = None
@@ -965,6 +965,21 @@ class LobbyPanel(BoutMixin, ChatMixin):
                     self.action_for = (p["id"], p["name"], p.get("live", True))
             return None
         return self._edit(k)
+    def _mention_hint(self):
+        """The dim rest-of-name shown after a typed @fragment (TAB/→ takes it)."""
+        if self.pm_to is not None or getattr(self, "_mention_cycle", None) or self.state is None:
+            return ""
+        import re
+        match = re.search(r"(?<!\w)@([^@]+)$", self.buf)
+        if not match:
+            return ""
+        fragment = match.group(1)
+        matches = sorted({p["name"] for p in self.state.roster
+                          if p.get("name", "").lower().startswith(fragment.lower())}, key=str.lower)
+        if not matches or len(matches[0]) == len(fragment):
+            return ""
+        return matches[0][len(fragment):]
+
     def _complete_mention(self):
         cycle = getattr(self, "_mention_cycle", None)
         if cycle and self.buf == cycle[0]:
