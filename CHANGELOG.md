@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.47 — @ HINTS (2026-10-17)
+
+@ HINTS: in lobby chat, type @ and the start of a name; the rest shows dim, and TAB or → fills it in.
+
 ## 0.6.46 — @ HINTS (2026-10-17)
 
 @ HINTS: type @g in the lobby and the rest of the name shows dim; TAB or → fills it in.
