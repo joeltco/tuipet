@@ -175,8 +175,8 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("@ HINTS: type @g in the lobby and the rest of the name shows dim; "
-                 "TAB or → fills it in.")
+    WHATS_NEW = ("@ HINTS: in lobby chat, type @ and the start of a name; the rest "
+                 "shows dim, and TAB or → fills it in.")
 
 
     BINDINGS = [
