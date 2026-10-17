@@ -237,8 +237,7 @@ class Screen(FxMixin, Static):
                                   bgimg=bgimg, clip=_WINDOW))
 
     def _background(self, pet):
-        from .holidays import tint
-        return self._crossfade(tint(pet.background()))
+        return self._crossfade(pet.background())
 
     def _crossfade(self, target):
         """Canon BackgroundAnim.animateBack: a background change never snaps --

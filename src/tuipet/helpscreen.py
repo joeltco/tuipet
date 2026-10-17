@@ -21,7 +21,7 @@ HELP = [
     ("October: Halloween; December: Xmas", 0),
     ("Hunts and festival fun all", 0),
     ("month. 2x road bits Oct 31 / Dec 25.", 0),
-    ("A road; seasonal colors in Options", 0),
+    ("A: the ghost trail / snow hunts", 0),
     ("CARE", 2),
     # claims audit 2026-07-25; re-truthed 2026-07-26 with the bandage's
     # final door, the H key ("bits/hour" was half the assistant's bill)

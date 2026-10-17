@@ -5,7 +5,7 @@ import json
 import pytest
 from rich.cells import cell_len
 
-from tuipet import adventure as A, data, holidays as H, persistence as P, shop, statusbox, tournament as T
+from tuipet import adventure as A, holidays as H, persistence as P, shop, statusbox, tournament as T
 from tuipet.pet import Pet
 
 
@@ -33,7 +33,6 @@ def test_calendar_edges(monkeypatch, month, day, season, exact, year):
     assert T.holiday_season() == T.holiday_season(d) == season
     assert bool(T.holiday()) == exact
     assert bool(T.festival()) == bool(exact or season)
-    assert (H.tint(['ffffff']) != ['ffffff']) == bool(season)
     banner = statusbox.festival_line()
     assert bool(banner) == bool(exact or season)
     if season:
@@ -111,24 +110,17 @@ def test_old_saves_sync_and_season_notice(monkeypatch):
     assert H.notice().startswith('Halloween is here!')
 
 
-def test_tint_copy_and_options(monkeypatch):
-    from tuipet.optionsscreen import OptionsPanel, _ROWS
+def test_the_seasonal_tint_is_gone(monkeypatch):
+    """Joel 2026-10-17 ("Theres seasonal colors?? Where??" -> A): the home tint
+    was invisible at 15% and muddy brown when stronger; it is removed, along
+    with its Options toggle.  October home art is the plain scene."""
+    from tuipet import arena
+    from tuipet.optionsscreen import _ROWS
     on(monkeypatch,10,16)
-    raw=data.load_backgrounds()
-    before=json.dumps(raw,sort_keys=True)
-    frame=next(iter(raw.values()))[0]
-    tinted=H.tint(frame)
-    assert tinted is not frame and tinted != frame
-    assert len(tinted)==len(frame) and all(len(a)==len(b) for a,b in zip(tinted,frame))
-    assert H.tint(['ffffff']) == ['f4e9e0']
-    on(monkeypatch,10,31)
-    assert H.tint(['ffffff']) != ['f4e9e0']
-    panel=OptionsPanel(pet(),lambda:False,lambda:None)
-    panel.cursor=_ROWS.index('colors')
-    assert 'Seasonal colors' in panel.text().plain
-    panel.key('enter')
-    assert H.tint(frame) is frame
-    assert json.dumps(raw,sort_keys=True)==before
+    assert not hasattr(H, 'tint') and 'colors' not in _ROWS
+    p=pet()
+    assert arena.Screen()._background.__code__.co_names.count('tint') == 0
+    assert p.background() == p.background()
 
 
 def test_capsule_opening_day_rarity(monkeypatch):

@@ -33,7 +33,7 @@ def test_row_surface_and_order():
     """The full switchboard, dangerous rows last (a fat-finger past 'new'
     must never land on the erase gate's neighbour)."""
     assert _ROWS == ("theme", "sound", "account", "cloud", "update", "keys",
-                     "colors", "new", "erase")
+                     "new", "erase")         # "colors" left with the seasonal tint (2026-10-17)
     pan, _ = _panel()
     _fits(pan)
     for _ in _ROWS:                        # every cursor position renders in budget

@@ -20,15 +20,15 @@ from .web import is_browser
 from . import update as update_check
 from .themescreen import ThemePanel
 
-_ROWS = ("theme", "sound", "account", "cloud", "update", "keys", "colors", "new", "erase")
-_LABEL = {"colors": "Seasonal colors", "theme": "Theme", "sound": "Sound", "account": "Account",
+_ROWS = ("theme", "sound", "account", "cloud", "update", "keys", "new", "erase")
+_LABEL = {"theme": "Theme", "sound": "Sound", "account": "Account",
           "cloud": "Cloud sync", "update": "Update", "keys": "Keys",
           "new": "New egg", "erase": "Erase all data"}
 # the note line under the list describes the SELECTED row and follows the
 # cursor (Joel's live review 2026-07-07: it sat frozen on the flavour line);
 # action feedback (sound toggled, update verdict...) overrides it until the
 # cursor moves again.  Over-wide lines marquee via menu.note(tick).
-_DESC = {"colors": "seasonal home tint — on or off", "theme": "recolor the whole game — live preview",
+_DESC = {"theme": "recolor the whole game — live preview",
          "sound": "the DVPet chirps — switch + volume",
          "account": "switch login — the pet parks in the cloud",
          "cloud": "cloud saves + offline mail — on or off",
@@ -366,11 +366,6 @@ class OptionsPanel(menu.SubHost):
             if row == "theme":
                 self._sub_row = row
                 self.sub = ThemePanel(on_change=self.on_theme_change)
-            elif row == "colors":
-                d = persistence.load_settings()
-                d["seasonal_colors"] = not d.get("seasonal_colors", True)
-                persistence.save_settings(d)
-                self.msg = "Seasonal colors: " + ("on" if d["seasonal_colors"] else "off")
             elif row == "sound":
                 self._sub_row = row
                 self.sub = SoundPanel(self.sound_get, self.sound_toggle)
@@ -424,8 +419,6 @@ class OptionsPanel(menu.SubHost):
         return None
 
     def _value(self, row):
-        if row == "colors":
-            return "on" if persistence.load_settings().get("seasonal_colors", True) else "off"
         if row == "theme":
             return theme.current()
         if row == "sound":
