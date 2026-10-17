@@ -66,13 +66,28 @@ keyboard.addEventListener('beforeinput', e => {
     e.preventDefault(); key(e.inputType === 'deleteContentBackward' ? 'backspace' : 'enter'); resetInput();
   }
 });
+// Android keyboards (Gboard etc.) never send plain key presses: every letter
+// arrives as an unfinished "composition" word that only commits on space.  Waiting
+// for compositionend meant a lone `l` never reached the game (Joel 2026-10-17:
+// "I press L and nothing happens").  Send each composed letter the moment it
+// appears, as the difference from what this word already sent.
+let composed = '';
+const composeTo = text => {
+  text = text || '';
+  if (text.startsWith(composed)) sendText(text.slice(composed.length));
+  else if (composed.startsWith(text)) for (let i = text.length; i < composed.length; i++) key('backspace');
+  else { for (let i = 0; i < composed.length; i++) key('backspace'); sendText(text); }
+  composed = text;
+};
+keyboard.addEventListener('compositionstart', () => { composed = ''; });
 keyboard.addEventListener('input', e => {
-  if (e.isComposing || e.inputType === 'insertFromComposition' || e.inputType === 'insertCompositionText') return;
+  if (e.isComposing || e.inputType === 'insertCompositionText') { composeTo(e.data); return; }
+  if (e.inputType === 'insertFromComposition') return;
   if (e.inputType === 'deleteContentBackward') key('backspace');
   else sendText(e.data ?? keyboard.value.replace(/^ /, ''));
   resetInput();
 });
-keyboard.addEventListener('compositionend', e => { sendText(e.data); resetInput(); });
+keyboard.addEventListener('compositionend', e => { composeTo(e.data); composed = ''; resetInput(); });
 const focusKeyboard = () => keyboard.focus({preventScroll:true});
 // Termux-style extra keys (touch screens only, see index.html): fire on pointerdown and keep the
 // soft keyboard's focus so a tap never closes it.
