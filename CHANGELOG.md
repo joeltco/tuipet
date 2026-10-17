@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.36 — A BETTER HELP. Press ? for a rewritten guide (2026-10-17)
+
+A BETTER HELP. Press ? for a rewritten guide: first steps and phone controls up top, fixed mistakes, and the essentials on hunts, towns, raids, the lobby and DNA. PGUP/PGDN leaps through it.
+
 ## 0.6.35 — HALLOWEEN, CLEANER. The muddy seasonal tint is gone -- your  (2026-10-17)
 
 HALLOWEEN, CLEANER. The muddy seasonal tint is gone -- your scenes keep their real colors. The ghost trail, festival finds and Oct 31 double bits are all still on.
