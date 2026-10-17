@@ -1,0 +1,377 @@
+{
+  "boss": {
+    "num": 29,
+    "name": "Existing boss",
+    "hp": 10000000,
+    "max_hp": 30000000,
+    "start": 1803500000,
+    "end": 1804104800
+  },
+  "board": {
+    "regular-2": {
+      "damage": 20000000,
+      "ts": 1803500010
+    }
+  },
+  "history": [
+    {
+      "id": "1800000000",
+      "boss_name": "Existing boss",
+      "num": 29,
+      "defeated": true,
+      "ended": 1800000000,
+      "max_hp": 30000000,
+      "board": {
+        "regular-0": {
+          "damage": 100000,
+          "ts": 1799900000
+        },
+        "regular-1": {
+          "damage": 105000,
+          "ts": 1799900001
+        },
+        "regular-2": {
+          "damage": 110000,
+          "ts": 1799900002
+        },
+        "regular-3": {
+          "damage": 115000,
+          "ts": 1799900003
+        },
+        "regular-4": {
+          "damage": 120000,
+          "ts": 1799900004
+        },
+        "regular-5": {
+          "damage": 125000,
+          "ts": 1799900005
+        },
+        "regular-6": {
+          "damage": 130000,
+          "ts": 1799900006
+        },
+        "regular-7": {
+          "damage": 135000,
+          "ts": 1799900007
+        },
+        "regular-8": {
+          "damage": 140000,
+          "ts": 1799900008
+        },
+        "regular-9": {
+          "damage": 145000,
+          "ts": 1799900009
+        },
+        "regular-10": {
+          "damage": 150000,
+          "ts": 1799900010
+        },
+        "regular-11": {
+          "damage": 155000,
+          "ts": 1799900011
+        }
+      }
+    },
+    {
+      "id": "1800700000",
+      "boss_name": "Existing boss",
+      "num": 29,
+      "defeated": true,
+      "ended": 1800700000,
+      "max_hp": 30000000,
+      "board": {
+        "regular-0": {
+          "damage": 100000,
+          "ts": 1799900000
+        },
+        "regular-1": {
+          "damage": 105000,
+          "ts": 1799900001
+        },
+        "regular-2": {
+          "damage": 110000,
+          "ts": 1799900002
+        },
+        "regular-3": {
+          "damage": 115000,
+          "ts": 1799900003
+        },
+        "regular-4": {
+          "damage": 120000,
+          "ts": 1799900004
+        },
+        "regular-5": {
+          "damage": 125000,
+          "ts": 1799900005
+        },
+        "regular-6": {
+          "damage": 130000,
+          "ts": 1799900006
+        },
+        "regular-7": {
+          "damage": 135000,
+          "ts": 1799900007
+        },
+        "regular-8": {
+          "damage": 140000,
+          "ts": 1799900008
+        },
+        "regular-9": {
+          "damage": 145000,
+          "ts": 1799900009
+        },
+        "regular-10": {
+          "damage": 150000,
+          "ts": 1799900010
+        },
+        "regular-11": {
+          "damage": 155000,
+          "ts": 1799900011
+        }
+      }
+    },
+    {
+      "id": "1801400000",
+      "boss_name": "Existing boss",
+      "num": 29,
+      "defeated": true,
+      "ended": 1801400000,
+      "max_hp": 30000000,
+      "board": {
+        "regular-0": {
+          "damage": 100000,
+          "ts": 1799900000
+        },
+        "regular-1": {
+          "damage": 105000,
+          "ts": 1799900001
+        },
+        "regular-2": {
+          "damage": 110000,
+          "ts": 1799900002
+        },
+        "regular-3": {
+          "damage": 115000,
+          "ts": 1799900003
+        },
+        "regular-4": {
+          "damage": 120000,
+          "ts": 1799900004
+        },
+        "regular-5": {
+          "damage": 125000,
+          "ts": 1799900005
+        },
+        "regular-6": {
+          "damage": 130000,
+          "ts": 1799900006
+        },
+        "regular-7": {
+          "damage": 135000,
+          "ts": 1799900007
+        },
+        "regular-8": {
+          "damage": 140000,
+          "ts": 1799900008
+        },
+        "regular-9": {
+          "damage": 145000,
+          "ts": 1799900009
+        },
+        "regular-10": {
+          "damage": 150000,
+          "ts": 1799900010
+        },
+        "regular-11": {
+          "damage": 155000,
+          "ts": 1799900011
+        }
+      }
+    },
+    {
+      "id": "1802100000",
+      "boss_name": "Existing boss",
+      "num": 29,
+      "defeated": true,
+      "ended": 1802100000,
+      "max_hp": 30000000,
+      "board": {
+        "regular-0": {
+          "damage": 100000,
+          "ts": 1799900000
+        },
+        "regular-1": {
+          "damage": 105000,
+          "ts": 1799900001
+        },
+        "regular-2": {
+          "damage": 110000,
+          "ts": 1799900002
+        },
+        "regular-3": {
+          "damage": 115000,
+          "ts": 1799900003
+        },
+        "regular-4": {
+          "damage": 120000,
+          "ts": 1799900004
+        },
+        "regular-5": {
+          "damage": 125000,
+          "ts": 1799900005
+        },
+        "regular-6": {
+          "damage": 130000,
+          "ts": 1799900006
+        },
+        "regular-7": {
+          "damage": 135000,
+          "ts": 1799900007
+        },
+        "regular-8": {
+          "damage": 140000,
+          "ts": 1799900008
+        },
+        "regular-9": {
+          "damage": 145000,
+          "ts": 1799900009
+        },
+        "regular-10": {
+          "damage": 150000,
+          "ts": 1799900010
+        },
+        "regular-11": {
+          "damage": 155000,
+          "ts": 1799900011
+        }
+      }
+    },
+    {
+      "id": "1802800000",
+      "boss_name": "Existing boss",
+      "num": 29,
+      "defeated": true,
+      "ended": 1802800000,
+      "max_hp": 30000000,
+      "board": {
+        "regular-0": {
+          "damage": 100000,
+          "ts": 1799900000
+        },
+        "regular-1": {
+          "damage": 105000,
+          "ts": 1799900001
+        },
+        "regular-2": {
+          "damage": 110000,
+          "ts": 1799900002
+        },
+        "regular-3": {
+          "damage": 115000,
+          "ts": 1799900003
+        },
+        "regular-4": {
+          "damage": 120000,
+          "ts": 1799900004
+        },
+        "regular-5": {
+          "damage": 125000,
+          "ts": 1799900005
+        },
+        "regular-6": {
+          "damage": 130000,
+          "ts": 1799900006
+        },
+        "regular-7": {
+          "damage": 135000,
+          "ts": 1799900007
+        },
+        "regular-8": {
+          "damage": 140000,
+          "ts": 1799900008
+        },
+        "regular-9": {
+          "damage": 145000,
+          "ts": 1799900009
+        },
+        "regular-10": {
+          "damage": 150000,
+          "ts": 1799900010
+        },
+        "regular-11": {
+          "damage": 155000,
+          "ts": 1799900011
+        }
+      }
+    }
+  ],
+  "attempts": {
+    "regular-0": {
+      "date": "2027-01-25",
+      "left": 0
+    },
+    "regular-1": {
+      "date": "2027-01-25",
+      "left": 1
+    },
+    "regular-2": {
+      "date": "2027-01-25",
+      "left": 2
+    },
+    "regular-3": {
+      "date": "2027-01-25",
+      "left": 3
+    },
+    "regular-4": {
+      "date": "2027-01-25",
+      "left": 0
+    },
+    "regular-5": {
+      "date": "2027-01-25",
+      "left": 1
+    },
+    "regular-6": {
+      "date": "2027-01-25",
+      "left": 2
+    },
+    "regular-7": {
+      "date": "2027-01-25",
+      "left": 3
+    },
+    "regular-8": {
+      "date": "2027-01-25",
+      "left": 0
+    },
+    "regular-9": {
+      "date": "2027-01-25",
+      "left": 1
+    },
+    "regular-10": {
+      "date": "2027-01-25",
+      "left": 2
+    },
+    "regular-11": {
+      "date": "2027-01-25",
+      "left": 3
+    }
+  },
+  "claimed": {
+    "1800000000": [
+      "regular-0",
+      "paid-player"
+    ]
+  },
+  "paid": {
+    "1800000000": {
+      "paid-player": {
+        "bits": 5000,
+        "items": [
+          "vitamin"
+        ],
+        "defeated": true,
+        "rank": 1,
+        "boss": "Existing boss"
+      }
+    }
+  }
+}

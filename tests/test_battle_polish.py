@@ -41,7 +41,7 @@ def test_zero_damage_volley_reports_and_spends_attempt(monkeypatch, tmp_path):
     calls = []
     client = SimpleNamespace(raid=srv._raid_view("joel", now=1001))
 
-    def hit(raw):
+    def hit(raw, *identity):
         calls.append(raw)
         srv._raid_hit("joel", raw, p.num, now=1001)
 
@@ -57,7 +57,7 @@ def test_zero_damage_volley_reports_and_spends_attempt(monkeypatch, tmp_path):
 def test_thrown_raid_reports_while_view_is_in_flight():
     calls = []
     panel = RaidPanel(pet(), None, client=SimpleNamespace(
-        raid=None, raid_hit=lambda raw: calls.append(raw)))
+        raid=None, raid_hit=lambda raw, *identity: calls.append(raw)))
     panel._report(SimpleNamespace(dealt=3, won=True))
     assert calls == [3]
 

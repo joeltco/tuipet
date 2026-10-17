@@ -209,29 +209,23 @@ class RaidPanel(menu.SubHost):
 
     def _apply_reward(self, reward):
         if not reward.get("ok"):
-            self.msg = "Nothing to claim."
+            self.msg = reward.get("why") or "Nothing to claim."
             self.sfx = "error"
             return
         rid = reward.get("id")
-        if rid is not None and persistence.raid_paid(rid):
-            # a RE-SENT payout this profile already applied (its ack was
-            # lost): never pay twice, just let the server drop its copy
+        try:
+            applied = persistence.raid_checkpoint(self.pet, reward)
+        except (OSError, ValueError, TypeError):
+            self.msg = "Reward not saved — reconnect and press C to retry."
+            self.sfx = "error"
+            return
+        if not applied:
             self.client.raid_ack(rid)
             self.msg = "Already collected."
             return
-        if rid is not None:
-            persistence.note_raid_paid(rid)  # ledger FIRST: a crash can't double-pay
-        bits = int(reward.get("bits", 0))
-        self.pet.bits += bits
-        got = list(reward.get("items") or [])
-        for key in got:
-            self.pet.add_item(key)
+        bits = reward["bits"]
+        got = reward["items"]
         if reward.get("defeated"):
-            # the felled boss is a Mega down for everyone on the board: the
-            # claim pays the KO6 counter and the raids egg-unlock channel
-            self.pet.mega_kills += 1
-            persistence.mega_kills_add(1)
-            persistence.raid_add()
             # the prize names come from shop.entry -- THE resolver for a
             # catalog key (item sweep 2026-07-24).  This read vitems.json,
             # which since the TUIPET catalog (2026-07-18) holds only the
@@ -301,15 +295,14 @@ class RaidPanel(menu.SubHost):
         dealt = int(getattr(b, "dealt", 0) or 0)
         # battle audit 2026-10-14: every thrown volley spends an attempt;
         # a whiff or a poll's missing cached view must not refund it.
-        self.client.raid_hit(dealt)
+        try:
+            self.client.raid_hit(dealt, getattr(self, "_throw_raid", None),
+                                 getattr(self, "_throw_request", None))
+        except OSError:
+            self.msg = "Could not save the report — check storage before retrying."
+            return
         self._dealt += dealt
-        if dealt > 0:
-            # NEUTRAL until the ack lands: "reported!" used to stand even
-            # when the gate rejected it or the socket was down (raid review
-            # 2026-07-18); the ack path speaks the credit or the refusal
-            self.msg = f"Landed {dealt} — reporting to the gate…"
-        else:
-            self.msg = "Not a scratch — reporting the attempt…"
+        self.msg = "Volley reporting — server rolls from your synced pet…"
 
     def key(self, k):
         if self.sub is not None:
@@ -324,6 +317,13 @@ class RaidPanel(menu.SubHost):
             self._finish_show()
             return None
         if k in ("space", "enter"):
+            st = getattr(self.client, "state", None)
+            if st is not None and (not getattr(st, "connected", False) or not st.me_id):
+                self.msg = "Reconnecting — wait for the gate before throwing."
+                return None
+            if self.pet.dead or self.pet.stage in ("Egg", "Fresh"):
+                self.msg = "This pet cannot raid yet."
+                return None
             v = self.view
             if not v:
                 self.msg = "The gate hasn't answered yet…"
@@ -365,6 +365,9 @@ class RaidPanel(menu.SubHost):
                 return None
             # the clone raid bout: RaidBout precomputes generate_raid and
             # the battlescreen replays it (records nothing on the pet)
+            import uuid
+            self._throw_raid = self._boss().get("id")
+            self._throw_request = uuid.uuid4().hex
             self.sub = BattlePanel(self.pet, self._boss_enemy(), raid=True)
             return None
         if k in ("c", "C"):        # both cases, like the lobby's letter keys
@@ -394,11 +397,20 @@ class RaidPanel(menu.SubHost):
         with the waiting purse / weekly cadence on the shop-tease beat (40
         ticks), so neither starves the other (menu.note marquees any of
         them when over-wide)."""
+        st = getattr(self.client, "state", None)
+        if st is not None and getattr(st, "login_failed", None):
+            return f"Gate refused: {st.login_failed}"
+        if st is not None and not getattr(st, "connected", False):
+            return "Reconnecting — reports and rewards wait for the gate."
         award = v.get("award")
         if award:
-            alt = f"purse waiting: {award.get('boss', '?')[:12]} — press C"
+            bits = award.get("preview_bits", award.get("bits", "?"))
+            items = award.get("items", 0)
+            count = len(items) if isinstance(items, list) else items
+            alt = f"C claim: {bits}b + {count} items"
         elif not self._standing():
-            alt = ""
+            left = max(0, int(b.get("start", 0) - v.get("now", 0)))
+            alt = f"INCOMING BOSS — {left // 3600}h {left % 3600 // 60}m"
         else:
             import time as _time
             from . import tournament as _cad
@@ -421,6 +433,8 @@ class RaidPanel(menu.SubHost):
                       else " · weekend finishes pay 1.5x" if srv_wknd else ""))
         if self.msg and (not alt or (self.frame_i // 40) % 2 == 0):
             return self.msg
+        if not award and self._standing() and (self.frame_i // 80) % 2:
+            return "Win: top 5000/3000/2000b; others 500b + item; escape 100–2000b"
         return alt or self.msg
 
     def text(self):
@@ -482,7 +496,7 @@ class RaidPanel(menu.SubHost):
             note = f"{fell[1]} falls — the pool is broken!"
         elif not self._standing():
             left = max(0, int(b.get("start", 0) - v.get("now", 0)))
-            note = f"INCOMING BOSS — {left // 3600}h {left % 3600 // 60}m"
+            note = self._context_line(v, b) or f"INCOMING BOSS — {left // 3600}h {left % 3600 // 60}m"
         else:
             # priority msg > waiting purse > the weekly cadence; every
             # number (pool, standing, tries, top) lives on the CARD

@@ -344,7 +344,7 @@ def test_cup_npc_and_repeat_podium_keep_original_durations():
 def _raid():
     state = SimpleNamespace(me_id=1, login_failed=None, error=None)
     client = SimpleNamespace(state=state, raid={}, last_hit=None, raid_reward=None,
-                             raid_get=lambda: None)
+                             raid_get=lambda: None, raid_ack=lambda rid: None)
     return RaidPanel(_pet(), lambda *args: client, client=client)
 
 
@@ -359,7 +359,7 @@ def test_raid_fall_and_reward_keep_original_durations():
     assert panel._fell is not None
     panel.anim()
     assert panel._fell is None
-    panel._apply_reward({"ok": True, "defeated": False, "bits": 100})
+    panel._apply_reward({"ok": True, "id": "anim-raid", "items": [], "defeated": False, "bits": 100})
     for _ in range(119):
         panel.anim()
     assert panel._won is not None
@@ -370,7 +370,7 @@ def test_raid_fall_and_reward_keep_original_durations():
 @pytest.mark.parametrize("key", ["escape", "space", "enter", "c", "z"])
 def test_raid_reward_skip_never_claims_or_starts_or_leaves(key):
     panel = _raid()
-    panel._apply_reward({"ok": True, "defeated": False, "bits": 100})
+    panel._apply_reward({"ok": True, "id": "anim-raid", "items": [], "defeated": False, "bits": 100})
     panel.client.raid_claim = lambda *args: pytest.fail("skip claimed reward")
     before = (panel.pet.bits, panel.pet.battles, panel.pet.energy)
     assert panel.key(key) is None

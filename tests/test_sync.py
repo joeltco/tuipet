@@ -58,7 +58,10 @@ def server(tmp_path):
            "TUIPET_HOST": "127.0.0.1",
            "TUIPET_ACCOUNTS": str(tmp_path / "accounts.json"),
            "TUIPET_SAVES": str(tmp_path / "saves.json"),
-           "TUIPET_HOLDERS": str(tmp_path / "holders.json")}
+           "TUIPET_HOLDERS": str(tmp_path / "holders.json"),
+           "TUIPET_RAID": str(tmp_path / "raid.json"),
+           "TUIPET_WIPED": str(tmp_path / "wiped.json"),
+           "TUIPET_FEED": str(tmp_path / "feed.jsonl")}
     proc = subprocess.Popen([sys.executable, os.path.join(root, "server", "server.py")],
                             env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     uri = f"ws://127.0.0.1:{port}/"

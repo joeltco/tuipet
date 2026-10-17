@@ -344,10 +344,15 @@ class LobbyClient(_WsClient):
     def raid_get(self):
         self._send({"t": "raid_get"})
 
-    def raid_hit(self, damage):
-        # (the old `stage` field was DEAD wire weight: the gate binds the
-        # multiplier to the roster card's num -- raid round 2026-07-19)
-        self._send({"t": "raid_hit", "damage": int(damage)})
+    def raid_hit(self, damage, raid_id=None, request_id=None):
+        import uuid
+        from . import persistence
+        message = {"t": "raid_hit", "damage": int(damage),
+                   "raid": raid_id or ((self.raid or {}).get("boss") or {}).get("id"),
+                   "request": request_id or uuid.uuid4().hex}
+        if (self.raid or {}).get("protocol") == 2 or raid_id is not None:
+            persistence.raid_outbox(self.name, message=message)
+        self._send(message)
 
     def raid_claim(self, raid_id):
         # acks: this build ledgers applied raids and sends raid_ack, so the
@@ -355,8 +360,16 @@ class LobbyClient(_WsClient):
         self._send({"t": "raid_claim", "raid": raid_id, "acks": True})
 
     def raid_ack(self, raid_id):
-        """The reward is APPLIED: the server may drop its held copy."""
-        self._send({"t": "raid_ack", "raid": raid_id})
+        from . import persistence
+        import json
+        try:
+            with open(persistence.SAVE_PATH, encoding="utf-8") as f:
+                checkpoint = json.load(f)
+        except (OSError, ValueError):
+            return
+        # New relays durably sync the reward-bearing save before releasing it.
+        self._send({"t": "raid_ack", "raid": raid_id, "protocol": 2,
+                    "save": checkpoint})
 
     def update_pet(self, pet):
         self.pet = pet
@@ -406,8 +419,10 @@ class LobbyClient(_WsClient):
         #                                       server lets the newest launch evict
         #                                       its own stale room session (message
         #                                       audit 2026-07-06)
+        from . import persistence
         return {"t": "login", "name": self.name, "pw": self.pw, "pet": self.pet,
-                "boot": BOOT}
+                "boot": BOOT, "device": persistence.device_id(),
+                "dlabel": persistence.device_label()}
 
     def _on_connect(self):
         self.state.connected = True
@@ -484,7 +499,14 @@ class LobbyClient(_WsClient):
             del s.dms[to][:-CHAT_CAP]
         elif t == "raid":
             self.raid = m                 # the raid page renders from this
+            if m.get("protocol") == 2:
+                from . import persistence
+                for message in persistence.raid_outbox(self.name):
+                    self._send(message)
         elif t == "raid_hit":
+            if m.get("request") and not m.get("retryable"):
+                from . import persistence
+                persistence.raid_outbox(self.name, receipt=m["request"])
             self.raid = None              # stale view: the pool moved; refetch
             self.last_hit = m
         elif t == "raid_reward":

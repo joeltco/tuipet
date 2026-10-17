@@ -74,6 +74,12 @@ def _atomic_write_json(path, data, keep_bak=False, strict=False):
             else:
                 os.replace(path, path + ".bak")   # keep one generation back
         os.replace(tmp, path)
+        if strict and os.name == "posix":
+            fd = os.open(os.path.dirname(path) or ".", os.O_RDONLY)
+            try:
+                os.fsync(fd)
+            finally:
+                os.close(fd)
         from .web.storage import checkpoint
         checkpoint()
         # a transient refusal used to stick forever -- the exit banner

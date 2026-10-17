@@ -295,6 +295,9 @@ class Pet(CareMixin, DnaMixin, BattleMixin, BodyMixin):
     anim: str = "idle"
     anim_ttl: float = 0.0
 
+    raid_receipts: list = _dcf(default_factory=list)
+    raid_progress: dict = _dcf(default_factory=dict)
+
     def __post_init__(self):
         if self.num is not None and self.num >= 0:
             _, by_num = data.load_sprites()

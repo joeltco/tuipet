@@ -1069,6 +1069,10 @@ def to_save_dict(pet):
     # pet_from_save drops every key that isn't a Pet field, so an older client
     # pulling this save simply ignores it -- no server change, no format break.
     prog = progress_for_sync()
+    if pet.raid_receipts:
+        prog["raids_paid"] = sorted(set(prog.get("raids_paid", [])) | set(pet.raid_receipts))
+    for key, value in pet.raid_progress.items():
+        prog[key] = max(prog.get(key, 0), value)
     # Trophy history repairs old split writes and retains credit if projecting
     # the committed cup journal into settings is temporarily unavailable.
     won = getattr(pet, "trophies_won", None) or {}
@@ -1078,6 +1082,51 @@ def to_save_dict(pet):
     if prog:
         data["progress"] = prog
     return data
+
+
+def raid_outbox(account, message=None, receipt=None):
+    """Keep ambiguous sends across reconnects and process restarts."""
+    d = load_settings()
+    out = d.setdefault("raid_outbox", {}).setdefault(str(account).lower(), {})
+    if message is not None:
+        out[message["request"]] = message
+    if receipt is not None:
+        out.pop(receipt, None)
+    if message is not None or receipt is not None:
+        _file_progress(d)
+        _atomic_write_json(SETTINGS_PATH, d, keep_bak=True, strict=True)
+    return list(out.values())
+
+
+def raid_checkpoint(pet, reward):
+    """Commit effects and receipt together; settings are a recoverable projection."""
+    import copy
+    rid = reward.get("id")
+    if (not isinstance(rid, str) or not rid or type(reward.get("bits")) is not int
+            or not 0 <= reward["bits"] <= 7500
+            or not isinstance(reward.get("items"), list) or len(reward["items"]) > 3
+            or type(reward.get("defeated")) is not bool
+            or any(not isinstance(k, str) or k not in {"energy_drink", "vitamin", "textbook", "dna_crystal",
+                            "steak", "cake", "dumbbell", "x_antibody", "ball"}
+                   for k in reward["items"])):
+        raise ValueError("Invalid raid reward; please reconnect.")
+    if rid in pet.raid_receipts or raid_paid(rid):
+        return False
+    updated = copy.deepcopy(pet)
+    updated.bits += reward["bits"]
+    for key in reward["items"]:
+        updated.add_item(key)
+    updated.raid_receipts.append(rid)
+    if reward.get("defeated"):
+        updated.mega_kills += 1
+        prog = to_save_dict(pet).get("progress", {})
+        for key in ("mega_kills", "raids"):
+            updated.raid_progress[key] = int(prog.get(key, 0)) + 1
+    payload = to_save_dict(updated)
+    _atomic_write_json(SAVE_PATH, payload, keep_bak=True, strict=True)
+    pet.__dict__.update(updated.__dict__)
+    merge_progress(payload["progress"])
+    return True
 
 
 def cup_checkpoint(pet, trophy_id=None):

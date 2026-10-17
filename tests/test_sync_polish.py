@@ -36,8 +36,8 @@ def relay(tmp_path, monkeypatch):
     async def inline(fn, *args):
         return fn(*args)
     monkeypatch.setattr(server.asyncio, "to_thread", inline)
-    for attr in ("ACCOUNTS", "SAVES", "HOLDERS", "LEASES", "BOOT_SEEN", "CLIENTS", "WIPED"):
-        monkeypatch.setattr(server, attr, {})
+    for attr in ("ACCOUNTS", "SAVES", "HOLDERS", "LEASES", "BOOT_SEEN", "CLIENTS", "WIPED", "_RATE_BUCKETS"):
+        monkeypatch.setattr(server, attr, {})   # rate buckets too: limits must not leak between tests
     for attr in ("ACCOUNTS_PATH", "SAVES_PATH", "HOLDERS_PATH", "WIPED_PATH"):
         monkeypatch.setattr(server, attr, str(tmp_path / (attr + ".json")))
     monkeypatch.setattr(server, "_make_account", lambda name, pw: {"name": name})

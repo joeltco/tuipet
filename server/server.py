@@ -15,11 +15,15 @@ Run:  python3 server.py     (HOST/PORT/TUIPET_ACCOUNTS via env; defaults 0.0.0.0
 from __future__ import annotations
 
 import asyncio
+import copy
+import functools
+import uuid
 import hashlib
 import hmac
 import itertools
 import json
 import logging
+import math
 import os
 import time
 from collections import deque
@@ -87,22 +91,52 @@ PBKDF2_ITERS = 100_000
 _ids = itertools.count(1)
 
 
+def _durable_json(path, value):
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    for target in (path + ".bak", path):
+        with open(target + ".tmp", "w", encoding="utf-8") as f:
+            json.dump(value, f)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(target + ".tmp", target)
+        fd = os.open(os.path.dirname(path) or ".", os.O_RDONLY)
+        try:
+            os.fsync(fd)
+        finally:
+            os.close(fd)
+
+
+def _load_mapping(path):
+    # Backup is written first, so prefer it after an interrupted mirror write.
+    found = False
+    for target in (path + ".bak", path):
+        try:
+            with open(target, encoding="utf-8") as f:
+                found = True
+                value = json.load(f)
+            if not isinstance(value, dict):
+                raise ValueError("expected object")
+            return value
+        except FileNotFoundError:
+            pass
+        except (OSError, ValueError):
+            found = True
+            LOG.exception("invalid snapshot %s", target)
+    if found:
+        raise RuntimeError("Restore unreadable ledger: " + path)
+    return {}
+
+
 # ---- accounts (name -> {name, salt, hash}, keyed by lowercased name) --------
 def _load_accounts():
-    try:
-        return json.load(open(ACCOUNTS_PATH, encoding="utf-8"))
-    except (OSError, ValueError):
-        return {}
+    return _load_mapping(ACCOUNTS_PATH)
 
 
 ACCOUNTS = _load_accounts()
 
 
 def _save_accounts():
-    tmp = ACCOUNTS_PATH + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as f:
-        json.dump(ACCOUNTS, f)
-    os.replace(tmp, ACCOUNTS_PATH)
+    _durable_json(ACCOUNTS_PATH, ACCOUNTS)
 
 
 def _hash(pw, salt):
@@ -193,10 +227,7 @@ def _holder_view(key):
 
 # ---- cloud saves (name.lower() -> full pet save dict incl. _saved_at) --------
 def _load_saves():
-    try:
-        return json.load(open(SAVES_PATH, encoding="utf-8"))
-    except (OSError, ValueError):
-        return {}
+    return _load_mapping(SAVES_PATH)
 
 
 SAVES = _load_saves()
@@ -234,10 +265,7 @@ def _prune_saves(now=None):
             changed = True
     if changed:
         try:
-            tmp = SAVES_PATH + ".tmp"
-            with open(tmp, "w", encoding="utf-8") as f:
-                json.dump(SAVES, f)
-            os.replace(tmp, SAVES_PATH)
+            _durable_json(SAVES_PATH, SAVES)
         except OSError:
             LOG.warning("saves prune: disk refused %s", SAVES_PATH)
 
@@ -353,12 +381,15 @@ async def _store_save(key, save):
     except (TypeError, ValueError):
         save["_saved_at"] = now
     save["_srv_at"] = now                         # our own receipt stamp rides along
-    SAVES[key] = save
     async with _saves_lock:
-        tmp = SAVES_PATH + ".tmp"
-        with open(tmp, "w", encoding="utf-8") as f:
-            json.dump(SAVES, f)
-        os.replace(tmp, SAVES_PATH)               # atomic
+        updated = dict(SAVES, **{key: save})
+        try:
+            _durable_json(SAVES_PATH, updated)
+        except OSError:
+            SAVES.clear()
+            SAVES.update(_load_saves())
+            raise
+        SAVES[key] = save
     return True
 
 
@@ -375,10 +406,7 @@ async def _wipe_account(key):
     had = SAVES.pop(key, None) is not None
     if had:
         async with _saves_lock:
-            tmp = SAVES_PATH + ".tmp"
-            with open(tmp, "w", encoding="utf-8") as f:
-                json.dump(SAVES, f)
-            os.replace(tmp, SAVES_PATH)
+            _durable_json(SAVES_PATH, SAVES)
     if HOLDERS.pop(key, None) is not None:
         _save_holders()
     return had
@@ -849,7 +877,7 @@ RAID_POOL_PATH = os.path.join(
 # actually shows up: a FELLED boss grows the next one; an ESCAPED boss
 # shrinks the next to ~what the community proved it can deal in a window.
 RAID_HP_FLOOR = 5_000_000            # one solid week for a single mid roster
-RAID_HP_CAP = 440_000_000            # the old flat pool is the ceiling
+RAID_HP_CAP = 30_000_000             # mixed-stage ten-regular capacity; see FIXES.md
 RAID_GROW = 1.5                      # felled -> the bar rises
 RAID_FIT = 0.9                       # escaped -> sized to proven output
 RAID_COOLDOWN_S = 1440 * 60          # 24h "Incoming Boss..."
@@ -859,11 +887,7 @@ RAID_MAX_RAW = 20                    # 10 rounds x 2 damage: the honest ceiling
 #                                      (back to the clone's own number -- the
 #                                      0.5 HP race landed client-side 2026-07-17)
 RAID_DMG_MULT = 5000
-# num -> raid multiplier, precomputed from the atlas (tools regen it).  The
-# damage mult binds to the pet's NUM, not the free-text stage string a client
-# can forge: claiming x20 now means claiming a real super-ultimate species,
-# which shows on the forger's own roster sprite -- the same tradeoff the client
-# _clamp_card fix accepted (round-3 audit 2026-07-16).
+# Species multipliers are resolved from the held cloud save at the wire boundary.
 RAID_MULT_BY_NUM_PATH = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "raid_stage_mult.json")
 # battle audit 2026-10-14: raid text I/O names the save/catalog encoding.
@@ -883,41 +907,149 @@ RAID_ITEM_POOL = ["energy_drink", "vitamin", "textbook", "dna_crystal",
 RAID_HISTORY_KEEP = 5
 
 
+def _validate_raid(d):
+    if not isinstance(d, dict):
+        raise ValueError("raid ledger must be an object")
+    for key, default in (("boss", None), ("board", {}), ("history", []),
+                         ("claimed", {}), ("attempts", {}), ("paid", {}),
+                         ("rewards", {}), ("receipts", {})):
+        d.setdefault(key, copy.deepcopy(default))
+        if key != "boss" and not isinstance(d[key], type(default)):
+            raise ValueError("invalid raid " + key)
+    def board(rows):
+        if not isinstance(rows, dict):
+            raise ValueError("invalid board")
+        for row in rows.values():
+            if not isinstance(row, dict) or not isinstance(row.get("damage"), int) or row["damage"] < 0:
+                raise ValueError("invalid contribution")
+    board(d["board"])
+    boss = d["boss"]
+    if boss is not None:
+        if not isinstance(boss, dict) or not isinstance(boss.get("name"), str):
+            raise ValueError("invalid boss")
+        for k in ("num", "hp", "max_hp", "start", "end"):
+            if not isinstance(boss.get(k), (int, float)) or not math.isfinite(boss[k]):
+                raise ValueError("invalid boss " + k)
+        boss.setdefault("id", str(int(boss["end"])))
+        if boss["max_hp"] > RAID_HP_CAP:
+            boss["hp"] = max(1, round(boss["hp"] * RAID_HP_CAP / boss["max_hp"])) if boss["hp"] > 0 else 0
+            boss["max_hp"] = RAID_HP_CAP
+    for row in d["history"] + list(d["rewards"].values()):
+        if not isinstance(row, dict) or not isinstance(row.get("id"), str) or not isinstance(row.get("boss_name"), str):
+            raise ValueError("invalid archived raid")
+        board(row.get("board"))
+        if (type(row.get("defeated")) is not bool
+                or not isinstance(row.get("ended"), (int, float)) or not math.isfinite(row["ended"])
+                or not isinstance(row.get("max_hp", 0), (int, float))):
+            raise ValueError("invalid archive metadata")
+    for row in d["history"]:
+        d["rewards"].setdefault(row["id"], copy.deepcopy(row))
+    for rec in d["attempts"].values():
+        if not isinstance(rec, dict) or not isinstance(rec.get("date"), str) or not isinstance(rec.get("left"), int) or not 0 <= rec["left"] <= RAID_ATTEMPTS_PER_DAY:
+            raise ValueError("invalid attempts")
+    for who in d["paid"].values():
+        if not isinstance(who, dict) or any(not isinstance(r, dict) or not isinstance(r.get("bits"), int)
+                                             or not isinstance(r.get("items"), list) for r in who.values()):
+            raise ValueError("invalid paid rewards")
+    if any(not isinstance(v, list) for v in d["claimed"].values()):
+        raise ValueError("invalid claims")
+    for who in d["receipts"].values():
+        if not isinstance(who, dict) or any(not isinstance(r, dict) or r.get("t") != "raid_hit"
+                                           for r in who.values()):
+            raise ValueError("invalid receipts")
+    if not isinstance(d.get("revision", 0), int):
+        raise ValueError("invalid revision")
+    return d
+
+
 def _load_raid():
-    try:
-        with open(RAID_PATH, encoding="utf-8") as f:
-            d = json.load(f)
-        d.setdefault("boss", None)
-        d.setdefault("board", {})
-        d.setdefault("history", [])
-        d.setdefault("claimed", {})
-        d.setdefault("attempts", {})
-        d.setdefault("paid", {})
-        return d
-    except Exception:
-        return {"boss": None, "board": {}, "history": [], "claimed": {},
-                "attempts": {}, "paid": {}}
+    candidates = []
+    exists = False
+    for path in (RAID_PATH, RAID_PATH + ".bak"):
+        try:
+            with open(path, encoding="utf-8") as f:
+                exists = True
+                candidates.append(_validate_raid(json.load(f)))
+        except FileNotFoundError:
+            pass
+        except (OSError, ValueError, TypeError, KeyError):
+            exists = True
+            LOG.exception("raid: invalid snapshot %s", path)
+    if candidates:
+        return max(candidates, key=lambda d: d.get("revision", 0))
+    if exists:
+        raise RuntimeError("Raid ledger and backup unreadable; restore a snapshot")
+    return _validate_raid({})
 
 
 RAID = _load_raid()
+_RAID_DEPTH = 0
 
 
 def _save_raid():
-    try:
-        tmp = RAID_PATH + ".tmp"
-        with open(tmp, "w", encoding="utf-8") as f:
-            json.dump(RAID, f)
-        os.replace(tmp, RAID_PATH)
-    except OSError:
-        LOG.warning("raid: disk refused %s", RAID_PATH)
+    if _RAID_DEPTH:
+        return
+    os.makedirs(os.path.dirname(RAID_PATH) or ".", exist_ok=True)
+    RAID["revision"] = RAID.get("revision", 0) + 1
+    # Both copies contain the committed revision before a success is sent.
+    for path in (RAID_PATH + ".bak", RAID_PATH):
+        with open(path + ".tmp", "w", encoding="utf-8") as f:
+            json.dump(RAID, f, allow_nan=False)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(path + ".tmp", path)
+        fd = os.open(os.path.dirname(path) or ".", os.O_RDONLY)
+        try:
+            os.fsync(fd)
+        finally:
+            os.close(fd)
+
+
+def _raid_transaction(fn):
+    @functools.wraps(fn)
+    def run(*args, **kwargs):
+        global RAID, _RAID_DEPTH
+        if _RAID_DEPTH:
+            return fn(*args, **kwargs)
+        RAID.setdefault("rewards", {})
+        RAID.setdefault("receipts", {})
+        for row in RAID["history"]:
+            RAID["rewards"].setdefault(row["id"], copy.deepcopy(row))
+        before = copy.deepcopy(RAID)
+        _RAID_DEPTH += 1
+        try:
+            result = fn(*args, **kwargs)
+        except Exception:
+            RAID = before
+            raise
+        finally:
+            _RAID_DEPTH -= 1
+        if RAID != before:
+            try:
+                _save_raid()
+            except OSError:
+                # A replace may have landed before failure: recover its receipt.
+                RAID = _load_raid() if os.path.exists(RAID_PATH + ".bak") else before
+                LOG.exception("raid: durable write failed")
+                return {"t": "raid_reward" if fn.__name__ == "_raid_claim" else "raid_hit",
+                        "ok": False, "why": "Storage unavailable; retry the same request.",
+                        "retryable": True, "request": args[1].get("request")
+                        if fn.__name__ == "_raid_verified_hit" else None}
+        return result
+    return run
 
 
 def _raid_pool():
     try:
         with open(RAID_POOL_PATH, encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
-        return [{"num": 0, "name": "Unknown Boss", "energy_max": 65}]
+            rows = json.load(f)
+        valid = [row for row in rows if isinstance(row, dict) and type(row.get("num")) is int
+                 and isinstance(row.get("name"), str)] if isinstance(rows, list) else []
+        if valid:
+            return valid
+        raise ValueError("empty raid pool")
+    except (OSError, ValueError, TypeError):
+        raise RuntimeError("Raid catalog unavailable; restore raid_pool.json")
 
 
 def _raid_mult_for_num(num):
@@ -958,11 +1090,12 @@ def _raid_stage_next(now):
     start = now + RAID_COOLDOWN_S
     if RAID["boss"] is None and not RAID["history"]:
         start = now                       # a fresh install opens immediately
-    return {"num": int(pick["num"]), "name": str(pick["name"]),
+    return {"id": uuid.uuid4().hex, "num": int(pick["num"]), "name": str(pick["name"]),
             "hp": hp, "max_hp": hp,
             "start": start, "end": start + RAID_WINDOW_S}
 
 
+@_raid_transaction
 def _raid_rotate(now=None):
     """Archive a finished raid and stage the next boss (idempotent)."""
     now = time.time() if now is None else now
@@ -971,11 +1104,13 @@ def _raid_rotate(now=None):
         return                            # still standing
     if b is not None:
         RAID["history"].append({
-            "id": str(int(b["end"])), "boss_name": b["name"], "num": b["num"],
-            "defeated": b["hp"] <= 0, "ended": now,
+            "id": b.get("id", str(int(b["end"]))), "boss_name": b["name"], "num": b["num"],
+            "defeated": b["hp"] <= 0, "ended": now if b["hp"] <= 0 else b["end"],
             "max_hp": b.get("max_hp", 0),      # the adaptive sizer reads this
             "board": dict(RAID["board"]),
         })
+        archived = RAID["history"][-1]
+        RAID["rewards"][archived["id"]] = copy.deepcopy(archived)
         RAID["history"] = RAID["history"][-RAID_HISTORY_KEEP:]
         RAID["board"] = {}
     RAID["boss"] = _raid_stage_next(now)
@@ -989,15 +1124,12 @@ def _raid_attempts(name, now=None):
     # (audit 2026-07-15)
     day = time.strftime("%Y-%m-%d", time.gmtime(now))
     rec = RAID["attempts"].get(name)
-    if not rec or rec.get("date") != day:
+    if not rec:
         rec = {"date": day, "left": RAID_ATTEMPTS_PER_DAY}
         RAID["attempts"][name] = rec
-        if len(RAID["attempts"]) > 4096:
-            # drop only STALE (previous-day) rows -- `= {name: rec}` wiped every
-            # OTHER player's TODAY count, refunding their used attempts on the
-            # next hit (round-3 audit 2026-07-16)
-            RAID["attempts"] = {n: r for n, r in RAID["attempts"].items()
-                                if r.get("date") == day}
+    # A backwards UTC step cannot refund attempts or move the high-water day.
+    if day > rec["date"]:
+        rec["date"], rec["left"] = day, RAID_ATTEMPTS_PER_DAY
     return rec
 
 
@@ -1012,7 +1144,7 @@ def _raid_award(name):
     """The newest archived raid this player contributed to and hasn't
     claimed -> {id, rank, defeated, bits, items} (weekend x1.5 applies at
     CLAIM time, not here)."""
-    for rec in sorted(RAID["history"], key=lambda r: r["id"], reverse=True):
+    for rec in sorted(RAID["rewards"].values(), key=lambda r: r.get("ended", 0), reverse=True):
         if name in RAID["claimed"].get(rec["id"], []):
             continue
         # battle audit 2026-10-14: an old zero-damage row is not a contribution.
@@ -1032,7 +1164,8 @@ def _raid_award(name):
             bits = max(RAID_CONSOLATION,
                        min(RAID_RANK_BITS[3], int(RAID_RANK_BITS[3] * share * 5)))
             items = 0
-        return {"id": rec["id"], "rank": rank, "defeated": rec["defeated"],
+        preview = int(bits * 1.5) if time.gmtime(rec.get("ended", time.time())).tm_wday >= 5 else bits
+        return {"preview_bits": preview, "id": rec["id"], "rank": rank, "defeated": rec["defeated"],
                 "boss": rec["boss_name"], "bits": bits, "items": items,
                 "ended": rec.get("ended")}
     return None
@@ -1049,6 +1182,7 @@ def _raid_pending(name):
     return None
 
 
+@_raid_transaction
 def _raid_view(name, now=None):
     now = time.time() if now is None else now
     _raid_rotate(now)
@@ -1063,14 +1197,13 @@ def _raid_view(name, now=None):
             "top": [(who, v["damage"]) for who, v in top[:10]],
             "you": list(you),
             "attempts": _raid_attempts(name, now)["left"],
-            "award": _raid_award(name) or _raid_pending(name)}
+            "award": _raid_pending(name) or _raid_award(name),
+            "protocol": 2}
 
 
+@_raid_transaction
 def _raid_hit(name, raw, num, now=None):
-    """One attempt's damage report.  The server owns the attempt count and
-    the ceiling: raw battle damage is bounded by what 10 rounds can deal, and
-    the stage multiplier binds to the claimed species NUM (not a forgeable
-    stage string)."""
+    """Apply a trusted computed volley. Wire traffic must use _raid_verified_hit."""
     now = time.time() if now is None else now
     _raid_rotate(now)
     b = RAID["boss"]
@@ -1086,7 +1219,7 @@ def _raid_hit(name, raw, num, now=None):
         # battle audit 2026-10-14: Infinity is malformed damage too.
         raw = 0
     raw = max(0, min(raw, RAID_MAX_RAW))
-    dealt = raw * RAID_DMG_MULT * _raid_mult_for_num(num)
+    dealt = min(b["hp"], raw * RAID_DMG_MULT * _raid_mult_for_num(num))
     b["hp"] = max(0, b["hp"] - dealt)
     # battle audit 2026-10-14: whiffs spend attempts but earn no claim rank.
     if dealt > 0:
@@ -1101,6 +1234,7 @@ def _raid_hit(name, raw, num, now=None):
     return {"t": "raid_hit", "ok": True, "dealt": dealt}
 
 
+@_raid_transaction
 def _raid_claim(name, raid_id, now=None, acks=False):
     """`acks`: the client ledgers applied raid ids and sends raid_ack (0.6.20+).
     Only such a client gets its payout HELD for re-send -- an older build
@@ -1130,14 +1264,11 @@ def _raid_claim(name, raid_id, now=None, acks=False):
               "rank": a["rank"], "boss": a["boss"]}
     if acks:
         RAID["paid"].setdefault(a["id"], {})[name] = reward   # held until raid_ack
-    if len(RAID["claimed"]) > RAID_HISTORY_KEEP * 4:
-        keep = {r["id"] for r in RAID["history"]}
-        RAID["claimed"] = {k: v for k, v in RAID["claimed"].items() if k in keep}
-        RAID["paid"] = {k: v for k, v in RAID["paid"].items() if k in keep}
     _save_raid()
     return dict(reward, t="raid_reward", ok=True, id=a["id"])
 
 
+@_raid_transaction
 def _raid_ack(name, raid_id):
     """The client APPLIED the reward: drop the held copy."""
     who = RAID.get("paid", {}).get(str(raid_id))
@@ -1145,6 +1276,64 @@ def _raid_ack(name, raid_id):
         if not who:
             RAID["paid"].pop(str(raid_id), None)
         _save_raid()
+
+
+def _raid_peer_ip(ws):
+    addr = getattr(ws, "remote_address", None)
+    if addr and addr[0] in ("127.0.0.1", "::1"):
+        return _peer_ip(ws)
+    return str(addr[0])[:64] if addr else "?"
+
+
+_RATE_BUCKETS = {}
+
+
+def _rate_allow(scope, key, limit, window, now=None):
+    now = time.monotonic() if now is None else now
+    bucket = _RATE_BUCKETS.setdefault((scope, key), deque())
+    while bucket and bucket[0] <= now - window:
+        bucket.popleft()
+    if len(bucket) >= limit:
+        LOG.warning("rate rejected scope=%s key=%s", scope, key)
+        return False
+    bucket.append(now)
+    if len(_RATE_BUCKETS) > 4096:
+        for k, q in list(_RATE_BUCKETS.items()):
+            if not q or q[-1] < now - 86400:
+                del _RATE_BUCKETS[k]
+    return True
+
+
+@_raid_transaction
+def _raid_verified_hit(client, m, now=None):
+    now = time.time() if now is None else now
+    reject = lambda why: {"t": "raid_hit", "ok": False, "why": why,
+                          "request": m.get("request"), "raid": m.get("raid")}
+    request = m.get("request")
+    rid = m.get("raid")
+    if not isinstance(request, str) or not 16 <= len(request) <= 64 or not isinstance(rid, str):
+        return reject("Update tuipet to throw safely; viewing and claiming still work.")
+    key = client.name.lower()
+    receipts = RAID["receipts"].setdefault(key, {})
+    if request in receipts:
+        return receipts[request]
+    _raid_rotate(now)
+    if rid != RAID["boss"]["id"]:
+        return reject("That raid has ended; refresh before throwing.")
+    save = SAVES.get(key)
+    holder = HOLDERS.get(key)
+    if not holder or holder.get("device") != client.device or not isinstance(save, dict):
+        return reject("Sync this device's held cloud save before raiding.")
+    try:
+        from raid_combat import volley
+        raw, num = volley(save, RAID["boss"]["num"])
+    except (ValueError, TypeError, KeyError, OverflowError):
+        return reject("Cloud pet cannot raid; sync a living fighting-stage pet.")
+    result = _raid_hit(client.name, raw, num, now=now)
+    result.update(request=request, raid=rid, authoritative=True)
+    if result.get("ok"):
+        receipts[request] = result
+    return result
 
 
 async def handler(ws):
@@ -1196,6 +1385,10 @@ async def handler(ws):
                     if not pw:
                         await _send(client, {"t": "login_failed", "msg": "Pick a password to claim this name."})
                         return
+                    if not (_rate_allow("registration-ip", _raid_peer_ip(ws), 20, 3600)   # 20/h: carriers share one IP among many phones (CGNAT)
+                            and _rate_allow("registration-name", key, 3, 86400)):
+                        await _send(client, {"t": "login_failed", "msg": "Registration limit; try again later."})
+                        return
                     candidate = await asyncio.to_thread(_make_account, name, pw)
                     # sync audit 2026-10-14: hashing yields; another login may claim first.
                     acc = ACCOUNTS.get(key)
@@ -1207,7 +1400,13 @@ async def handler(ws):
                         name = acc["name"]
                     else:
                         ACCOUNTS[key] = candidate
-                        _save_accounts()
+                        try:
+                            _save_accounts()
+                        except OSError:
+                            ACCOUNTS.clear()
+                            ACCOUNTS.update(_load_accounts())
+                            await _send(client, {"t": "login_failed", "msg": "Account storage unavailable; retry."})
+                            return
                         LOG.info("registered account %s", name)
                 # A sync_only connection just pulls/pushes the cloud save; it never
                 # joins the live roster, so it can coexist with a lobby login on the
@@ -1274,6 +1473,13 @@ async def handler(ws):
 
             elif not logged_in:
                 await _send(client, {"t": "error", "msg": "Log in first."})
+
+            elif t in ("raid_get", "raid_hit", "raid_claim", "raid_ack") and not (
+                    _rate_allow("raid-account", client.name.lower(), 90, 60)
+                    and _rate_allow("raid-ip", _raid_peer_ip(ws), 900, 60)):
+                await _send(client, {"t": "raid_reward" if t == "raid_claim" else "raid_hit",
+                                     "ok": False, "why": "Raid request limit; wait a minute.",
+                                     "request": m.get("request"), "retryable": True})
 
             elif t == "pet":
                 client.pet = _clamp_pet(m.get("pet"))
@@ -1359,11 +1565,7 @@ async def handler(ws):
             elif t == "raid_get":
                 await _send(client, _raid_view(client.name))
             elif t == "raid_hit":
-                # the multiplier binds to the roster card's NUM, resolved to a
-                # real species' stage in RAID_MULT_BY_NUM -- a forged stage
-                # STRING doesn't buy x20 (clone round-3 audit 2026-07-16)
-                r = _raid_hit(client.name, m.get("damage"),
-                              (client.pet or {}).get("num"))
+                r = _raid_verified_hit(client, m)
                 await _send(client, r)
                 await _send(client, _raid_view(client.name))
             elif t == "raid_claim":
@@ -1371,6 +1573,30 @@ async def handler(ws):
                                                 acks=bool(m.get("acks"))))
                 await _send(client, _raid_view(client.name))
             elif t == "raid_ack":
+                if m.get("protocol") == 2:
+                    key = client.name.lower()
+                    save = m.get("save")
+                    hold = HOLDERS.get(key)
+                    rid = str(m.get("raid"))
+                    if client.name not in RAID.get("paid", {}).get(rid, {}):
+                        continue  # A retried ACK must never overwrite a newer cloud save.
+                    if (not hold or hold.get("device") != client.device
+                            or LEASES.get(key, (None,))[0] != client.boot or not isinstance(save, dict)
+                            or not isinstance(save.get("progress"), dict)
+                            or not isinstance(save["progress"].get("raids_paid"), list)
+                            or rid not in save["progress"]["raids_paid"] or _erased_pet(key, save)):
+                        await _send(client, {"t": "raid_reward", "ok": False,
+                                             "why": "Reward held: sync the holding device to finish."})
+                        continue
+                    try:
+                        cloud_receipts = ((SAVES.get(key) or {}).get("progress") or {}).get("raids_paid", [])
+                        stored = rid in cloud_receipts or await _store_save(key, save)
+                    except OSError:
+                        stored = False
+                    if not stored:
+                        await _send(client, {"t": "raid_reward", "ok": False,
+                                             "why": "Reward held: cloud save failed; retry C."})
+                        continue
                 _raid_ack(client.name, m.get("raid"))
 
             elif t == "chat":

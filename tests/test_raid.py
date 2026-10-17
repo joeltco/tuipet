@@ -184,6 +184,7 @@ def test_net_raid_messages_land_in_client_state():
 # ---- panel -----------------------------------------------------------------------
 
 class _StubState:
+    connected = True
     me_id = 1
     login_failed = None
     error = None
@@ -199,11 +200,14 @@ class _StubClient:
     def raid_get(self):
         self.calls.append(("get",))
 
-    def raid_hit(self, damage):
+    def raid_hit(self, damage, *identity):
         self.calls.append(("hit", damage))
 
     def raid_claim(self, raid_id):
         self.calls.append(("claim", raid_id))
+
+    def raid_ack(self, raid_id):
+        self.calls.append(("ack", raid_id))
 
 
 def _pet():
@@ -244,12 +248,12 @@ def test_panel_text_smokes_in_every_view_state():
     assert "BossMon" in plain and "POOL" not in plain
     # incoming: the countdown replaces the pool bar
     pan.client.raid = _view(_mega(), start=90000.0, now=100.0)
-    assert "INCOMING" in pan.text().plain
+    assert pan.msg in pan.text().plain
     # a waiting purse advertises the claim key (it shares the context line
     # with the status message on the 40-tick beat; raid-menu fix 2026-07-19)
     pan.client.raid = _view(_mega(), award={"id": "9", "boss": "BossMon"})
     pan.frame_i = 40                            # the purse's beat
-    assert "purse" in pan.text().plain
+    assert "C claim" in pan.text().plain
     pan.frame_i = 0                             # the message's beat
     assert pan.msg in pan.text().plain
     # the whole page holds the 12-row LCD in every state (the old stacked
@@ -365,7 +369,7 @@ def test_the_claim_reveal_pins_the_prize_line_and_cheers_the_pet():
     pan.pet.name = "Blitz"
     pan.client.raid = _view(_mega(), hp=700, start=0.0, now=100.0)
     pan.anim()
-    pan.client.raid_reward = {"ok": True, "bits": 5000, "items": ["vitamin"],
+    pan.client.raid_reward = {"ok": True, "id": "win-reveal", "bits": 5000, "items": ["vitamin"],
                               "defeated": True, "rank": 1, "boss": "Sleipmon X"}
     pan.anim()
     assert pan._won is not None and pan._won[1] is True
@@ -383,7 +387,7 @@ def test_the_claim_reveal_pins_the_prize_line_and_cheers_the_pet():
     assert pan._won is None                       # the reveal lets go
     assert "Blitz" not in pan.text().plain
     # the escaped claim: pinned line, no cheer takeover
-    pan.client.raid_reward = {"ok": True, "bits": 100, "defeated": False}
+    pan.client.raid_reward = {"ok": True, "id": "escape-reveal", "bits": 100, "items": [], "defeated": False}
     pan.anim()
     assert pan._won is not None and pan._won[1] is False
     plain = pan.text().plain
@@ -475,7 +479,7 @@ def test_claim_pays_bits_items_ko6_and_the_raids_channel():
     pan = _panel()
     p = pan.pet
     p.bits = 100
-    pan.client.raid_reward = {"t": "raid_reward", "ok": True, "bits": 5000,
+    pan.client.raid_reward = {"t": "raid_reward", "ok": True, "id": "win", "bits": 5000,
                               "items": ["energy_drink", "steak"],
                               "defeated": True, "rank": 1, "boss": "BossMon"}
     pan.anim()
@@ -486,7 +490,7 @@ def test_claim_pays_bits_items_ko6_and_the_raids_channel():
     assert persistence.get_progress()["raids"] == 1
     assert "BossMon" in pan.msg
     # an escaped-boss claim pays but counts nothing
-    pan.client.raid_reward = {"t": "raid_reward", "ok": True, "bits": 100,
+    pan.client.raid_reward = {"t": "raid_reward", "ok": True, "id": "escape", "bits": 100,
                               "items": [], "defeated": False}
     pan.anim()
     assert p.bits == 5200 and p.mega_kills == 1
@@ -546,7 +550,7 @@ def test_the_panel_reports_honestly_and_stays_live():
                                    "now": 1.0, "board": [], "attempts": 3},
                              raid_reward=None, last_hit=None,
                              raid_get=lambda: calls.append("get"),
-                             raid_hit=lambda d: calls.append(("hit", d)))
+                             raid_hit=lambda d, *identity: calls.append(("hit", d)))
     pan = RaidPanel.__new__(RaidPanel)
     pan.pet = SimpleNamespace(stage="Mega", bits=0,
                               record_battle=lambda *a, **k: "")
@@ -745,7 +749,8 @@ def test_raid_hit_wire_carries_no_stage():
     sent = []
     c._send = lambda m: sent.append(m)
     c.raid_hit(40)
-    assert sent == [{"t": "raid_hit", "damage": 40}]
+    assert sent[0]["t"] == "raid_hit" and sent[0]["damage"] == 40
+    assert len(sent[0]["request"]) == 32 and "stage" not in sent[0]
 
 
 # ---- raid audit 2026-07-23 (Joel: "raid system is garbage... garbled mess,
