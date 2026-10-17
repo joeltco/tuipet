@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.45 — BROWSER FIXES (2026-10-17)
+
+BROWSER FIXES: phone keys land the moment you tap them, the keyboard no longer scrambles the screen, and q saves instead of closing the game.
+
 ## 0.6.44 — BROWSER KEYBOARD FIXED (2026-10-17)
 
 BROWSER KEYBOARD FIXED: phone keys land the moment you tap them, and the keyboard popping up no longer scrambles the screen.
