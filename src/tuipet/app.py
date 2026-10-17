@@ -171,7 +171,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("FRIENDLIER FIRST STEPS. A clearer sign-up card, a First Steps guide at the top of Help that explains your stats, tips while your egg warms up, and messages that say exactly when your pet can battle or take the road.")
+    WHATS_NEW = ("BETTER SOUND. Sounds no longer pile up or play over each other, skipping or muting stops them, your volume setting is respected everywhere, and battles and duels now end with a win or lose sound.")
 
 
     BINDINGS = [
