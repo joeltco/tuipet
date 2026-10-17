@@ -1167,8 +1167,10 @@ class TuiPetApp(ActionsMixin, App):
     def repaint(self):
         # The panel's own strip names the active controls.
         if getattr(self, "keys_w", None) is not None:
-            self.keys_w.display = self.mode is None          # a panel owns input: hide (UI batch A)
-            self.keys_w.styles.opacity = 0.4 if self.pet.stage == "Egg" else 1.0   # egg: nothing works yet (first-5 #7)
+            # a panel owns input, or it's still an egg: the rail stays VISIBLE but dims
+            # (Joel 2026-10-17: "I dont think im digging the action bar disappearing")
+            owned = self.mode is not None or self.pet.stage == "Egg"
+            self.keys_w.styles.opacity = 0.4 if owned else 1.0
         if self.mode is not None:
             self.screen_w.update(self._center(self.mode.text()))
             self._mode_strip()

@@ -88,16 +88,14 @@ def test_panel_hides_rail_and_recenters_real_terminal():
             home_region = app.query_one("#wrap").region
             app._open_mode(AccountPanel(name="audit"))
             await pilot.pause()
-            assert not app.keys_w.display
-            region = app.query_one("#wrap").region
-            assert region.height == 18
-            assert region.y == (24 - region.height) // 2
-            assert home_region.height == 24
+            # Joel 2026-10-17 reverted the hiding: the rail stays and dims in panels
+            assert app.keys_w.display and app.keys_w.styles.opacity == 0.4
+            assert app.query_one("#wrap").region == home_region     # layout no longer jumps
             assert app.screen_w.content_region.size == (40, 12)
             assert app.screen_w.render().plain.startswith("ACCOUNT")
             app._close_mode(None)
             await pilot.pause()
-            assert app.keys_w.display
+            assert app.keys_w.display and app.keys_w.styles.opacity == 1.0
     asyncio.run(run())
 
 
