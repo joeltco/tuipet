@@ -316,6 +316,8 @@ def test_tournament_bracket_runs_when_eligible():
     pan = TournamentPanel(p)
     pan.cursor = tournament._hour(p)
     _step(pan, "enter")
+    assert pan.detail is not None
+    _step(pan, "y")
     assert pan.phase == "bracket"
     guard = 0
     while pan.phase != "select" and guard < 6000:

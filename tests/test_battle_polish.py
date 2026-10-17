@@ -106,6 +106,9 @@ def test_cup_key_refreshes_schedule_before_entry(monkeypatch):
     p.world_seconds += DAY_LENGTH
     monkeypatch.setattr(tournament, "_rand_trophy_ids", lambda p: [new["id"]] * 24)
     panel.key("enter")  # no text() refresh between rollover and input
+    assert panel.detail[0]["id"] == new["id"]
+    assert p.fought_hours == []  # review has not paid or locked entry
+    panel.key("y")
     assert panel.tourney is not None
     assert panel.tourney.trophy["id"] == new["id"]
     assert p.fought_hours == [0]

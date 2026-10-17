@@ -49,6 +49,8 @@ class TournamentPanel(menu.SubHost):
         fest = tournament.festival()
         self.msg = (f"{fest} — every cup runs today!" if fest
                     else "One cup per hour — F fights today's featured.")
+        self.detail = None
+        self.detail_scroll = 0
         self.phase = "select"
         self.tree_view = False       # the bracket page (B toggles; shown between rounds)
         self._advance = None         # the field-advances parade: {"t","nums"}
@@ -57,6 +59,61 @@ class TournamentPanel(menu.SubHost):
         #                              scene, so the words live on the line)
         self._ceremony = None        # the champion's podium beat: {"t"}
         self._intro = None           # the match introductions: {"t"}
+
+    def selected_cup(self):
+        if getattr(self, "detail", None):
+            return self.detail[0]
+        sched = getattr(self, "sched", None) or tournament.schedule(self.pet)
+        cursor = getattr(self, "cursor", tournament._hour(self.pet))
+        return tournament.trophy_by_id(sched[cursor])
+
+    def detail_lines(self, tr):
+        from .pet import weekend_bonus
+        if tr is None:
+            return ["No cup in that slot."]
+        tier = tr["enemy_stage"] or tr["age_limit"] or tournament.pet_tier(self.pet) or "Mega"
+        purse = tournament.preview_purse(self.pet, tr)
+        bonus = weekend_bonus()
+        lines = [tournament.trophy_label(tr), "Bracket: " + tier]
+        if tournament._TIER_RANK[tier] > tournament._pet_tier_rank(self.pet):
+            lines.append("WARNING: higher bracket!")
+        lines.append("Rules: " + "/".join(filter(None, [tr["age_limit"],
+                     tr["field_req"], tr["attr_req"]])) if any(
+                     tr[k] for k in ("age_limit", "field_req", "attr_req")) else "Rules: open")
+        lines.append("Stake %db; title ~%db" % (tournament.entry_fee(self.pet, tr), int(purse * bonus)))
+        lines.append("Loss Q/S/F: 0/%d/%db" % (int((purse // 3) * bonus), int((purse // 2) * bonus)))
+        prizes = []
+        for kind, cid, amt in (("i", tr["item"], 1), ("f", tr["food_id"], tr["food_amt"])):
+            if cid >= 0 and amt > 0:
+                key = tournament._prize_key(kind, cid)
+                prizes.append("%s x%d" % ((tournament.shop.entry(key) or {}).get("name", key), amt))
+        lines.append("Prize: " + (", ".join(prizes) or "trophy + bits"))
+        lines.append("Season: %s; prelim: %s" % (tr["season"], self.prerequisite_path(tr)))
+        lines.append("3 bouts: need 20 energy")
+        lines.append("Reload abandons paid entry")
+        return lines
+
+    def prerequisite_path(self, tr):
+        chain = []
+        node = tournament.trophy_by_id(tr.get("prelim")) if tr.get("prelim") else None
+        while node:
+            chain.insert(0, "%s #%d" % (node["season"], node["id"] + 1))
+            node = tournament.trophy_by_id(node.get("prelim")) if node.get("prelim") else None
+        return " > ".join(chain) or "none"
+
+    def target_lines(self):
+        lines = []
+        for rule in data.load_egg_unlock().values():
+            target = tournament.trophy_by_id(rule.get("tourney", -1))
+            if target:
+                chain, node = [], target
+                while node:
+                    chain.insert(0, "%s #%d" % (node["season"], node["id"] + 1))
+                    node = tournament.trophy_by_id(node.get("prelim")) if node.get("prelim") else None
+                lines.append("Egg path: " + " > ".join(chain))
+                if not target.get("prelim"):
+                    lines.append("  Prerequisites: none")
+        return lines
 
     def anim(self):
         if self.sub_anim():          # SubHost: delegate + sfx bubble
@@ -124,8 +181,10 @@ class TournamentPanel(menu.SubHost):
             return "[dim]%s · any key skip[/]" % menu._clip(self._say or "field advances", 29)
         if self._intro is not None:
             return "[b]%s[/] [dim]· any key skip[/]" % menu._clip(self._say or "introductions…", 29)
+        if getattr(self, "detail", None) is not None:
+            return "Y pay entry · ↑↓ terms · ESC back"
         if self.phase == "select":
-            return menu.hints(("↑↓", "pick"), ("ENTER", "join"),
+            return menu.hints(("↑↓", "pick"), ("ENTER", "view"),
                               ("F", "feat."), ("A", "alarm"))
         # menus audit 2026-10-14: exiting a live bracket records a loss.
         if self.tourney is not None and self.tourney.over:
@@ -135,6 +194,14 @@ class TournamentPanel(menu.SubHost):
                           ("ESC", "forfeit"))
 
     def key(self, k):
+        # The opening key closes even during terms, a bout or a passive show.
+        if k == "u":
+            t = getattr(self, "tourney", None)
+            if t is not None:
+                if not t.over:
+                    t.record(False)
+                return ("done", (t.last, t.champion))
+            return ("done", None)
         if self.sub is not None:
             r = self.sub.key(k)
             if r is not None and r[0] == "done":
@@ -177,6 +244,37 @@ class TournamentPanel(menu.SubHost):
                 else:
                     self.tree_view = True               # backed out: the tree waits
             return None
+        if getattr(self, "detail", None) is not None:
+            tr, slot, featured = self.detail
+            if k in ("escape", "u"):
+                self.detail = None
+            elif k in ("up", "down"):
+                self.detail_scroll = max(0, self.detail_scroll + (1 if k == "down" else -1))
+            elif k == "y":
+                sched = tournament.schedule(self.pet)
+                if self.detail_stamp != (self.pet.tourney_day, self.pet.tourney_real) or (
+                        not featured and sched[slot] != tr["id"]):
+                    self.detail = None
+                    self.msg = "Board changed; review the new cup."
+                    return None
+                err = (tournament.eligibility_featured(self.pet, tr) if featured else
+                       tournament.eligibility_at(self.pet, tr, slot))
+                if err:
+                    self.msg = err
+                else:
+                    from copy import deepcopy
+                    before = deepcopy(vars(self.pet))
+                    try:
+                        self.tourney = Tournament(self.pet, tr, slot=slot, featured=featured)
+                    except OSError:
+                        vars(self.pet).update(before)
+                        self.msg = "Entry not saved; no stake paid."
+                        self.sfx = "error"
+                        return None
+                    self.detail = None
+                    self.phase, self.tree_view = "bracket", True
+                    self.sfx = "mischief"
+            return None
         if self.phase == "select":
             if k in ("up", "k", "down", "j", "pageup", "pagedown", "enter", "space", "f"):
                 # battle audit 2026-10-14: input can arrive before the
@@ -199,15 +297,10 @@ class TournamentPanel(menu.SubHost):
                     self.msg = "No cup in that slot."
                     self.sfx = "error"
                     return None
-                err = tournament.eligibility_at(self.pet, tr, self.cursor)
-                if err:
-                    self.msg = err
-                    self.sfx = "error"
-                    return None
-                self.tourney = Tournament(self.pet, tr, slot=self.cursor)
-                self.phase = "bracket"
-                self.tree_view = True          # the event opens on the field of eight
-                self.sfx = "mischief"          # soundConfig tourneyStart -> mischief.wav
+                self.detail_scroll = 0
+                self.detail_stamp = (self.pet.tourney_day, self.pet.tourney_real)
+                self.detail = (tr, self.cursor, False)
+                self.msg = "Review terms; Y pays entry. ESC back."
             elif k == "f":
                 # today's FEATURED cup: any hour, once per real day
                 tr = tournament.featured_now(self.pet)
@@ -215,15 +308,10 @@ class TournamentPanel(menu.SubHost):
                     self.msg = "No featured cup today."
                     self.sfx = "error"
                     return None
-                err = tournament.eligibility_featured(self.pet, tr)
-                if err:
-                    self.msg = err
-                    self.sfx = "error"
-                    return None
-                self.tourney = Tournament(self.pet, tr, featured=True)
-                self.phase = "bracket"
-                self.tree_view = True
-                self.sfx = "mischief"
+                self.detail_scroll = 0
+                self.detail_stamp = (self.pet.tourney_day, self.pet.tourney_real)
+                self.detail = (tr, None, True)
+                self.msg = "Featured terms; Y pays. ESC back."
             elif k == "a":
                 # onTourneyAlarm: toggle the wake-me call on this slot's cup
                 tid = self.sched[self.cursor] if 0 <= self.cursor < len(self.sched) else -1
@@ -290,7 +378,7 @@ class TournamentPanel(menu.SubHost):
                 s = self.pet.name or "YOU"
             else:                              # the rival wears its grudge mark
                 s = ("!" if e.get("rival") else "") + e["name"]
-            return s[:w]
+            return menu._clip(s, w)
 
         out = menu.bar(t.name, "BRACKET")
         champ = tree[3][0] if len(tree) > 3 else None
@@ -306,7 +394,7 @@ class TournamentPanel(menu.SubHost):
             you = (tree[0][i] == "YOU" or c2 and tree[1][i // 2] == "YOU"
                    or c3 and tree[2][i // 4] == "YOU")
             style = INK_B if you else INK
-            out.append(" %-11s%-11s%s\n" % (c1, c2, c3),
+            out.append(" %s%s%s\n" % (menu.set_cell_size(c1, 11), menu.set_cell_size(c2, 11), c3),
                        style=style if you else (INK if c1 else DIM))
         out.append_text(menu.note(t.last, tick=self.frame_i))
         out.append_text(menu.footer(""))     # keys ride the strip (menus call #12 = A)
@@ -415,6 +503,18 @@ class TournamentPanel(menu.SubHost):
             return self._advance_frame()
         if self._intro is not None:
             return self._intro_frame()
+        if getattr(self, "detail", None) is not None:
+            out = menu.bar("FEATURED" if self.detail[2] else "CUP", "Y PAY")
+            from rich.text import Text
+            from rich.console import Console
+            lines = []
+            for line in self.detail_lines(self.detail[0]):
+                lines.extend(t.plain for t in Text(line).wrap(Console(width=38), 38))
+            self.detail_scroll = min(self.detail_scroll, max(0, len(lines) - 9))
+            for line in lines[self.detail_scroll:self.detail_scroll + 9]:
+                out.append(" " + line + "\n")
+            out.append_text(menu.note(self.msg, tick=self.frame_i))
+            return out
         if self.phase == "select":
             self.sched = tournament.schedule(self.pet)   # live: a day rollover re-rolls
             hour = tournament._hour(self.pet)
@@ -431,14 +531,14 @@ class TournamentPanel(menu.SubHost):
                 # "+item OPEN" clipped mid-word).  OPEN beats alarm (an
                 # open cup IS the alarm's fulfilment); alarm beats +item
                 # (the itemed prize shows on every other hour + in the cup)
-                if i == hour:
-                    tag = "\u00bb OPEN"
-                elif tr and self.pet.tourney_alarm == tr["id"]:
-                    tag = "\u2666alarm"
-                elif tr and tr["item"] >= 0:
-                    tag = "+item"
+                if i in (self.pet.fought_hours or []):
+                    tag = "RUN"
+                elif i != hour and not tournament.festival():
+                    tag = "CLOSED"
+                elif tr and tournament.eligibility_at(self.pet, tr, i):
+                    tag = "BLOCKED"
                 else:
-                    tag = ""
+                    tag = "CURRENT" if i == hour else "OPEN"
                 return ("%02dh %-22s %s" % (i, name, tag)).rstrip()
 
             self.cursor = menu.list_window(out, self.sched, self.cursor, 5, fmt)
@@ -453,10 +553,7 @@ class TournamentPanel(menu.SubHost):
             # on a festival that's the slot under the cursor, not the hour's
             # -- and the shown purse carries the weekend x1.5 the payout
             # does (cup review 2026-07-18)
-            tr_line = tournament.open_now(self.pet)
-            if tournament.festival() and 0 <= self.cursor < len(self.sched) \
-                    and self.sched[self.cursor] >= 0:
-                tr_line = tournament.trophy_by_id(self.sched[self.cursor]) or tr_line
+            tr_line = self.selected_cup()
             if tr_line:
                 from .pet import weekend_bonus
                 fee = tournament.entry_fee(self.pet, tr_line)
@@ -475,7 +572,7 @@ class TournamentPanel(menu.SubHost):
                            % (tournament.trophy_label(ftr)[:20], tag),
                            style=DIM if done else INK_B)
             nw = tournament.next_winnable(self.pet)
-            if nw and nw[0] == hour:
+            if nw and (nw[0] == hour or tournament.festival()):
                 out.append("  \u2713 %s is open NOW\n" % tournament.trophy_label(nw[1])[:24],
                            style=INK_B)
             elif nw:

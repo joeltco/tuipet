@@ -1320,8 +1320,16 @@ def tournament(app):
     p, t, T = app.pet, app.mode.tourney, theme
     app.stats_w.border_subtitle = gen_subtitle(p)
     if t is None:                      # cup-select phase (no bout yet)
-        card(app, "Cup", ["", "Pick a cup", "to enter."],
-             subtitle=gen_subtitle(p))
+        pan = app.mode
+        tr = pan.selected_cup()
+        # Full payment terms scroll on the LCD; keep the side card a summary.
+        lines = pan.detail_lines(tr)[:2]
+        if tr:
+            lines += ["Season: " + tr["season"],
+                      "Prelim: " + pan.prerequisite_path(tr)]
+        lines += ["3 bouts: need 20 energy"] + pan.target_lines()
+        lines = [_fit_cells(line, CARD_W) for line in lines[:14]]
+        card(app, "Cup", lines, subtitle=gen_subtitle(p))
         return
     if t.over and t.champion:
         lines = [f"[b]{p.name[:14]}[/] [dim]· cup[/]", DIV,

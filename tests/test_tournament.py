@@ -346,6 +346,7 @@ def test_mid_bracket_contracts():
     pan = TournamentPanel(p)
     pan.cursor = slot
     pan.key("enter")
+    pan.key("y")
     assert pan.tourney is not None
     r1 = pan.key("escape")                     # forfeit from the opening tree
     assert pan.tourney.over and r1[0] == "done"
@@ -358,6 +359,7 @@ def test_mid_bracket_contracts():
     pan2 = TournamentPanel(p)
     pan2.cursor = tournament._hour(p)
     pan2.key("enter")
+    pan2.key("y")
     assert pan2.tourney is None, "a spent cup-hour must not re-run"
     assert "has run" in pan2.msg
 
@@ -367,6 +369,7 @@ def test_mid_bracket_contracts():
     pan3 = TournamentPanel(p3)
     pan3.cursor = slot
     pan3.key("enter")
+    pan3.key("y")
     pan3.key("space")                         # start the round-one walk-in
     # the MATCH INTRODUCTIONS play first (cup theater 2026-07-21): the
     # walk-ins hold the stage, then the bell opens the fight itself
@@ -490,6 +493,7 @@ def test_a_cup_runs_once_per_hour():
     from tuipet import tournament as tm
     random.seed(3)
     p = Pet(num=964, stage="Mega", attribute="Vaccine", obedience=900, bits=10_000)
+    p.energy = 20  # synthetic Mega uses a Fresh species; fund three bouts
     p.world_seconds = 600.0
     p.age_seconds = 13 * 1440.0
     # the one pool holds every cup now (2026-07-17): this hour's cup may be
@@ -525,6 +529,7 @@ def test_next_winnable_skips_hours_already_run():
     from tuipet import tournament as tm
     random.seed(5)
     p = Pet(num=100, stage="Champion", attribute="Vaccine", obedience=800)
+    p.energy = p.max_energy
     p.world_seconds = 600.0
     tm.schedule(p)
     p.fought_hours = [tm._hour(p)]             # this hour has run
@@ -674,7 +679,7 @@ def test_cup_entry_honors_the_battle_condition_gates():
 def test_cup_rows_wear_one_whole_tag(monkeypatch):
     """The board's 10-cell tag slot hard-cut every two-tag combo ("+item
     » OPEN" shipped as "» O" -- menu polish 2026-07-22): ONE tag
-    per row now, dominant state first (OPEN > alarm > +item), and every
+    per row now, availability state takes precedence over prizes/alarms; every
     row fits the 38-cell budget whole."""
     from rich.cells import cell_len
     from tuipet import tournament
@@ -688,6 +693,7 @@ def test_cup_rows_wear_one_whole_tag(monkeypatch):
     monkeypatch.setattr(tournament, "trophy_by_id",
                         lambda tid: dict(tr, id=tid))   # distinct ids, all itemed
     monkeypatch.setattr(tournament, "_hour", lambda pet: 0)
+    monkeypatch.setattr(tournament, "festival", lambda: False)
     # text() re-rolls the schedule live (day-rollover guard) -- patch the roll
     monkeypatch.setattr(tournament, "schedule", lambda pet: list(range(100, 124)))
     p.tourney_alarm = 101                               # the 01h slot's cup
@@ -696,9 +702,9 @@ def test_cup_rows_wear_one_whole_tag(monkeypatch):
     open_row = next(ln for ln in lines if ln.startswith("▸ 00h"))
     alarm_row = next(ln for ln in lines if ln.lstrip().startswith("01h"))
     item_row = next(ln for ln in lines if ln.lstrip().startswith("02h"))
-    assert "» OPEN" in open_row and "+item" not in open_row
-    assert "♦alarm" in alarm_row and "+item" not in alarm_row
-    assert "+item" in item_row
+    assert "BLOCKED" in open_row and "+item" not in open_row
+    assert "CLOSED" in alarm_row and "+item" not in alarm_row
+    assert "CLOSED" in item_row
     for ln in (open_row, alarm_row, item_row):
         assert cell_len(ln.rstrip()) <= 38
 

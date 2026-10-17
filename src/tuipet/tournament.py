@@ -8,7 +8,7 @@ The real thing is a SCHEDULED 8-entrant bracket, not an always-open menu:
   day.  Only the CURRENT hour's cup is enterable (checkTourneyClosed).
 - Entry runs Tournament.isEligible: not already fought today (SameDayRetry
   cups exempt), not too old for an age-limited cup, field/attribute
-  restrictions, and a Prelim chain (its qualifier beaten this season).
+  restrictions, and a Prelim chain (its qualifier already beaten).
   DVPet's fully-recovered gate has no tuipet analog (battle HP is per-fight).
 - The bracket is the player + 7 entrants drawn from the DEX (TournamentAble
   forms filtered by the cup's stage/field/attribute rules; the default
@@ -81,13 +81,15 @@ def is_weekend(today=None):
 
 def featured_now(pet, today=None):
     """The day's FEATURED cup: one per real date, drawn from the season's
-    pool by a date-seeded roll.  The weekend headliner draws from the PET's
+    eligible pool by a date-seeded roll (stage, field, attribute and prelim).
+    The weekend headliner draws from the PET's
     own bracket or the open tier (cup ruling 2026-07-18: the old top-tier-
     only weekend draw handed a Champion pressing F a near-unwinnable Mega
     bracket -- the marquee event should be winnable by whoever's playing).
     Open at ANY hour, once per real day, on top of the hourly board."""
     d = today or _today()
-    pool = [t for t in data.load_tournies() if t["season"] == real_season(d)]
+    pool = [t for t in data.load_tournies() if t["season"] == real_season(d)
+            and _eligibility_rest(pet, t) is None]
     if is_weekend(d):
         mine = pet_tier(pet)                # None = a Mega pet: the open field
         top = [t for t in pool
@@ -284,7 +286,7 @@ def eligibility(pet, t):
     # eligibility_featured) run.  This body was a hand-copy of the same
     # rules and the two could drift silently (cup review 2026-07-18).
     return (_eligibility_rest(pet, t) or _stake_check(pet, t)
-            or pet.battle_condition())   # the ONE bout condition gate (audit 2026-07-19)
+            or _run_condition(pet))   # the ONE bout condition gate (audit 2026-07-19)
 
 
 def eligibility_at(pet, t, slot):
@@ -298,7 +300,7 @@ def eligibility_at(pet, t, slot):
     if slot != _hour(pet) and not festival():
         return "That cup is closed — only the %02d:00 one runs now." % _hour(pet)
     return (_eligibility_rest(pet, t) or _stake_check(pet, t)
-            or pet.battle_condition())   # the ONE bout condition gate (audit 2026-07-19)
+            or _run_condition(pet))   # the ONE bout condition gate (audit 2026-07-19)
 
 
 def eligibility_featured(pet, t):
@@ -306,7 +308,12 @@ def eligibility_featured(pet, t):
     if featured_done(pet):
         return "Today's featured cup has run."
     return (_eligibility_rest(pet, t) or _stake_check(pet, t)
-            or pet.battle_condition())   # the ONE bout condition gate (audit 2026-07-19)
+            or _run_condition(pet))   # the ONE bout condition gate (audit 2026-07-19)
+
+
+def _run_condition(pet):
+    return pet.battle_condition() or (
+        "Three bouts need 20 energy at entry." if pet.energy < 20 else None)
 
 
 def _stake_check(pet, t):
@@ -318,11 +325,11 @@ def _stake_check(pet, t):
 
 def next_winnable(pet):
     """The next hour TODAY whose cup this pet can actually enter (eligibility
-    passes) -- scanning from the current hour forward through the schedule.
+    passes); festivals also scan earlier slots. Body readiness is required.
     Returns (hour, trophy) or None when nothing enterable is left today."""
     sched = schedule(pet)
     run = getattr(pet, "fought_hours", None) or []
-    for i in range(_hour(pet), len(sched)):
+    for i in range(0 if festival() else _hour(pet), len(sched)):
         tid = sched[i]
         if tid < 0 or i in run:                    # that hour's cup has already run
             continue
@@ -330,7 +337,8 @@ def next_winnable(pet):
         # the hour gate only speaks for THIS hour; a FUTURE slot is judged on
         # the rest of the rules (we have not reached it yet)
         # battle audit 2026-10-14: "open NOW" must not promise an unpaid stake.
-        if tr and _eligibility_rest(pet, tr) is None and _stake_check(pet, tr) is None:
+        if tr and _eligibility_rest(pet, tr) is None and _stake_check(pet, tr) is None \
+                and _run_condition(pet) is None:
             return (i, tr)
     return None
 
@@ -489,9 +497,7 @@ class Tournament:
         rn = int(getattr(pet, "rival_num", -1) or -1)
         if rn >= 0:
             rec = data.record_for(rn)
-            tier = (trophy["enemy_stage"] or trophy["age_limit"]
-                    or pet_tier(pet) or "Mega")
-            if rec and not data.is_placeholder(rn) and rec.get("stage") == tier:
+            if rec and any(r["num"] == rn for r in pool):
                 e = dict(_mk_entrant(rec, trophy, open_mega), rival=True)
                 self.entrants[random.randrange(7)] = e
                 self.rival_in = True
@@ -541,6 +547,8 @@ class Tournament:
             h = _hour(pet) if slot is None else slot     # festival any-slot entry
             if h not in hrs:
                 hrs.append(h)
+        from . import persistence
+        persistence.cup_checkpoint(pet)
 
     @property
     def round_name(self):
@@ -625,6 +633,8 @@ class Tournament:
             self.over = True
             self.champion = False
             self.last = "The bracket ends — your pet has fallen."
+            from . import persistence
+            persistence.cup_checkpoint(self.pet)
             return self.last
         if not won:
             # setIsWon(0): the QF pays nothing, the semi a third, the final half
@@ -638,6 +648,8 @@ class Tournament:
             self.pet._open_praise()
             tail = (" +%db" % self.reward_bits) if self.reward_bits else ""
             self.last = "Eliminated in the %s.%s" % (self.round_name, tail)
+            from . import persistence
+            persistence.cup_checkpoint(self.pet)
             return self.last
         self.round += 1
         if self.round >= 3:
@@ -653,7 +665,6 @@ class Tournament:
             won_map[self.trophy["id"]] = "day %d" % (
                 int(self.pet.world_seconds // DAY_LENGTH) + 1)
             from . import persistence
-            persistence.tourney_add(self.trophy["id"])     # gates the tournament egg unlocks
             extras = []
             if self.trophy["item"] >= 0:
                 # THE AUTHORED PRIZE TABLE, ALIVE (item expansion
@@ -676,6 +687,7 @@ class Tournament:
             tail = (" + " + "/".join(extras)) if extras else ""
             self.tree.append(["YOU"])                     # the top of the bracket
             self.last = "CHAMPION! +%db%s + trophy!" % (self.reward_bits, tail)
+            persistence.cup_checkpoint(self.pet, self.trophy["id"])
         else:
             self._resolve_npc_round()
             self.tree.append(list(self.bracket))          # the field after this round

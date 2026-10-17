@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import time  # noqa: F401
 
 
@@ -52,7 +53,7 @@ SETTINGS_PATH = os.path.join(SAVE_DIR, "settings.json")
 save_failed = ""
 _failed_path = ""    # WHICH file refused: only its own later success clears the flag
 
-def _atomic_write_json(path, data, keep_bak=False):
+def _atomic_write_json(path, data, keep_bak=False, strict=False):
     """Atomic JSON write (tmp + os.replace); keep_bak rotates one generation
     back first.  This dance lived in three hand-rolled copies (settings, save,
     cloud-pull; refactor 2026-07-05)."""
@@ -62,8 +63,16 @@ def _atomic_write_json(path, data, keep_bak=False):
         tmp = path + ".tmp"
         with open(tmp, "w", encoding="utf-8") as fh:
             json.dump(data, fh)
+            if strict:
+                fh.flush()
+                os.fsync(fh.fileno())
         if keep_bak and os.path.exists(path):
-            os.replace(path, path + ".bak")   # keep one generation back
+            if strict:
+                # Keep the committed main in place until the single commit replace.
+                shutil.copyfile(path, path + ".bak.tmp")
+                os.replace(path + ".bak.tmp", path + ".bak")
+            else:
+                os.replace(path, path + ".bak")   # keep one generation back
         os.replace(tmp, path)
         from .web.storage import checkpoint
         checkpoint()
@@ -86,6 +95,8 @@ def _atomic_write_json(path, data, keep_bak=False):
         # player only found out by losing it.  Record it; the app warns.
         save_failed = "%s: %s" % (os.path.dirname(path) or path, e.strerror or e)
         _failed_path = path
+        if strict:
+            raise
         return
 
 _LOCK_NAME = "running.pid"

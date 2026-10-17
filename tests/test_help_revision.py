@@ -117,7 +117,7 @@ def test_dna_mash_hint(monkeypatch):
     'The egg hatches on its own (~60s).', 'energy + Effort; adds weight.',
     'In fights: SPACE locks the bar.', 'On the map list, H picks a hunt.',
     'Town rest restores lives/energy', 'Replay boss bits: once per real day.',
-    'F opens the daily featured cup.', 'Three attempts per UTC day.',
+    'ENTER/F details; Y pays entry.', 'Three attempts per UTC day.',
     'forms, full DP and enough energy.', 'Buy at most one egg per real day.',
     'A spoiled mash returns half.', 'Tap keys during dying to try rescue.',
     'Menus pause care and growth too.',

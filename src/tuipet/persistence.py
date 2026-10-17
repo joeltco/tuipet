@@ -1069,9 +1069,30 @@ def to_save_dict(pet):
     # pet_from_save drops every key that isn't a Pet field, so an older client
     # pulling this save simply ignores it -- no server change, no format break.
     prog = progress_for_sync()
+    # Trophy history repairs old split writes and retains credit if projecting
+    # the committed cup journal into settings is temporarily unavailable.
+    won = getattr(pet, "trophies_won", None) or {}
+    if won:
+        prog["tourneys"] = sorted(set(prog.get("tourneys", [])) | {
+            int(tid) for tid in won if str(tid).isdigit()})
     if prog:
         data["progress"] = prog
     return data
+
+
+def cup_checkpoint(pet, trophy_id=None):
+    """Commit purse, locks and egg credit in one replace before projecting settings.
+
+    The travelling save is the journal: load/sync already set-merges its progress,
+    so interruption before the settings projection is repaired on reload.
+    """
+    payload = to_save_dict(pet)
+    if trophy_id is not None:
+        prog = payload.setdefault("progress", {})
+        prog["tourneys"] = sorted(set(prog.get("tourneys", [])) | {int(trophy_id)})
+    _atomic_write_json(SAVE_PATH, payload, keep_bak=True, strict=True)
+    if trophy_id is not None:
+        merge_progress(payload.get("progress"))
 
 
 def save(pet, path=None):
@@ -1311,6 +1332,12 @@ def load(path=None):
             if broken_dna:
                 quarantine_save(broken)
             msg = (msg + "  " if msg else "") + "(recovered from the backup save)"
+        # Replay the committed progress rider after an interrupted projection.
+        prog = data.get("progress") or {}
+        if pet.trophies_won:
+            prog = dict(prog, tourneys=sorted(set(prog.get("tourneys", [])) | {
+                int(tid) for tid in pet.trophies_won if str(tid).isdigit()}))
+        merge_progress(prog)
         return pet, msg
     if broken is None:
         return None, ""              # a true first launch: nothing on disk
