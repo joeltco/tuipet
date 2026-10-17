@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.40 — POLISHED MENUS. One consistent style for headers, selections (2026-10-17)
+
+POLISHED MENUS. One consistent style for headers, selections and key hints across every screen, a clearer status card, cleaner DNA and cup pages, and warnings that look like warnings.
+
 ## 0.6.39 — A CLEANER LOOK. Brighter status colors in every theme, reada (2026-10-17)
 
 A CLEANER LOOK. Brighter status colors in every theme, readable cup terms, the action list steps aside while a menu is open, a tidier account card, and the web game sits centered on phones.
