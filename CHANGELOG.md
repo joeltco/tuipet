@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.33 — FRIENDLIER FIRST STEPS. A clearer sign-up card, a First Step (2026-10-16)
+
+FRIENDLIER FIRST STEPS. A clearer sign-up card, a First Steps guide at the top of Help that explains your stats, tips while your egg warms up, and messages that say exactly when your pet can battle or take the road.
+
 ## 0.6.32 — HALLOWEEN ALL OCTOBER. The whole month is a festival (2026-10-16)
 
 HALLOWEEN ALL OCTOBER. The whole month is a festival: more road finds and present capsules, rarer monsters, a ghost trail of Candlemon, Bakemon and Pumpmon, and a spooky tint at home -- with double bits on Oct 31. December does the same for Christmas.
