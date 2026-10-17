@@ -171,7 +171,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("A BETTER HELP. Press ? for a rewritten guide: first steps and phone controls up top, fixed mistakes, and the essentials on hunts, towns, raids, the lobby and DNA. PGUP/PGDN leaps through it.")
+    WHATS_NEW = ("FAIRER CUPS. U now shows each cup's bracket, rules, prize and price before you pay, warns before a bracket above your stage, won't let you enter without energy for all three bouts, and the daily featured cup is always one your pet can enter.")
 
 
     BINDINGS = [
