@@ -396,7 +396,7 @@ class LobbyPanel(BoutMixin, ChatMixin):
         s = self.state
         if not s:
             return
-        received = getattr(s, "pm_received", 0)
+        received = getattr(s, "pm_received", 0) + getattr(s, "mentions_received", 0)
         if received > getattr(self, "_pm_received", 0):
             self._feedback("menu")
         self._pm_received = received
@@ -892,6 +892,10 @@ class LobbyPanel(BoutMixin, ChatMixin):
             elif k == "escape":
                 self.action_for = None
             return None
+        if k == "tab" and self.pm_to is None and self._complete_mention():
+            return None
+        if k != "tab":
+            self._mention_cycle = None
         if k == "tab":
             # the MONTHLY LADDER (2026-07-14): online wins, fresh race each
             # month.  TAB because every letter belongs to the chat input.
@@ -961,6 +965,30 @@ class LobbyPanel(BoutMixin, ChatMixin):
                     self.action_for = (p["id"], p["name"], p.get("live", True))
             return None
         return self._edit(k)
+    def _complete_mention(self):
+        cycle = getattr(self, "_mention_cycle", None)
+        if cycle and self.buf == cycle[0]:
+            _, prefix, matches, index = cycle
+            index = (index + 1) % len(matches)
+        else:
+            import re
+            match = re.search(r"(?<!\w)@([^@]*)$", self.buf)
+            if not match:
+                return False
+            prefix = self.buf[:match.start()]
+            fragment = match.group(1).lower()
+            matches = sorted({p["name"] for p in self.state.roster
+                              if p.get("name", "").lower().startswith(fragment)}, key=str.lower)
+            if not matches:
+                return False
+            index = 0
+        value = prefix + "@" + matches[index]
+        if len(value) > CHAT_MAX:
+            return False
+        self.buf = value
+        self._mention_cycle = (value, prefix, matches, index)
+        return True
+
     def _edit(self, k):
         if k == "backspace":
             self.buf = self.buf[:-1]

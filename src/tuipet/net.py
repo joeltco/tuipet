@@ -21,6 +21,15 @@ else:
 CHAT_CAP = 200
 
 
+def mentioned_names(text, names):
+    """Prefer a full account name over its shorter prefix (spaces are legal)."""
+    names = sorted(set(n for n in names if n), key=lambda n: (-len(n), n.lower()))
+    if not names:
+        return []
+    pattern = r"(?<!\w)@(" + "|".join(_re.escape(n) for n in names) + r")(?!\w)"
+    return list(dict.fromkeys(m.group(1).lower() for m in _re.finditer(pattern, text, _re.I)))
+
+
 def clean_remote(s):
     """Keep remote text from changing terminal direction or emitting controls."""
     import unicodedata
@@ -178,6 +187,7 @@ class LobbyState:
         self.reconnecting = False              # dropped -> the client is retrying with backoff
         self.dms: dict = {}                    # peer_name -> [(from_name, text)] private threads
         self.pm_received = 0                   # arrival edge survives capped/read threads
+        self.mentions_received = 0
         self.unread: set = set()               # peer names with unread DMs
         self.blocked: set = set()              # muted peers (loaded from settings on connect)
         self.room: str | None = None           # current password room (None = main lobby)
@@ -302,14 +312,14 @@ class SyncClient(_WsClient):
                 # void, silently, and the player watched a cloud save "not go
                 # over" with no word from the game (Joel, 2026-07-30).
                 self.not_holder = m.get("holder") or {"label": "another device"}
-        elif t == "pm":
+        elif t in ("pm", "mention"):
             # the sync ghost is the HOME-SCREEN alert channel: the app drains
             # this into the message box (presence 2026-07-05)
             # sync audit 2026-10-14: mute applies to home alerts as well as lobby chat.
             from . import persistence
             if m.get("from_name", "?") in persistence.get_blocked():
                 return
-            self.inbox.append((m.get("from_name", "?"), m.get("text", "")))
+            self.inbox.append((m.get("from_name", "?"), None if t == "mention" else m.get("text", "")))
             del self.inbox[:-20]
         elif t == "announce":
             # a server announcement reaches the home screen the same way a PM
@@ -509,6 +519,10 @@ class LobbyClient(_WsClient):
             if nm not in s.blocked and not self._replayed(m, nm):
                 s.chat.append((nm, m.get("text", "")))
                 del s.chat[:-CHAT_CAP]
+                names = [p.get("name", "") for p in s.roster] + [s.me_name]
+                if (nm.lower() != (s.me_name or "").lower() and not m.get("replay")
+                        and (s.me_name or "").lower() in mentioned_names(m.get("text", ""), names)):
+                    s.mentions_received += 1
         elif t == "announce":
             # a server announcement rides the public feed under the 📢 speaker
             # (unblockable -- it's the dev's line, not a peer's)

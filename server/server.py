@@ -25,6 +25,7 @@ import json
 import logging
 import math
 import os
+import re
 import time
 from collections import deque
 
@@ -1395,6 +1396,23 @@ def _rate_allow(scope, key, limit, window, now=None):
     return True
 
 
+async def _mention_alerts(client, text):
+    if client.room is not None:
+        return
+    names = sorted({a["name"] for a in ACCOUNTS.values()}, key=lambda n: (-len(n), n.lower()))
+    if not names:
+        return
+    pattern = r"(?<!\w)@(" + "|".join(re.escape(n) for n in names) + r")(?!\w)"
+    targets = list(dict.fromkeys(m.group(1).lower() for m in re.finditer(pattern, text, re.I)))
+    targets = [n for n in targets if n != client.name.lower()][:3]
+    for name in targets:
+        conns = [c for c in _account_conns(name) if not c.live]
+        if conns and _rate_allow("mention", (client.name.lower(), name), 1, 60):
+            for conn in conns:
+                await _send(conn, {"t": "mention", "from_name": _clean(client.name, MAX_NAME),
+                                   "text": _clean(text, MAX_CHAT)})
+
+
 @_raid_transaction
 def _raid_verified_hit(client, m, now=None):
     now = time.time() if now is None else now
@@ -1734,6 +1752,7 @@ async def handler(ws):
                     if client.room is None:
                         CHAT_BACKLOG.append(out)  # the re-entry replay window (main only)
                     await _broadcast_room(client.room, out)
+                    await _mention_alerts(client, text)
                     # room chats still land in the admin feed (abuse handling >
                     # absolute privacy on a hobby relay), marked with their room
                     _feed("chat", name=client.name, text=text, room=client.room)

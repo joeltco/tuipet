@@ -343,6 +343,8 @@ class TuiPetApp(ActionsMixin, App):
                 # pane; once CONNECTED the lobby client receives its own
                 # copy, so then (and only then) the ghost's are duplicates.
                 for nm, tx in sync.inbox:
+                    if tx is None:
+                        continue
                     st.chat.append((nm if nm == "📢" else f"✉{nm}", tx))
                 del st.chat[:-net.CHAT_CAP]
             sync.inbox.clear()
@@ -357,7 +359,11 @@ class TuiPetApp(ActionsMixin, App):
         # (Rich-brackets hard rule, remote-triggered; chat-input audit 2026-07-07).
         # The lobby chat pane is already safe (Text.append renders literally);
         # this flash is the one markup-parsed sink for remote text.
-        if nm == "📢":                       # a server announcement, not a peer's ✉
+        if tx is None:
+            name = set_cell_size(net.clean_remote(nm), 38 - len("@  mentioned you")).rstrip()
+            label = "@ " + name + " mentioned you"
+            self.flash(_hud_esc(label))
+        elif nm == "📢":                       # a server announcement, not a peer's ✉
             self.flash(f"📢 [b]{_hud_esc(tx)}[/]")
         else:
             self.flash(f"✉ [b]{_hud_esc(nm)}[/]: {_hud_esc(tx)}")

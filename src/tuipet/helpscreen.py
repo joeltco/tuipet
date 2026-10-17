@@ -108,7 +108,7 @@ HELP = [
     ("l lobby - online; type + ENTER chats.", 1),
     ("  Empty ENTER on a tamer: B battle,", 0),
     ("  J jogress, V/M PM, X block, P ping.", 0),
-    ("  PgUp/PgDn scroll · ESC leaves.", 0),
+    ("  @+TAB; PgUp/PgDn scroll; ESC leaves.", 0),
     ("  Jogress opens at Rookie: compatible", 0),
     ("  forms, full DP and enough energy.", 0),
     ("r raid - online account required.", 1),

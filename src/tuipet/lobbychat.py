@@ -18,7 +18,7 @@ from . import battlescreen  # noqa: F401
 from . import jogressscreen  # noqa: F401
 from . import menu  # noqa: F401
 from . import persistence  # noqa: F401
-from .net import ANNOUNCE, CHAT_CAP, clean_remote  # noqa: F401
+from .net import ANNOUNCE, CHAT_CAP, clean_remote, mentioned_names  # noqa: F401
 from .render import marquee  # noqa: F401
 from .theme import INK, INK_B, DIM, SEL  # noqa: F401  (theme.apply propagation)
 
@@ -230,7 +230,10 @@ class ChatMixin:
             else:
                 pm = str(nm).startswith("✉")
                 mine = bool(me) and (nm == me or str(nm).startswith("✉→"))
-                mention = bool(me) and me.lower() in str(tx).lower()
+                names = [p.get("name", "") for p in s.roster] + [me]
+                # a bare name still highlights (pre-@ behaviour); @name also pings
+                mention = bool(me) and (me.lower() in str(tx).lower()
+                                        or me.lower() in mentioned_names(str(tx), names))
                 # mine first: my own echo (chat or ✉→ PM) always reads dim
                 sty = DIM if mine else (INK_B if (pm or mention) else INK)
                 parts = _wrap(f"{nm}: {tx}", cw - 1)
