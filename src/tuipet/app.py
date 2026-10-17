@@ -175,7 +175,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("POLISHED MENUS. One consistent style for headers, selections and key hints across every screen, a clearer status card, cleaner DNA and cup pages, and warnings that look like warnings.")
+    WHATS_NEW = ("THE ACTION BAR IS BACK in menus -- dimmed instead of hidden, so the screen no longer jumps when a menu opens.")
 
 
     BINDINGS = [
