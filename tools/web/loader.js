@@ -110,7 +110,12 @@ function fitTerminal() {
   Object.assign(screen.style, {left:(v?.offsetLeft || 0)+'px',top:(v?.offsetTop || 0)+'px',width:(v?.width || innerWidth)+'px',height:((v?.height || innerHeight) - xkeysHeight())+'px'});
   xkeys.style.bottom = Math.max(0, innerHeight - (v ? v.offsetTop + v.height : innerHeight))+'px';
   const box = document.querySelector('#terminal');
-  const targetRows = matchMedia('(pointer:coarse)').matches && box.clientWidth > box.clientHeight ? 24 : 30;
+  // Orientation from the PHONE, not the box: the on-screen keyboard shrinks the
+  // box until portrait reads as landscape, and 30->24 rows scrambled the whole
+  // layout every time the keyboard popped up (Joel 2026-10-17).  Keyboard up =
+  // same grid, smaller font.
+  const landscape = (window.screen?.width || innerWidth) > (window.screen?.height || innerHeight);
+  const targetRows = matchMedia('(pointer:coarse)').matches && landscape ? 24 : 30;
   // Measure the renderer's actual rounded cells, rather than assume font metrics.
   const fits = size => {
     term.options.fontSize = size;

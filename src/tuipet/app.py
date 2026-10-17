@@ -175,8 +175,8 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("@MENTIONS in the lobby: type @ + a name (TAB completes) to ping a tamer -- "
-                 "they hear it in the lobby, or get a flash on their home screen.")
+    WHATS_NEW = ("BROWSER FIX: the phone keyboard no longer scrambles the screen -- "
+                 "the game keeps its layout and just shrinks while you type.")
 
 
     BINDINGS = [
