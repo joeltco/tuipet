@@ -261,6 +261,7 @@ def test_lobby_refusal_and_error_feedback_is_rate_limited(monkeypatch):
     panel = lobby()
     clock = [100.0]
     monkeypatch.setattr("tuipet.lobbyscreen.time.monotonic", lambda: clock[0])
+    panel.state.roster = [{"id": 2, "name": "rival", "live": True}]  # still here (2026-10-17 expiry sweep)
     panel._sent_invites.add((2, "battle"))
     panel.state.inbox.append({"t": "invite_resp", "from_id": 2, "kind": "battle",
                               "accept": False, "busy": True})

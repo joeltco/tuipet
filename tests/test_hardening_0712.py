@@ -58,6 +58,7 @@ def test_invite_resp_without_from_name_does_not_crash():
     pan = _panel(s)
     # a relayed / malformed busy-decline with no from_name (protocol drift);
     # ledgered first -- an UNSOLICITED resp is dropped outright (C5 2026-07-19)
+    s.roster = [{"id": 9, "name": "rival", "live": True}]   # still here (2026-10-17 expiry sweep)
     pan._sent_invites.add((9, "battle"))
     s.inbox.append({"t": "invite_resp", "from_id": 9, "kind": "battle", "busy": True})
     pan.anim()                                       # drains the inbox
@@ -74,6 +75,7 @@ def test_send_loop_requeues_a_dropped_frame():
                 raise RuntimeError("socket closed")
 
         c._ws = DeadWS()
+        c._welcomed.set(); c._ready.set()            # sends wait for welcome (2026-10-17)
         c._q.put_nowait({"t": "move", "n": 1})
         await c._send_loop()                         # dequeue -> send fails -> requeue
         return c._q

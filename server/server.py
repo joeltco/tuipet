@@ -464,6 +464,21 @@ def _lease_ok(client, key):
 # fresh client's pane filled only with what came after.  A live login now
 # replays this rolling window so re-entry rejoins the conversation.
 CHAT_BACKLOG: deque = deque(maxlen=30)
+MODERATION_PATH = os.environ.get("TUIPET_MODERATION", os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "moderation.json"))
+MODERATION = _load_mapping(MODERATION_PATH)
+
+
+def _moderated(name, banned=False):
+    record = MODERATION.get(name.lower(), {})
+    return bool(record.get("ban")) if banned else record.get("mute", 0) > time.time()
+
+
+def _new_name_ok(name):
+    return (bool(name) and any(c.isalnum() for c in name)
+            and name.lower() not in ("admin", "server", "system", "tuipet", "mod")
+            and not name.startswith(("📢", "✉", "—", "!", "→")))
+
 
 
 class Client:
@@ -471,7 +486,7 @@ class Client:
                  "bugs_sent", "room", "device", "dlabel")
 
     def __init__(self, ws):
-        self.id = next(_ids)
+        self.id = str(next(_ids))
         self.ws = ws
         self.name = f"guest{self.id}"
         self.pet = {}
@@ -485,7 +500,7 @@ class Client:
         self.dlabel = ""       # its human name for the take-question
 
 
-CLIENTS: dict[int, Client] = {}
+CLIENTS: dict[str, Client] = {}
 
 # Per-IP bug budget.  MAX_BUGS_PER_CONN counts on ONE socket, so one connection
 # per report walked straight through it: 2026-10-01 took 46 reports in 46
@@ -525,7 +540,9 @@ def _bug_budget_ok(ip):
 def _clean(s, limit):
     # None must clean to "" -- str(None) minted the literal name "None"
     # (a raid client with no cached account logged in as it)
-    return str(s or "").replace("\n", " ").replace("\r", " ").strip()[:limit]
+    import unicodedata
+    return "".join(c for c in str(s or "")
+                   if unicodedata.category(c) not in ("Cc", "Cf")).strip()[:limit]
 
 
 def _clamp_pet(p):
@@ -843,13 +860,56 @@ async def _handle_admin(client, m):
         if not text:
             await _send(client, {"t": "admin_ok", "cmd": "announce", "sent": 0})
             return
-        out = {"t": "announce", "text": text}
+        out = {"t": "announce", "id": uuid.uuid4().hex, "text": text}
         CHAT_BACKLOG.append(out)              # late joiners see it on entry
         await _broadcast(out)
         _feed("announce", text=text)
         LOG.info("announce (%d chars) to %d conns", len(text), len(CLIENTS))
         await _send(client, {"t": "admin_ok", "cmd": "announce",
                              "sent": sum(1 for c in CLIENTS.values() if c.logged)})
+    elif cmd in ("kick", "mute", "unmute", "ban", "unban"):
+        name = _clean(m.get("name"), MAX_NAME)
+        target = name.lower()
+        if target not in ACCOUNTS:
+            await _send(client, {"t": "error", "msg": "No such player."})
+            return
+        record = dict(MODERATION.get(target, {}))
+        if cmd == "mute":
+            try:
+                minutes = max(1, min(int(m.get("minutes", 10)), 525600))
+            except (ValueError, TypeError):
+                await _send(client, {"t": "error", "msg": "Minutes must be a number."})
+                return
+            record["mute"] = time.time() + minutes * 60
+        elif cmd == "unmute":
+            record.pop("mute", None)
+        elif cmd == "ban":
+            record["ban"] = True
+        elif cmd == "unban":
+            record.pop("ban", None)
+        previous = MODERATION.get(target)
+        MODERATION[target] = record
+        try:
+            _durable_json(MODERATION_PATH, MODERATION)
+        except OSError:
+            if previous is None:
+                MODERATION.pop(target, None)
+            else:
+                MODERATION[target] = previous
+            await _send(client, {"t": "error", "msg": "Moderation storage unavailable."})
+            return
+        _feed(cmd, name=ACCOUNTS[target]["name"], **record)
+        for c in list(CLIENTS.values()):
+            if c.logged and c.name.lower() == target:
+                await _send(c, {"t": "error", "msg": {
+                    "mute": "You are muted; please wait before messaging.",
+                    "unmute": "Your mute has ended.",
+                    "kick": "You were kicked by an administrator.",
+                    "ban": "This account is banned.",
+                    "unban": "Your ban has ended."}[cmd]})
+                if cmd in ("kick", "ban"):
+                    await _close_quiet(c.ws)
+        await _send(client, {"t": "admin_ok", "cmd": cmd})
     else:
         await _send(client, {"t": "error", "msg": "Unknown admin cmd."})
 
@@ -1288,6 +1348,36 @@ def _raid_peer_ip(ws):
 _RATE_BUCKETS = {}
 
 
+def _wire_ok(m):
+    target = m.get("to")
+    if isinstance(target, int) and not isinstance(target, bool):
+        # pre-0.6.42 clients send their offline-thread sentinel as a number
+        m["to"] = target = str(target)
+    if "to" in m and not isinstance(target, str):
+        return False
+    if m.get("t") == "relay":
+        payload = m.get("payload")
+        return isinstance(payload, dict) and ("card" not in payload or isinstance(payload["card"], dict))
+    return True
+
+
+def _message_budget(kind, key):
+    if kind in ("chat", "pm"):
+        return _token_allow(kind, key, 8, 0.5)
+    if kind in ("invite", "invite_resp"):
+        return _token_allow("invites", key, 6, 0.1)
+    return _token_allow(kind, key, 60 if kind == "relay" else 12, 6 if kind == "relay" else 1)
+
+
+def _token_allow(scope, key, burst, refill, now=None):
+    now = time.monotonic() if now is None else now
+    bucket = _RATE_BUCKETS.setdefault(("token-" + scope, key), deque([(burst, now)]))
+    tokens, last = bucket[0]
+    tokens = min(burst, tokens + max(0, now - last) * refill)
+    bucket[0] = (tokens - 1 if tokens >= 1 else tokens, now)
+    return tokens >= 1
+
+
 def _rate_allow(scope, key, limit, window, now=None):
     now = time.monotonic() if now is None else now
     bucket = _RATE_BUCKETS.setdefault((scope, key), deque())
@@ -1299,7 +1389,8 @@ def _rate_allow(scope, key, limit, window, now=None):
     bucket.append(now)
     if len(_RATE_BUCKETS) > 4096:
         for k, q in list(_RATE_BUCKETS.items()):
-            if not q or q[-1] < now - 86400:
+            stamp = q[-1][1] if q and isinstance(q[-1], tuple) else (q[-1] if q else 0)
+            if not q or stamp < now - 86400:
                 del _RATE_BUCKETS[k]
     return True
 
@@ -1337,6 +1428,9 @@ def _raid_verified_hit(client, m, now=None):
 
 
 async def handler(ws):
+    if sum(_raid_peer_ip(c.ws) == _raid_peer_ip(ws) for c in CLIENTS.values()) >= 20:
+        await ws.send(json.dumps({"t": "error", "msg": "Too many connections; try later."}))
+        return
     if len(CLIENTS) >= MAX_CLIENTS:
         await ws.send(json.dumps({"t": "error", "msg": "Lobby is full."}))
         return
@@ -1359,28 +1453,50 @@ async def handler(ws):
             if t == "login":
                 # A login_failed closes the socket (return): this client always
                 # retries on a fresh connection, so keeping the old one open leaks it.
-                name = _clean(m.get("name"), MAX_NAME)
+                # Look up legacy identity before cleaning so old accounts remain usable.
+                legacy = str(m.get("name") or "").replace("\n", " ").replace("\r", " ").strip()[:MAX_NAME]
+                name = legacy if legacy.lower() in ACCOUNTS else _clean(legacy, MAX_NAME)
                 pw = str(m.get("pw") or "")[:MAX_PW]
                 if not name:
                     await _send(client, {"t": "login_failed", "msg": "Name required."})
                     return
                 key = name.lower()
+                if _moderated(key, banned=True):
+                    await _send(client, {"t": "login_failed", "msg": "This account is banned."})
+                    return
+                ip = _raid_peer_ip(ws)
+                if any(len(_RATE_BUCKETS.get((scope, value), ())) >= 10
+                       and _RATE_BUCKETS[(scope, value)][0] > time.monotonic() - 600
+                       for scope, value in (("login-ip", ip), ("login-name", key))):
+                    await _send(client, {"t": "login_failed", "msg": "Too many failed passwords; try later."})
+                    return
                 acc = ACCOUNTS.get(key)
                 if acc:                                   # existing name -> must match
                     # pbkdf2 off the event loop: 100k iterations is tens of ms,
                     # and the loop is the whole relay — a login flood must not
                     # freeze every live chat/battle session
+                    attempt = time.monotonic()
+                    if not (_rate_allow("login-ip", ip, 10, 600, now=attempt)
+                            and _rate_allow("login-name", key, 10, 600, now=attempt)):
+                        await _send(client, {"t": "login_failed", "msg": "Too many failed passwords; try later."})
+                        return
                     if not await asyncio.to_thread(_verify, pw, acc):
                         await asyncio.sleep(0.4)          # slow down brute force
                         await _send(client, {"t": "login_failed", "msg": "Wrong password for that name."})
                         return
+                    for scope, value in (("login-ip", ip), ("login-name", key)):
+                        bucket = _RATE_BUCKETS[(scope, value)]
+                        if attempt in bucket:
+                            bucket.remove(attempt)
                     name = acc["name"]                    # canonical capitalisation
                 else:                                     # new name -> claim it
-                    if not any(c.isalnum() for c in name):
+                    if not _new_name_ok(name):
                         # 2026-10-16: "-" was claimed as an account; a NEW name must
                         # carry a letter or digit (existing names keep working)
                         await _send(client, {"t": "login_failed",
-                                             "msg": "Names need a letter or number."})
+                                             "msg": "Names need a letter or number."
+                                             if not any(ch.isalnum() for ch in name)
+                                             else "That name is reserved."})
                         return
                     if not pw:
                         await _send(client, {"t": "login_failed", "msg": "Pick a password to claim this name."})
@@ -1480,6 +1596,17 @@ async def handler(ws):
                 await _send(client, {"t": "raid_reward" if t == "raid_claim" else "raid_hit",
                                      "ok": False, "why": "Raid request limit; wait a minute.",
                                      "request": m.get("request"), "retryable": True})
+
+            elif t in ("chat", "pm", "invite", "invite_resp", "relay", "pet") and (
+                    _moderated(client.name, banned=True) or
+                    (t != "pet" and _moderated(client.name))):
+                await _send(client, {"t": "error", "msg": "You are muted or banned; messaging is unavailable."})
+
+            elif t in ("chat", "pm", "invite", "invite_resp", "relay", "pet") and not _message_budget(t, client.name.lower()):
+                await _send(client, {"t": "error", "msg": "Please slow down; try again shortly."})
+
+            elif t in ("pm", "invite", "invite_resp", "relay") and not _wire_ok(m):
+                await _send(client, {"t": "error", "msg": "Invalid message envelope."})
 
             elif t == "pet":
                 client.pet = _clamp_pet(m.get("pet"))
@@ -1602,7 +1729,7 @@ async def handler(ws):
             elif t == "chat":
                 text = _clean(m.get("text"), MAX_CHAT)
                 if text and client.live:          # a sync_only ghost isn't in the room
-                    out = {"t": "chat", "from_id": client.id,
+                    out = {"t": "chat", "id": uuid.uuid4().hex, "from_id": client.id,
                            "from_name": client.name, "text": text}
                     if client.room is None:
                         CHAT_BACKLOG.append(out)  # the re-entry replay window (main only)
@@ -1616,6 +1743,8 @@ async def handler(ws):
                 # No password check beyond the phrase ITSELF: the phrase is the
                 # password (DSprite's private 🔒 rooms, tuipet-shaped).
                 if not client.live:
+                    # still ack: a 0.6.42+ sender holds its queue until room_ok
+                    await _send(client, {"t": "room_ok", "room": client.room})
                     continue
                 code = _room_code(m.get("code"))
                 if code != client.room:

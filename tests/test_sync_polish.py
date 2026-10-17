@@ -255,4 +255,4 @@ def test_design_repro_reconnect_queue_keeps_old_peer_id():
     client.invite(42, "battle")
     client._on_disconnect()
     client._on_retry_wait()
-    assert client._q.get_nowait() == {"t": "invite", "to": 42, "kind": "battle"}
+    assert client._q.get_nowait() == {"t": "invite", "to": "42", "kind": "battle"}  # ids are strings (2026-10-17)

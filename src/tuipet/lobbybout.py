@@ -51,7 +51,7 @@ def _clamp_card(card):
                 or (isinstance(v, float) and not math.isfinite(v)):
             v = d
         return max(lo, min(int(v), hi))
-    card = dict(card)
+    card = dict(card) if isinstance(card, dict) else {}
     card["strength_max"] = _n(card.get("strength_max"), 4, 1, 9)
     card["strength"] = _n(card.get("strength"), 4, 0, card["strength_max"])
     card["hunger_max"] = _n(card.get("hunger_max"), 4, 1, 9)

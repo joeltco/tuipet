@@ -105,6 +105,7 @@ class LobbyPanel(BoutMixin, ChatMixin):
         self.action_for = None
         self.pm_to = None              # (id, name): the input line is a PM compose
         self.invite_prompt = None
+        self._invite_times = {}
         self._sent_invites = set()     # (pid, kind) awaiting a response: an
         #                                invite_resp with no entry here is a
         #                                forgery and is dropped (a crafted
@@ -404,7 +405,20 @@ class LobbyPanel(BoutMixin, ChatMixin):
             # it lands -- net.py badges every PM blind, and the badge used to
             # survive the very conversation you watched arrive (round 30)
             s.unread.discard(self.dm_peer[1])
+        now = time.monotonic()
+        peers = {p["id"] for p in s.roster}
+        for key in list(self._sent_invites):
+            if key[0] not in peers or now - self._invite_times.setdefault(key, now) >= 60:
+                self._sent_invites.discard(key)
+                self._invite_times.pop(key, None)
+        if self.invite_prompt and not self._invite_valid(self.invite_prompt):
+            self.invite_prompt = None
+            self.status = "Invite expired or player left."
         for m in list(s.inbox):
+            if m.get("t") == "invite" and not self._invite_valid(m):
+                self.client.respond(m.get("from_id"), m.get("kind"), False)
+                s.inbox.remove(m)
+                continue
             t = m.get("t")
             if t == "invite":
                 if m.get("kind") not in ("jogress", "battle"):
@@ -447,7 +461,7 @@ class LobbyPanel(BoutMixin, ChatMixin):
                     continue        # a response to an invite never sent: forged
                 self._sent_invites.discard(rk)
                 if m.get("accept"):
-                    if self.phase == "lobby":
+                    if self.phase == "lobby" and not self._session_gate(m.get("kind")):
                         self._enter_session(m.get("from_id"), m.get("from_name", "?"), m.get("kind"), host=True)
                     else:                                  # already busy -> free the accepter
                         self.client.relay(m.get("from_id"), {"kind": m.get("kind"), "abort": True})
@@ -601,9 +615,11 @@ class LobbyPanel(BoutMixin, ChatMixin):
         if had_partner and self.client:
             self.client.update_pet(self._card())
     def _on_relay(self, m):
-        if not self.partner or m.get("from_id") != self.partner[0]:
+        if not isinstance(m, dict) or not self.partner or m.get("from_id") != self.partner[0]:
             return
-        payload = m.get("payload") or {}
+        payload = m.get("payload")
+        if not isinstance(payload, dict) or ("card" in payload and not isinstance(payload["card"], dict)):
+            return
         kind = payload.get("kind")
         if payload.get("abort"):                       # partner cancelled / got busy
             if self.phase == "jogress" and self.jphase == "waiting":
@@ -784,10 +800,21 @@ class LobbyPanel(BoutMixin, ChatMixin):
                 return ("done", None)            # Esc -> leave the lobby
             self._connect(*r[1])
         return None
+    def _invite_valid(self, inv):
+        received = inv.setdefault("_received", time.monotonic())
+        return (time.monotonic() - received < 60 and self.state is not None
+                and any(p["id"] == inv.get("from_id") for p in self.state.roster))
+
     def _key_lobby(self, k):
         if self.invite_prompt is not None:
             inv = self.invite_prompt
             if k in ("y", "Y"):
+                gate = self._session_gate(inv.get("kind"))
+                if not self._invite_valid(inv) or gate:
+                    self.client.respond(inv.get("from_id"), inv.get("kind"), False)
+                    self.invite_prompt = None
+                    self.status = gate or "Invite expired or player left."
+                    return None
                 self.client.respond(inv.get("from_id"), inv["kind"], True)
                 self.invite_prompt = None
                 self._enter_session(inv.get("from_id"), inv.get("from_name", "?"), inv["kind"], host=False)
@@ -814,14 +841,14 @@ class LobbyPanel(BoutMixin, ChatMixin):
                     self._feedback("refuse")
                     self.status, self.action_for = err, None
                     return None
-                self.client.invite(pid, "battle"); self._sent_invites.add((pid, "battle")); self.status = f"Battle invite → {pname}"; self.action_for = None
+                self.client.invite(pid, "battle"); self._sent_invites.add((pid, "battle")); self._invite_times[(pid, "battle")] = time.monotonic(); self.status = f"Battle invite → {pname}"; self.action_for = None
             elif k in ("j", "J") and plive:
                 err = jogress.can_jogress(self.pet)
                 if err:
                     self._feedback("refuse")
                     self.status, self.action_for = err, None
                     return None
-                self.client.invite(pid, "jogress"); self._sent_invites.add((pid, "jogress")); self.status = f"Jogress invite → {pname}"; self.action_for = None
+                self.client.invite(pid, "jogress"); self._sent_invites.add((pid, "jogress")); self._invite_times[(pid, "jogress")] = time.monotonic(); self.status = f"Jogress invite → {pname}"; self.action_for = None
             elif k in ("p", "P") and not plive and pid != OFFLINE_ID:
                 # ping is for GHOSTS only -- "come to the lobby" means nothing
                 # to someone whose app is shut, and ping() addresses by id

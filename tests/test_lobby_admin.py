@@ -81,7 +81,8 @@ def test_admin_announce_broadcasts_and_feeds(tmp_path, monkeypatch):
     feed = [json.loads(l) for l in open(tmp_path / "feed.jsonl")]
     assert feed[-1]["kind"] == "announce" and feed[-1]["text"] == "v0.2.397 is live!"
     # late joiners replay it from the chat backlog
-    assert {"t": "announce", "text": "v0.2.397 is live!"} in server.CHAT_BACKLOG
+    assert any(m["t"] == "announce" and m["text"] == "v0.2.397 is live!"
+               and m.get("id") for m in server.CHAT_BACKLOG)
     server.CHAT_BACKLOG.clear()
 
 

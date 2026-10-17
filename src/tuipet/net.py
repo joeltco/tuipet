@@ -19,6 +19,15 @@ else:
     import websockets
 
 CHAT_CAP = 200
+
+
+def clean_remote(s):
+    """Keep remote text from changing terminal direction or emitting controls."""
+    import unicodedata
+    return "".join(c for c in str(s or "")
+                   if unicodedata.category(c) not in ("Cc", "Cf"))
+
+
 ANNOUNCE = "📢"          # the dev's speaker: never a peer, never blockable
 WIRE_READ_MAX = 256 * 1024   # our read cap: a welcome carrying a big stored save
 #                              must not kill the connection (the server's INBOUND
@@ -57,7 +66,7 @@ _RAW_KEYS = ("save",)
 
 def display_safe(s):
     """Strip variation selectors from one remote string (see the law above)."""
-    return _VARSEL.sub("", s) if isinstance(s, str) else s
+    return clean_remote(_VARSEL.sub("", s)) if isinstance(s, str) else s
 
 
 def _normalize(v, key=None):
@@ -160,7 +169,7 @@ class LobbyState:
     def __init__(self):
         self.connected = False
         self.error: str | None = None
-        self.me_id: int | None = None
+        self.me_id: str | None = None
         self.me_name: str | None = None
         self.roster: list[dict] = []          # [{id,name,pet}] — replaced wholesale
         self.chat: list[tuple[str, str]] = []  # [(from_name, text)] — capped
@@ -325,6 +334,10 @@ class LobbyClient(_WsClient):
         self._ws = None
         self._q: asyncio.Queue = asyncio.Queue()
         self._stop = False                    # rejected login (or teardown) -> no retry
+        self._welcomed = asyncio.Event()
+        self._ready = asyncio.Event()
+        self._restore_room = None
+        self._chat_ids = []
         self._had_welcome = False             # a past successful login makes drops RECONNECTS
         self._backoff0 = 2.0                  # first-retry delay (tests shrink it)
         self.ladder = None                    # last ladder message (rankings page)
@@ -376,10 +389,10 @@ class LobbyClient(_WsClient):
         self._send({"t": "pet", "pet": pet})
 
     def invite(self, to, kind):
-        self._send({"t": "invite", "to": to, "kind": kind})
+        self._send({"t": "invite", "to": str(to), "kind": kind})
 
     def pm(self, to, text, to_name=None):
-        msg = {"t": "pm", "to": to, "text": text}
+        msg = {"t": "pm", "to": str(to), "text": text}
         if to_name:
             msg["to_name"] = to_name       # lets the server queue when the id is stale/offline
         self._send(msg)
@@ -390,13 +403,13 @@ class LobbyClient(_WsClient):
         self.pm(to, "\u2694\ufe0f wants to battle -- come to the Lobby!")
 
     def respond(self, to, kind, accept, busy=False):
-        msg = {"t": "invite_resp", "to": to, "kind": kind, "accept": bool(accept)}
+        msg = {"t": "invite_resp", "to": str(to), "kind": kind, "accept": bool(accept)}
         if busy:
             msg["busy"] = True
         self._send(msg)
 
     def relay(self, to, payload):
-        self._send({"t": "relay", "to": to, "payload": payload})
+        self._send({"t": "relay", "to": str(to), "payload": payload})
 
     def room(self, code):
         """Join the password room for `code` (everyone typing the same phrase
@@ -425,6 +438,9 @@ class LobbyClient(_WsClient):
                 "dlabel": persistence.device_label()}
 
     def _on_connect(self):
+        self._welcomed.clear()
+        self._ready.clear()
+        self._restore_room = self.state.room
         self.state.connected = True
         self.state.reconnecting = False
 
@@ -445,9 +461,15 @@ class LobbyClient(_WsClient):
         self.state.reconnecting = False
 
     async def _send_loop(self):
+        await self._welcomed.wait()
+        if self._restore_room:
+            await self._ws.send(json.dumps({"t": "room", "code": self._restore_room}))
         while True:
+            await self._ready.wait()
             obj = await self._q.get()
             try:
+                if obj.get("t") == "room":
+                    self._ready.clear()
                 await self._ws.send(json.dumps(obj))
             except Exception:
                 # don't lose the frame we already dequeued: requeue it so
@@ -466,16 +488,23 @@ class LobbyClient(_WsClient):
         if t == "welcome":
             self._had_welcome = True
             s.me_id = m.get("id")
-            s.me_name = m.get("name")
+            s.me_name = clean_remote(m.get("name"))
+            self._welcomed.set()
+            if not self._restore_room:
+                self._ready.set()
         elif t == "ladder":
             self.ladder = m               # the rankings page renders from this
         elif t == "roster":
             s.roster = m.get("players") or []
         elif t == "room_ok":
+            self._restore_room = None
+            self._ready.set()
             s.room = m.get("room") or None
             s.chat.append(("", f"— room: {s.room} —" if s.room else "— main lobby —"))
             del s.chat[:-CHAT_CAP]
         elif t == "chat":
+            if self._restore_room:
+                return
             nm = m.get("from_name", "?")
             if nm not in s.blocked and not self._replayed(m, nm):
                 s.chat.append((nm, m.get("text", "")))
@@ -514,6 +543,8 @@ class LobbyClient(_WsClient):
         elif t == "ladder_reward":
             self.ladder_reward = m        # the season-award flow consumes this once
         elif t in ("invite", "invite_resp", "relay"):
+            import time
+            m["_received"] = time.monotonic()
             s.inbox.append(m)
         elif t == "login_failed":
             msg = m.get("msg") or ""
@@ -530,12 +561,22 @@ class LobbyClient(_WsClient):
                 self._stop = True
         elif t == "error":
             s.error = m.get("msg")
+            if s.error in ("You were kicked by an administrator.", "This account is banned."):
+                s.login_failed = s.error
+                self._stop = True
 
     def _replayed(self, m, nm):
         """True for a server-marked backlog `replay` line the pane already
         shows: reconnects and room→main returns re-send the same window, and
         with no client dedup every line printed twice.  Live repeats are
         untagged and always append."""
+        mid = m.get("id")
+        if isinstance(mid, str) and mid:
+            if mid in self._chat_ids:
+                return True
+            self._chat_ids.append(mid)
+            del self._chat_ids[:-200]
+            return False
         return bool(m.get("replay")) and (nm, m.get("text", "")) in self.state.chat[-30:]
 
 

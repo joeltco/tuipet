@@ -17,7 +17,7 @@ def test_help_order_and_render_budget():
         'GROW', 'ADVANCED', 'LEGACY', 'HOLIDAYS']
     assert HELP[8][0] == 'PHONE / NAVIGATION'
     assert any('hatches on its own' in t for t, _ in HELP[:8])
-    assert len(HELP) <= 139
+    assert len(HELP) <= 141   # +2: lobby chat/PM/scroll/leave (lobby audit 2026-10-17)
     pan = HelpPanel(Pet(num=100))
     for top in range(pan._max_top() + 1):
         pan.top = top

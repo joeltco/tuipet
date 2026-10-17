@@ -1011,6 +1011,8 @@ def test_a_forged_invite_resp_never_enters_a_session():
                     "kind": "battle", "accept": False})
     pan.anim()
     assert pan.status == st0
+    # Keep eligibility independent of this forged-response check.
+    pan._session_gate = lambda kind: None
     # a REAL invite's accept still enters the session, once
     pan._sent_invites.add((9, "jogress"))
     s.inbox.append({"t": "invite_resp", "from_id": 9, "from_name": "attacker",

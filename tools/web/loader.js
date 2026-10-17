@@ -49,8 +49,8 @@ window.key = (name, char = null) => {
 };
 const keyboard = document.querySelector('#keyboard');
 const names = {Enter:'enter',Escape:'escape',ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',' ':'space',Tab:'tab',Backspace:'backspace','?':'question_mark',PageUp:'pageup',PageDown:'pagedown',Delete:'delete',Home:'home',End:'end'};
-// A printable keyboard-only Escape for stock phone keyboards with no Esc key.
-const sendText = text => { for (const c of text) { const n = c === '~' || c === '\x1b' ? 'escape' : c === '\n' ? 'enter' : names[c] || c; key(...(window.withMods ? withMods(n, n === c ? c : null) : [n, c === '~' || c === '\x1b' ? null : c])); } };
+// Escape is available on the touch bar; printable text stays literal.
+const sendText = text => { for (const c of text) { const n = c === '\x1b' ? 'escape' : c === '\n' ? 'enter' : names[c] || c; key(...(window.withMods ? withMods(n, n === c ? c : null) : [n, c === '\x1b' ? null : c])); } };
 const resetInput = () => { keyboard.value = ' '; keyboard.setSelectionRange(1,1); };
 resetInput();
 keyboard.addEventListener('keydown', e => {

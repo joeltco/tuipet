@@ -109,7 +109,7 @@ def test_chat_empty_state_and_caret_blink():
     pan.state.chat = []
     pan._mq = 0
     txt = pan.text().plain
-    assert "say hi" in txt
+    assert "P: ping ghosts" in txt
     inp = [l for l in txt.split("\n") if l.startswith("say:")][0]
     assert "_" in inp
     pan._mq = 5                                          # the caret's off-beat

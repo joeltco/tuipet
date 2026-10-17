@@ -18,7 +18,7 @@ from . import battlescreen  # noqa: F401
 from . import jogressscreen  # noqa: F401
 from . import menu  # noqa: F401
 from . import persistence  # noqa: F401
-from .net import ANNOUNCE, CHAT_CAP  # noqa: F401
+from .net import ANNOUNCE, CHAT_CAP, clean_remote  # noqa: F401
 from .render import marquee  # noqa: F401
 from .theme import INK, INK_B, DIM, SEL  # noqa: F401  (theme.apply propagation)
 
@@ -62,14 +62,14 @@ HINTS_OPEN = "ENTER send/act · TAB ranks · ESC leave"
 
 def _fit(s, w):
     """Pad or truncate to exactly `w` DISPLAY CELLS (never characters)."""
-    return set_cell_size(str(s), w)
+    return set_cell_size(clean_remote(s), w)
 
 
 def _wrap(s, w):
     """Word-wrap `s` into lines of <= w CELLS, hard-splitting any over-long word.
     A wide glyph is never split down the middle -- chop_cells keeps it whole."""
     out, line = [], ""
-    for word in str(s).split(" "):
+    for word in clean_remote(s).split(" "):
         while cell_len(word) > w:
             if line:
                 out.append(line); line = ""
@@ -270,7 +270,7 @@ class ChatMixin:
         view = rows[max(0, end - BODY):end]
         view = [("", INK)] * (BODY - len(view)) + view
         if not rows:                                       # the empty room
-            view[BODY // 2] = ("— say hi, the room hears you —".center(w), DIM)
+            view[BODY // 2] = ("P: ping ghosts · threads · ranks".center(w), DIM)
         for ln, sty in view:
             t.append(_fit(ln, w) + "\n", style=sty)
         if self.pm_to is not None:                           # the input line is a PM compose
@@ -312,5 +312,5 @@ class ChatMixin:
                                        or "reconnecting" in line or "Retrying" in line):
                 # liveness: the static wait line read as a hang (QOL 2026-07-23)
                 line = line[:-1] + "." * (1 + (mq // 5) % 3)
-            t.append(line[:w], style=DIM)
+            t.append(_fit(line, w), style=DIM)
         return t
