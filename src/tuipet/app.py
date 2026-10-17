@@ -175,7 +175,7 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("A CLEANER LOOK. Brighter status colors in every theme, readable cup terms, the action list steps aside while a menu is open, a tidier account card, and the web game sits centered on phones.")
+    WHATS_NEW = ("POLISHED MENUS. One consistent style for headers, selections and key hints across every screen, a clearer status card, cleaner DNA and cup pages, and warnings that look like warnings.")
 
 
     BINDINGS = [
