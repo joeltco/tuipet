@@ -175,8 +175,8 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("SAFER LOBBY: spam limits, cleaner names, challenges expire after 60s, private rooms stay "
-                 "private through reconnects, and the lobby help now covers chat, PMs and scrolling.")
+    WHATS_NEW = ("@MENTIONS in the lobby: type @ + a name (TAB completes) to ping a tamer -- "
+                 "they hear it in the lobby, or get a flash on their home screen.")
 
 
     BINDINGS = [
