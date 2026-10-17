@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.35 — HALLOWEEN, CLEANER. The muddy seasonal tint is gone -- your  (2026-10-17)
+
+HALLOWEEN, CLEANER. The muddy seasonal tint is gone -- your scenes keep their real colors. The ghost trail, festival finds and Oct 31 double bits are all still on.
+
 ## 0.6.34 — BETTER SOUND. Sounds no longer pile up or play over each oth (2026-10-17)
 
 BETTER SOUND. Sounds no longer pile up or play over each other, skipping or muting stops them, your volume setting is respected everywhere, and battles and duels now end with a win or lose sound.
