@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.44 — BROWSER KEYBOARD FIXED (2026-10-17)
+
+BROWSER KEYBOARD FIXED: phone keys land the moment you tap them, and the keyboard popping up no longer scrambles the screen.
+
 ## 0.6.43 — @MENTIONS in the lobby (2026-10-17)
 
 @MENTIONS in the lobby: type @ + a name (TAB completes) to ping a tamer -- they hear it in the lobby, or get a flash on their home screen.
