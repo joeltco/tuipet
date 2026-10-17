@@ -216,7 +216,7 @@ def adventure_line(pet):
         return f"[dim]Quest   [/][{theme.POS}]★ all {total} cleared[/]"
     if prog <= 0:
         return f"[dim]Quest   [/][dim]▸ {_frontier_name(pet, 16)}[/]"
-    count = f"{prog} / {total} "
+    count = f"{prog}/{total} "             # tight: the spaced form cut the map name (Joel 2026-10-17, A)
     return f"[dim]Quest   [/][b]{count}[/][dim]▸ {_frontier_name(pet, 16 - len(count))}[/]"
 
 
@@ -271,7 +271,7 @@ def home_lines(pet):
         # Level, once DigiCore-only, now ride the two battle rows below --
         # both were live progression the main card never showed, home-card
         # surfacing 2026-07-24 "evaluate what we can fit".)
-        f"[dim]Weight  [/][b]{pet.weight:>3}g[/] · [b {T.COIN}]{bits:>6}b[/]",
+        f"[dim]Weight  [/][b]{pet.weight}g[/] · [b {T.COIN}]{bits}b[/]",
         # care mistakes decide the evolution road (every line's CM gates)
         # and 20 is lethal.  Stage-scoped: they reset on evolve.
         (f"[dim]Care    [/][b {T.POS}]spotless[/]" if pet.care_mistakes == 0 else
@@ -288,8 +288,8 @@ def home_lines(pet):
         # IS the neg hex on mono and amber -- Data and Virus rendered as
         # literal twins there, near-twins on grey (both red-family).
         battle_row,
-        f"[dim]Power   [/][b {T.LIFE}]V{compact_count(pet.vaccine):>4}[/] [b {T.POS}]D{compact_count(pet.data_power):>4}[/] "
-        f"[b {T.NEG}]Vi{compact_count(pet.virus):>4}[/]",
+        f"[dim]Power   [/][b {T.LIFE}]V{compact_count(pet.vaccine)}[/] [b {T.POS}]D{compact_count(pet.data_power)}[/] "
+        f"[b {T.NEG}]Vi{compact_count(pet.virus)}[/]",
         adventure_line(pet),
         # the @ line is WHERE THE MON STANDS (liveness law, Joel 2026-07-21
         # "shouldnt the @ say what zone the mon is in during adventure?"):

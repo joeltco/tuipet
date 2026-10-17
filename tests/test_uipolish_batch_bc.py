@@ -92,7 +92,7 @@ def test_08_home_keeps_rows_and_distinct_live_power_roles():
     power = next(row for row in rows if "Power" in row)
     assert "[dim]Power   [/]" in power
     assert all(f"[b {ink}]" in power for ink in (theme.LIFE, theme.POS, theme.NEG))
-    assert "V 120" in power and "D  45" in power and "Vi  88" in power
+    assert "V120" in power and "D45" in power and "Vi88" in power   # compact again (Joel 2026-10-17, A)
 
 
 def test_09_current_total_and_independent_facts_have_separate_grammar():

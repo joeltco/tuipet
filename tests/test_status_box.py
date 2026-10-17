@@ -79,7 +79,7 @@ def test_home_card_surfaces_level_and_the_attribute_powers():
     p.vaccine, p.data_power, p.virus = 120, 45, 88
     Stats.paint(fake, p)
     _fits(fake, "home/powers")
-    assert "V 120" in fake.txt and "D  45" in fake.txt and "Vi  88" in fake.txt
+    assert "V120" in fake.txt and "D45" in fake.txt and "Vi88" in fake.txt
     assert "Lv" in fake.txt                      # level folded into Battle row
     # extreme uncapped powers + a maxed record still fit the box
     p.vaccine = p.data_power = p.virus = 9999

@@ -118,7 +118,7 @@ def test_the_home_card_shows_live_quest_progress():
     assert "▸" in line and (first in line or first.split("'s ", 1)[0] in line)
     p.adv_progress = 5
     line = statusbox.adventure_line(p)
-    assert f"5 / {len(ZONES)}" in line                           # partway, count kept
+    assert f"5/{len(ZONES)}" in line                           # partway, count kept
     sixth = ZONES[A.PROGRESSION[5]]["name"]
     assert sixth in line or sixth.split("'s ", 1)[0][:11] in line
     p.adv_progress = len(ZONES)
