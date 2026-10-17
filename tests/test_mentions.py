@@ -9,7 +9,7 @@ from rich.text import Text
 
 from tuipet import net, persistence
 from tuipet.app import TuiPetApp
-from tuipet.theme import INK, INK_B
+from tuipet.theme import INK_B
 from test_lobby_audit import _panel
 from test_lobbychat_fixes import Wire, login, server
 from test_lobbychat_fixes import isolated as isolated
