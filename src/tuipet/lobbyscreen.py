@@ -754,7 +754,7 @@ class LobbyPanel(BoutMixin, ChatMixin):
         # no blank separator rows: header + tagline + top-8 + you + season is
         # EXACTLY the 12-row LCD -- the old blanks pushed "you: rank" and
         # "season resets" (the page's whole point) off the box (round 30)
-        t.append("  one win = one rung · online only\n", style=DIM)
+        t.append("  online wins set your ladder score\n", style=DIM)
         top = list(lad.get("top") or [])[:8]
         you_rank, you_wins = (lad.get("you") or [0, 0])[:2]
         if not top:
@@ -953,11 +953,7 @@ class LobbyPanel(BoutMixin, ChatMixin):
 
     # ---- render ----------------------------------------------------------
     def _care_cue(self):
-        """The care alarm's on-screen half while the lobby TICKS (2026-07-13:
-        the lobby is no longer a pause room -- app.on_tick runs the life-sim
-        through chat, so the strip must carry the nag or the pet starves
-        silently behind the chat window).  Compact by design: name(10) +
-        the loudest need, <= 38 plain cols with the ESC hint."""
+        """Show pre-existing care needs while the lobby pauses simulation."""
         from . import theme
         p = self.pet
         if not p.needs_attention():
@@ -974,6 +970,8 @@ class LobbyPanel(BoutMixin, ChatMixin):
             w = "messy!"
         elif p.energy <= 0:
             w = "exhausted!"
+        elif p.injured:
+            w = "hurt!"
         else:
             w = "misbehaving!"
         return (f"[{theme.NEG}]⚠ {(p.name or '?')[:10]} {w}[/] [dim]·[/] "
@@ -1005,7 +1003,8 @@ class LobbyPanel(BoutMixin, ChatMixin):
             # leave-to-home word (grammar sweep 2026-07-18)
             return menu.hints(("TAB", "field"), ("ENTER", "sign in"), ("ESC", "leave"))
         if self.phase == "ladder":
-            return menu.hints(("TAB", "lobby"), ("ESC", "back"))
+            return menu.hints(("TAB", "retry" if self._ladder_stalled() else "lobby"),
+                              ("ESC", "back"))
         if self.phase == "dm":
             cue = self._care_cue()      # the DM thread live-ticks too
             if cue:

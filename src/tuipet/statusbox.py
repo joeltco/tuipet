@@ -1008,7 +1008,8 @@ def help_(app):
         f"Gen    {app.pet.generation}", "",
         "[dim]the guide scrolls[/]",
         "[dim]on the display[/]", "",
-        "[dim]↑↓ scroll  ESC back[/]"])
+        "[dim]↑↓ scroll  PGUP/PGDN leap[/]",
+        "[dim]ESC back[/]"])
 
 
 def options(app):
@@ -1016,7 +1017,7 @@ def options(app):
     m = app.mode
     pet = getattr(app, "pet", None)
     row = _opts._ROWS[min(m.cursor, len(_opts._ROWS) - 1)]
-    desc = _opts._DESC.get(row, "")
+    desc = _opts.row_description(row)
     # word-wrap (card audit 2026-07-24): desc runs to 53 chars and the update
     # msg to ~49; the old [:26]/[26:52]/[:26] slices cut words mid-glyph and
     # dropped the msg's action hint.  Body budget = 14 rows (16 - title/DIV);
@@ -1045,8 +1046,10 @@ def options(app):
             action = "restart"
         elif getattr(m, "_upd", None) not in (None, "", "…"):
             action = "install"
-    lines.append("[dim]updating…[/]" if getattr(m, "_installing", False)
-                 else f"[dim]ENTER {action}[/]")
+    from .web import is_browser
+    if row != "update" or not is_browser():
+        lines.append("[dim]updating…[/]" if getattr(m, "_installing", False)
+                     else f"[dim]ENTER {action}[/]")
     card(app, "Options", lines)
 
 
@@ -1523,7 +1526,8 @@ def dna(app):
         "[dim]Stops at empty energy[/]",
         *last_rows,
         "[dim]Ties disarm; need a road[/]",
-        "[dim]ESC steps back out[/]",
+        ("[dim]Mash SPACE until time up.[/]" if m.phase == "mash"
+         else "[dim]ESC steps back out[/]"),
     ]
     app.stats_w.update("\n".join(lines))
 

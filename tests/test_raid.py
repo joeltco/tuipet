@@ -520,9 +520,9 @@ def test_map_rows_tell_the_adventure_or_raid_story():
     # ONE story (guide inconsistency 2026-07-28): the raid-era desc rewrite
     # ("Fell 2 raid bosses") went stale when the adventure rebuild restored
     # the map door -- desc now speaks the same dual sentence as the live goal
-    assert rules[idx]["desc"] == "clear adventure map 2 (or fell 2 raid bosses)"
+    assert rules[idx]["desc"] == "Clear area 2 (12 maps), or fell 2 raid bosses."
     assert egg.unlock_progress(idx, _prog(raids=1)) == \
-        "clear adventure map 2 (or fell 2 raid bosses)"
+        "Clear area 2 (12 maps), or fell 2 raid bosses."
     assert egg.unlock_ratio(idx, _prog(raids=1)) == 0.5        # 1/2 raids, map uncleared
     # clearing the adventure region unlocks it outright
     assert egg.unlock_progress(idx, _prog(maps={1})) == ""

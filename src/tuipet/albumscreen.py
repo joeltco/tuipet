@@ -31,14 +31,18 @@ def route_hint(num):
     2026-07-22): the book was a completion checklist with the HOW
     invisible -- "keep raising" over hundreds of masked entries, while
     lines.load_lines() knew exactly which line holds each form.  Named
-    routes only, never names of forms: the egg/line that raises it, else
-    the off-chart door its own requirements declare (armor / jogress /
-    a Field divergence).  Data only, nothing guessed."""
+    routes only, never names of forms: the bound egg/line that raises it,
+    else conservative item/special guidance or the live Field-road page."""
     from . import egg as egg_mod, lines
     lids = {lid for lid, line in lines.load_lines().items()
             if num in line["members"]}
     if lids:
         for i in range(egg_mod.count()):
+            explicit = egg_mod.hatch_line(i)
+            if explicit:
+                if explicit in lids:
+                    return f"raised on the {egg_mod.hatch_name(i)} line"
+                continue
             for t in egg_mod.hatch_targets(i):
                 _root, lid = lines.canonical_root(t)
                 if lid in lids:
@@ -46,13 +50,13 @@ def route_hint(num):
         return "raised on a line"          # a line holds it; no listed egg
     req = data.load_requirements().get(num, {})
     if req.get("evol_item", -1) != -1:
-        return "an armor jump reaches it"
+        return "an evolution item reaches it"
     if req.get("special", "None") != "None":
-        return "a jogress reaches it"
+        return "a special evolution reaches it"
     _, by_num = data.load_sprites()
     field = (by_num.get(num) or {}).get("field", "") or ""
     if field and field != "None":
-        return f"a {data.pretty_field(field)} divergence reaches it"
+        return "check X: Divergence for Field roads"
     return "keep raising"
 
 

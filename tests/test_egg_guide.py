@@ -216,7 +216,7 @@ def test_a_map_egg_tells_one_wrapped_story_everywhere():
     idx = next(i for i, r in rules.items() if r.get("map") == 0)
     # the desc IS the live goal -- one story, both doors named
     assert rules[idx]["desc"] == data_meta.map_goal(0)
-    assert "clear adventure map 1" in rules[idx]["desc"]
+    assert "Clear area 1 (6 maps)" in rules[idx]["desc"]
     assert "raid boss" in rules[idx]["desc"]
 
     p = Pet(num=100, stage="Champion", attribute="Vaccine")
@@ -242,5 +242,5 @@ def test_a_map_egg_tells_one_wrapped_story_everywhere():
     finally:
         statusbox.card = real_card
     joined = " ".join(got)
-    assert "raid boss)" in joined, "the card lost the goal's tail"
+    assert "raid boss." in joined, "the card lost the goal's tail"
     assert all(len(ln) <= 60 for ln in got)      # markup-inclusive sanity

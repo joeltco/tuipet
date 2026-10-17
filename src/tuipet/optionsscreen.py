@@ -33,9 +33,16 @@ _DESC = {"theme": "recolor the whole game — live preview",
          "account": "switch login — the pet parks in the cloud",
          "cloud": "cloud saves + offline mail — on or off",
          "update": "ENTER checks + installs · A flips launch auto-install",
-         "keys": "every binding on one page",
+         "keys": "home shortcuts on one page",
          "new": "retire the pet, hatch the heir",
          "erase": "wipe save, progress and login — for keeps"}
+
+
+def row_description(row):
+    from .web import is_browser
+    if row == "update" and is_browser():
+        return "Reload the page for web updates."
+    return _DESC.get(row, "")
 
 
 def _sound_value(on, with_volume=False):
@@ -250,7 +257,7 @@ class OptionsPanel(menu.SubHost):
     def _check_updates(self):
         from .web import is_browser
         if is_browser():
-            self.msg = "Reload the page to get the latest web version."
+            self.msg = "Reload the page for web updates."
             return
         if self._upd == "…":
             return                      # one probe at a time
@@ -273,7 +280,7 @@ class OptionsPanel(menu.SubHost):
         """
         from .web import is_browser
         if is_browser():
-            self.msg = "Reload the page to get the latest web version."
+            self.msg = "Reload the page for web updates."
             return
         if self._installing:
             return
@@ -486,7 +493,8 @@ class OptionsPanel(menu.SubHost):
             out.append_text(menu.row(f"{_LABEL[row]:<16} {menu._clip(self._value(row), 18)}",
                                      i == self.cursor))
         out.append_text(menu.blanks(7 - len(_ROWS)))
-        out.append_text(menu.note(self.msg or _DESC[_ROWS[self.cursor]],
+        desc = row_description(_ROWS[self.cursor])
+        out.append_text(menu.note(self.msg or desc,
                                   tick=self.frame_i))
         out.right_crop(1)              # the strip owns the keys (QOL 2026-07-23)
         return out

@@ -144,7 +144,7 @@ def map_goal(n):
     surface that tells it (the guide's Unlock desc here, the live Goal
     line in egg.unlock_progress)."""
     s = "" if n == 0 else "es"
-    return f"clear adventure map {n + 1} (or fell {n + 1} raid boss{s})"
+    return f"Clear area {n + 1} ({6 * (n + 1)} maps), or fell {n + 1} raid boss{s}."
 
 @lru_cache(maxsize=1)
 def load_titles():

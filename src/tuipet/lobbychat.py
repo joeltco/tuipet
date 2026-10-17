@@ -57,7 +57,7 @@ OFFLINE_ID = -1
 # on Joel's live screen it read as a run-off).  WHOLE WORDS ONLY, <= 38 cells;
 # ↑↓ pick lives on the strip below, so the LCD line doesn't repeat it.  These
 # are also the "default status" sentinels _text_lobby rewrites in place.
-HINTS_OPEN = "ENTER chat · TAB ranks · ESC leave"
+HINTS_OPEN = "ENTER send/act · TAB ranks · ESC leave"
 
 
 def _fit(s, w):

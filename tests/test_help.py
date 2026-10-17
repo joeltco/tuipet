@@ -208,7 +208,7 @@ def test_the_guides_reach_claims_stay_honest():
     that screen (app.on_key) -- ? answers from HOME.  And SPACE=ENTER has
     its shipped exception (digicore: SPACE pages, ENTER opens the doors)."""
     text = "\n".join(ln for ln, _ in HELP)
-    assert "any time you're home" in text
+    assert "opens Help from the home view" in text
     assert "SPACE doubles ENTER on most screens" in text
     assert "wherever ENTER does" not in text
 
@@ -277,7 +277,7 @@ def test_the_help_claims_match_the_shipped_mechanics():
     assert "sell eggs" in text and "Clearing an" in text and "patch" in text
     assert "hit saves your battle form" not in text
     # battle audit 2026-10-14: proto 4 duels commit their own live bar lock.
-    assert "battles lock their own bar" in text
+    assert "Battles use their own timing bar" in text
     assert "bits/hour" not in text
     assert "elder can go" not in text
 

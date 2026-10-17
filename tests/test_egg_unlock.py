@@ -178,6 +178,7 @@ def test_map_eggs_unlock_by_clearing_adventure_regions():
     """The map-N eggs open when ADVENTURE clears region N (the profile `maps`
     set), with the raid fallback (N+1 bosses) still standing -- the map rows
     always meant 'region-boss cleared' (adventure rebuild 2026-07-20)."""
+    from tuipet import data_meta
     u = data.load_egg_unlock()
     mapped = [(i, r) for i, r in u.items() if r.get("map") is not None]
     assert mapped                                     # there ARE map-gated eggs
@@ -188,5 +189,5 @@ def test_map_eggs_unlock_by_clearing_adventure_regions():
         assert not egg._conditions_met(r, locked)     # neither path -> locked
         assert egg._conditions_met(r, {**locked, "maps": {n}})      # adventure clears it
         assert egg._conditions_met(r, {**locked, "raids": n + 1})   # raid fallback
-        assert "adventure map" in egg.unlock_progress(i, locked)    # the guide names it
+        assert egg.unlock_progress(i, locked) == data_meta.map_goal(n)
         assert egg.unlock_progress(i, {**locked, "maps": {n}}) == ""  # cleared -> no gate text

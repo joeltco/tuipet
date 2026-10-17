@@ -109,7 +109,7 @@ def test_an_unseen_entry_names_its_route_home():
     answer.  Routes name eggs and doors, never masked forms."""
     from tuipet import albumscreen
     assert albumscreen.route_hint(29).startswith("raised on the ")   # a line member
-    assert albumscreen.route_hint(514) == "an armor jump reaches it"   # Depthmon (Shadramon #492 joined the pwa card line)
+    assert albumscreen.route_hint(514) == "an evolution item reaches it"   # Depthmon (Shadramon #492 joined the pwa card line)
 
 
 def test_every_roster_form_gets_a_route_class():
@@ -117,7 +117,7 @@ def test_every_roster_form_gets_a_route_class():
     hints = {n: albumscreen.route_hint(n) for n in data.album_roster()}
     for n, h in hints.items():
         assert (h.startswith("raised on") or h.endswith("reaches it")
-                or h == "keep raising"), (n, h)
+                or h in ("keep raising", "check X: Divergence for Field roads")), (n, h)
     # the map is genuinely informative: the bare fallback is the rare case
     bare = sum(1 for h in hints.values() if h == "keep raising")
     assert bare < len(hints) * 0.1, f"{bare}/{len(hints)} routeless"
