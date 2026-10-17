@@ -51,11 +51,17 @@ def update_raster(widget, content):
     if not isinstance(content, Raster):
         bridgeRasterHide()
         widget._web_lines = None
+        widget._web_raster = None
         return False
+    widget._web_raster = content
     widget._web_lines = content.lines
     changes = [y for y, line in enumerate(content.lines)
                if previous is None or previous[y] is not line]
     region = widget.content_region
+    position = (region.x, region.y)
+    if getattr(widget, '_web_position', None) != position:
+        changes = list(range(len(content.lines)))
+        widget._web_position = position
     if previous is None:
         widget.refresh()
     if region.width == 40 and region.height == 12 and widget.screen.is_current:
@@ -81,3 +87,10 @@ def render_screen(frame_rows, cols, rows, on="#2b2e31", bg="#c6c9cc", baseline=T
                    xshift=xshift, yshift=yshift, overlay=overlay, clip=clip,
                    overlay_free=overlay_free)
     return paint_cells(buf, cols, rows, on, bg, bgimg, free_ink)
+
+
+def sync_raster(widget):
+    """Layout can move an unchanged frame when the action rail disappears."""
+    content = getattr(widget, '_web_raster', None)
+    if content is not None:
+        update_raster(widget, content)

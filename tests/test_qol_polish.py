@@ -491,7 +491,7 @@ def test_password_peeks_its_last_char_only_while_typing():
     assert "******7" in page                   # last char peeks
     assert "secret7" not in page               # never the whole thing
     pan.key("tab")                             # leave the field...
-    assert "7" not in pan.text().plain.split("password:")[1].split("\n")[0]
+    assert "7" not in pan.text().plain.split("Password")[1].split("\n")[0]   # UI batch A card label
 
 
 # ---- O10: the town hub keeps your last pick for the session -----------------

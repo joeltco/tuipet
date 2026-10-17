@@ -512,7 +512,7 @@ class TournamentPanel(menu.SubHost):
                 lines.extend(t.plain for t in Text(line).wrap(Console(width=38), 38))
             self.detail_scroll = min(self.detail_scroll, max(0, len(lines) - 9))
             for line in lines[self.detail_scroll:self.detail_scroll + 9]:
-                out.append(" " + line + "\n")
+                out.append(" " + line + "\n", style=INK)
             out.append_text(menu.note(self.msg, tick=self.frame_i))
             return out
         if self.phase == "select":

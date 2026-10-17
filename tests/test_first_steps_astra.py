@@ -75,15 +75,15 @@ def test_panel_and_egg_subordinate_rail_then_home_restores_it():
                           _center=lambda t: t, _mode_strip=lambda: None,
                           _status_painter=lambda: None)
     TuiPetApp.repaint(app)
-    assert app.keys_w.styles.opacity == 0.4
-    assert 'TUIPET ACCOUNT' in app.screen_w.rendered.plain
+    assert app.keys_w.display is False                 # UI batch A: hidden while a panel owns input
+    assert 'ACCOUNT' in app.screen_w.rendered.plain
     app.mode = None
     app.pet.stage = 'Egg'
     TuiPetApp.repaint(app)
-    assert app.keys_w.styles.opacity == 0.4
+    assert app.keys_w.display is True and app.keys_w.styles.opacity == 0.4   # egg: shown but dim
     app.pet.stage = 'Fresh'
     TuiPetApp.repaint(app)
-    assert app.keys_w.styles.opacity == 1.0
+    assert app.keys_w.display is True and app.keys_w.styles.opacity == 1.0
 
 
 def test_training_result_prominently_offers_existing_skip():

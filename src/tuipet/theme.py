@@ -110,6 +110,30 @@ BEZEL = SHELL = LABEL = KEY = ""
 FLASH: tuple = ("", "", "")
 
 
+SHELL_BG = "#121212"
+SHELL_ROLES = ("accent", "pos", "neg", "heart", "energy", "care", "life", "coin")
+_GREY_SHELL = dict(accent="#e47b6b", pos="#7fa8d8", neg="#e47b6b",
+                   heart="#e47b6b", energy="#7fa8d8", care="#b28ad4",
+                   life="#68b89f", coin="#d8b45c")
+
+
+def shell_colors(t):
+    """Semantic inks for dark cards, independent of the LCD palette."""
+    colors = {role: t[role] for role in SHELL_ROLES}
+    if t is THEMES["grey"]:
+        colors.update(_GREY_SHELL)
+    return colors
+
+
+def shell_markup(markup):
+    """Retint explicit card markup only; never rewrite LCD or sprite inks."""
+    import re
+    t = THEMES[_current]
+    colors = shell_colors(t)
+    mapping = {t[role]: colors[role] for role in SHELL_ROLES}
+    return re.sub(r"#[0-9a-fA-F]{6}", lambda m: mapping.get(m[0], m[0]), markup)
+
+
 def _derive(t):
     on, bg, mid = t["on"], t["bg"], t["mid"]
     return {

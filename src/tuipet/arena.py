@@ -103,6 +103,10 @@ class Screen(FxMixin, Static):
         return super().render_line(y)
 
     def on_mount(self):
+        if is_browser():
+            from .web.render import sync_raster
+            self.screen.screen_layout_refresh_signal.subscribe(
+                self, lambda _: sync_raster(self), immediate=True)
         self.frame_i = 0      # interval counter (10 Hz; 1 tick == 0.1s == one DVPet _interval)
         self.anim_key = None  # last anim state, so cadences restart on a state change
         self.roamer = anim.Roamer(int(SCREEN_COLS * 0.28), SCREEN_COLS, SPRITE_W)  # left-of-centre anchor

@@ -46,3 +46,10 @@ def test_tints_never_vanish_into_the_box():
                   "heart", "energy", "care", "life", "coin"):
             assert _ratio(t[k], bg) >= TINT_MIN, \
                 f"{name}.{k} = {_ratio(t[k], bg):.2f}:1 -- below the shipped floor"
+
+
+def test_shell_semantics_have_body_text_contrast_in_every_theme():
+    from tuipet.theme import SHELL_BG, shell_colors
+    for name, t in THEMES.items():
+        for role, color in shell_colors(t).items():
+            assert _ratio(color, SHELL_BG) >= 4.5, (name, role)

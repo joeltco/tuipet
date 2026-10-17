@@ -131,6 +131,11 @@ class Stats(Static):
     """The right-hand card widget.  Every card body lives in statusbox --
     this widget only chooses home/egg/grave and writes the lines."""
 
+    def update(self, content=""):
+        if isinstance(content, str):
+            content = theme.shell_markup(content)
+        return super().update(content)
+
     def paint(self, pet: Pet):
         if pet.dead:
             return self._paint_grave(pet)
@@ -164,7 +169,7 @@ class TuiPetApp(ActionsMixin, App):
         border: round #7a7e78; padding: 0 1; width: 44; height: 3; margin-top: 1;
         color: #7d8186; content-align: left middle;
     }
-    #stats { border: round #7a7e78; padding: 0 1; width: 30; height: 18; margin-left: 1; }
+    #stats { background: #121212; border: round #7a7e78; padding: 0 1; width: 30; height: 18; margin-left: 1; }
     #keys {
         border: round #7a7e78; padding: 0 1; width: 75; height: 5; margin-top: 1; color: #7d8186;
     }
@@ -1161,8 +1166,8 @@ class TuiPetApp(ActionsMixin, App):
     def repaint(self):
         # The panel's own strip names the active controls.
         if getattr(self, "keys_w", None) is not None:
-            owned = self.mode is not None or self.pet.stage == "Egg"
-            self.keys_w.styles.opacity = 0.4 if owned else 1.0
+            self.keys_w.display = self.mode is None          # a panel owns input: hide (UI batch A)
+            self.keys_w.styles.opacity = 0.4 if self.pet.stage == "Egg" else 1.0   # egg: nothing works yet (first-5 #7)
         if self.mode is not None:
             self.screen_w.update(self._center(self.mode.text()))
             self._mode_strip()
