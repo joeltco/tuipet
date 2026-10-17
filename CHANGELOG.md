@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.34 — BETTER SOUND. Sounds no longer pile up or play over each oth (2026-10-17)
+
+BETTER SOUND. Sounds no longer pile up or play over each other, skipping or muting stops them, your volume setting is respected everywhere, and battles and duels now end with a win or lose sound.
+
 ## 0.6.33 — FRIENDLIER FIRST STEPS. A clearer sign-up card, a First Step (2026-10-16)
 
 FRIENDLIER FIRST STEPS. A clearer sign-up card, a First Steps guide at the top of Help that explains your stats, tips while your egg warms up, and messages that say exactly when your pet can battle or take the road.
