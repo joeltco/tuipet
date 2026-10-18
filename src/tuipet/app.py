@@ -175,8 +175,8 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("@ HINTS: in lobby chat, type @ and the start of a name; the rest "
-                 "shows dim, and TAB or → fills it in. Empty-lobby hint fixed.")
+    WHATS_NEW = ("CRASH FIXES: updating tuipet while the game is open no longer "
+                 "crashes the running game on its next save or evolve check.")
 
 
     BINDINGS = [
@@ -271,6 +271,13 @@ class TuiPetApp(ActionsMixin, App):
             yield Static(keys_markup(), id="keys")
 
     def on_mount(self):
+        # read the line charts NOW, while the files match this build: a lazy
+        # first read after a mid-session pip upgrade parsed the NEW lines.csv
+        # with the OLD parser (bug report 2026-10-18, 0.5.350 "unknown rule
+        # atom: 'FRAG'")
+        from . import lines as _lines
+        _lines.load_lines()
+        _lines.egg_bound_lines()
         self.screen_w = self.query_one("#lcd", Screen)
         self.stats_w = self.query_one("#stats", Stats)
         self.msg_w = self.query_one("#msg", Static)

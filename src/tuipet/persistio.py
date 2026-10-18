@@ -7,6 +7,7 @@ from __future__ import annotations
 import json
 import os
 import shutil
+import sys
 import time  # noqa: F401
 
 
@@ -80,8 +81,12 @@ def _atomic_write_json(path, data, keep_bak=False, strict=False):
                 os.fsync(fd)
             finally:
                 os.close(fd)
-        from .web.storage import checkpoint
-        checkpoint()
+        # browser only: a desktop lazy import here crashed autosave when pip
+        # swapped the package under a running game (bug report 2026-10-17,
+        # Windows 0.6.32 "No module named 'tuipet.web.storage'")
+        if sys.platform == "emscripten":
+            from .web.storage import checkpoint
+            checkpoint()
         # a transient refusal used to stick forever -- the exit banner
         # printed "couldn't save" over a pet that had been saving fine
         # every 10s since (persistence audit 2026-07-18).  Clear it only
