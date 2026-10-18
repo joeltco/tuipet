@@ -1121,8 +1121,10 @@ class LobbyPanel(BoutMixin, ChatMixin):
         # the open room: a fresh ✉ pops its own nudge ahead of the key chrome
         unread = sorted(self.state.unread) if self.state else []
         if unread:
-            who = unread[0][:12] + ("…" if len(unread) > 1 else "")
-            return f"[b]✉ {who}[/][dim] unread — V on their name[/]"
+            # V alone types a 'v' into chat (hint sweep 2026-10-17): the real
+            # path is pick the name, ENTER, then V
+            who = unread[0][:11] + ("…" if len(unread) > 1 else "")
+            return f"[b]✉ {who}[/][dim] unread · pick, ENTER, V[/]"
         # ESC's word lives on the LCD's own footer (HINTS_OPEN); repeating it
         # here pushed the strip to 42 of its 40 columns
         return menu.hints(("↑↓", "pick"), ("ENTER", "act"), ("PgUp", "log"))
