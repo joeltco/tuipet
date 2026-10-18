@@ -89,10 +89,10 @@ def test_typed_emoji_cannot_overflow_the_input_line():
 def test_the_empty_room_hint_is_not_clipped_mid_sentence():
     """It used to render as '— say hi, the room hears' — truncated with [:cw]."""
     s = _state()
-    rows = [ln for ln in _rendered(_panel(s)) if "P: ping ghosts" in ln]
+    rows = [ln for ln in _rendered(_panel(s)) if "say hi" in ln]
     assert rows, "the empty room lost its hint"
     hint = rows[0].split("│")[0].strip()
-    assert hint.endswith("ranks"), f"hint is clipped: {hint!r}"
+    assert hint.endswith("—"), f"hint is clipped: {hint!r}"
 
 
 # ---------------------------------------------------------------- the 📢 line

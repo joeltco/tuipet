@@ -273,7 +273,7 @@ class ChatMixin:
         view = rows[max(0, end - BODY):end]
         view = [("", INK)] * (BODY - len(view)) + view
         if not rows:                                       # the empty room
-            view[BODY // 2] = ("P: ping ghosts · threads · ranks".center(w), DIM)
+            view[BODY // 2] = ("— say hi, the room hears you —".center(w), DIM)
         for ln, sty in view:
             t.append(_fit(ln, w) + "\n", style=sty)
         if self.pm_to is not None:                           # the input line is a PM compose
