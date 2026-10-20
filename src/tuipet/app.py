@@ -175,8 +175,8 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("CRASH FIXES: updating tuipet while the game is open no longer "
-                 "crashes the running game on its next save or evolve check.")
+    WHATS_NEW = ("BUG FIXES: a perfect Digimemory dig's 2nd chip works, lobby no longer "
+                 "crashes on odd names, invites can't hijack Y, and more.")
 
 
     BINDINGS = [

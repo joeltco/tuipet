@@ -441,7 +441,11 @@ class LobbyPanel(BoutMixin, ChatMixin):
                     # (egg-battle audit 2026-07-06)
                     self.client.respond(m.get("from_id"), m.get("kind"), False)
                     self.status = gate
-                elif self.phase != "lobby" or self.invite_prompt is not None or self.action_for is not None:
+                elif (self.phase != "lobby" or self.invite_prompt is not None
+                      or self.action_for is not None
+                      # an open "clear the thread?" owns Y: an invite let it
+                      # ACCEPT a battle instead (hunt 2026-10-20)
+                      or getattr(self, "confirm_clear", None) is not None):
                     self.client.respond(m.get("from_id"), m.get("kind"), False, busy=True)  # in a session
                 elif self.buf or self.pm_to is not None:
                     # mid-sentence: the popped prompt would EAT the next
@@ -535,6 +539,7 @@ class LobbyPanel(BoutMixin, ChatMixin):
                     self.bt_outcome = "Opponent left."
                     self.bt_payload = ("battle_msg", "Opponent left — battle void.")
                     self.bphase = "over"
+                    self.bshow = None    # as _void_bout: a kept arena showed a live bar (hunt 2026-10-20)
 
     # ---- session orchestration ------------------------------------------
     def _enter_session(self, pid, pname, kind, host):
@@ -633,6 +638,7 @@ class LobbyPanel(BoutMixin, ChatMixin):
                     self.bt_outcome = "Opponent left."
                     self.bt_payload = ("battle_msg", "Opponent left — battle void.")
                     self.bphase = "over"
+                    self.bshow = None    # as _void_bout: a kept arena showed a live bar (hunt 2026-10-20)
             return
         if kind == "jogress" and self.phase == "jogress" and payload.get("t") == "confirm":
             # two-phase commit: the partner said yes; fuse only when BOTH have
@@ -1123,7 +1129,9 @@ class LobbyPanel(BoutMixin, ChatMixin):
         if unread:
             # V alone types a 'v' into chat (hint sweep 2026-10-17): the real
             # path is pick the name, ENTER, then V
-            who = unread[0][:11] + ("…" if len(unread) > 1 else "")
+            from rich.markup import escape
+            # escaped: a legal name like "a[/]" crashed the strip (hunt 2026-10-20)
+            who = escape(unread[0][:11]) + ("…" if len(unread) > 1 else "")
             return f"[b]✉ {who}[/][dim] unread · pick, ENTER, V[/]"
         # ESC's word lives on the LCD's own footer (HINTS_OPEN); repeating it
         # here pushed the strip to 42 of its 40 columns

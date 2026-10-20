@@ -95,7 +95,9 @@ class AccountPanel(CueQueue):
         # (QOL sweep 2026-07-23).  Leaving the field stars it fully.
         stars = ("*" * (len(self.pw_buf) - 1) + self.pw_buf[-1]
                  if self.field == "pw" and self.pw_buf else "*" * len(self.pw_buf))
-        pw = (stars + ("_" if self.field == "pw" else ""))[-_FIELD_W:]
+        # by CELLS too: the shown last char can be a 2-cell glyph, and the
+        # char slice ellipsized it and the cursor away (hunt 2026-10-20)
+        pw = _tail(stars + ("_" if self.field == "pw" else ""), _FIELD_W)
         t.append_text(menu.row("Name      " + nm, self.field == "name"))
         t.append_text(menu.row("Password  " + pw, self.field == "pw"))
         # keys ride the strip (round 35: the in-LCD hint line doubled it)

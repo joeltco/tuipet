@@ -500,6 +500,8 @@ class AdventurePanel(menu.SubHost):
         s["grade"] = g
         if g == "mega":
             self.pet.add_item(s["key"])       # the bonus copy, banked at the lock
+            if s["key"] == "digimemory":      # one payload per chip, or the
+                self.pet.stash_wild_memory()  # bonus one is "silent" (hunt 2026-10-20)
             self._find_msg = f"Dug up {s['name']} ×2!"
         elif g == "miss":
             self._find_msg = f"Scraped out {s['name']}..."

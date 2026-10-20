@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.50 — BUG FIXES (2026-10-20)
+
+BUG FIXES: a perfect Digimemory dig's 2nd chip works, lobby no longer crashes on odd names, invites can't hijack Y, and more.
+
 ## 0.6.49 — CRASH FIXES (2026-10-18)
 
 CRASH FIXES: updating tuipet while the game is open no longer crashes the running game on its next save or evolve check.

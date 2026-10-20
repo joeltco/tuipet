@@ -23,7 +23,7 @@ HELP = [
     ("ESC at sign-in plays locally.", 0),
     ("Web phone: tap the game to type.", 0),
     ("Web extra-key bar: arrows, ESC, TAB,", 0),
-    ("and PGUP/PGDN; ~ also means Escape.", 0),
+    ("and PGUP/PGDN.", 0),
     ("ENTER confirms; ESC goes back.", 1),
     ("SPACE doubles ENTER on most screens;", 0),
     ("PgUp/PgDn leap through long lists.", 0),

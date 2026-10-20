@@ -931,6 +931,11 @@ def get_account():
 
 
 def set_account(name, pw):
+    # progress is per account: the seen-caches belong to the old owner, and a
+    # stale album cache kept B's album from ever recording (hunt 2026-10-20)
+    global _FX_SEEN
+    _ALBUM_SEEN.clear()
+    _FX_SEEN = (None, None)
     d = load_settings()
     name = (name or "").strip()[:24]
     d["account"] = {"name": name, "pw": pw or ""}
