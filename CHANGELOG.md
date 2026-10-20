@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.52 — DOCS (2026-10-20)
+
+DOCS: the README and install notes now match the game (Godzilla Egg unlock, shop tabs, evolution charts).
+
 ## 0.6.51 — POLISH (2026-10-20)
 
 POLISH: the Assistant card now says it works while you're on the home screen; Help lost a repeated battle line.

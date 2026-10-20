@@ -175,8 +175,8 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("POLISH: the Assistant card now says it works while you're on the "
-                 "home screen; Help lost a repeated battle line.")
+    WHATS_NEW = ("DOCS: the README and install notes now match the game "
+                 "(Godzilla Egg unlock, shop tabs, evolution charts).")
 
 
     BINDINGS = [
