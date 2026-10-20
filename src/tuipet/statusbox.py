@@ -1142,7 +1142,7 @@ def assist(app):
         f"Hour    {hour}b/game hour",
         f"Bits    [b]{compact_count(p.bits, 17)}b[/]", "",
         "[dim]cleans and feeds while[/]",
-        "[dim]you are away[/]", "",
+        "[dim]on the home screen[/]", "",
         "[dim]ENTER hire/dismiss[/]"])
 
 

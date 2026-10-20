@@ -93,7 +93,6 @@ HELP = [
     ("t train - SPACE times the strike;", 1),
     ("  each try: +1 training, +1 Effort.", 0),
     ("  battles lock their own bar.", 0),
-    ("  Battles use their own timing bar.", 0),
     ("d digicore - stats; ↑↓ scroll.", 1),
     ("SPACE on CORE: gaze; elsewhere page", 0),
     ("EVOLVES: ENTER for requirements", 0),

@@ -277,7 +277,10 @@ def test_the_help_claims_match_the_shipped_mechanics():
     assert "sell eggs" in text and "Clearing an" in text and "patch" in text
     assert "hit saves your battle form" not in text
     # battle audit 2026-10-14: proto 4 duels commit their own live bar lock.
-    assert "Battles use their own timing bar" in text
+    # the duplicate "Battles use their own timing bar" line went in the
+    # 2026-10-20 polish (Joel: "Fix both"); the one line left says it
+    assert "battles lock their own bar" in text
+    assert "Battles use their own timing bar" not in text
     assert "bits/hour" not in text
     assert "elder can go" not in text
 
