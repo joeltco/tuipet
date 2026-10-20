@@ -1,6 +1,7 @@
-# Optional web build hook for Claude
+# Web build and deploy for Claude
 
-Keep this separate from the existing pip publish steps in `tools/deploy.sh`:
+`tools/deploy.sh` builds and publishes the web game after the PyPI upload
+(and its installability check). To build it separately:
 
 ```sh
 python3 tools/build_web.py
@@ -13,13 +14,17 @@ Serve that directory at `/tuipet/`, including its versioned `assets/` tree.
 no-cache`); `assets/` can have immutable long-lived caching. Retain old published
 asset directories during updates so already-loading tabs can finish. The local
 builder prunes obsolete local builds; do not mirror-delete published assets
-without a retention policy. No service worker is installed in Phase 1.
+without a retention policy. No service worker is installed.
 
 Keep the existing lobby WebSocket upgrade route at `wss://ff3mmo.com/tuipet/`.
 An HTTP navigation to `/tuipet/` serves the static index; an Upgrade request goes
 to the existing lobby. No Python server process per browser and no new lobby
 protocol or account database are required. HTTPS is needed for Web Locks and
-persistent storage APIs. No deploy/nginx changes were made here.
+persistent storage APIs. The release script uploads a tarball over SCP, extracts it into
+`/var/www/tuipet-web`, makes it readable, and checks the live index for the
+new versioned asset path. It retains old remote asset directories. A web
+publish failure warns without undoing the PyPI release; `--no-publish`
+skips both PyPI and web publishing.
 
 Local preview:
 

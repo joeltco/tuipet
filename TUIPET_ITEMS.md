@@ -1,12 +1,14 @@
 # TUIPET ITEMS — the catalog contract (BUILT 2026-07-18)
 
-> **⚠ SUPERSEDED 2026-07-26 — counts below are historical.** THE GREAT ITEM
-> EXPANSION (v0.5.283-284) took the shelf to **114 `shop.CATALOG` entries**
-> (verified 2026-07-29), and its ruling ledger — what each new item does, what
+> **⚠ SUPERSEDED 2026-07-26 — everything below is the historical 2026-07-18
+> contract; prices, effects and counts have changed since.** The live catalog
+> is `src/tuipet/shop.py::CATALOG` (**112 entries** as of v0.6.51, 2026-10-20,
+> plus the 11 Digimentals on the town Crests shelf). THE GREAT ITEM
+> EXPANSION (v0.5.283-284) first took the shelf to 114 entries, and its ruling ledger — what each new item does, what
 > stayed dormant, where everything is stocked — is
 > [ITEM_EXPANSION_2026_07_26.md](ITEM_EXPANSION_2026_07_26.md), with the
 > follow-up refactor in [ITEM_REFACTOR_2026_07_27.md](ITEM_REFACTOR_2026_07_27.md).
-> Read those for the current catalog. This file remains the *design record* of
+> Read those for how it got there. This file remains the *design record* of
 > the original contract: the effect grammar and the "no invented systems" law
 > below still hold. One later ruling reverses a line below: the **bandage item
 > was cut FINAL (2026-07-26)** — wrapping an injury lives only behind the **h**

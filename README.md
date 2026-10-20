@@ -25,17 +25,17 @@ Regular updates ship as the game grows.
   70th Edition chart: 28 new kaiju, from Botamon G and Baby Godzilla up
   through SpaceGodzilla, Kiryu, Destoroyah and Godzilla 1994 to Burning
   Godzilla, plus the G-Erosion forms of MetalGreymon, SkullGreymon and
-  WarGreymon, each firing its own shot in battle. Reach Mega with any
-  Digimon to earn the Godzilla Egg; the device's **G-Cell meter** decides
-  which kaiju your pet becomes, and a **G-Cell Fragment** left where a kaiju
+  WarGreymon, each firing its own shot in battle. Clear the Monster Island
+  road to earn the Godzilla Egg; the device's **G-Cell meter** decides
+  which kaiju your pet becomes, and a **G-Cell Fragment** left where a G-Erosion kaiju
   falls is the only road to Burning Godzilla.
-- **1,576 creatures**, 11 animation frames each, extracted from the game's
+- **1,584 creature entries**, 11 animation frames each, extracted from the game's
   sprite atlases as 1-bit bitmaps (`src/tuipet/data/sprites.json.gz`).
 - A **basic V-Pet** with care (hunger, effort, filth, sleep, lights), training
   drills, evolution (care-quality gates + DNA divergence + armor
   Digimentals + jogress), an **Adventure** mode (30 maps,
   bosses, towns), raid bosses, cups on a real-calendar schedule
-  (seasons, weekends, holidays), a shop with the classic four-tab
+  (seasons, weekends, holidays), a home shop with a three-tab
   storefront, digitama earned by play (and bought outright in each town's
   own egg shop), an in-game AI care assistant, and the device's own screen
   transitions and animation timelines.
@@ -70,13 +70,15 @@ actually hear the LCD beeps you also need the **termux-api** package
 package alone isn't enough: it installs a *bridge* that only works when the app
 is there. Missing the app, tuipet detects that and falls back to the terminal
 bell (Options → sound then reads *bell only*), so a silent install tells you
-what's wrong instead of just being quiet. Over SSH, sound stays silent on purpose. The
+what's wrong instead of just being quiet. Over SSH, tuipet avoids audio playback on the server and falls back to the
+terminal bell. The
 `curl -fsSL https://raw.githubusercontent.com/joeltco/tuipet/main/install.sh | bash`
-script does all of that in one shot.
+script installs Python, tuipet and the termux-api package in one shot;
+it still asks you to install the Termux:API app separately.
 
 **On iPhone / iPad — use [a-Shell](https://holzschu.github.io/a-Shell_iOS/)
 (the supported iOS way):** a-Shell is a free, open-source terminal on the App
-Store that ships Python 3.11 — everything tuipet needs.
+Store that ships Python. tuipet requires Python 3.10 or newer.
 
 ```sh
 pip install tuipet
@@ -99,8 +101,8 @@ Two iOS notes, both handled for you:
   bell (Options → sound shows *bell only*). Everything else — the lobby, battles,
   jogress, raids — works exactly as it does everywhere else.
 
-**On iSH:** iSH's Alpine usually ships a Python older than 3.10, so
-`pip install tuipet` fails with *"No matching distribution found"*. Prefer
+**On iSH:** check that its Alpine Python is 3.10 or newer before running
+`pip install tuipet`. Older Python versions cannot install tuipet. Prefer
 **a-Shell** above — it's the smoother iOS experience.
 
 ## Run from source
@@ -160,10 +162,11 @@ adventure, raids and cups; PvP battles and fusion happen in the lobby**.
 
 ## Care & evolution
 
-Evolution uses the real V-Pet gating model: each form's
-`digimon.csv` row gates on care **mistakes**, **overfeed**, **sleep
-disturbances**, **weight** class, **battles/wins** and **generation**,
-with the game's exact fulfilled-requirement scoring and deviation
+Evolution follows the egg's `lines.csv` chart: ordered care and battle
+brackets pick the first matching route, with a stage roll sharing qualifying
+shadowed routes. Off-chart forms use `digimon.csv` care **mistakes**,
+**overfeed**, **sleep disturbances**, **weight** class, **battles/wins**
+and **generation** gates, fulfilled-requirement scoring and deviation
 tiebreak. Per-stage counters
 reset on evolution; power and battle records carry for life. Good care with
 focused training walks the classic lines; neglect finds Numemon.
@@ -177,7 +180,7 @@ the hit — every attempt grows effort and training, and saves its strike grade.
 Local battle wins grow power in the defeated foe's attribute.
 Battles resolve as the device's HP race.
 
-**Armor evolution**: the shop's Eggs tab sells the 11 crest Digimentals in
+**Armor evolution**: town shops' Crests tabs sell the 11 crest Digimentals in
 their canonical discovery waves — Courage and Hope from day one, the crest
 five after your first armor evolution, Light and Kindness at 25 wins,
 Miracles behind the raid bosses, Destiny at generation 5. All 73 armor
@@ -191,11 +194,12 @@ has a road in the Field; ties disarm it. The next growth uses that road
 instead of the egg chart. Divergence lists every road destination; the final
 choice uses care scores and chance. Charges clear at every evolution;
 banked DNA stays. Charging costs energy (double off-Field), adds Effort up
-to three hearts, and costs obedience if energy goes negative. Charged-share
+to three hearts, and refuses a charge the pet cannot afford. Charged-share
 conditions are selection bonuses for off-chart forms, not unlock gates.
 DigiCore shows evolution requirements and your collection. **Jogress** (two-player DNA fusion) happens in the
-lobby with a real partner — the partner's attribute picks the fusion via the
-game's `attributeJogress` matrix.
+lobby with a real partner — exact partner species or matching attributes
+open the chart's fusion doors; off-chart pairings use the game's
+`attributeJogress` matrix.
 
 **DigiCore** (`d`) is tuipet's data book: the field-flavoured core counts down
 toward the hatch/growth window, then counts age toward elderhood. Growth
@@ -209,7 +213,7 @@ career cups; ENTER opens the album, or the hall of memory on LEGACY.
 
 Press **r** for raids: boss fights against the world's heavies, with a
 shared community pool that **sizes itself to the crowd** — a small crew can
-fell its boss, and every kill grows the next one. Three volleys a day, each
+fell its boss, and each kill grows the next one up to the pool cap. Three volleys a day, each
 billing energy and a little weight like any other fight. A felled boss
 collapses on the arena before the next one takes the stage, and your share
 waits on the board until you press **C** to claim it — your pet steps out to
@@ -237,7 +241,8 @@ pays 1.5× the purse, and weekend payouts also receive 1.5×.
 
 Press **l** for the lobby (accounts are free — pick a name and password).
 Live **chat** with backlog, presence, private messages (threads keep their
-full scrollable history), **PvP battles** (host-authoritative, with the
+scrollable history — up to 200 live messages per thread, with the latest
+50 kept between sessions), **PvP battles** (seeded on both peers, with the
 full round-replay animation), and two-player **jogress fusion**. TAB opens
 the **monthly ladder** — online wins race a fresh season each month, and
 past-season podium finishers claim a bits award, confirmed by the server and
@@ -251,7 +256,8 @@ tuipet somewhere else and it asks before touching anything — *"Your pet is on
 phone. Take it onto this device?"* — and only a yes moves it. The device
 holding the pet is never prompted and plays exactly as before; no other
 device can write over your save, however fresh its clock claims to be.
-Offline play is untouched; the network is fail-soft everywhere.
+Offline play stays local on the holding device. A cached non-holding device
+that cannot reach the cloud must reconnect before taking the pet.
 
 ## Scenes
 
@@ -261,7 +267,7 @@ your pet grows up with (until you repaint it).
 
 ## Shop, bag & economy
 
-**s** opens the classic four-tab storefront — **[Food] Items Eggs Honors**
+**s** opens the home storefront — **[Food] Items Honors**
 — stocked with the TUIPET catalog: real foods that get **eaten on the LCD**
 through their own device art (fish, steak, a feast, one mushroom you should
 NOT feed), care goods and growth tools, and **toys that actually play** —
@@ -280,11 +286,12 @@ hatch and teases the one you're closest to earning, and a newly earned
 digitama announces itself by name when you get home (**e** opens the guide). **On the road, each
 town's egg shop also sells a distinct band of eggs outright** — the real 8×8
 egg sprites, a paid shortcut that drops straight onto your carousel, and no
-two towns stock the same eggs.
+two towns stock the same band of eggs.
 
 ## AI assistant & options
 
-**v** hires the device's auto-care AI (per-stage retainer and per-care fees —
+**v** hires the device's auto-care AI (a game-hour retainer and per-care fees,
+both scaled by stage —
 it minds the pet, at a price). **g** opens options: account switching, sound backend, updates,
 key reference, theme, and the new-game/erase controls.
 
@@ -299,7 +306,7 @@ auto-update off; you'll still be told when a release is out. You can also press
 ENTER there to check now, and ENTER again to install on the spot.
 
 Where tuipet can't run pip for you — **iOS** sandboxes subprocesses, and a
-source checkout has no release to install over — it hands you the command
+source run without installed package metadata has no release to install over — it hands you the command
 instead of pretending it updated.
 
 ## Saving
@@ -320,10 +327,12 @@ menu pauses the sim too.
 Raw game files live under `_extract/` (gitignored). Re-extract with:
 
 ```sh
-python tools/extract_sprites.py     # rebuilds data/sprites.json.gz
-python tools/preview.py Agumon      # preview a creature as halfblocks
-python tools/allframes.py Agumon    # see all 11 frames
+python tools/extract_sprites.py     # rebuilds src/tuipet/data/sprites.json.gz, eggs and icons
 ```
+
+This extraction overwrites the curated egg bank as well as the sprite bank.
+The raw inputs are `raw_resources/` and `raw_model/`, linked to `_extract/`
+by `tools/setup_assets.sh`.
 
 The atlases are 672×672, an 11×11 grid: each **column** is one creature, each of
 the 11 **rows** is an animation frame. Creatures are authored at 3× scale on a
@@ -334,21 +343,21 @@ sprites and dropping the dev-build column labels) and thresholds to 1-bit.
 
 Each creature's 11-frame strip uses a fixed pose order, reverse-engineered from
 the game's own `View/SpriteAnim.class` (cfr-decompiled). Animations in
-`src/tuipet/data.py::ROLES` mirror the game's `cheer`/`jeer`/`eat`/`idleSleep`/etc.
+`src/tuipet/data_core.py::ROLES` mirror the game's `cheer`/`jeer`/`eat`/`idleSleep`/etc.
 
 | idx | pose                          | used by                          |
 |-----|-------------------------------|----------------------------------|
 | 0   | idle / walk A                 | idle bob (0,1), walk             |
-| 1   | idle / walk B                 | idle bob, play, tantrum          |
+| 1   | idle / walk B                 | idle bob, play, wake             |
 | 2   | sleep / rest A                | `idleSleep` (2,3), wake stretch  |
-| 3   | sleep / rest B                | `idleSleep`                      |
-| 4   | angry / refuse / attack       | jeer, refuse head-shake, battle  |
+| 3   | sleep / stretch               | `idleSleep`, wake                |
+| 4   | refuse / cheer-down / clean   | refuse head-shake, wash, poop    |
 | 5   | happy / cheer-up              | cheer (good), play               |
-| 6   | sad / unhappy                 | jeer (bad), tantrum, attack      |
+| 6   | attack / cheer-up             | attack, mild jeer               |
 | 7   | eat-closed (chew) / cheer-down| eat (8↔7), heal, cheer           |
 | 8   | eat-open (mouth) / neutral    | eat, heal, default expression    |
-| 9   | tired / sick / disliked / old | fatigue idle, geriatric, dislike |
-| 10  | exhausted (very tired)        | deep-fatigue idle                |
+| 9   | sad / tired / disliked        | jeer, tantrum, fatigue idle      |
+| 10  | exhausted / collapse          | jeer, tantrum, dying            |
 
 `refuse` is drawn as a left/right mirror flip on alternating frames (head-shake).
 
@@ -358,8 +367,9 @@ the game's own `View/SpriteAnim.class` (cfr-decompiled). Animations in
 
 You can use it, read it, change it, fork it, publish your own version, or build
 something commercial on top of it. You don't need to ask permission, and you
-don't owe anyone anything for it. The only condition MIT asks for is that the
-copyright notice travels with copies of the code.
+don't owe anyone anything for it. The MIT license asks that the
+copyright and permission notices travel with copies or substantial portions
+of the code.
 
 Pull requests and forks are welcome — see the source layout in
 [Run from source](#run-from-source).
