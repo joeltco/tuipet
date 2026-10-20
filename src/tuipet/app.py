@@ -175,8 +175,8 @@ class TuiPetApp(ActionsMixin, App):
     """
     # the release-news line (title-screen msg box, first launch per build) --
     # UPDATE THIS WITH EVERY RELEASE that ships something player-visible
-    WHATS_NEW = ("BUG FIXES: a perfect Digimemory dig's 2nd chip works, lobby no longer "
-                 "crashes on odd names, invites can't hijack Y, and more.")
+    WHATS_NEW = ("POLISH: the Assistant card now says it works while you're on the "
+                 "home screen; Help lost a repeated battle line.")
 
 
     BINDINGS = [

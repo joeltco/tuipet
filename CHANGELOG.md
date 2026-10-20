@@ -3,6 +3,10 @@
 Player-facing notes per release — the same line each version shows on its
 title screen. Full commit history: [GitHub](https://github.com/joeltco/tuipet/commits/main).
 
+## 0.6.51 — POLISH (2026-10-20)
+
+POLISH: the Assistant card now says it works while you're on the home screen; Help lost a repeated battle line.
+
 ## 0.6.50 — BUG FIXES (2026-10-20)
 
 BUG FIXES: a perfect Digimemory dig's 2nd chip works, lobby no longer crashes on odd names, invites can't hijack Y, and more.
